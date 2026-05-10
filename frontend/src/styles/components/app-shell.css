@@ -853,4 +853,150 @@
     margin: 0 0 8px;
     color: var(--ink-2);
   }
+
+  /* Awards page (#371-#373). Top-10 leaderboards per district award. */
+  .awards-page {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 32px 24px 48px;
+  }
+
+  .awards-page__header {
+    margin-bottom: 24px;
+  }
+
+  .awards-page__grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 980px) {
+    .awards-page__grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .awards-page__empty {
+    margin: 24px 0;
+    color: var(--ink-3);
+    font-style: italic;
+  }
+
+  .awards-page-card {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-md);
+    box-shadow: var(--rds-shadow-sm);
+    overflow: hidden;
+  }
+
+  .awards-page-card__header {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--line-2);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .awards-page-card__title {
+    margin: 0;
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--ink);
+  }
+
+  .awards-page-card__description {
+    margin: 0;
+    font-family: var(--sans);
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--ink-3);
+  }
+
+  .awards-page-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    font-family: var(--sans);
+    font-size: 12px;
+  }
+
+  .awards-page-card__achieved {
+    color: var(--green-600);
+    font-weight: 600;
+  }
+
+  .awards-page-card__methodology-link {
+    color: var(--link);
+    text-decoration: none;
+  }
+
+  .awards-page-card__methodology-link:hover {
+    text-decoration: underline;
+  }
+
+  .awards-page-card__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .awards-page-card__row {
+    display: grid;
+    grid-template-columns: 36px 1fr auto auto;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    border-bottom: 1px solid var(--line-2);
+    font-family: var(--sans);
+    font-size: 13px;
+  }
+
+  .awards-page-card__row:last-child {
+    border-bottom: 0;
+  }
+
+  .awards-page-card__rank {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-3);
+  }
+
+  .awards-page-card__district {
+    color: var(--link);
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .awards-page-card__district:hover {
+    text-decoration: underline;
+  }
+
+  .awards-page-card__region {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-3);
+  }
+
+  .awards-page-card__value {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .awards-page-card__empty {
+    margin: 0;
+    padding: 16px 18px;
+    font-size: 12px;
+    font-style: italic;
+    color: var(--ink-3);
+  }
 }

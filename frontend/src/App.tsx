@@ -24,6 +24,9 @@ const HistoryPage = React.lazy(() => import('./pages/HistoryPage'))
 // Code-split: MethodologyPage placeholder (#355) — real content in #368
 const MethodologyPage = React.lazy(() => import('./pages/MethodologyPage'))
 
+// Code-split: AwardsPage — top-10 leaderboards per district award (#370-#373)
+const AwardsPage = React.lazy(() => import('./pages/AwardsPage'))
+
 /** Loading fallback for lazy-loaded pages */
 function PageLoadingFallback(): React.JSX.Element {
   // AppShell owns the <main id="main-content"> landmark; this fallback
@@ -86,6 +89,14 @@ const router = createBrowserRouter(
           element: (
             <Suspense fallback={<PageLoadingFallback />}>
               <MethodologyPage />
+            </Suspense>
+          ),
+        },
+        {
+          path: 'awards',
+          element: (
+            <Suspense fallback={<PageLoadingFallback />}>
+              <AwardsPage />
             </Suspense>
           ),
         },

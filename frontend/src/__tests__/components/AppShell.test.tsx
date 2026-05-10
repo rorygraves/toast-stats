@@ -59,6 +59,10 @@ describe('AppShell (#354)', () => {
       expect(
         within(nav).getByRole('link', { name: 'Districts' })
       ).toHaveAttribute('href', '/')
+      expect(within(nav).getByRole('link', { name: 'Awards' })).toHaveAttribute(
+        'href',
+        '/awards'
+      )
       expect(
         within(nav).getByRole('link', { name: 'History' })
       ).toHaveAttribute('href', '/history')
@@ -67,11 +71,13 @@ describe('AppShell (#354)', () => {
       ).toHaveAttribute('href', '/methodology')
     })
 
-    it('does NOT render Regions or Awards "soon" stubs (omitted per Epic #352)', () => {
+    it('does NOT render Regions or any "soon" stubs (omitted per Epic #352)', () => {
+      // Awards was a "soon" stub at #354 launch; #371 enabled the real
+      // /awards page and re-included Awards in the primary nav. Regions
+      // remains omitted until that page exists.
       renderShell()
       const nav = screen.getByRole('navigation', { name: /primary/i })
       expect(within(nav).queryByText(/regions/i)).not.toBeInTheDocument()
-      expect(within(nav).queryByText(/awards/i)).not.toBeInTheDocument()
       expect(within(nav).queryByText(/soon/i)).not.toBeInTheDocument()
     })
 

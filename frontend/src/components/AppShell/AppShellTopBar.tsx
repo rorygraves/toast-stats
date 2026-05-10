@@ -3,6 +3,7 @@ import { NavLink, Link } from 'react-router-dom'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Districts', end: true },
+  { to: '/awards', label: 'Awards', end: false },
   { to: '/history', label: 'History', end: false },
   { to: '/methodology', label: 'Methodology', end: false },
 ] as const

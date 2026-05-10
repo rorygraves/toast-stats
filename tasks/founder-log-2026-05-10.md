@@ -89,3 +89,31 @@ Realistic scope check: doing each tab "1:1 match handoff" with chart visual rest
 This trades "1:1 handoff fidelity" for "architectural redesign complete" — each tab is dark-mode-aware, uses redesign tokens, matches the design's typography rhythm. Pixel polish is real work that deserves its own focused PR.
 
 **Tactic**: introduce a single `.redesign-panel` class in `app-shell.css` with the token-driven panel chrome. Apply it to existing components in a small touch (replace 3 hardcoded class strings per component). Heavy lift comes only when a section is genuinely new.
+
+### 14:50 UTC — #387 (#360 Overview chrome) merged
+
+`.redesign-panel` shared class shipped + applied to DistrictOverview, DistinguishedDistrictTrophyCase, PaymentCompositionCard. Static guard test ensures the rule stays token-driven (no hardcoded hex/rgba).
+
+### 15:05 UTC — #388 bulk chrome migration (#361-#365) merged
+
+26 components migrated from `bg-white rounded-lg shadow-md p-{4,6}` → `.redesign-panel`. Single PR closes Sprints 4 + 5 chrome work. Each tab's remaining content acceptance criteria (filter chips, criteria explainer, ranking-progression metric toggle) filed as deferred follow-ups.
+
+### 15:15 UTC — #389 (#366 Club detail chrome) merged
+
+3 panel swaps + 3 bg-gray-100 strips on ClubDetailPage. Loyal-blue hero retained.
+
+### 15:20 UTC — #390 (#367 History + #368 Methodology) merged
+
+History page = year-strip chip row + TI archive callout (per-year cards deferred — needs new year-end snapshot endpoint). Methodology = full 8-section content authored from analytics-core: Borda formula + DCP tiers + club health + glossary + caveats (incl. Lesson 47 reference) + changelog.
+
+### 15:30 UTC — #391 (#369 cleanup) merged. EPIC #352 COMPLETE.
+
+LandingPage.tsx → DistrictsPage.tsx (file rename via git mv; 5 test files too). Deleted dead components: Header/, Navigation/, DashboardLayout, NavigationHeaderIntegration test. All 17 child issues of Epic #352 shipped.
+
+### Status checkpoint
+
+**Epic #352 (2026 redesign) — COMPLETE.** 17/17 issues shipped through 11 PRs (#374 #378 #379 #380 #381 #382 #383 #385 #386 #387 #388 #389 #390 #391). Coverage suite green throughout. Filed deferred follow-ups: #384 (a11y tablist arrow-key nav), per-tab content polish on #361-#365.
+
+### 15:35 UTC — Awards epic #370 (stretch)
+
+Time remaining in 24h budget: substantial. Going for the Awards epic. Plan: revive the old top-10 leaderboard component pattern (deleted from AwardsRaceSection in #382) on a dedicated `/awards` page. Add Awards to the AppShell nav. Cross-link to /methodology Borda section.
