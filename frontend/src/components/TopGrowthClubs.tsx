@@ -43,7 +43,7 @@ export const TopGrowthClubs: React.FC<TopGrowthClubsProps> = ({
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="redesign-panel">
         <div className="animate-pulse space-y-4">
           <div className="h-6 bg-gray-200 rounded w-1/3"></div>
           <div className="h-32 bg-gray-200 rounded"></div>
@@ -127,7 +127,7 @@ export const TopGrowthClubs: React.FC<TopGrowthClubsProps> = ({
   return (
     <div className="space-y-6">
       {/* Top Growth Clubs */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="redesign-panel">
         <div className="flex items-center gap-2 mb-4">
           <svg
             className="w-6 h-6 text-green-600"
@@ -209,7 +209,7 @@ export const TopGrowthClubs: React.FC<TopGrowthClubsProps> = ({
 
       {/* Top DCP Goal Achievement Clubs */}
       {topDCPClubs && topDCPClubs.length > 0 && (
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="redesign-panel">
           <div className="flex items-center gap-2 mb-4">
             <svg
               className="w-6 h-6 text-tm-loyal-blue"

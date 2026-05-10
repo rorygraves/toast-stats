@@ -22,7 +22,7 @@ export const DCPGoalAnalysis: React.FC<DCPGoalAnalysisProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="redesign-panel">
         <div className="animate-pulse space-y-4">
           <div className="h-6 bg-gray-200 rounded-sm w-1/3"></div>
           <div className="h-64 bg-gray-200 rounded-sm"></div>
@@ -33,7 +33,7 @@ export const DCPGoalAnalysis: React.FC<DCPGoalAnalysisProps> = ({
 
   if (!dcpGoalAnalysis) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="redesign-panel">
         <p className="text-gray-600">
           No DCP goal analysis available. Please use the Admin Panel to collect
           historical data.
@@ -110,7 +110,7 @@ export const DCPGoalAnalysis: React.FC<DCPGoalAnalysisProps> = ({
     <div className="space-y-6">
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-lg shadow-md p-4">
+        <div className="redesign-panel">
           <div className="flex items-center gap-2 mb-2">
             <svg
               className="w-5 h-5 text-tm-loyal-blue"
@@ -136,7 +136,7 @@ export const DCPGoalAnalysis: React.FC<DCPGoalAnalysisProps> = ({
           </p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-4">
+        <div className="redesign-panel">
           <div className="flex items-center gap-2 mb-2">
             <svg
               className="w-5 h-5 text-tm-true-maroon"
@@ -162,7 +162,7 @@ export const DCPGoalAnalysis: React.FC<DCPGoalAnalysisProps> = ({
           </p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-4">
+        <div className="redesign-panel">
           <div className="flex items-center gap-2 mb-2">
             <svg
               className="w-5 h-5 text-tm-loyal-blue"
@@ -187,7 +187,7 @@ export const DCPGoalAnalysis: React.FC<DCPGoalAnalysisProps> = ({
       </div>
 
       {/* Most Commonly Achieved Goals */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="redesign-panel">
         <div className="flex items-center gap-2 mb-4">
           <svg
             className="w-6 h-6 text-green-600"
@@ -215,7 +215,7 @@ export const DCPGoalAnalysis: React.FC<DCPGoalAnalysisProps> = ({
       </div>
 
       {/* Least Commonly Achieved Goals */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="redesign-panel">
         <div className="flex items-center gap-2 mb-4">
           <svg
             className="w-6 h-6 text-red-600"
@@ -244,7 +244,7 @@ export const DCPGoalAnalysis: React.FC<DCPGoalAnalysisProps> = ({
       </div>
 
       {/* Heatmap Visualization */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="redesign-panel">
         <h3 className="text-xl font-semibold text-gray-900 mb-4">
           DCP Goal Achievement Heatmap
         </h3>

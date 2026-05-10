@@ -54,7 +54,7 @@ const EducationalAwardsChart: React.FC<EducationalAwardsChartProps> = ({
   if (isLoading) {
     return (
       <section
-        className="bg-white rounded-lg shadow-md p-6"
+        className="redesign-panel"
         aria-busy="true"
         aria-label="Loading educational awards"
       >
@@ -74,7 +74,7 @@ const EducationalAwardsChart: React.FC<EducationalAwardsChartProps> = ({
   if (isError) {
     return (
       <section
-        className="bg-white rounded-lg shadow-md p-6"
+        className="redesign-panel"
         role="alert"
         aria-label="Educational awards error"
       >
@@ -98,7 +98,7 @@ const EducationalAwardsChart: React.FC<EducationalAwardsChartProps> = ({
   if (!data) {
     return (
       <section
-        className="bg-white rounded-lg shadow-md p-6"
+        className="redesign-panel"
         role="status"
         aria-label="Educational awards"
       >

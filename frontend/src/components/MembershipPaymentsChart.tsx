@@ -325,7 +325,7 @@ export const MembershipPaymentsChart: React.FC<
 
   return (
     <div
-      className="bg-white rounded-lg shadow-md p-6"
+      className="redesign-panel"
       aria-label="Membership payments trend chart"
     >
       {/* Header */}

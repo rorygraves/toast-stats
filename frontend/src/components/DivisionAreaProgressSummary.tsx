@@ -307,7 +307,7 @@ export const DivisionAreaProgressSummary: React.FC<
   if (isLoading) {
     return (
       <div
-        className="bg-white rounded-lg shadow-md"
+        className="redesign-panel"
         role="status"
         aria-label="Loading division and area progress summaries"
         aria-busy="true"
@@ -335,7 +335,7 @@ export const DivisionAreaProgressSummary: React.FC<
   // Empty state
   if (!divisions || divisions.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-md">
+      <div className="redesign-panel">
         {/* Header */}
         <div className="p-6 border-b border-gray-200">
           <h3 className="text-xl font-bold text-gray-900 font-tm-headline">
@@ -360,7 +360,7 @@ export const DivisionAreaProgressSummary: React.FC<
   // Main render
   return (
     <section
-      className="bg-white rounded-lg shadow-md"
+      className="redesign-panel"
       aria-label="Division and Area Progress Summary"
       role="region"
     >

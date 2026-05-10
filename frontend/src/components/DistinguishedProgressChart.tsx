@@ -48,7 +48,7 @@ export const DistinguishedProgressChart: React.FC<
       : 0
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="redesign-panel">
       <div className="flex items-center gap-2 mb-6">
         <h3 className="text-xl font-tm-headline font-bold text-tm-black">
           Distinguished Club Progress

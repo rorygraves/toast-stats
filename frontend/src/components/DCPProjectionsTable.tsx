@@ -221,7 +221,7 @@ export const DCPProjectionsTable: React.FC<DCPProjectionsTableProps> = ({
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="redesign-panel">
         <h3 className="text-xl font-bold text-gray-900 font-tm-headline mb-4">
           DCP Projections
         </h3>
@@ -231,10 +231,7 @@ export const DCPProjectionsTable: React.FC<DCPProjectionsTableProps> = ({
   }
 
   return (
-    <div
-      className="bg-white rounded-lg shadow-md"
-      data-testid="dcp-projections-table"
-    >
+    <div className="redesign-panel" data-testid="dcp-projections-table">
       {/* Header */}
       <div className="p-6 border-b border-gray-200">
         <h3 className="text-xl font-bold text-gray-900 font-tm-headline mb-4">

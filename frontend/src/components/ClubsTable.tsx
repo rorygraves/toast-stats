@@ -330,7 +330,7 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md">
+    <div className="redesign-panel">
       {/* Header with Export and Results Count */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">

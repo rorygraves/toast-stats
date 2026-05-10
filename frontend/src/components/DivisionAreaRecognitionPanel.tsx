@@ -110,7 +110,7 @@ export const DivisionAreaRecognitionPanel: React.FC<
         aria-busy="true"
       >
         {/* Section Header Skeleton */}
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="redesign-panel">
           <div className="animate-pulse">
             <div className="h-7 bg-gray-200 rounded w-1/3 mb-2"></div>
             <div className="h-4 bg-gray-200 rounded w-2/3"></div>
@@ -131,7 +131,7 @@ export const DivisionAreaRecognitionPanel: React.FC<
     return (
       <section className="space-y-6" aria-label="Division and Area Recognition">
         {/* Section Header */}
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="redesign-panel">
           <h2 className="text-2xl font-bold text-gray-900 font-tm-headline">
             Division and Area Recognition
           </h2>
@@ -145,7 +145,7 @@ export const DivisionAreaRecognitionPanel: React.FC<
         </div>
 
         {/* Empty State Message */}
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="redesign-panel">
           <div className="text-center py-12">
             <svg
               className="mx-auto h-12 w-12 text-gray-400 mb-4"
@@ -188,7 +188,7 @@ export const DivisionAreaRecognitionPanel: React.FC<
       role="region"
     >
       {/* Section Header - Requirement 10.2, 10.7: Updated header */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="redesign-panel">
         <div className="flex items-center gap-3 mb-2">
           <svg
             className="w-8 h-8 text-tm-loyal-blue flex-shrink-0"
@@ -221,7 +221,7 @@ export const DivisionAreaRecognitionPanel: React.FC<
       <DivisionAreaProgressSummary divisions={divisions} isLoading={false} />
 
       {/* Summary Footer - Requirement 1.3: Consistent styling */}
-      <div className="bg-white rounded-lg shadow-md p-4">
+      <div className="redesign-panel">
         <p
           className="font-tm-body text-gray-600 text-center"
           style={{ fontSize: '14px' }}

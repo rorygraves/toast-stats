@@ -202,10 +202,7 @@ export const YearOverYearComparison: React.FC<YearOverYearComparisonProps> = ({
   const chartDescription = `Bar chart comparing current year metrics to previous year. ${improvements} metric(s) improved, ${declines} metric(s) declined.`
 
   return (
-    <div
-      className="bg-white rounded-lg shadow-md p-6"
-      aria-label="Year-over-year comparison"
-    >
+    <div className="redesign-panel" aria-label="Year-over-year comparison">
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-gray-900">
           Year-Over-Year Comparison

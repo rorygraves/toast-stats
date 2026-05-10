@@ -102,7 +102,7 @@ const HistoricalRankChart: React.FC<HistoricalRankChartProps> = ({
   if (isLoading) {
     return (
       <section
-        className="bg-white rounded-lg shadow-md p-6"
+        className="redesign-panel"
         aria-busy="true"
         aria-label="Loading historical rank data"
       >
@@ -122,7 +122,7 @@ const HistoricalRankChart: React.FC<HistoricalRankChartProps> = ({
   if (isError) {
     return (
       <section
-        className="bg-white rounded-lg shadow-md p-6"
+        className="redesign-panel"
         role="alert"
         aria-label="Historical rank data error"
       >
@@ -146,7 +146,7 @@ const HistoricalRankChart: React.FC<HistoricalRankChartProps> = ({
   if (!data || data.length === 0) {
     return (
       <section
-        className="bg-white rounded-lg shadow-md p-6"
+        className="redesign-panel"
         role="status"
         aria-label="Historical rank data"
       >
@@ -217,7 +217,7 @@ const HistoricalRankChart: React.FC<HistoricalRankChartProps> = ({
 
   return (
     <section
-      className="bg-white rounded-lg shadow-md p-4 sm:p-6"
+      className="redesign-panel sm:p-6"
       aria-label="Historical rank progression chart"
     >
       <div className="flex flex-col gap-4 mb-4">

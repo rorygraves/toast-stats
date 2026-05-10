@@ -71,7 +71,7 @@ export const FormExample: React.FC = () => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md">
+    <div className="max-w-2xl mx-auto p-6 redesign-panel">
       <h2 className="tm-h2 mb-6">Contact Form Example</h2>
       <p className="tm-body-medium text-gray-600 mb-8">
         This form demonstrates all brand-compliant form components with proper

@@ -56,11 +56,7 @@ interface ErrorStateProps {
 }
 
 const ErrorState: React.FC<ErrorStateProps> = ({ error, onRetry }) => (
-  <div
-    className="bg-white rounded-lg shadow-md p-6 sm:p-8"
-    role="alert"
-    aria-live="polite"
-  >
+  <div className="redesign-panel sm:p-8" role="alert" aria-live="polite">
     <div className="flex flex-col items-center text-center">
       {/* Error Icon */}
       <div className="w-16 h-16 rounded-full tm-bg-true-maroon-10 flex items-center justify-center mb-4">
@@ -124,7 +120,7 @@ interface EmptyStateProps {
 
 const EmptyState: React.FC<EmptyStateProps> = ({ districtName }) => (
   <div
-    className="bg-white rounded-lg shadow-md p-6 sm:p-8"
+    className="redesign-panel sm:p-8"
     role="status"
     aria-label="No ranking data available"
   >

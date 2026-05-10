@@ -96,7 +96,7 @@ export const AreaPerformanceChart: React.FC<AreaPerformanceChartProps> = ({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md">
+    <div className="redesign-panel">
       {/* Header */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

@@ -23,7 +23,7 @@ export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({
   if (variant === 'card') {
     return (
       <div
-        className={`bg-white rounded-lg shadow-md p-6 ${className}`}
+        className={`redesign-panel ${className}`}
         role="status"
         aria-label="Loading"
       >
@@ -39,7 +39,7 @@ export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({
   if (variant === 'table') {
     return (
       <div
-        className={`bg-white rounded-lg shadow-md ${className}`}
+        className={`redesign-panel ${className}`}
         role="status"
         aria-label="Loading table"
       >
@@ -73,7 +73,7 @@ export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({
   if (variant === 'stat') {
     return (
       <div
-        className={`bg-white rounded-lg shadow-md p-4 ${className}`}
+        className={`redesign-panel ${className}`}
         role="status"
         aria-label="Loading statistics"
       >

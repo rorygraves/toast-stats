@@ -111,7 +111,7 @@ const PartialYearBadge: React.FC = () => (
  */
 const TableLoadingSkeleton: React.FC = () => (
   <section
-    className="bg-white rounded-lg shadow-md p-4 sm:p-6"
+    className="redesign-panel sm:p-6"
     aria-busy="true"
     aria-label="Loading multi-year comparison table"
   >
@@ -129,7 +129,7 @@ const TableLoadingSkeleton: React.FC = () => (
  */
 const EmptyState: React.FC = () => (
   <section
-    className="bg-white rounded-lg shadow-md p-4 sm:p-6"
+    className="redesign-panel sm:p-6"
     role="status"
     aria-label="No multi-year ranking data available"
   >
@@ -299,7 +299,7 @@ const MultiYearComparisonTable: React.FC<MultiYearComparisonTableProps> = ({
 
   return (
     <section
-      className="bg-white rounded-lg shadow-md p-4 sm:p-6"
+      className="redesign-panel sm:p-6"
       aria-labelledby="multi-year-comparison-heading"
     >
       {/* Header */}

@@ -51,7 +51,7 @@ export const ClubDCPGoalsCard: React.FC<ClubDCPGoalsCardProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="redesign-panel">
         <div className="animate-pulse space-y-3">
           <div className="h-6 bg-gray-200 rounded-sm w-1/3"></div>
           <div className="h-4 bg-gray-200 rounded-sm w-full"></div>
@@ -80,7 +80,7 @@ export const ClubDCPGoalsCard: React.FC<ClubDCPGoalsCardProps> = ({
   ]
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="redesign-panel">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-900 font-tm-headline flex items-center gap-2">
           <svg

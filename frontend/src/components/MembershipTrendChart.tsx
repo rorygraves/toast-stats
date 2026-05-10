@@ -266,7 +266,7 @@ export const MembershipTrendChart: React.FC<MembershipTrendChartProps> = ({
 
   return (
     <div
-      className="bg-white rounded-lg shadow-md p-6"
+      className="redesign-panel"
       aria-label="District membership trend chart"
     >
       <div className="mb-6">

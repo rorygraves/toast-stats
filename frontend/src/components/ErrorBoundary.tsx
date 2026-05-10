@@ -62,7 +62,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
       return (
         <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
-          <div className="bg-white rounded-lg shadow-md p-8 max-w-md w-full">
+          <div className="redesign-panel p-8 max-w-md w-full">
             <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
               <svg
                 className="w-6 h-6 text-red-600"

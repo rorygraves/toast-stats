@@ -77,7 +77,7 @@ export const DivisionPerformanceCards: React.FC<
   // Loading state
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="redesign-panel">
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-tm-loyal-blue mb-4"></div>
@@ -96,7 +96,7 @@ export const DivisionPerformanceCards: React.FC<
   // Error state - invalid or missing data
   if (!districtSnapshot) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="redesign-panel">
         <div className="text-center py-12">
           <svg
             className="mx-auto h-12 w-12 text-gray-400 mb-4"
@@ -133,7 +133,7 @@ export const DivisionPerformanceCards: React.FC<
   // Empty state - no divisions found
   if (divisions.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="redesign-panel">
         <div className="text-center py-12">
           <svg
             className="mx-auto h-12 w-12 text-gray-400 mb-4"
@@ -171,7 +171,7 @@ export const DivisionPerformanceCards: React.FC<
     <div className="space-y-6">
       {/* Snapshot Timestamp Header */}
       {snapshotTimestamp && (
-        <div className="bg-white rounded-lg shadow-md p-4">
+        <div className="redesign-panel">
           <div className="flex items-center justify-between">
             <div>
               <h2
@@ -220,7 +220,7 @@ export const DivisionPerformanceCards: React.FC<
       </div>
 
       {/* Summary Footer */}
-      <div className="bg-white rounded-lg shadow-md p-4">
+      <div className="redesign-panel">
         <p
           className="font-tm-body text-gray-600 text-center"
           style={{ fontSize: '14px' }}

@@ -180,7 +180,7 @@ const MetricToggleButton: React.FC<MetricToggleButtonProps> = ({
  */
 const ChartLoadingSkeleton: React.FC = () => (
   <section
-    className="bg-white rounded-lg shadow-md p-4 sm:p-6"
+    className="redesign-panel sm:p-6"
     aria-busy="true"
     aria-label="Loading ranking progression chart"
   >
@@ -214,7 +214,7 @@ interface EmptyStateProps {
 
 const EmptyState: React.FC<EmptyStateProps> = ({ programYear }) => (
   <section
-    className="bg-white rounded-lg shadow-md p-4 sm:p-6"
+    className="redesign-panel sm:p-6"
     role="status"
     aria-label="No ranking data available"
   >
@@ -292,7 +292,7 @@ const FullYearRankingChart: React.FC<FullYearRankingChartProps> = ({
 
   return (
     <section
-      className="bg-white rounded-lg shadow-md p-4 sm:p-6"
+      className="redesign-panel sm:p-6"
       aria-label="Full year ranking progression chart"
     >
       {/* Header */}

@@ -158,7 +158,7 @@ const ComparisonPanel: React.FC<ComparisonPanelProps> = ({
   ]
 
   return (
-    <div className="bg-white rounded-lg shadow-md mb-4 p-4 border-l-4 border-tm-loyal-blue">
+    <div className="redesign-panel mb-4 p-4 border-l-4 border-tm-loyal-blue">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-bold text-gray-900 font-tm-headline">

@@ -154,7 +154,7 @@ const ClubPerformanceTable: React.FC<ClubPerformanceTableProps> = ({
   if (isLoading) {
     return (
       <section
-        className="bg-white rounded-lg shadow-md p-6"
+        className="redesign-panel"
         aria-busy="true"
         aria-label="Loading club performance data"
       >
@@ -172,7 +172,7 @@ const ClubPerformanceTable: React.FC<ClubPerformanceTableProps> = ({
 
   return (
     <section
-      className="bg-white rounded-lg shadow-md p-4 sm:p-6"
+      className="redesign-panel sm:p-6"
       aria-label="Club performance table"
     >
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3 sm:gap-4">

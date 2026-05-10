@@ -63,7 +63,7 @@ export const LeadershipInsights: React.FC<LeadershipInsightsProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="redesign-panel">
         <div className="animate-pulse space-y-4">
           <div className="h-6 bg-gray-200 rounded-sm w-1/3"></div>
           <div className="h-32 bg-gray-200 rounded-sm"></div>
@@ -75,7 +75,7 @@ export const LeadershipInsights: React.FC<LeadershipInsightsProps> = ({
 
   if (!insights) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="redesign-panel">
         <p className="text-gray-600">
           No leadership insights available. Please use the Admin Panel to
           collect historical data.
@@ -160,7 +160,7 @@ export const LeadershipInsights: React.FC<LeadershipInsightsProps> = ({
     <div className="space-y-6">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow-md p-4">
+        <div className="redesign-panel">
           <p className="text-sm text-gray-600 mb-1">Average Leadership Score</p>
           <p
             className={`text-3xl font-bold ${getScoreColor(insights.summary.averageLeadershipScore)}`}
@@ -168,13 +168,13 @@ export const LeadershipInsights: React.FC<LeadershipInsightsProps> = ({
             {insights.summary.averageLeadershipScore}
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow-md p-4">
+        <div className="redesign-panel">
           <p className="text-sm text-gray-600 mb-1">Best Practice Divisions</p>
           <p className="text-3xl font-bold text-tm-loyal-blue">
             {insights.summary.totalBestPracticeDivisions}
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow-md p-4">
+        <div className="redesign-panel">
           <p className="text-sm text-gray-600 mb-1">Top Division</p>
           <p className="text-lg font-semibold text-gray-900 truncate">
             {insights.summary.topPerformingDivisions[0]?.divisionName || 'N/A'}
@@ -183,7 +183,7 @@ export const LeadershipInsights: React.FC<LeadershipInsightsProps> = ({
             Score: {insights.summary.topPerformingDivisions[0]?.score || 0}
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow-md p-4">
+        <div className="redesign-panel">
           <p className="text-sm text-gray-600 mb-1">Top Area</p>
           <p className="text-lg font-semibold text-gray-900 truncate">
             {insights.summary.topPerformingAreas[0]?.areaName || 'N/A'}
@@ -195,7 +195,7 @@ export const LeadershipInsights: React.FC<LeadershipInsightsProps> = ({
       </div>
 
       {/* Leadership Effectiveness Scores */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="redesign-panel">
         <h3 className="text-xl font-semibold text-gray-900 mb-4">
           Leadership Effectiveness Scores
         </h3>
@@ -282,7 +282,7 @@ export const LeadershipInsights: React.FC<LeadershipInsightsProps> = ({
 
       {/* Best Practice Divisions */}
       {insights.bestPracticeDivisions.length > 0 && (
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="redesign-panel">
           <h3 className="text-xl font-semibold text-gray-900 mb-4">
             Best Practice Divisions
           </h3>
@@ -325,7 +325,7 @@ export const LeadershipInsights: React.FC<LeadershipInsightsProps> = ({
 
       {/* Leadership Changes */}
       {insights.leadershipChanges.length > 0 && (
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="redesign-panel">
           <h3 className="text-xl font-semibold text-gray-900 mb-4">
             Performance Changes
           </h3>
@@ -377,7 +377,7 @@ export const LeadershipInsights: React.FC<LeadershipInsightsProps> = ({
       )}
 
       {/* Area Director Correlations */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="redesign-panel">
         <h3 className="text-xl font-semibold text-gray-900 mb-4">
           Area Performance Indicators
         </h3>
