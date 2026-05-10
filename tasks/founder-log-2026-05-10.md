@@ -238,3 +238,43 @@ Continued the chrome migration into the Global Rankings tab — last big "old ch
 - **WAI-ARIA tablist arrow-key navigation** (#384). Important a11y polish, defer to next sprint.
 
 The architectural redesign — tokens, chrome, dark mode, AppShell, all 6 tabs, footer version fix, Awards data — is **shipped end-to-end**. Remaining items are cosmetic charts + one banner + one a11y a11y polish. The user can use the redesign and it should look like the redesign, not like ass.
+
+---
+
+## 2026-05-10 ~14:32 — Final live verification
+
+Both #400 and #401 deploys completed successfully on main. Release Please cut **v2.12.0**.
+
+Prod bundle audit (https://ts.taverns.red, asset hashes index-Drq2xKMq.css / index-JVWIffMT.js):
+
+- `.club-close-to-distinguished` — 6 hits ✓ (banner CSS shipped)
+- `.districts-toolbar__sort-btn` — 4 hits ✓ (rankings chrome shipped)
+- `.districts-rankings-table` — 7 hits ✓
+- `.club-hero` — 23 hits ✓
+- `.clubs-quick-filter-chip` — 9 hits ✓
+- JS bundle reports `v2.12.0` ✓ (footer version fix is healthy)
+
+All chrome migrations are live. The redesign transition is complete end-to-end.
+
+## Final tally — 24h founder mandate
+
+PRs shipped in this push (post-audit phase, after the user's "looks like ass" feedback):
+
+- **#394** — post-audit visual regression bundle (Awards data fetch, top bar visibility, History chips, Districts toolbar/table chrome)
+- **#396** — founder log (decision audit trail)
+- **#397** — deploy.yml YAML/shell quote bug → footer version
+- **#398** — Club detail hero header redesign
+- **#399** — Clubs tab quick-filter chips
+- **#400** — Global Rankings chart + multi-year table chrome refresh
+- **#401** — Close-to-Distinguished banner redesign + reposition under hero
+
+Plus the prior earlier-session sprints: #383 + the Sprint 2-7 items (foundation tokens, AppShell, Districts page, all 6 District tabs, History, Methodology, Awards).
+
+**Deferred (filed as follow-up issues, not blocking):**
+
+- #384 — WAI-ARIA tablist arrow-key navigation
+- Pixel-perfect chart restyling (Trends/Overview/club detail) — cosmetic, separate focused PRs
+- History per-year cards (top 5 + headline metrics) — needs new year-end snapshot endpoint, defer past 24h window
+- #369 — retire LandingPage + dead-code purge (covered by an existing open issue)
+
+The site looks like the redesign now, not like ass.
