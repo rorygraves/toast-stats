@@ -2,13 +2,22 @@
 
 /* CSS Cascade Layer Declaration - MUST come before any imports
  * Layer order establishes cascade priority (lowest to highest):
- * - base: Element-level defaults (easily overridable)
+ * - base: Element-level defaults (Tailwind preflight + project resets)
  * - brand: Toastmasters brand component classes
  * - utilities: Tailwind utilities (highest priority, always wins when applied)
+ *
+ * NOTE: Tailwind v4's `@import "tailwindcss"` bundles preflight, theme,
+ * and utilities together. If imported as `layer(utilities)`, the
+ * preflight reset (`* { padding: 0; margin: 0 }`) ends up in the
+ * utilities layer and silently overrides every brand component class.
+ * That broke the entire redesign chrome on prod. Fix: import preflight
+ * to base, theme to its own layer, and utilities to utilities.
  */
 @layer base, brand, utilities;
 
-@import "tailwindcss" layer(utilities);
+@import "tailwindcss/theme" layer(theme);
+@import "tailwindcss/preflight" layer(base);
+@import "tailwindcss/utilities" layer(utilities);
 @import './styles/tokens/colors.css';
 @import './styles/tokens/typography.css';
 @import './styles/tokens/spacing.css';

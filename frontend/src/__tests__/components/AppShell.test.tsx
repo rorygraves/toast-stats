@@ -71,29 +71,28 @@ describe('AppShell (#354)', () => {
       ).toHaveAttribute('href', '/methodology')
     })
 
-    it('does NOT render Regions or any "soon" stubs (omitted per Epic #352)', () => {
-      // Awards was a "soon" stub at #354 launch; #371 enabled the real
-      // /awards page and re-included Awards in the primary nav. Regions
-      // remains omitted until that page exists.
+    it('renders Regions as a disabled "soon" stub per design parity', () => {
+      // Design (screenshots/01-districts.png) shows Regions in the primary
+      // nav with a soon badge. Awards shipped (#371) so it is a real link.
       renderShell()
       const nav = screen.getByRole('navigation', { name: /primary/i })
-      expect(within(nav).queryByText(/regions/i)).not.toBeInTheDocument()
-      expect(within(nav).queryByText(/soon/i)).not.toBeInTheDocument()
+      const regionsLink = within(nav).getByRole('link', { name: /regions/i })
+      expect(regionsLink).toHaveClass('app-shell-nav__link--soon')
+      expect(regionsLink).toHaveAttribute('aria-disabled', 'true')
     })
 
-    it('does NOT render notifications, help, or avatar elements (no auth today)', () => {
+    it('renders the top-bar tools cluster (notifications, help, avatar)', () => {
+      // Design shows a bell + ? + JS avatar on the right side of the
+      // top bar. They are visual stubs until auth lands.
       renderShell()
-      // Scope to the top bar so a future footer button doesn't trip this.
       const header = screen.getByRole('banner')
       expect(
-        within(header).queryByRole('button', { name: /notifications/i })
-      ).not.toBeInTheDocument()
+        within(header).getByRole('button', { name: /notifications/i })
+      ).toBeInTheDocument()
       expect(
-        within(header).queryByRole('button', { name: /help/i })
-      ).not.toBeInTheDocument()
-      expect(
-        within(header).queryByRole('img', { name: /avatar|profile/i })
-      ).not.toBeInTheDocument()
+        within(header).getByRole('button', { name: /help/i })
+      ).toBeInTheDocument()
+      expect(within(header).getByLabelText(/account/i)).toBeInTheDocument()
     })
 
     it('marks the active nav link with aria-current="page"', () => {

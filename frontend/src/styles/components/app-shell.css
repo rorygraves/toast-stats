@@ -15,16 +15,19 @@
     flex: 1;
   }
 
+  /* Top bar: 3-column flex (brand | nav with flex:1 | tools) per design.
+     The bar spans the viewport edge-to-edge with 24px gutter padding;
+     the .app-shell__page wrapper handles content max-width below. */
   .app-shell-top-bar {
     position: sticky;
     top: 0;
     z-index: 40;
     height: 56px;
     border-bottom: 1px solid var(--line);
-    /* Use a fully opaque surface as the fallback so the bar is visible
-       even when backdrop-filter is unsupported (still some Firefox).
-       Browsers that support backdrop-filter overlay the alpha-tinted
-       background on top so the blurred translucency works there. */
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
     background-color: var(--surface);
     -webkit-backdrop-filter: saturate(140%) blur(8px);
     backdrop-filter: saturate(140%) blur(8px);
@@ -37,24 +40,21 @@
     }
   }
 
-  .app-shell-top-bar__inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 100%;
-    padding-left: 24px;
-    padding-right: 24px;
-    max-width: 1280px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
   .app-shell-brand {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     text-decoration: none;
     color: var(--ink);
+    font-family: var(--serif);
+    font-weight: 800;
+    font-size: 16px;
+    letter-spacing: -0.005em;
+    flex-shrink: 0;
+  }
+
+  .app-shell-brand:hover {
+    text-decoration: none;
   }
 
   .app-shell-brand__mark {
@@ -63,30 +63,30 @@
     justify-content: center;
     width: 24px;
     height: 24px;
-    border-radius: var(--rds-radius-sm);
+    border-radius: 5px;
     background-color: var(--loyal-500);
     color: #ffffff;
     font-family: var(--serif);
     font-weight: 800;
-    font-size: 11px;
-    letter-spacing: -0.02em;
+    font-size: 12px;
   }
 
   .app-shell-brand__name {
     font-family: var(--serif);
-    font-weight: 700;
-    font-size: 15px;
-    letter-spacing: -0.01em;
+    font-weight: 800;
+    font-size: 16px;
+    letter-spacing: -0.005em;
   }
 
   .app-shell-nav {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     gap: 4px;
+    flex: 1;
   }
 
   .app-shell-nav__link {
-    padding: 6px 12px;
+    padding: 8px 12px;
     border-radius: var(--rds-radius-sm);
     text-decoration: none;
     color: var(--ink-2);
@@ -99,11 +99,82 @@
 
   .app-shell-nav__link:hover {
     background-color: var(--surface-3);
+    text-decoration: none;
   }
 
   .app-shell-nav__link[aria-current='page'] {
     color: var(--loyal-500);
     background-color: var(--loyal-50);
+  }
+
+  .app-shell-nav__link--soon {
+    color: var(--ink-4);
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .app-shell-nav__link--soon::after {
+    content: 'soon';
+    font-family: var(--mono, ui-monospace, SFMono-Regular, monospace);
+    font-size: 9px;
+    font-weight: 500;
+    background-color: var(--surface-3);
+    color: var(--ink-4);
+    padding: 1px 4px;
+    border-radius: 3px;
+    margin-left: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    vertical-align: 1px;
+  }
+
+  .app-shell-tools {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  .app-shell-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--rds-radius-sm);
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--ink-3);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .app-shell-icon-btn:hover {
+    background-color: var(--surface-3);
+    color: var(--ink);
+  }
+
+  .app-shell-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: var(--maroon-500);
+    color: #ffffff;
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Universal page-content wrapper. Use on any route that needs the
+     1280px-centered 24px-padded chrome. Districts/DistrictDetail have
+     their own scoped wrappers and don't need this. */
+  .app-shell__page {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 24px;
   }
 
   .app-shell-footer {

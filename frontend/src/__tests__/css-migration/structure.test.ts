@@ -36,11 +36,20 @@ describe('CSS Layer Architecture Structure', () => {
       expect(layerMatch?.[1]).toBe('base, brand, utilities')
     })
 
-    it('Tailwind is imported into utilities layer', () => {
+    it('Tailwind preflight goes to base layer; utilities go to utilities layer', () => {
+      // Tailwind v4's `@import "tailwindcss"` bundles preflight + theme +
+      // utilities. If imported as `layer(utilities)`, the preflight reset
+      // (`* { padding: 0 }`) ends up in utilities and silently overrides
+      // every brand component class. Splitting the import keeps preflight
+      // in `base` (lowest precedence) and utilities in `utilities` (highest).
       const css = readCssFile('index.css')
-
-      // Verify Tailwind is imported with layer(utilities)
-      expect(css).toMatch(/@import\s+["']tailwindcss["']\s+layer\(utilities\)/)
+      expect(css).toMatch(
+        /@import\s+["']tailwindcss\/preflight["']\s+layer\(base\)[\s\S]*@import\s+["']tailwindcss\/utilities["']\s+layer\(utilities\)/
+      )
+      // Guard against regressing to the bundled import.
+      expect(css).not.toMatch(
+        /@import\s+["']tailwindcss["']\s+layer\(utilities\)/
+      )
     })
 
     it('layer declaration appears before any style imports', () => {
@@ -166,7 +175,7 @@ describe('CSS Layer Architecture Structure', () => {
 
       // Verification 2: Tailwind is in utilities layer
       expect(indexCss).toMatch(
-        /@import\s+["']tailwindcss["']\s+layer\(utilities\)/
+        /@import\s+["']tailwindcss\/preflight["']\s+layer\(base\)[\s\S]*@import\s+["']tailwindcss\/utilities["']\s+layer\(utilities\)/
       )
 
       // Verification 3: .tm-btn-primary is in brand layer
@@ -274,7 +283,7 @@ describe('CSS Layer Architecture Structure', () => {
 
       // Verification 2: Tailwind is in utilities layer
       expect(indexCss).toMatch(
-        /@import\s+["']tailwindcss["']\s+layer\(utilities\)/
+        /@import\s+["']tailwindcss\/preflight["']\s+layer\(base\)[\s\S]*@import\s+["']tailwindcss\/utilities["']\s+layer\(utilities\)/
       )
 
       // Verification 3: min-height is in base layer
@@ -358,7 +367,7 @@ describe('CSS Layer Architecture Structure', () => {
 
       // Verification 2: Tailwind is in utilities layer
       expect(indexCss).toMatch(
-        /@import\s+["']tailwindcss["']\s+layer\(utilities\)/
+        /@import\s+["']tailwindcss\/preflight["']\s+layer\(base\)[\s\S]*@import\s+["']tailwindcss\/utilities["']\s+layer\(utilities\)/
       )
 
       // Verification 3: Typography classes are in brand layer
@@ -452,7 +461,7 @@ describe('CSS Layer Architecture Structure', () => {
 
       // Verification 2: Tailwind is in utilities layer
       expect(indexCss).toMatch(
-        /@import\s+["']tailwindcss["']\s+layer\(utilities\)/
+        /@import\s+["']tailwindcss\/preflight["']\s+layer\(base\)[\s\S]*@import\s+["']tailwindcss\/utilities["']\s+layer\(utilities\)/
       )
 
       // Verification 3: .tm-card is in brand layer
