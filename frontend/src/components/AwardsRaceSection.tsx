@@ -76,13 +76,27 @@ export const AwardsRaceSection: React.FC<AwardsRaceSectionProps> = ({
   const allEmpty = cardData.every(({ entries }) => entries.length === 0)
   if (allEmpty) return null
 
+  const updatedAt = (() => {
+    const raw = standings.metadata?.calculatedAt
+    if (!raw) return null
+    const d = new Date(raw)
+    if (Number.isNaN(d.getTime())) return null
+    return d.toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    })
+  })()
+
   return (
     <section className="awards-race" aria-labelledby="awards-race-heading">
       <header className="awards-race__header">
         <h2 id="awards-race-heading" className="awards-race__title">
-          Awards Race
+          Awards Race · Top contenders
         </h2>
-        <p className="awards-race__subtitle">Top contender per award</p>
+        {updatedAt && (
+          <span className="awards-race__meta">Updated {updatedAt}</span>
+        )}
       </header>
       <div className="awards-race__grid">
         {cardData.map(({ spec, entries }) => (

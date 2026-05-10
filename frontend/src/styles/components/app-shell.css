@@ -893,15 +893,26 @@
   /* Awards Race 3-card contender summary (#357). Sits between the
      Districts page KPI strip and the rankings table. The deeper
      top-10 leaderboards live on the future Awards page (Epic #370). */
+  /* Awards Race renders as a single bordered .panel per design — header
+     row with title + right-aligned timestamp, then the 3 contender
+     columns separated by vertical dividers (no per-card border, no
+     per-card radius). */
   .awards-race {
     margin-bottom: 20px;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-md);
+    overflow: hidden;
   }
 
   .awards-race__header {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
-    margin-bottom: 12px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
   }
 
   .awards-race__title {
@@ -913,8 +924,7 @@
     color: var(--ink);
   }
 
-  .awards-race__subtitle {
-    margin: 0;
+  .awards-race__meta {
     font-family: var(--sans);
     font-size: 12px;
     color: var(--ink-3);
@@ -923,7 +933,6 @@
   .awards-race__grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 12px;
   }
 
   @media (min-width: 768px) {
@@ -936,11 +945,30 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
-    padding: 16px 18px;
-    background-color: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--rds-radius-md);
-    box-shadow: var(--rds-shadow-sm);
+    padding: 16px;
+    background-color: transparent;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  @media (min-width: 768px) {
+    .awards-race-card {
+      border-bottom: none;
+    }
+    .awards-race-card:last-child {
+      border-right: none;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .awards-race-card:last-child {
+      border-bottom: none;
+    }
+    .awards-race-card {
+      border-right: none;
+    }
   }
 
   .awards-race-card__header {

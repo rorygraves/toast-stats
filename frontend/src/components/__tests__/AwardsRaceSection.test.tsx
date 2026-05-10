@@ -204,4 +204,16 @@ describe('AwardsRaceSection — 3-card redesign (#357)', () => {
     ).toBeInTheDocument()
     expect(screen.getByText(/90% retention of last year/i)).toBeInTheDocument()
   })
+
+  it('renders the section header on a single line with a timestamp meta', () => {
+    renderWithRouter(<AwardsRaceSection standings={mockStandings} />)
+    // Design 01-districts.png shows "Awards Race · Top contenders" on
+    // one line plus a right-aligned "Updated <date>" meta. Live used
+    // to render the title + subtitle on two stacked lines without a
+    // timestamp.
+    expect(
+      screen.getByText(/awards race · top contenders/i)
+    ).toBeInTheDocument()
+    expect(screen.getByText(/updated /i)).toBeInTheDocument()
+  })
 })
