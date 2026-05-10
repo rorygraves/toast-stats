@@ -649,4 +649,26 @@
     background-color: var(--loyal-50);
     color: var(--loyal-500);
   }
+
+  /* Shared redesign panel chrome (#360+). Replaces the legacy
+     `bg-white rounded-lg shadow-md p-6` Tailwind triplet on existing
+     components — token-driven so dark mode just works. Each tab's
+     content rebuild applies this class to their card containers. */
+  .redesign-panel {
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-md);
+    box-shadow: var(--rds-shadow-sm);
+    padding: 18px;
+    color: var(--ink);
+  }
+
+  .redesign-panel__header {
+    margin: 0 0 12px;
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: -0.005em;
+    color: var(--ink);
+  }
 }

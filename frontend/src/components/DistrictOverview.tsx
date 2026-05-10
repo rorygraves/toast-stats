@@ -80,7 +80,7 @@ export const DistrictOverview: React.FC<DistrictOverviewProps> = ({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="redesign-panel">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Overview</h2>

@@ -72,7 +72,7 @@ export const PaymentCompositionCard: React.FC<PaymentCompositionCardProps> = ({
   ]
 
   return (
-    <div className="payment-composition bg-white rounded-lg shadow-md p-6">
+    <div className="payment-composition redesign-panel">
       <h2 className="text-lg font-bold text-gray-900 font-tm-headline mb-3">
         Payment Composition
       </h2>

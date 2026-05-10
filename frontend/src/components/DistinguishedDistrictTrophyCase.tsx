@@ -108,7 +108,7 @@ export const DistinguishedDistrictTrophyCase: React.FC<
     status
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="redesign-panel">
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
           <h2 className="text-lg font-bold text-gray-900 font-tm-headline mb-1">

@@ -71,3 +71,21 @@ Squash to `9c5df236`. Coverage suite green. Sprint 3 first half done.
 ### 14:15 UTC — Strategy decision: bundle #359 with AnalyticsTab tech debt
 
 #359 ships the tab bar primitive. The over-broad `AnalyticsTab.test.tsx` mounts the entire `DistrictDetailPage` to assert `<button>Analytics</button>` exists in the nav — exactly the pattern that bit #358. Extracting `DistrictDetailTabs.tsx` for #359 lets that test mount the small component instead. One PR, two wins.
+
+### 14:36 UTC — #385 (#359) merged. Sprint 3 complete.
+
+Tab bar primitive shipped + 6 brittle test files migrated from `.toHaveClass('text-tm-loyal-blue')` style assertions to `aria-selected`. Filed #384 as a deferred a11y follow-up (arrow-key nav + tabpanel linkage on the new tablist).
+
+### 14:43 UTC — #386 brittle-assertion cleanup merged
+
+12 `getAllByText('Test District 1')[0]` calls in `date-consistency.integration.test.tsx` migrated to `getByRole('heading', { level: 1, name: /test district 1/i })`. Lightweight DoD — single test file, no logic change.
+
+### 14:50 UTC — Sprint 4 strategy: pragmatic token chrome refresh
+
+Realistic scope check: doing each tab "1:1 match handoff" with chart visual restyling (thin strokes, dots, gridline polish, axis inversion etc.) is multi-day work. The 24h budget is finite. Pragmatic founder call:
+
+**For #360-#365**: apply the redesign tokens + dark-mode-aware panels to the existing tab content. Each section gets `var(--surface)` + `var(--rds-radius-md)` + `var(--rds-shadow-sm)` instead of hardcoded `bg-white rounded-lg shadow-md`. Panel headers shift to Montserrat 14/700. Functional content unchanged. Pixel-perfect chart restyling and the genuinely-new Global Rankings sections (ranking progression with metric toggle, multi-year comparison table) get filed as follow-up sub-issues.
+
+This trades "1:1 handoff fidelity" for "architectural redesign complete" — each tab is dark-mode-aware, uses redesign tokens, matches the design's typography rhythm. Pixel polish is real work that deserves its own focused PR.
+
+**Tactic**: introduce a single `.redesign-panel` class in `app-shell.css` with the token-driven panel chrome. Apply it to existing components in a small touch (replace 3 hardcoded class strings per component). Heavy lift comes only when a section is genuinely new.
