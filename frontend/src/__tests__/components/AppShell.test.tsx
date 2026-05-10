@@ -132,14 +132,23 @@ describe('AppShell (#354)', () => {
       expect(footer).toHaveTextContent(/mit license/i)
     })
 
-    it('does not double-prefix the version (deploy.yml already passes v<semver>)', () => {
-      // Regression guard: VITE_APP_VERSION ships as e.g. 'v2.10.0', so the
-      // footer must NOT add another 'v'. The fallback in tests is 'dev', so
-      // we assert no 'vdev'/'vv' substring.
+    it('renders a non-empty version (no double-v, no bare-v)', () => {
+      // Three regression guards:
+      //   1. No 'vv' — VITE_APP_VERSION ships pre-prefixed with 'v', so
+      //      the JSX must not add another 'v'.
+      //   2. No 'vdev' — same shape mistake when the env var is missing.
+      //   3. No bare 'v' followed by no number — happened on prod when
+      //      deploy.yml's `node -p 'require(\"./package.json\")...'` quoting
+      //      silently failed and $() resolved to empty, leaving
+      //      VITE_APP_VERSION="v". Fix: deploy.yml now uses jq.
       renderShell()
       const footer = screen.getByRole('contentinfo')
-      expect(footer.textContent).not.toMatch(/v\s*v/i)
-      expect(footer.textContent).not.toMatch(/vdev/i)
+      const text = footer.textContent ?? ''
+      expect(text).not.toMatch(/v\s*v/i)
+      expect(text).not.toMatch(/vdev/i)
+      // The version slot must end with either a digit-bearing version
+      // (matched after MIT License) OR the literal 'dev' fallback.
+      expect(text).toMatch(/MIT License\s*·\s*(?:v\d|dev)/i)
     })
 
     it('preserves the theme toggle for manual dark-mode access', () => {
