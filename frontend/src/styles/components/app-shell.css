@@ -130,4 +130,39 @@
   .app-shell-footer__link {
     color: var(--link);
   }
+
+  /* Placeholder pages (#355). Removed when their real implementations
+     ship in #367 (history) and #368 (methodology). */
+  .placeholder-page {
+    max-width: 1280px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 40px 24px;
+    font-family: var(--sans);
+  }
+
+  .placeholder-page__eyebrow {
+    margin: 0;
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--maroon-500);
+  }
+
+  .placeholder-page__title {
+    margin: 8px 0 12px;
+    font-family: var(--serif);
+    font-weight: 800;
+    font-size: 28px;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+  }
+
+  .placeholder-page__body {
+    margin: 0;
+    font-size: 14px;
+    color: var(--ink-2);
+  }
 }

@@ -18,6 +18,12 @@ const ClubDetailPage = React.lazy(() => import('./pages/ClubDetailPage'))
 // Code-split: ClubRedirectPage — district-free club URL (#320)
 const ClubRedirectPage = React.lazy(() => import('./pages/ClubRedirectPage'))
 
+// Code-split: HistoryPage placeholder (#355) — real content in #367
+const HistoryPage = React.lazy(() => import('./pages/HistoryPage'))
+
+// Code-split: MethodologyPage placeholder (#355) — real content in #368
+const MethodologyPage = React.lazy(() => import('./pages/MethodologyPage'))
+
 /** Loading fallback for lazy-loaded pages */
 function PageLoadingFallback(): React.JSX.Element {
   // AppShell owns the <main id="main-content"> landmark; this fallback
@@ -64,6 +70,22 @@ const router = createBrowserRouter(
           element: (
             <Suspense fallback={<PageLoadingFallback />}>
               <ClubRedirectPage />
+            </Suspense>
+          ),
+        },
+        {
+          path: 'history',
+          element: (
+            <Suspense fallback={<PageLoadingFallback />}>
+              <HistoryPage />
+            </Suspense>
+          ),
+        },
+        {
+          path: 'methodology',
+          element: (
+            <Suspense fallback={<PageLoadingFallback />}>
+              <MethodologyPage />
             </Suspense>
           ),
         },
