@@ -545,6 +545,93 @@ describe('DistrictsPage - Layout Order (#83)', () => {
 })
 
 // ============================================================
+// My District — sticky-pin to top of rankings (#417)
+// ============================================================
+describe('DistrictsPage - My District sticky pin (#417)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    localStorage.clear()
+  })
+
+  const setupTwoRows = () => {
+    const baseRow = (
+      i: number
+    ): import('../../services/cdn').AllDistrictsRanking => ({
+      districtId: `${i}`,
+      districtName: `District ${i}`,
+      region: '1',
+      paidClubs: 100,
+      paidClubBase: 90,
+      clubGrowthPercent: 0,
+      totalPayments: 5000,
+      paymentBase: 4500,
+      paymentGrowthPercent: 0,
+      activeClubs: 100,
+      distinguishedClubs: 50,
+      selectDistinguished: 20,
+      presidentsDistinguished: 10,
+      distinguishedPercent: 50,
+      clubsRank: i,
+      paymentsRank: i,
+      distinguishedRank: i,
+      aggregateScore: 300 - i,
+    })
+    mockedFetchCdnRankings.mockResolvedValueOnce({
+      rankings: [baseRow(1), baseRow(2)],
+      date: '2025-11-22',
+    })
+  }
+
+  it('renders a my-district star button per row, defaulting to off', async () => {
+    setupTwoRows()
+    renderWithProviders(<DistrictsPage />)
+    await screen.findByText('District 1')
+    const stars = screen.getAllByRole('button', {
+      name: /set district \d+ as my district/i,
+    })
+    expect(stars.length).toBe(2)
+  })
+
+  it('clicking the star sets the district as mine and pins it to the top', async () => {
+    const { fireEvent } = await import('@testing-library/react')
+    setupTwoRows()
+    renderWithProviders(<DistrictsPage />)
+    await screen.findByText('District 1')
+
+    // District 2 starts below District 1 in rankings (rank 2 vs 1)
+    const star2 = screen.getByRole('button', {
+      name: /set district 2 as my district/i,
+    })
+    fireEvent.click(star2)
+
+    // After click, District 2 should appear before District 1 in DOM order
+    const rows = screen.getAllByRole('row')
+    const dataRows = rows.slice(1) // skip header
+    const firstDistrictText =
+      dataRows[0]?.querySelector('td:first-child')?.textContent || ''
+    expect(firstDistrictText).toMatch(/D2/)
+  })
+
+  it('persists the my-district choice to localStorage', async () => {
+    const { fireEvent } = await import('@testing-library/react')
+    setupTwoRows()
+    renderWithProviders(<DistrictsPage />)
+    await screen.findByText('District 1')
+
+    const star1 = screen.getByRole('button', {
+      name: /set district 1 as my district/i,
+    })
+    fireEvent.click(star1)
+
+    // Wait a tick for the useEffect that writes to localStorage
+    await new Promise(r => setTimeout(r, 0))
+    expect(localStorage.getItem('toast-stats:v1:my-district-id')).toBe(
+      JSON.stringify('1')
+    )
+  })
+})
+
+// ============================================================
 // Rankings table — column order + click affordance (#436)
 // ============================================================
 describe('DistrictsPage - Rankings column order (#436)', () => {
