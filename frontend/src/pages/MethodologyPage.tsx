@@ -124,20 +124,21 @@ const MethodologyPage: React.FC = () => {
         <p>Distinguished Club Program tiers, in ascending order:</p>
         <ul>
           <li>
-            <strong>Distinguished</strong> — 5 of 10 DCP goals + 20+ paid
-            members or net +5 / 75% retention.
+            <strong>Distinguished</strong> — 5 of 10 DCP goals AND (20+ paid
+            members OR net growth ≥ 3).
           </li>
           <li>
-            <strong>Select Distinguished</strong> — 7 of 10 goals + same
-            membership floor.
+            <strong>Select Distinguished</strong> — 7 of 10 goals AND (20+ paid
+            members OR net growth ≥ 5).
           </li>
           <li>
-            <strong>President's Distinguished</strong> — 9 of 10 goals + same
-            membership floor.
+            <strong>President's Distinguished</strong> — 9 of 10 goals AND 20+
+            paid members. <em>No growth alternative.</em>
           </li>
           <li>
-            <strong>Smedley Award</strong> — President's Distinguished +
-            chartered new club (rare; honors club founders).
+            <strong>Smedley Distinguished</strong> — 10 of 10 goals AND 25+ paid
+            members. <em>No growth alternative.</em> New for the 2025-2026
+            program year.
           </li>
         </ul>
         <p>
@@ -145,6 +146,13 @@ const MethodologyPage: React.FC = () => {
           club can achieve goals in any order. Toast Stats reads the raw
           per-goal columns from <code>club-performance.csv</code> rather than
           inferring from a single "goals achieved" count.
+        </p>
+        <p className="methodology-source">
+          Source: <code>docs/toastmasters-rules-reference.md</code> §3.2 /
+          Toastmasters Distinguished Club Program documentation. The
+          determination logic lives in{' '}
+          <code>frontend/src/utils/dcpProjections.ts</code> (
+          <code>determineLevel</code>).
         </p>
       </section>
 
@@ -154,31 +162,43 @@ const MethodologyPage: React.FC = () => {
           Club health classifications
         </h2>
         <p>
-          Health is a Toast Stats overlay (not an official TI metric) that
-          combines membership trend + DCP progress + payment timeliness:
+          Toast Stats classifies each club into one of three mutually exclusive
+          health statuses, recomputed every snapshot from the current data
+          (never persisted as a property of the club):
         </p>
         <ul>
           <li>
-            <strong>Thriving</strong> — current paid members ≥ base, on track
-            for Distinguished or higher, no missed renewals.
+            <strong>Thriving</strong> (<code>thriving</code>) — meets all three:
+            <ul>
+              <li>
+                20+ paid members OR net growth ≥ 3 since program-year base
+              </li>
+              <li>On track for the program-month DCP checkpoint</li>
+              <li>Club Success Plan (CSP) submitted (2025-26 onward)</li>
+            </ul>
           </li>
           <li>
-            <strong>Healthy</strong> — paid members ≥ base, mid-tier DCP
-            progress, no urgent flags.
+            <strong>Vulnerable</strong> (<code>vulnerable</code>) — at least one
+            of the three Thriving requirements is unmet, but the club has not
+            crossed the intervention threshold below.
           </li>
           <li>
-            <strong>Watch</strong> — small drop below base, behind on DCP, or
-            one missed renewal cycle.
-          </li>
-          <li>
-            <strong>At-risk</strong> — sustained membership drop, two missed
-            renewal cycles, or under 8 paid members.
+            <strong>Intervention Required</strong> (
+            <code>intervention-required</code>) — paid members &lt; 12 AND net
+            growth &lt; 3 since program-year base. This rule overrides all other
+            criteria.
           </li>
         </ul>
-        <p>
-          The exact thresholds live in <code>analytics-core</code>. Health is
-          recomputed every snapshot and never persisted as a property of the
-          club — it's always a function of the current data.
+        <p className="methodology-source">
+          Source:{' '}
+          <code>
+            packages/analytics-core/src/analytics/ClubHealthAnalyticsModule.ts
+          </code>{' '}
+          (lines 316–360); type definition in{' '}
+          <code>packages/shared-contracts/src/types/club-health-status.ts</code>
+          . The DCP checkpoint progression by program month lives in the same
+          analytics module. Toast Stats health is a project-specific overlay,
+          not an official Toastmasters International metric.
         </p>
       </section>
 
