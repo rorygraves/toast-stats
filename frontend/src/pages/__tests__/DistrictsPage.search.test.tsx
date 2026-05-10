@@ -1,5 +1,5 @@
 /**
- * Unit tests for LandingPage search bar (#91)
+ * Unit tests for DistrictsPage search bar (#91)
  *
  * Verifies:
  * - Search input renders with placeholder
@@ -12,7 +12,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { screen, fireEvent } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import LandingPage from '../LandingPage'
+import DistrictsPage from '../DistrictsPage'
 import { fetchCdnRankings } from '../../services/cdn'
 import { renderWithProviders } from '../../__tests__/test-utils'
 
@@ -117,14 +117,14 @@ const setupWithData = () => {
   })
 }
 
-describe('LandingPage - District Search (#91)', () => {
+describe('DistrictsPage - District Search (#91)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
   it('should render a search input with appropriate placeholder', async () => {
     setupWithData()
-    renderWithProviders(<LandingPage />)
+    renderWithProviders(<DistrictsPage />)
 
     await screen.findByText('District 57')
 
@@ -134,7 +134,7 @@ describe('LandingPage - District Search (#91)', () => {
 
   it('should filter table rows when typing a district number', async () => {
     setupWithData()
-    renderWithProviders(<LandingPage />)
+    renderWithProviders(<DistrictsPage />)
 
     await screen.findByText('District 57')
     expect(screen.getByText('District 61')).toBeInTheDocument()
@@ -151,7 +151,7 @@ describe('LandingPage - District Search (#91)', () => {
 
   it('should filter table rows when typing a district name', async () => {
     setupWithData()
-    renderWithProviders(<LandingPage />)
+    renderWithProviders(<DistrictsPage />)
 
     await screen.findByText('District 57')
 
@@ -165,7 +165,7 @@ describe('LandingPage - District Search (#91)', () => {
 
   it('should clear search and show all districts when clear button is clicked', async () => {
     setupWithData()
-    renderWithProviders(<LandingPage />)
+    renderWithProviders(<DistrictsPage />)
 
     await screen.findByText('District 57')
 
@@ -189,7 +189,7 @@ describe('LandingPage - District Search (#91)', () => {
 
   it('should retain original rank when filtering (#102)', async () => {
     setupWithData()
-    renderWithProviders(<LandingPage />)
+    renderWithProviders(<DistrictsPage />)
 
     await screen.findByText('District 57')
 

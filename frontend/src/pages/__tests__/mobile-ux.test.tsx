@@ -42,17 +42,17 @@ describe('Issue #86 — Tab bar scroll fade indicator', () => {
 // ---- Issue #85: Sticky table columns ----
 
 describe('Issue #85 — Sticky table columns on mobile', () => {
-  it('LandingPage should have sticky classes on Rank column', () => {
+  it('DistrictsPage should have sticky classes on Rank column', () => {
     const source = fs.readFileSync(
-      path.join(SRC_DIR, 'pages', 'LandingPage.tsx'),
+      path.join(SRC_DIR, 'pages', 'DistrictsPage.tsx'),
       'utf-8'
     )
     expect(source).toMatch(/sticky.*left-0/)
   })
 
-  it('LandingPage should have sticky classes on District column', () => {
+  it('DistrictsPage should have sticky classes on District column', () => {
     const source = fs.readFileSync(
-      path.join(SRC_DIR, 'pages', 'LandingPage.tsx'),
+      path.join(SRC_DIR, 'pages', 'DistrictsPage.tsx'),
       'utf-8'
     )
     expect(source).toMatch(/sticky.*left-\[/)

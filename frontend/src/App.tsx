@@ -4,7 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from './config/queryClient'
 import { ProgramYearProvider } from './contexts/ProgramYearContext'
 import { DarkModeProvider } from './contexts/DarkModeContext'
-import LandingPage from './pages/LandingPage'
+import DistrictsPage from './pages/DistrictsPage'
 import AppShell from './components/AppShell'
 
 // Code-split: DistrictDetailPage (816 lines + recharts) loads on navigation (#169)
@@ -47,7 +47,7 @@ const router = createBrowserRouter(
       children: [
         {
           index: true,
-          element: <LandingPage />,
+          element: <DistrictsPage />,
         },
         {
           path: 'district/:districtId',

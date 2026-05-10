@@ -166,7 +166,7 @@
     color: var(--ink-2);
   }
 
-  /* Districts page redesign chrome (#356). Lives inside LandingPage.tsx
+  /* Districts page redesign chrome (#356). Lives inside DistrictsPage.tsx
      until #369 retires the file. The .districts-* namespace is intentional
      — Districts is its own surface, distinct from app-shell chrome and
      from the legacy tm-* brand classes. */

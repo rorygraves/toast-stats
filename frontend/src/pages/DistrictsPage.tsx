@@ -24,7 +24,7 @@ import {
 import { formatDisplayDate } from '../utils/dateFormatting'
 import { DistrictRanking } from '../types/districts'
 
-const LandingPage: React.FC = () => {
+const DistrictsPage: React.FC = () => {
   const navigate = useNavigate()
   const [sortBy, setSortBy] = useState<
     'aggregate' | 'clubs' | 'payments' | 'distinguished'
@@ -1120,4 +1120,4 @@ const LandingPage: React.FC = () => {
   )
 }
 
-export default LandingPage
+export default DistrictsPage

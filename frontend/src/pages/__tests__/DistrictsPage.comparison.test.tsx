@@ -1,5 +1,5 @@
 /**
- * Integration tests for LandingPage comparison mode (#93)
+ * Integration tests for DistrictsPage comparison mode (#93)
  *
  * Verifies:
  * - Pin icon renders on each table row
@@ -11,7 +11,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { screen, fireEvent } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import LandingPage from '../LandingPage'
+import DistrictsPage from '../DistrictsPage'
 import { fetchCdnRankings } from '../../services/cdn'
 import { renderWithProviders } from '../../__tests__/test-utils'
 
@@ -134,14 +134,14 @@ const setupWithData = () => {
   })
 }
 
-describe('LandingPage - Comparison Mode (#93)', () => {
+describe('DistrictsPage - Comparison Mode (#93)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
   it('should render pin buttons on each table row', async () => {
     setupWithData()
-    renderWithProviders(<LandingPage />)
+    renderWithProviders(<DistrictsPage />)
 
     await screen.findByText('District 57')
 
@@ -151,7 +151,7 @@ describe('LandingPage - Comparison Mode (#93)', () => {
 
   it('should toggle pin state when pin button is clicked', async () => {
     setupWithData()
-    renderWithProviders(<LandingPage />)
+    renderWithProviders(<DistrictsPage />)
 
     await screen.findByText('District 57')
 
@@ -168,7 +168,7 @@ describe('LandingPage - Comparison Mode (#93)', () => {
 
   it('should show ComparisonPanel when 2 districts are pinned', async () => {
     setupWithData()
-    renderWithProviders(<LandingPage />)
+    renderWithProviders(<DistrictsPage />)
 
     await screen.findByText('District 57')
 
@@ -184,7 +184,7 @@ describe('LandingPage - Comparison Mode (#93)', () => {
 
   it('should not show ComparisonPanel when only 1 district is pinned', async () => {
     setupWithData()
-    renderWithProviders(<LandingPage />)
+    renderWithProviders(<DistrictsPage />)
 
     await screen.findByText('District 57')
 
@@ -196,7 +196,7 @@ describe('LandingPage - Comparison Mode (#93)', () => {
 
   it('should disable pin buttons when 3 districts are already pinned', async () => {
     setupWithData()
-    renderWithProviders(<LandingPage />)
+    renderWithProviders(<DistrictsPage />)
 
     await screen.findByText('District 57')
 
@@ -223,7 +223,7 @@ describe('LandingPage - Comparison Mode (#93)', () => {
 
   it('should remove district from comparison when unpin button is clicked in table', async () => {
     setupWithData()
-    renderWithProviders(<LandingPage />)
+    renderWithProviders(<DistrictsPage />)
 
     await screen.findByText('District 57')
 

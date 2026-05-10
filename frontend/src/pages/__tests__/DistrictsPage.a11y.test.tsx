@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react'
 import { axe, toHaveNoViolations } from 'jest-axe'
 import { expect, it, describe, vi } from 'vitest'
-import LandingPage from '../LandingPage'
+import DistrictsPage from '../DistrictsPage'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ProgramYearProvider } from '../../contexts/ProgramYearContext'
@@ -20,13 +20,13 @@ Object.defineProperty(window, 'localStorage', {
   writable: true,
 })
 
-describe('LandingPage Accessibility', () => {
+describe('DistrictsPage Accessibility', () => {
   it('should have no accessibility violations', async () => {
     const { container } = render(
       <QueryClientProvider client={queryClient}>
         <ProgramYearProvider>
           <MemoryRouter>
-            <LandingPage />
+            <DistrictsPage />
           </MemoryRouter>
         </ProgramYearProvider>
       </QueryClientProvider>

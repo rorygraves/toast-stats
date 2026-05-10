@@ -2,13 +2,13 @@
    Asserts the new header (eyebrow + redesigned h1 + lede), 4-card global
    KPI strip, and methodology callout. The existing rankings table +
    Awards Race controls + filters keep working — covered by the original
-   LandingPage tests. */
+   DistrictsPage tests. */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { screen, within } from '@testing-library/react'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
-import LandingPage from '../LandingPage'
+import DistrictsPage from '../DistrictsPage'
 import { fetchCdnRankings } from '../../services/cdn'
 import { renderWithProviders } from '../../__tests__/test-utils'
 
@@ -93,7 +93,7 @@ describe('Districts page redesign chrome (#356)', () => {
   describe('page header', () => {
     it('renders the program-year eyebrow above the h1 (en-dash format)', async () => {
       setupWithData()
-      renderWithProviders(<LandingPage />)
+      renderWithProviders(<DistrictsPage />)
       await screen.findByText('District 1')
       // The eyebrow uses an en-dash (–) per the handoff, not a hyphen.
       expect(
@@ -103,7 +103,7 @@ describe('Districts page redesign chrome (#356)', () => {
 
     it('renders the redesigned h1 "District Rankings" (no "Toastmasters" prefix)', async () => {
       setupWithData()
-      renderWithProviders(<LandingPage />)
+      renderWithProviders(<DistrictsPage />)
       await screen.findByText('District 1')
       expect(
         screen.getByRole('heading', {
@@ -115,7 +115,7 @@ describe('Districts page redesign chrome (#356)', () => {
 
     it('renders the lede paragraph', async () => {
       setupWithData()
-      renderWithProviders(<LandingPage />)
+      renderWithProviders(<DistrictsPage />)
       await screen.findByText('District 1')
       expect(
         screen.getByText(/compare district performance/i)
@@ -126,7 +126,7 @@ describe('Districts page redesign chrome (#356)', () => {
   describe('global KPI strip (4 cards)', () => {
     it('renders all 4 KPI labels', async () => {
       setupWithData()
-      renderWithProviders(<LandingPage />)
+      renderWithProviders(<DistrictsPage />)
       await screen.findByText('District 1')
       // "Paid Clubs · Global" and "Districts Tracked" are unique to the
       // KPI strip. "Total Payments" + "Distinguished Clubs" also appear
@@ -152,14 +152,14 @@ describe('Districts page redesign chrome (#356)', () => {
 
     it('sums paid clubs across all districts (100 + 50 = 150)', async () => {
       setupWithData()
-      renderWithProviders(<LandingPage />)
+      renderWithProviders(<DistrictsPage />)
       await screen.findByText('District 1')
       expect(screen.getByTestId('kpi-paid-clubs')).toHaveTextContent('150')
     })
 
     it('sums total payments across all districts (5000 + 2500 = 7500)', async () => {
       setupWithData()
-      renderWithProviders(<LandingPage />)
+      renderWithProviders(<DistrictsPage />)
       await screen.findByText('District 1')
       const kpi = screen.getByTestId('kpi-total-payments')
       // Format may be "7,500" or "$7.5K" — assert the digits at least
@@ -168,7 +168,7 @@ describe('Districts page redesign chrome (#356)', () => {
 
     it('sums distinguished clubs across all districts (50 + 22 = 72)', async () => {
       setupWithData()
-      renderWithProviders(<LandingPage />)
+      renderWithProviders(<DistrictsPage />)
       await screen.findByText('District 1')
       expect(screen.getByTestId('kpi-distinguished-clubs')).toHaveTextContent(
         '72'
@@ -177,7 +177,7 @@ describe('Districts page redesign chrome (#356)', () => {
 
     it('shows the count of tracked districts (2 in fixture)', async () => {
       setupWithData()
-      renderWithProviders(<LandingPage />)
+      renderWithProviders(<DistrictsPage />)
       await screen.findByText('District 1')
       expect(screen.getByTestId('kpi-districts-tracked')).toHaveTextContent('2')
     })
@@ -186,7 +186,7 @@ describe('Districts page redesign chrome (#356)', () => {
   describe('methodology callout', () => {
     it('links to the /methodology page', async () => {
       setupWithData()
-      renderWithProviders(<LandingPage />)
+      renderWithProviders(<DistrictsPage />)
       await screen.findByText('District 1')
       const links = screen.getAllByRole('link', { name: /methodology/i })
       const calloutLink = links.find(

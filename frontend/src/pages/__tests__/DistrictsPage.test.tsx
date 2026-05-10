@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { screen, within } from '@testing-library/react'
-import LandingPage from '../LandingPage'
+import DistrictsPage from '../DistrictsPage'
 import { fetchCdnRankings } from '../../services/cdn'
 import { renderWithProviders } from '../../__tests__/test-utils'
 
@@ -34,7 +34,7 @@ const mockedFetchCdnRankings = vi.mocked(fetchCdnRankings)
 
 // renderWithProviders is provided by test-utils to include ProgramYearProvider and common wrappers
 
-describe('LandingPage - Percentage Formatting', () => {
+describe('DistrictsPage - Percentage Formatting', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -68,7 +68,7 @@ describe('LandingPage - Percentage Formatting', () => {
         date: '2025-11-22',
       })
 
-      renderWithProviders(<LandingPage />)
+      renderWithProviders(<DistrictsPage />)
 
       // Wait for data to load and check for positive percentage with + prefix
       const element = await screen.findByText('+12.5%')
@@ -103,7 +103,7 @@ describe('LandingPage - Percentage Formatting', () => {
         date: '2025-11-22',
       })
 
-      renderWithProviders(<LandingPage />)
+      renderWithProviders(<DistrictsPage />)
 
       // Wait for data to load and check for negative percentage
       const element = await screen.findByText('-11.1%')
@@ -138,7 +138,7 @@ describe('LandingPage - Percentage Formatting', () => {
         date: '2025-11-22',
       })
 
-      renderWithProviders(<LandingPage />)
+      renderWithProviders(<DistrictsPage />)
 
       // Wait for data to load and check for zero percentage
       const element = await screen.findByText('0.0%')
@@ -173,7 +173,7 @@ describe('LandingPage - Percentage Formatting', () => {
         date: '2025-11-22',
       })
 
-      renderWithProviders(<LandingPage />)
+      renderWithProviders(<DistrictsPage />)
 
       // Wait for data to load and check for 1 decimal place formatting
       const element1 = await screen.findByText('+12.6%')
@@ -184,7 +184,7 @@ describe('LandingPage - Percentage Formatting', () => {
   })
 })
 
-describe('LandingPage - Error Handling', () => {
+describe('DistrictsPage - Error Handling', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -195,7 +195,7 @@ describe('LandingPage - Error Handling', () => {
       new Error('CDN rankings fetch failed: 404')
     )
 
-    renderWithProviders(<LandingPage />)
+    renderWithProviders(<DistrictsPage />)
 
     // Wait for error state to render
     const welcomeHeading = await screen.findByText('Welcome to Toast-Stats!')
@@ -223,7 +223,7 @@ describe('LandingPage - Error Handling', () => {
     const mockError = new Error('Something went wrong')
     mockedFetchCdnRankings.mockRejectedValueOnce(mockError)
 
-    renderWithProviders(<LandingPage />)
+    renderWithProviders(<DistrictsPage />)
 
     // Wait for error state to render
     const errorHeading = await screen.findByText('Error Loading Rankings')
@@ -242,7 +242,7 @@ describe('LandingPage - Error Handling', () => {
   })
 })
 
-describe('LandingPage - Table Cell Rendering', () => {
+describe('DistrictsPage - Table Cell Rendering', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -274,7 +274,7 @@ describe('LandingPage - Table Cell Rendering', () => {
       date: '2025-11-22',
     })
 
-    renderWithProviders(<LandingPage />)
+    renderWithProviders(<DistrictsPage />)
 
     // Wait for data to load and check for rank numbers
     const clubsRank = await screen.findByText('Rank #5')
@@ -312,7 +312,7 @@ describe('LandingPage - Table Cell Rendering', () => {
       date: '2025-11-22',
     })
 
-    renderWithProviders(<LandingPage />)
+    renderWithProviders(<DistrictsPage />)
 
     // Wait for data to load and check for percentage colors
     const positivePercent = await screen.findByText('+15.5%')
@@ -350,7 +350,7 @@ describe('LandingPage - Table Cell Rendering', () => {
       date: '2025-11-22',
     })
 
-    renderWithProviders(<LandingPage />)
+    renderWithProviders(<DistrictsPage />)
 
     // Wait for data to load and check for bullet separators
     await screen.findByText('District 1')
@@ -389,7 +389,7 @@ describe('LandingPage - Table Cell Rendering', () => {
       date: '2025-11-22',
     })
 
-    const { container } = renderWithProviders(<LandingPage />)
+    const { container } = renderWithProviders(<DistrictsPage />)
 
     // Wait for data to load and verify all elements are present
     await screen.findByText('District 1')
@@ -418,7 +418,7 @@ describe('LandingPage - Table Cell Rendering', () => {
   })
 })
 
-describe('LandingPage - Layout Order (#83)', () => {
+describe('DistrictsPage - Layout Order (#83)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -456,7 +456,7 @@ describe('LandingPage - Layout Order (#83)', () => {
   it('should render the rankings table before Historical Rank Progression in DOM order', async () => {
     setupWithData()
 
-    const { container } = renderWithProviders(<LandingPage />)
+    const { container } = renderWithProviders(<DistrictsPage />)
 
     // Wait for data
     await screen.findByText('District 1')
@@ -486,7 +486,7 @@ describe('LandingPage - Layout Order (#83)', () => {
   it('should render Historical Rank Progression inside a collapsed <details> element', async () => {
     setupWithData()
 
-    const { container } = renderWithProviders(<LandingPage />)
+    const { container } = renderWithProviders(<DistrictsPage />)
 
     await screen.findByText('District 1')
 
@@ -509,7 +509,7 @@ describe('LandingPage - Layout Order (#83)', () => {
   it('renders the redesign h1 "District Rankings" (#356)', async () => {
     setupWithData()
 
-    renderWithProviders(<LandingPage />)
+    renderWithProviders(<DistrictsPage />)
 
     await screen.findByText('District 1')
 
@@ -517,7 +517,7 @@ describe('LandingPage - Layout Order (#83)', () => {
     // Rankings" with a text-2xl class; the redesign uses just "District
     // Rankings" with the .districts-page-header__title class (Montserrat
     // 800 / 28px). The chrome contract is asserted in detail by
-    // LandingPage.redesign.test.tsx.
+    // DistrictsPage.redesign.test.tsx.
     const heading = screen.getByRole('heading', {
       level: 1,
       name: /^district rankings$/i,
@@ -528,7 +528,7 @@ describe('LandingPage - Layout Order (#83)', () => {
   it('should render region filter as always-visible pill toggle bar (#326)', async () => {
     setupWithData()
 
-    renderWithProviders(<LandingPage />)
+    renderWithProviders(<DistrictsPage />)
 
     await screen.findByText('District 1')
 
