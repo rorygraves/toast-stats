@@ -261,3 +261,76 @@ describe('Provisional Distinguished Badge — ClubDetailPage', () => {
     ).toBeGreaterThanOrEqual(1)
   })
 })
+
+// ============================================================
+// Close-to-Distinguished call-out banner — chrome refresh (#366)
+// ============================================================
+
+describe('Close-to-Distinguished call-out — ClubDetailPage', () => {
+  afterEach(() => {
+    cleanup()
+  })
+
+  function setClubOverrides(overrides: Record<string, unknown>) {
+    vi.mocked(useDistrictAnalytics).mockReturnValue({
+      data: {
+        districtId: '61',
+        allClubs: [{ ...baseMockClub, ...overrides }],
+      },
+      isLoading: false,
+      error: null,
+    } as ReturnType<typeof useDistrictAnalytics>)
+  }
+
+  it('renders the call-out with redesign chrome class when goals met but members short', () => {
+    // 5 goals (gap=0) + 17 members + base 17 (no growth) → memberGap=3
+    setClubOverrides({
+      membershipBase: 17,
+      membershipTrend: [{ date: '2026-03-15', count: 17 }],
+      dcpGoalsTrend: [{ date: '2026-03-15', goalsAchieved: 5 }],
+      distinguishedLevel: 'NotDistinguished',
+      aprilRenewals: 0,
+    })
+    renderWithRoute()
+
+    const callout = screen.getByRole('region', {
+      name: /close to distinguished/i,
+    })
+    expect(callout).toHaveClass('club-close-to-distinguished')
+  })
+
+  it('positions the call-out before the stats grid', () => {
+    setClubOverrides({
+      membershipBase: 17,
+      membershipTrend: [{ date: '2026-03-15', count: 17 }],
+      dcpGoalsTrend: [{ date: '2026-03-15', goalsAchieved: 5 }],
+      distinguishedLevel: 'NotDistinguished',
+      aprilRenewals: 0,
+    })
+    renderWithRoute()
+
+    const callout = screen.getByRole('region', {
+      name: /close to distinguished/i,
+    })
+    const baseLabel = screen.getByText('Base')
+    // DOCUMENT_POSITION_FOLLOWING (4) means callout precedes baseLabel
+    expect(callout.compareDocumentPosition(baseLabel)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    )
+  })
+
+  it('does not render the call-out when neither goals nor members close', () => {
+    setClubOverrides({
+      membershipBase: 8,
+      membershipTrend: [{ date: '2026-03-15', count: 10 }],
+      dcpGoalsTrend: [{ date: '2026-03-15', goalsAchieved: 1 }],
+      distinguishedLevel: 'NotDistinguished',
+      aprilRenewals: 0,
+    })
+    renderWithRoute()
+
+    expect(
+      screen.queryByRole('region', { name: /close to distinguished/i })
+    ).not.toBeInTheDocument()
+  })
+})

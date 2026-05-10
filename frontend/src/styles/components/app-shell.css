@@ -661,6 +661,57 @@
     border-color: rgba(123, 24, 40, 0.3);
   }
 
+  /* Close-to-Distinguished call-out (#366). Yellow accent banner that
+     surfaces directly under the hero when the club has met the goals
+     threshold but is members-short for Distinguished status. */
+  .club-close-to-distinguished {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    border-radius: var(--rds-radius-md);
+    background: rgba(201, 183, 72, 0.12);
+    border: 1px solid rgba(201, 183, 72, 0.45);
+    border-left: 4px solid var(--yellow-600);
+    box-shadow: var(--rds-shadow-sm);
+  }
+
+  .club-close-to-distinguished__icon {
+    flex-shrink: 0;
+    font-size: 22px;
+    line-height: 1;
+    color: var(--yellow-600);
+    margin-top: 2px;
+  }
+
+  .club-close-to-distinguished__body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .club-close-to-distinguished__title {
+    margin: 0;
+    font-family: var(--display);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .club-close-to-distinguished__copy {
+    margin: 0;
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--ink-2);
+  }
+
+  .club-close-to-distinguished__copy strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
   /* Clubs tab quick-filter chip strip (#24 follow-up). Sits above the
      ClubsTable toolbar on the District detail Clubs tab. */
   .clubs-quick-filters {
