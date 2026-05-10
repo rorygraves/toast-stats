@@ -1,0 +1,133 @@
+/* AppShell chrome (#354). Tokens from styles/tokens/redesign.css.
+   The bar's translucent surface uses --rds-surface-rgb so it inverts
+   automatically under [data-theme='dark']. */
+
+@layer brand {
+  .app-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: var(--bg);
+    color: var(--ink);
+  }
+
+  .app-shell__main {
+    flex: 1;
+  }
+
+  .app-shell-top-bar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    height: 56px;
+    border-bottom: 1px solid var(--line);
+    background-color: rgba(var(--rds-surface-rgb), 0.72);
+    backdrop-filter: saturate(140%) blur(8px);
+    -webkit-backdrop-filter: saturate(140%) blur(8px);
+  }
+
+  .app-shell-top-bar__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+    padding-left: 24px;
+    padding-right: 24px;
+    max-width: 1280px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .app-shell-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: var(--ink);
+  }
+
+  .app-shell-brand__mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--rds-radius-sm);
+    background-color: var(--loyal-500);
+    color: #ffffff;
+    font-family: var(--serif);
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: -0.02em;
+  }
+
+  .app-shell-brand__name {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: -0.01em;
+  }
+
+  .app-shell-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .app-shell-nav__link {
+    padding: 6px 12px;
+    border-radius: var(--rds-radius-sm);
+    text-decoration: none;
+    color: var(--ink-2);
+    background-color: transparent;
+    font-family: var(--sans);
+    font-weight: 500;
+    font-size: 13.5px;
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+
+  .app-shell-nav__link:hover {
+    background-color: var(--surface-3);
+  }
+
+  .app-shell-nav__link[aria-current='page'] {
+    color: var(--loyal-500);
+    background-color: var(--loyal-50);
+  }
+
+  .app-shell-footer {
+    border-top: 1px solid var(--line);
+    background-color: var(--surface);
+    color: var(--ink-3);
+  }
+
+  .app-shell-footer__inner {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 1280px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 16px 24px;
+    font-family: var(--sans);
+    font-size: 12px;
+  }
+
+  @media (min-width: 768px) {
+    .app-shell-footer__inner {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+  }
+
+  .app-shell-footer__meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .app-shell-footer__link {
+    color: var(--link);
+  }
+}

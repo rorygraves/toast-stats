@@ -358,7 +358,7 @@ const ClubDetailPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-100" id="main-content">
+      <div className="min-h-screen bg-gray-100">
         <div className="container mx-auto px-4 py-8">
           <LoadingSkeleton variant="card" />
           <div className="mt-6">
@@ -373,7 +373,7 @@ const ClubDetailPage: React.FC = () => {
 
   if (!club) {
     return (
-      <div className="min-h-screen bg-gray-100" id="main-content">
+      <div className="min-h-screen bg-gray-100">
         <div className="container mx-auto px-4 py-8">
           <EmptyState
             title="Club Not Found"
@@ -393,7 +393,7 @@ const ClubDetailPage: React.FC = () => {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gray-100" id="main-content">
+      <div className="min-h-screen bg-gray-100">
         <div className="container mx-auto px-4 py-4 sm:py-8">
           {/* Breadcrumbs */}
           <nav

@@ -470,9 +470,9 @@ describe('LandingPage - Layout Order (#83)', () => {
     )
     expect(historyDetails).toBeDefined()
 
-    // Table should appear before the history details in DOM order
-    const mainContent = container.querySelector('#main-content')!
-    const allElements = mainContent.querySelectorAll('table, details')
+    // Table should appear before the history details in DOM order.
+    // (#main-content moved up to AppShell in #354 — query the page root.)
+    const allElements = container.querySelectorAll('table, details')
     const elements = Array.from(allElements)
     const tableIndex = elements.findIndex(el => el.tagName === 'TABLE')
     const historyIndex = elements.indexOf(historyDetails!)

@@ -27,6 +27,7 @@
 @import './styles/components/cards.css';
 @import './styles/components/status-indicators.css';
 @import './styles/components/alerts.css';
+@import './styles/components/app-shell.css';
 @import './styles/responsive.css';
 @import './styles/dark-mode.css';
 

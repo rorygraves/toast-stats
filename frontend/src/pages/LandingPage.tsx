@@ -309,7 +309,7 @@ const LandingPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-100" id="main-content">
+      <div className="min-h-screen bg-gray-100">
         <div className="container mx-auto px-4 py-8">
           <div className="bg-white rounded-lg shadow-md p-8">
             <div className="animate-pulse space-y-4">
@@ -349,7 +349,7 @@ const LandingPage: React.FC = () => {
 
     if (isNoSnapshotError) {
       return (
-        <div className="min-h-screen bg-gray-100" id="main-content">
+        <div className="min-h-screen bg-gray-100">
           <div className="container mx-auto px-4 py-8">
             <div
               className="bg-tm-happy-yellow bg-opacity-20 border border-tm-happy-yellow rounded-lg p-8 mx-auto"
@@ -420,7 +420,7 @@ const LandingPage: React.FC = () => {
 
     // Handle other types of errors
     return (
-      <div className="min-h-screen bg-gray-100" id="main-content">
+      <div className="min-h-screen bg-gray-100">
         <div className="container mx-auto px-4 py-8">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
             <h2 className="text-xl font-bold text-red-800 mb-2">
@@ -442,7 +442,7 @@ const LandingPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100" id="main-content">
+    <div className="min-h-screen bg-gray-100">
       <div className="container mx-auto px-4 py-8">
         {/* Header — compact (#83) */}
         <div className="bg-white rounded-lg shadow-md p-4 mb-3">

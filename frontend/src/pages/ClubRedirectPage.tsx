@@ -33,20 +33,19 @@ const ClubRedirectPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <main
-        id="main-content"
+      <div
         className="tm-container"
         style={{ padding: '2rem', textAlign: 'center' }}
       >
         <div className="tm-loading-spinner" aria-label="Looking up club..." />
         <p className="text-gray-500 mt-4 font-tm-body">Looking up club...</p>
-      </main>
+      </div>
     )
   }
 
   if (isError || !data || (data && clubId && !data.clubs[clubId])) {
     return (
-      <main id="main-content" className="tm-container p-8">
+      <div className="tm-container p-8">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-lg mx-auto text-center">
           <h2 className="text-xl font-semibold text-red-800 mb-2">
             Club Not Found
@@ -62,7 +61,7 @@ const ClubRedirectPage: React.FC = () => {
             Back to Rankings
           </a>
         </div>
-      </main>
+      </div>
     )
   }
 

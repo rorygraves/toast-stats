@@ -50,6 +50,12 @@
   --rds-shadow-sm: 0 1px 2px rgba(15, 23, 32, .04);
   --rds-shadow: 0 1px 2px rgba(15, 23, 32, .04), 0 1px 3px rgba(15, 23, 32, .06);
   --rds-shadow-lg: 0 1px 2px rgba(15, 23, 32, .04), 0 8px 24px rgba(15, 23, 32, .08);
+
+  /* RGB triple for the AppShell top-bar translucent surface.
+     The bar uses rgba(var(--rds-surface-rgb), 0.72) + backdrop-filter to
+     achieve the blurred glassy look from the handoff. We can't put the
+     alpha in the token because rgba() can't mix var() with a literal alpha. */
+  --rds-surface-rgb: 255, 255, 255;
 }
 
 [data-theme='dark'] {
@@ -73,4 +79,6 @@
   --rds-shadow-sm: 0 1px 2px rgba(0, 0, 0, .3);
   --rds-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 1px 3px rgba(0, 0, 0, .4);
   --rds-shadow-lg: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .5);
+
+  --rds-surface-rgb: 17, 25, 34;
 }

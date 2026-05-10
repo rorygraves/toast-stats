@@ -516,7 +516,7 @@ const DistrictDetailPage: React.FC = () => {
   if (districtsData && !selectedDistrict && districtId) {
     return (
       <ErrorBoundary>
-        <div className="min-h-screen bg-gray-100" id="main-content">
+        <div className="min-h-screen bg-gray-100">
           <div className="container mx-auto px-4 py-4 sm:py-8">
             <div className="mb-4 sm:mb-6">
               <button
@@ -587,7 +587,7 @@ const DistrictDetailPage: React.FC = () => {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gray-100" id="main-content">
+      <div className="min-h-screen bg-gray-100">
         <div className="container mx-auto px-4 py-4 sm:py-8">
           {/* Header */}
           <div className="mb-4 sm:mb-6">
