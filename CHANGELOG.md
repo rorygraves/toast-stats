@@ -1,5 +1,31 @@
 # Changelog
 
+## [2.12.0](https://github.com/taverns-red/toast-stats/compare/toast-stats-v2.11.0...toast-stats-v2.12.0) (2026-05-10)
+
+
+### Features
+
+* **club:** redesign Close-to-Distinguished call-out + move under hero ([#366](https://github.com/taverns-red/toast-stats/issues/366)) ([#401](https://github.com/taverns-red/toast-stats/issues/401)) ([7ac4fe8](https://github.com/taverns-red/toast-stats/commit/7ac4fe86715b11ecee1a697144db8ef725ff72a5))
+* **club:** redesign Club detail hero header per handoff ([#23](https://github.com/taverns-red/toast-stats/issues/23) follow-up to [#366](https://github.com/taverns-red/toast-stats/issues/366)) ([#398](https://github.com/taverns-red/toast-stats/issues/398)) ([1cdf649](https://github.com/taverns-red/toast-stats/commit/1cdf64921d8bf620f647904bb280b44ae6755f8f))
+* **clubs:** redesign quick-filter chips on Clubs tab ([#24](https://github.com/taverns-red/toast-stats/issues/24) follow-up to [#361](https://github.com/taverns-red/toast-stats/issues/361)) ([#399](https://github.com/taverns-red/toast-stats/issues/399)) ([649acdc](https://github.com/taverns-red/toast-stats/commit/649acdcdd78bfd2d53a188300868a621a7444fe1))
+
+
+### Bug Fixes
+
+* **deploy:** footer version was rendering as bare "v" — fix yaml/shell quoting ([#397](https://github.com/taverns-red/toast-stats/issues/397)) ([103d2b2](https://github.com/taverns-red/toast-stats/commit/103d2b290f05a7ef0070bc3e1497a8f1e23b132f))
+* **visual:** post-audit visual regressions — Awards data, top bar, History chips, Districts toolbar/table ([#394](https://github.com/taverns-red/toast-stats/issues/394)) ([28c7e34](https://github.com/taverns-red/toast-stats/commit/28c7e346b4e0fbb3e2c773cd06dfc73f1bd5a3a0))
+
+
+### Refactors
+
+* **rankings:** chrome refresh on Global Rankings chart + multi-year table ([#365](https://github.com/taverns-red/toast-stats/issues/365)) ([#400](https://github.com/taverns-red/toast-stats/issues/400)) ([8e7f350](https://github.com/taverns-red/toast-stats/commit/8e7f350dda9c33a4b0a927eadbdd78de48ddc28f))
+
+
+### Documentation
+
+* **founder-log:** record Global Rankings chrome refresh + remaining cosmetic gap ([6140a95](https://github.com/taverns-red/toast-stats/commit/6140a95bd61fbd61f95f12844ea2421e006d606e))
+* **founder-log:** record post-audit fixes + remaining visual gap ([#396](https://github.com/taverns-red/toast-stats/issues/396)) ([5640231](https://github.com/taverns-red/toast-stats/commit/56402310bd96bf4e1703aa400c0dd9c5cab5da14))
+
 ## [2.11.0](https://github.com/taverns-red/toast-stats/compare/toast-stats-v2.10.0...toast-stats-v2.11.0) (2026-05-10)
 
 
