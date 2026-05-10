@@ -130,9 +130,11 @@ describe('ClubDetailPage (#208)', () => {
       screen.getAllByText('St Lawrence Toastmasters').length
     ).toBeGreaterThanOrEqual(1)
 
-    // Breadcrumbs
+    // Breadcrumbs (the new hero also renders "District 61" in its
+    // sub-line — query for the breadcrumb anchor explicitly)
     expect(screen.getByText('Home')).toBeInTheDocument()
-    expect(screen.getByText('District 61')).toBeInTheDocument()
+    const breadcrumbLink = screen.getByRole('link', { name: 'District 61' })
+    expect(breadcrumbLink).toHaveAttribute('href', '/district/61')
   })
 
   it('renders membership stats grid with correct net change', () => {

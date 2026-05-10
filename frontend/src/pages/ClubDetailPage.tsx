@@ -11,7 +11,6 @@ import {
   type ProgramYear,
 } from '../utils/programYear'
 import { formatDisplayDate } from '../utils/dateFormatting'
-import { getClubStatusBadge } from '../utils/clubStatusBadge'
 import {
   isProvisionallyDistinguished,
   getConfirmedLevel,
@@ -414,74 +413,79 @@ const ClubDetailPage: React.FC = () => {
             <span className="text-gray-900 font-medium">{club.clubName}</span>
           </nav>
 
-          {/* Header */}
-          <div className="bg-tm-loyal-blue rounded-lg shadow-md p-6 mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-tm-headline font-bold text-white">
-                  {club.clubName}
-                </h1>
-                <p className="text-tm-loyal-blue-20 mt-1 font-tm-body">
-                  {club.areaName} • {club.divisionName}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-3 flex-wrap">
-                {/* Health status badge */}
-                <span
-                  className={`px-4 py-2 text-sm font-medium rounded-full border ${
-                    club.currentStatus === 'intervention-required'
-                      ? 'bg-red-100 text-red-800 border-red-300'
-                      : club.currentStatus === 'vulnerable'
-                        ? 'bg-yellow-100 text-yellow-800 border-yellow-300'
-                        : 'bg-green-100 text-green-800 border-green-300'
-                  }`}
-                >
-                  {club.currentStatus.toUpperCase()}
+          {/* Redesigned hero per handoff (#23 follow-up). Loyal-blue panel
+              with charter-style eyebrow + h1 + sub-line + right-side
+              health & DCP tier pills. */}
+          <header className="club-hero">
+            <div className="club-hero__intro">
+              <p className="club-hero__eyebrow">Club #{clubId}</p>
+              <h1 className="club-hero__title">{club.clubName}</h1>
+              <p className="club-hero__sub">
+                <span>{club.areaName}</span>
+                <span aria-hidden="true" className="club-hero__sub-divider">
+                  ·
                 </span>
-                {/* Club status badge */}
-                {club.clubStatus && (
+                <span>{club.divisionName}</span>
+                {districtId && (
+                  <>
+                    <span aria-hidden="true" className="club-hero__sub-divider">
+                      ·
+                    </span>
+                    <span>District {districtId}</span>
+                  </>
+                )}
+              </p>
+            </div>
+
+            <div className="club-hero__pills">
+              <span
+                className={
+                  'club-hero__pill ' +
+                  (club.currentStatus === 'intervention-required'
+                    ? 'club-hero__pill--at-risk'
+                    : club.currentStatus === 'vulnerable'
+                      ? 'club-hero__pill--watch'
+                      : 'club-hero__pill--thriving')
+                }
+              >
+                <span aria-hidden="true" className="club-hero__pill-dot" />
+                {club.currentStatus === 'intervention-required'
+                  ? 'Intervention required'
+                  : club.currentStatus === 'vulnerable'
+                    ? 'Vulnerable'
+                    : 'Thriving'}
+              </span>
+              {club.distinguishedLevel &&
+                club.distinguishedLevel !== 'NotDistinguished' && (
                   <span
-                    className={`px-4 py-2 text-sm font-medium rounded-full border ${getClubStatusBadge(club.clubStatus)}`}
+                    className={
+                      'club-hero__pill club-hero__pill--tier ' +
+                      (club.distinguishedLevel === 'President'
+                        ? 'club-hero__pill--tier-presidents'
+                        : club.distinguishedLevel === 'Select'
+                          ? 'club-hero__pill--tier-select'
+                          : 'club-hero__pill--tier-distinguished')
+                    }
+                    title={
+                      isProvisionallyDistinguished(club)
+                        ? getProvisionalTooltip(club)
+                        : undefined
+                    }
                   >
-                    {club.clubStatus}
+                    {club.distinguishedLevel === 'President'
+                      ? "President's"
+                      : club.distinguishedLevel}
+                    {isProvisionallyDistinguished(club) &&
+                      (() => {
+                        const confirmed = getConfirmedLevel(club)
+                        return confirmed === 'NotDistinguished'
+                          ? ' (provisional)'
+                          : ' (provisional)'
+                      })()}
                   </span>
                 )}
-                {/* Distinguished level */}
-                {club.distinguishedLevel &&
-                  club.distinguishedLevel !== 'NotDistinguished' && (
-                    <div className="flex flex-col items-center gap-1">
-                      <span className="px-4 py-2 bg-tm-happy-yellow-30 text-tm-true-maroon text-sm font-medium rounded-full">
-                        {club.distinguishedLevel === 'President'
-                          ? "President's"
-                          : club.distinguishedLevel}
-                      </span>
-                      {isProvisionallyDistinguished(club) &&
-                        (() => {
-                          const confirmed = getConfirmedLevel(club)
-                          const confirmedLabel =
-                            confirmed === 'NotDistinguished'
-                              ? 'at risk'
-                              : confirmed === 'President'
-                                ? "President's"
-                                : confirmed
-                          return (
-                            <span
-                              className="text-xs text-amber-600 font-medium"
-                              title={getProvisionalTooltip(club)}
-                            >
-                              Provisional
-                              {confirmed !== 'NotDistinguished'
-                                ? ` — Confirmed: ${confirmedLabel}`
-                                : ' — at risk of losing status'}
-                            </span>
-                          )
-                        })()}
-                    </div>
-                  )}
-              </div>
             </div>
-          </div>
+          </header>
 
           {/* Stats Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">

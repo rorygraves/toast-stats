@@ -529,6 +529,138 @@
     color: var(--ink-3);
   }
 
+  /* Club detail hero — loyal panel with charter eyebrow + h1 + sub-line +
+     health/DCP pills (#366 redesign hero per handoff 03-club-detail.png). */
+  .club-hero {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 24px 28px;
+    margin-bottom: 20px;
+    background-color: var(--loyal-500);
+    color: #ffffff;
+    border-radius: var(--rds-radius-lg);
+    box-shadow: var(--rds-shadow);
+  }
+
+  @media (min-width: 768px) {
+    .club-hero {
+      flex-direction: row;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+  }
+
+  .club-hero__intro {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .club-hero__eyebrow {
+    margin: 0;
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.78);
+  }
+
+  .club-hero__title {
+    margin: 8px 0 6px;
+    font-family: var(--serif);
+    font-weight: 800;
+    font-size: 30px;
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+    color: #ffffff;
+  }
+
+  .club-hero__sub {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-family: var(--sans);
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .club-hero__sub-divider {
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  .club-hero__pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .club-hero__pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background-color: #ffffff;
+    color: var(--ink);
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+  /* Health pill variants — colored dot + neutral text on white pill */
+  .club-hero__pill-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .club-hero__pill--thriving .club-hero__pill-dot {
+    background-color: var(--green-500);
+  }
+
+  .club-hero__pill--healthy .club-hero__pill-dot {
+    background-color: var(--green-500);
+  }
+
+  .club-hero__pill--watch .club-hero__pill-dot {
+    background-color: var(--yellow-500);
+  }
+
+  .club-hero__pill--at-risk .club-hero__pill-dot {
+    background-color: var(--red-500);
+  }
+
+  /* DCP tier pill — outlined on white background by default */
+  .club-hero__pill--tier {
+    background-color: #ffffff;
+    color: var(--maroon-500);
+    border: 1px solid rgba(123, 24, 40, 0.2);
+  }
+
+  .club-hero__pill--tier-distinguished {
+    color: var(--green-600);
+    border-color: rgba(21, 128, 61, 0.25);
+  }
+
+  .club-hero__pill--tier-select {
+    color: var(--loyal-500);
+    border-color: rgba(0, 65, 101, 0.25);
+  }
+
+  .club-hero__pill--tier-presidents {
+    color: var(--yellow-600);
+    border-color: rgba(201, 183, 72, 0.4);
+  }
+
+  .club-hero__pill--tier-smedley {
+    color: var(--maroon-500);
+    border-color: rgba(123, 24, 40, 0.3);
+  }
+
   /* Awards Race 3-card contender summary (#357). Sits between the
      Districts page KPI strip and the rankings table. The deeper
      top-10 leaderboards live on the future Awards page (Epic #370). */
