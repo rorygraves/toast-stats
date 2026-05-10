@@ -252,7 +252,9 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
 
       // Wait for the page to render
       await waitFor(() => {
-        expect(screen.getAllByText('Test District 1')[0]).toBeInTheDocument()
+        expect(
+          screen.getByRole('heading', { level: 1, name: /test district 1/i })
+        ).toBeInTheDocument()
       })
 
       // Verify the hook was called with the expected date parameter
@@ -291,7 +293,9 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
 
       // Wait for the page to render
       await waitFor(() => {
-        expect(screen.getAllByText('Test District 1')[0]).toBeInTheDocument()
+        expect(
+          screen.getByRole('heading', { level: 1, name: /test district 1/i })
+        ).toBeInTheDocument()
       })
 
       // Navigate to Divisions & Areas tab to see the DivisionPerformanceCards
@@ -339,7 +343,9 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
       renderDistrictDetailPage()
 
       await waitFor(() => {
-        expect(screen.getAllByText('Test District 1')[0]).toBeInTheDocument()
+        expect(
+          screen.getByRole('heading', { level: 1, name: /test district 1/i })
+        ).toBeInTheDocument()
       })
 
       // The hook should be called with a date parameter (not undefined)
@@ -364,7 +370,9 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
 
       // Wait for the page to render
       await waitFor(() => {
-        expect(screen.getAllByText('Test District 1')[0]).toBeInTheDocument()
+        expect(
+          screen.getByRole('heading', { level: 1, name: /test district 1/i })
+        ).toBeInTheDocument()
       })
 
       // Navigate to Divisions & Areas tab
@@ -406,7 +414,9 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
 
       // Wait for the page to render
       await waitFor(() => {
-        expect(screen.getAllByText('Test District 1')[0]).toBeInTheDocument()
+        expect(
+          screen.getByRole('heading', { level: 1, name: /test district 1/i })
+        ).toBeInTheDocument()
       })
 
       // Navigate to Divisions & Areas tab
@@ -451,7 +461,9 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
 
       // Wait for the page to render
       await waitFor(() => {
-        expect(screen.getAllByText('Test District 1')[0]).toBeInTheDocument()
+        expect(
+          screen.getByRole('heading', { level: 1, name: /test district 1/i })
+        ).toBeInTheDocument()
       })
 
       // Navigate to Divisions & Areas tab
@@ -504,7 +516,9 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
 
       // Wait for the page to render
       await waitFor(() => {
-        expect(screen.getAllByText('Test District 1')[0]).toBeInTheDocument()
+        expect(
+          screen.getByRole('heading', { level: 1, name: /test district 1/i })
+        ).toBeInTheDocument()
       })
 
       // Navigate to Divisions & Areas tab
@@ -541,7 +555,9 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
 
       // Wait for the page to render
       await waitFor(() => {
-        expect(screen.getAllByText('Test District 1')[0]).toBeInTheDocument()
+        expect(
+          screen.getByRole('heading', { level: 1, name: /test district 1/i })
+        ).toBeInTheDocument()
       })
 
       // Navigate to Divisions & Areas tab
@@ -580,7 +596,9 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
 
       // Wait for the page to render
       await waitFor(() => {
-        expect(screen.getAllByText('Test District 1')[0]).toBeInTheDocument()
+        expect(
+          screen.getByRole('heading', { level: 1, name: /test district 1/i })
+        ).toBeInTheDocument()
       })
 
       // Navigate to Divisions & Areas tab
@@ -610,7 +628,9 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
 
       // Wait for the page to render
       await waitFor(() => {
-        expect(screen.getAllByText('Test District 1')[0]).toBeInTheDocument()
+        expect(
+          screen.getByRole('heading', { level: 1, name: /test district 1/i })
+        ).toBeInTheDocument()
       })
 
       // Navigate to Divisions & Areas tab
@@ -653,7 +673,9 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
       renderDistrictDetailPage()
 
       await waitFor(() => {
-        expect(screen.getAllByText('Test District 1')[0]).toBeInTheDocument()
+        expect(
+          screen.getByRole('heading', { level: 1, name: /test district 1/i })
+        ).toBeInTheDocument()
       })
 
       // The hook should be called with a date (the program year end date as fallback)
@@ -692,7 +714,9 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
       renderDistrictDetailPage()
 
       await waitFor(() => {
-        expect(screen.getAllByText('Test District 1')[0]).toBeInTheDocument()
+        expect(
+          screen.getByRole('heading', { level: 1, name: /test district 1/i })
+        ).toBeInTheDocument()
       })
 
       // Change the date
