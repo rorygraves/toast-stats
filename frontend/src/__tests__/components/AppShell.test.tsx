@@ -126,6 +126,16 @@ describe('AppShell (#354)', () => {
       expect(footer).toHaveTextContent(/mit license/i)
     })
 
+    it('does not double-prefix the version (deploy.yml already passes v<semver>)', () => {
+      // Regression guard: VITE_APP_VERSION ships as e.g. 'v2.10.0', so the
+      // footer must NOT add another 'v'. The fallback in tests is 'dev', so
+      // we assert no 'vdev'/'vv' substring.
+      renderShell()
+      const footer = screen.getByRole('contentinfo')
+      expect(footer.textContent).not.toMatch(/v\s*v/i)
+      expect(footer.textContent).not.toMatch(/vdev/i)
+    })
+
     it('preserves the theme toggle for manual dark-mode access', () => {
       renderShell()
       const footer = screen.getByRole('contentinfo')

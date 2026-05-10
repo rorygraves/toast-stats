@@ -35,7 +35,7 @@ const AppShellFooter: React.FC = () => {
             >
               MIT License
             </a>
-            {' · v'}
+            {' · '}
             {version}
           </span>
           <ThemeToggle />
