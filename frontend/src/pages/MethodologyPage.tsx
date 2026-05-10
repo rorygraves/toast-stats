@@ -12,9 +12,14 @@ const SECTIONS: ReadonlyArray<{ id: string; num: string; title: string }> = [
   { id: 'borda-count', num: '03', title: 'Borda count scoring' },
   { id: 'dcp-tiers', num: '04', title: 'DCP tier definitions' },
   { id: 'club-health', num: '05', title: 'Club health classifications' },
-  { id: 'glossary', num: '06', title: 'Glossary' },
-  { id: 'caveats', num: '07', title: 'Caveats & known issues' },
-  { id: 'changelog', num: '08', title: 'Changelog' },
+  {
+    id: 'district-membership-trend',
+    num: '06',
+    title: 'District Membership Trend',
+  },
+  { id: 'glossary', num: '07', title: 'Glossary' },
+  { id: 'caveats', num: '08', title: 'Caveats & known issues' },
+  { id: 'changelog', num: '09', title: 'Changelog' },
 ]
 
 const MethodologyPage: React.FC = () => {
@@ -177,9 +182,54 @@ const MethodologyPage: React.FC = () => {
         </p>
       </section>
 
-      <section id="glossary" className="methodology-section">
+      <section id="district-membership-trend" className="methodology-section">
         <h2 className="methodology-section__title">
           <span className="methodology-section__num">06</span>
+          District Membership Trend
+        </h2>
+        <p>
+          The chart on the District Detail · Trends tab plots a single metric:
+          the district&apos;s <strong>total paid members</strong> at each
+          snapshot date during the selected program year (Jul 1 – Jun 30).
+        </p>
+        <ul>
+          <li>
+            <strong>Source.</strong> The raw value comes from the Toastmasters
+            District Performance dashboard — the same source the Toastmasters
+            International office uses for monthly published rankings.
+          </li>
+          <li>
+            <strong>Snapshot frequency.</strong> Toast Stats prunes to one
+            snapshot per month (typically the last business day&apos;s data).
+            Daily snapshots before pruning are not retained.
+          </li>
+          <li>
+            <strong>Program-year scope.</strong> The default chart shows the
+            currently selected program year. Use the program-year selector to
+            inspect prior years.
+          </li>
+          <li>
+            <strong>Comparison series.</strong> Prior-year data is overlaid as a
+            faint reference line so you can visually compare YoY growth at the
+            same calendar week.
+          </li>
+          <li>
+            <strong>Y-axis.</strong> &quot;Paid Members&quot; — count of members
+            with current paid memberships, NOT a payment count (members
+            typically pay twice per year, so payment count ≈ 2× member count
+            over a full year).
+          </li>
+        </ul>
+        <p>
+          Growth and decline period overlays in the chart are computed from
+          consecutive month-over-month deltas; the threshold and detection logic
+          live in <code>frontend/src/components/MembershipTrendChart.tsx</code>.
+        </p>
+      </section>
+
+      <section id="glossary" className="methodology-section">
+        <h2 className="methodology-section__title">
+          <span className="methodology-section__num">07</span>
           Glossary
         </h2>
         <dl className="methodology-glossary">
@@ -217,7 +267,7 @@ const MethodologyPage: React.FC = () => {
 
       <section id="caveats" className="methodology-section">
         <h2 className="methodology-section__title">
-          <span className="methodology-section__num">07</span>
+          <span className="methodology-section__num">08</span>
           Caveats &amp; known issues
         </h2>
         <ul>
@@ -242,7 +292,7 @@ const MethodologyPage: React.FC = () => {
 
       <section id="changelog" className="methodology-section">
         <h2 className="methodology-section__title">
-          <span className="methodology-section__num">08</span>
+          <span className="methodology-section__num">09</span>
           Changelog
         </h2>
         <p>
