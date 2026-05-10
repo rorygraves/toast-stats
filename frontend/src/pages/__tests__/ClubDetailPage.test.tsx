@@ -130,9 +130,10 @@ describe('ClubDetailPage (#208)', () => {
       screen.getAllByText('St Lawrence Toastmasters').length
     ).toBeGreaterThanOrEqual(1)
 
-    // Breadcrumbs (the new hero also renders "District 61" in its
-    // sub-line — query for the breadcrumb anchor explicitly)
-    expect(screen.getByText('Home')).toBeInTheDocument()
+    // Breadcrumbs (#442) — leading 'Home' crumb removed; trail starts at
+    // the parent district. The new hero also renders "District 61" in
+    // its sub-line, so query the breadcrumb anchor explicitly.
+    expect(screen.queryByText('Home')).not.toBeInTheDocument()
     const breadcrumbLink = screen.getByRole('link', { name: 'District 61' })
     expect(breadcrumbLink).toHaveAttribute('href', '/district/61')
   })

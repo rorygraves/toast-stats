@@ -395,23 +395,25 @@ const ClubDetailPage: React.FC = () => {
     <ErrorBoundary>
       <div className="min-h-screen">
         <div className="container mx-auto px-4 py-4 sm:py-8">
-          {/* Breadcrumbs */}
+          {/* Breadcrumbs — leading 'Home' crumb removed per #442 (the
+              AppShell's 'Districts' active nav already serves as the
+              top-level location signal). Trail starts at the parent
+              district so 'back to district' navigation stays one click
+              away. */}
           <nav
             className="flex items-center gap-2 text-sm text-gray-500 mb-6 font-tm-body"
             aria-label="Breadcrumb"
           >
-            <Link to="/" className="hover:text-tm-loyal-blue transition-colors">
-              Home
-            </Link>
-            <span>›</span>
             <Link
               to={`/district/${districtId}`}
               className="hover:text-tm-loyal-blue transition-colors"
             >
               {districtName}
             </Link>
-            <span>›</span>
-            <span className="text-gray-900 font-medium">{club.clubName}</span>
+            <span aria-hidden="true">›</span>
+            <span className="text-gray-900 font-medium" aria-current="page">
+              {club.clubName}
+            </span>
           </nav>
 
           {/* Redesigned hero per handoff (#23 follow-up). Loyal-blue panel

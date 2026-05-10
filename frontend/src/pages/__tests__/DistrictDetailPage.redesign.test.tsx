@@ -8,7 +8,7 @@
 
 import React from 'react'
 import { describe, it, expect } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import { MemoryRouter } from 'react-router-dom'
@@ -44,22 +44,12 @@ const renderHeader = (
 }
 
 describe('DistrictDetailHeader (#358)', () => {
-  describe('breadcrumbs', () => {
-    it('renders a Districts → District N breadcrumb trail', () => {
+  describe('breadcrumbs (#442 — removed)', () => {
+    it('does NOT render a breadcrumb (would duplicate AppShell nav + H1)', () => {
       renderHeader()
-      const nav = screen.getByRole('navigation', { name: /breadcrumb/i })
-      const districtsLink = within(nav).getByRole('link', {
-        name: /districts/i,
-      })
-      expect(districtsLink).toHaveAttribute('href', '/')
-      expect(within(nav).getByText(/district 57/i)).toBeInTheDocument()
-    })
-
-    it('marks the current crumb with aria-current="page"', () => {
-      renderHeader()
-      const nav = screen.getByRole('navigation', { name: /breadcrumb/i })
-      const current = within(nav).getByText(/district 57/i)
-      expect(current).toHaveAttribute('aria-current', 'page')
+      expect(
+        screen.queryByRole('navigation', { name: /breadcrumb/i })
+      ).not.toBeInTheDocument()
     })
   })
 

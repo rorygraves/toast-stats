@@ -1,5 +1,4 @@
 import React, { useState, useCallback } from 'react'
-import { Link } from 'react-router-dom'
 import { ProgramYearSelector } from './ProgramYearSelector'
 import { DistrictExportButton } from './DistrictExportButton'
 import type { ProgramYear } from '../utils/programYear'
@@ -37,24 +36,11 @@ export const DistrictDetailHeader: React.FC<DistrictDetailHeaderProps> = ({
 }) => {
   return (
     <>
-      <nav aria-label="Breadcrumb" className="district-detail-breadcrumbs">
-        <Link to="/" className="district-detail-breadcrumbs__link">
-          Districts
-        </Link>
-        <span
-          aria-hidden="true"
-          className="district-detail-breadcrumbs__separator"
-        >
-          ›
-        </span>
-        <span
-          aria-current="page"
-          className="district-detail-breadcrumbs__current"
-        >
-          {districtName}
-        </span>
-      </nav>
-
+      {/* Breadcrumb removed per #442 — duplicated the AppShell's active
+          'Districts' nav tab and the H1 below. The active nav + H1 give
+          the user their location without redundant chrome. The
+          breadcrumb on Club Detail still provides 'back to district'
+          navigation since AppShell has no Club tab. */}
       <div className="district-detail-page-header">
         <div className="district-detail-page-header__intro">
           <p className="district-detail-page-header__eyebrow">
