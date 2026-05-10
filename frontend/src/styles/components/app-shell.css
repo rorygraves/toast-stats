@@ -661,6 +661,77 @@
     border-color: rgba(123, 24, 40, 0.3);
   }
 
+  /* Clubs tab quick-filter chip strip (#24 follow-up). Sits above the
+     ClubsTable toolbar on the District detail Clubs tab. */
+  .clubs-quick-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .clubs-quick-filters__label {
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-right: 4px;
+  }
+
+  .clubs-quick-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background-color: var(--surface);
+    color: var(--ink-2);
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 150ms, border-color 150ms, color 150ms;
+  }
+
+  .clubs-quick-filter-chip:hover {
+    border-color: var(--loyal-200);
+    color: var(--loyal-500);
+  }
+
+  .clubs-quick-filter-chip--active {
+    background-color: var(--loyal-500);
+    border-color: var(--loyal-500);
+    color: #ffffff;
+  }
+
+  .clubs-quick-filter-chip--active:hover {
+    background-color: var(--loyal-600);
+    border-color: var(--loyal-600);
+    color: #ffffff;
+  }
+
+  .clubs-quick-filter-chip__star {
+    color: var(--yellow-600);
+  }
+
+  .clubs-quick-filter-chip--active .clubs-quick-filter-chip__star {
+    color: #ffffff;
+  }
+
+  .clubs-quick-filter-chip__clear {
+    color: var(--maroon-500);
+    border-color: rgba(123, 24, 40, 0.25);
+  }
+
+  .clubs-quick-filter-chip__clear:hover {
+    background-color: rgba(123, 24, 40, 0.06);
+    border-color: var(--maroon-500);
+    color: var(--maroon-500);
+  }
+
   /* Awards Race 3-card contender summary (#357). Sits between the
      Districts page KPI strip and the rankings table. The deeper
      top-10 leaderboards live on the future Awards page (Epic #370). */

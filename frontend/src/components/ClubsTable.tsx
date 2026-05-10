@@ -374,42 +374,191 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="clubs-quick-filters">
+            <span className="clubs-quick-filters__label">Quick filters:</span>
+
+            {/* ⭐ Close to Distinguished — clubs needing exactly 1 more member */}
             <button
+              type="button"
               onClick={() => {
                 const current = getFilter('membersNeeded')
                 if (
                   current &&
                   Array.isArray(current.value) &&
-                  current.value[0] === 1
+                  current.value[0] === 1 &&
+                  current.value[1] === 1
                 ) {
                   setFilter('membersNeeded', null)
                 } else {
                   setFilter('membersNeeded', {
                     field: 'membersNeeded',
                     type: 'numeric',
-                    value: [1, null],
+                    value: [1, 1],
                   })
                   setSortField('membersNeeded')
                   setSortDirection('asc')
                   onSortChange?.('membersNeeded', 'asc')
                 }
               }}
-              className={`px-3 py-1 text-xs font-medium border rounded-sm transition-colors font-tm-body ${
-                getFilter('membersNeeded')?.value?.[0] === 1
-                  ? 'bg-tm-loyal-blue text-white border-tm-loyal-blue'
-                  : 'text-tm-loyal-blue hover:text-tm-loyal-blue-80 border-tm-loyal-blue-30 hover:bg-tm-loyal-blue-10'
-              }`}
+              className={
+                'clubs-quick-filter-chip' +
+                (() => {
+                  const f = getFilter('membersNeeded')
+                  return Array.isArray(f?.value) &&
+                    f.value[0] === 1 &&
+                    f.value[1] === 1
+                    ? ' clubs-quick-filter-chip--active'
+                    : ''
+                })()
+              }
+              aria-pressed={(() => {
+                const f = getFilter('membersNeeded')
+                return (
+                  Array.isArray(f?.value) &&
+                  f.value[0] === 1 &&
+                  f.value[1] === 1
+                )
+              })()}
             >
+              <span
+                aria-hidden="true"
+                className="clubs-quick-filter-chip__star"
+              >
+                ★
+              </span>
               Close to Distinguished
+            </button>
+
+            {/* Needs members — clubs short by 2+ to reach next tier */}
+            <button
+              type="button"
+              onClick={() => {
+                const current = getFilter('membersNeeded')
+                const isActive =
+                  Array.isArray(current?.value) &&
+                  current.value[0] === 2 &&
+                  current.value[1] === null
+                if (isActive) {
+                  setFilter('membersNeeded', null)
+                } else {
+                  setFilter('membersNeeded', {
+                    field: 'membersNeeded',
+                    type: 'numeric',
+                    value: [2, null],
+                  })
+                }
+              }}
+              className={
+                'clubs-quick-filter-chip' +
+                (() => {
+                  const f = getFilter('membersNeeded')
+                  return Array.isArray(f?.value) &&
+                    f.value[0] === 2 &&
+                    f.value[1] === null
+                    ? ' clubs-quick-filter-chip--active'
+                    : ''
+                })()
+              }
+              aria-pressed={(() => {
+                const f = getFilter('membersNeeded')
+                return (
+                  Array.isArray(f?.value) &&
+                  f.value[0] === 2 &&
+                  f.value[1] === null
+                )
+              })()}
+            >
+              Needs members
+            </button>
+
+            {/* Missing renewals — clubs with 0 October renewals */}
+            <button
+              type="button"
+              onClick={() => {
+                const current = getFilter('octoberRenewals')
+                const isActive =
+                  Array.isArray(current?.value) &&
+                  current.value[0] === 0 &&
+                  current.value[1] === 0
+                if (isActive) {
+                  setFilter('octoberRenewals', null)
+                } else {
+                  setFilter('octoberRenewals', {
+                    field: 'octoberRenewals',
+                    type: 'numeric',
+                    value: [0, 0],
+                  })
+                }
+              }}
+              className={
+                'clubs-quick-filter-chip' +
+                (() => {
+                  const f = getFilter('octoberRenewals')
+                  return Array.isArray(f?.value) &&
+                    f.value[0] === 0 &&
+                    f.value[1] === 0
+                    ? ' clubs-quick-filter-chip--active'
+                    : ''
+                })()
+              }
+              aria-pressed={(() => {
+                const f = getFilter('octoberRenewals')
+                return (
+                  Array.isArray(f?.value) &&
+                  f.value[0] === 0 &&
+                  f.value[1] === 0
+                )
+              })()}
+            >
+              Missing renewals
+            </button>
+
+            {/* President's tier only */}
+            <button
+              type="button"
+              onClick={() => {
+                const current = getFilter('distinguished')
+                const isActive =
+                  Array.isArray(current?.value) &&
+                  (current.value as string[]).includes('President')
+                if (isActive) {
+                  setFilter('distinguished', null)
+                } else {
+                  setFilter('distinguished', {
+                    field: 'distinguished',
+                    type: 'categorical',
+                    value: ['President'],
+                  })
+                }
+              }}
+              className={
+                'clubs-quick-filter-chip' +
+                (() => {
+                  const f = getFilter('distinguished')
+                  return Array.isArray(f?.value) &&
+                    (f.value as string[]).includes('President')
+                    ? ' clubs-quick-filter-chip--active'
+                    : ''
+                })()
+              }
+              aria-pressed={(() => {
+                const f = getFilter('distinguished')
+                return (
+                  Array.isArray(f?.value) &&
+                  (f.value as string[]).includes('President')
+                )
+              })()}
+            >
+              President's tier only
             </button>
 
             {hasActiveFilters && (
               <button
+                type="button"
                 onClick={clearAllFilters}
-                className="px-3 py-1 text-xs text-tm-true-maroon hover:text-tm-true-maroon-80 font-medium border border-tm-true-maroon-30 rounded-sm hover:bg-tm-true-maroon-10 font-tm-body"
+                className="clubs-quick-filter-chip clubs-quick-filter-chip__clear"
               >
-                Clear All Filters ({activeFilterCount})
+                Clear all ({activeFilterCount})
               </button>
             )}
           </div>
