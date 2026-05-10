@@ -31,9 +31,10 @@ describe('Journey 01: The Navigation Flow', () => {
   it('navigates from landing page to District 61 overview', async () => {
     render(<App />)
 
-    // Step 1: Landing page loads successfully
+    // Step 1: Landing page loads successfully (#356 redesign chrome)
     const landingHeading = await screen.findByRole('heading', {
-      name: /Toastmasters District Rankings/i,
+      level: 1,
+      name: /^district rankings$/i,
     })
     expect(landingHeading).toBeInTheDocument()
 

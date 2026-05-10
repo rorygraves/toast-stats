@@ -155,6 +155,26 @@ const LandingPage: React.FC = () => {
     () => data?.rankings || [],
     [data?.rankings]
   )
+
+  // Global KPI strip totals (#356) — must run unconditionally so it lives
+  // at the top of the component, BEFORE the loading/error early returns
+  // (rules of hooks).
+  const kpiTotals = React.useMemo(() => {
+    let paidClubs = 0
+    let totalPayments = 0
+    let distinguishedClubs = 0
+    for (const r of rankings) {
+      paidClubs += r.paidClubs ?? 0
+      totalPayments += r.totalPayments ?? 0
+      distinguishedClubs += r.distinguishedClubs ?? 0
+    }
+    return {
+      paidClubs,
+      totalPayments,
+      distinguishedClubs,
+      tracked: rankings.length,
+    }
+  }, [rankings])
   const currentDate: string = data?.date || ''
   // For the date selector label, use the latest date from the selected program year,
   // not the global CDN latest (#180)
@@ -309,7 +329,7 @@ const LandingPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-100">
+      <div className="districts-page-root">
         <div className="container mx-auto px-4 py-8">
           <div className="bg-white rounded-lg shadow-md p-8">
             <div className="animate-pulse space-y-4">
@@ -349,7 +369,7 @@ const LandingPage: React.FC = () => {
 
     if (isNoSnapshotError) {
       return (
-        <div className="min-h-screen bg-gray-100">
+        <div className="districts-page-root">
           <div className="container mx-auto px-4 py-8">
             <div
               className="bg-tm-happy-yellow bg-opacity-20 border border-tm-happy-yellow rounded-lg p-8 mx-auto"
@@ -420,7 +440,7 @@ const LandingPage: React.FC = () => {
 
     // Handle other types of errors
     return (
-      <div className="min-h-screen bg-gray-100">
+      <div className="districts-page-root">
         <div className="container mx-auto px-4 py-8">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
             <h2 className="text-xl font-bold text-red-800 mb-2">
@@ -442,26 +462,70 @@ const LandingPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header — compact (#83) */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-3">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-3">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Toastmasters District Rankings
-              </h1>
-              <p className="text-gray-600 text-sm">
-                Compare district performance across paid clubs, payments, and
-                distinguished clubs
-              </p>
-              <DataFreshnessBadge className="mt-2" />
+    <div className="districts-page-root">
+      <div className="districts-page">
+        {/* Redesigned page header (#356) */}
+        <div className="districts-page-header">
+          <div className="districts-page-header__intro">
+            <p className="districts-page-header__eyebrow">
+              Program Year {selectedProgramYear.label.replace(/-/g, '–')}
+            </p>
+            <h1 className="districts-page-header__title">District Rankings</h1>
+            <p className="districts-page-header__lede">
+              Compare district performance across paid clubs, payments, and
+              distinguished clubs.
+            </p>
+          </div>
+          <div className="districts-page-header__actions">
+            <DataFreshnessBadge />
+          </div>
+        </div>
+
+        {/* Global KPI strip (#356) */}
+        <div className="districts-kpi-strip">
+          <div className="districts-kpi-card">
+            <p className="districts-kpi-card__label">Paid Clubs · Global</p>
+            <div
+              className="districts-kpi-card__value"
+              data-testid="kpi-paid-clubs"
+            >
+              {kpiTotals.paidClubs.toLocaleString()}
             </div>
           </div>
+          <div className="districts-kpi-card">
+            <p className="districts-kpi-card__label">Total Payments</p>
+            <div
+              className="districts-kpi-card__value"
+              data-testid="kpi-total-payments"
+            >
+              {kpiTotals.totalPayments.toLocaleString()}
+            </div>
+          </div>
+          <div className="districts-kpi-card">
+            <p className="districts-kpi-card__label">Distinguished Clubs</p>
+            <div
+              className="districts-kpi-card__value"
+              data-testid="kpi-distinguished-clubs"
+            >
+              {kpiTotals.distinguishedClubs.toLocaleString()}
+            </div>
+          </div>
+          <div className="districts-kpi-card">
+            <p className="districts-kpi-card__label">Districts Tracked</p>
+            <div
+              className="districts-kpi-card__value"
+              data-testid="kpi-districts-tracked"
+            >
+              {kpiTotals.tracked.toLocaleString()}
+            </div>
+          </div>
+        </div>
 
-          {/* Program Year and Date Selectors */}
-          <div className="flex flex-col sm:flex-row gap-4 pt-3 border-t border-gray-200">
-            {/* Program Year Selector */}
+        {/* Filters: Program Year + Date Selectors (kept under the new
+            chrome rather than in the header — #356 defers the inline
+            action-cluster selectors per the simplified Districts scope) */}
+        <div className="districts-filters-card">
+          <div className="flex flex-col sm:flex-row gap-4">
             {availableProgramYears.length > 0 && (
               <div className="flex-shrink-0">
                 <ProgramYearSelector
@@ -473,7 +537,6 @@ const LandingPage: React.FC = () => {
               </div>
             )}
 
-            {/* Date Selector - Shows only dates in selected program year */}
             {cachedDates.length > 0 && (
               <div className="flex flex-col gap-1 flex-1">
                 <label
@@ -1036,6 +1099,21 @@ const LandingPage: React.FC = () => {
               (93 pts), their Overall Score = 96 + 98 + 93 = 287 points
             </p>
           </div>
+        </div>
+
+        {/* Forward-pointer to the dedicated methodology page (#356).
+            The legacy in-page Scoring Methodology block above stays as
+            the canonical explainer until #368 ships real /methodology
+            content; #369 will remove the duplication. */}
+        <div className="districts-methodology-callout">
+          Definitions, refresh cadence, and known caveats live on the{' '}
+          <a
+            href="/methodology"
+            className="districts-methodology-callout__link"
+          >
+            Methodology
+          </a>{' '}
+          page.
         </div>
       </div>
     </div>

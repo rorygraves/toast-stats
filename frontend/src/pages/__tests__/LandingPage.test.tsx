@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import LandingPage from '../LandingPage'
 import { fetchCdnRankings } from '../../services/cdn'
 import { renderWithProviders } from '../../__tests__/test-utils'
@@ -389,20 +389,24 @@ describe('LandingPage - Table Cell Rendering', () => {
       date: '2025-11-22',
     })
 
-    renderWithProviders(<LandingPage />)
+    const { container } = renderWithProviders(<LandingPage />)
 
     // Wait for data to load and verify all elements are present
     await screen.findByText('District 1')
 
+    // Scope to the rankings table — the KPI strip from #356 also renders
+    // these same numbers as global totals.
+    const table = within(container.querySelector('table')!)
+
     // Check paid clubs column
-    expect(screen.getByText('100')).toBeInTheDocument()
-    expect(screen.getByText('Rank #5')).toBeInTheDocument()
-    expect(screen.getByText('+12.5%')).toBeInTheDocument()
+    expect(table.getByText('100')).toBeInTheDocument()
+    expect(table.getByText('Rank #5')).toBeInTheDocument()
+    expect(table.getByText('+12.5%')).toBeInTheDocument()
 
     // Check total payments column
-    expect(screen.getByText('5,000')).toBeInTheDocument()
-    expect(screen.getByText('Rank #3')).toBeInTheDocument()
-    expect(screen.getByText('+11.1%')).toBeInTheDocument()
+    expect(table.getByText('5,000')).toBeInTheDocument()
+    expect(table.getByText('Rank #3')).toBeInTheDocument()
+    expect(table.getByText('+11.1%')).toBeInTheDocument()
 
     // Verify the rank and percentage are in the same container (text-xs class)
     const rankElements = screen.getAllByText(/Rank #\d+/)
@@ -502,18 +506,23 @@ describe('LandingPage - Layout Order (#83)', () => {
     expect(summary!.textContent).toMatch(/Historical Rank Progression/i)
   })
 
-  it('should use compact header with smaller title', async () => {
+  it('renders the redesign h1 "District Rankings" (#356)', async () => {
     setupWithData()
 
     renderWithProviders(<LandingPage />)
 
     await screen.findByText('District 1')
 
-    // Title should use text-2xl (compact) instead of text-3xl
+    // The h1 was rewritten in #356 — old wording was "Toastmasters District
+    // Rankings" with a text-2xl class; the redesign uses just "District
+    // Rankings" with the .districts-page-header__title class (Montserrat
+    // 800 / 28px). The chrome contract is asserted in detail by
+    // LandingPage.redesign.test.tsx.
     const heading = screen.getByRole('heading', {
-      name: /Toastmasters District Rankings/i,
+      level: 1,
+      name: /^district rankings$/i,
     })
-    expect(heading).toHaveClass('text-2xl')
+    expect(heading).toBeInTheDocument()
   })
 
   it('should render region filter as always-visible pill toggle bar (#326)', async () => {

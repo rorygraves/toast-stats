@@ -165,4 +165,153 @@
     font-size: 14px;
     color: var(--ink-2);
   }
+
+  /* Districts page redesign chrome (#356). Lives inside LandingPage.tsx
+     until #369 retires the file. The .districts-* namespace is intentional
+     — Districts is its own surface, distinct from app-shell chrome and
+     from the legacy tm-* brand classes. */
+  .districts-page-root {
+    /* No min-height: 100vh here — AppShell already owns the viewport
+       wrapper (.app-shell { min-height: 100vh } + .app-shell__main
+       { flex: 1 }). Adding 100vh here nests two viewport-tall divs
+       and forces a guaranteed scrollbar past the AppShell chrome. */
+    background-color: var(--bg);
+  }
+
+  .districts-page {
+    max-width: 1280px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 32px 24px;
+  }
+
+  .districts-filters-card {
+    margin-bottom: 12px;
+    padding: 16px;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-md);
+    box-shadow: var(--rds-shadow-sm);
+  }
+
+  .districts-page-header {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  @media (min-width: 768px) {
+    .districts-page-header {
+      flex-direction: row;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+  }
+
+  .districts-page-header__intro {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .districts-page-header__eyebrow {
+    margin: 0;
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--maroon-500);
+  }
+
+  .districts-page-header__title {
+    margin: 8px 0 8px;
+    font-family: var(--serif);
+    font-weight: 800;
+    font-size: 28px;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+  }
+
+  .districts-page-header__lede {
+    margin: 0;
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--ink-2);
+    max-width: 60ch;
+  }
+
+  .districts-page-header__actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  /* 4-card KPI strip */
+  .districts-kpi-strip {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  @media (min-width: 640px) {
+    .districts-kpi-strip {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 980px) {
+    .districts-kpi-strip {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  .districts-kpi-card {
+    padding: 14px 16px;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-md);
+    box-shadow: var(--rds-shadow-sm);
+  }
+
+  .districts-kpi-card__label {
+    margin: 0 0 6px;
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  .districts-kpi-card__value {
+    font-family: var(--serif);
+    font-weight: 800;
+    font-size: 30px;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+
+  /* Methodology callout */
+  .districts-methodology-callout {
+    margin-top: 24px;
+    padding: 16px 18px;
+    background-color: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-md);
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--ink-2);
+  }
+
+  .districts-methodology-callout__link {
+    color: var(--link);
+    font-weight: 600;
+  }
 }
