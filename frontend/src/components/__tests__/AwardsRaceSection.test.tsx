@@ -166,4 +166,42 @@ describe('AwardsRaceSection — 3-card redesign (#357)', () => {
     )
     expect(container.querySelector('.awards-race-card')).toBeNull()
   })
+
+  it('renders a progress bar on each card with a sensible width %', () => {
+    renderWithRouter(<AwardsRaceSection standings={mockStandings} />)
+
+    // Extension leader value=14, no winner — progress = min(100, 14/15*100) ≈ 93%
+    const ext = findCard(/extension/i)
+    const extBar = within(ext).getByRole('progressbar') as HTMLElement
+    const extFill = extBar.firstElementChild as HTMLElement
+    expect(parseFloat(extFill.style.width)).toBeGreaterThan(80)
+    expect(parseFloat(extFill.style.width)).toBeLessThanOrEqual(100)
+    expect(extFill).not.toHaveClass('awards-race-card__progress-fill--won')
+
+    // 20-Plus leader is a winner → progress = 100% with --won modifier
+    const twenty = findCard(/20-plus/i)
+    const twentyBar = within(twenty).getByRole('progressbar') as HTMLElement
+    const twentyFill = twentyBar.firstElementChild as HTMLElement
+    expect(twentyFill.style.width).toBe('100%')
+    expect(twentyFill).toHaveClass('awards-race-card__progress-fill--won')
+  })
+
+  it('shows a status dot in each card footer', () => {
+    renderWithRouter(<AwardsRaceSection standings={mockStandings} />)
+    // Each card's footer has a leading dot indicator
+    const dots = document.querySelectorAll('.awards-race-card__status-dot')
+    expect(dots.length).toBeGreaterThanOrEqual(3)
+  })
+
+  it('renders the threshold sub-line per card per design wording', () => {
+    renderWithRouter(<AwardsRaceSection standings={mockStandings} />)
+    // Design subtitles describe the award threshold below the title
+    expect(
+      screen.getByText(/most new paid clubs vs prior year/i)
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/% of paid clubs with 20\+ members/i)
+    ).toBeInTheDocument()
+    expect(screen.getByText(/90% retention of last year/i)).toBeInTheDocument()
+  })
 })

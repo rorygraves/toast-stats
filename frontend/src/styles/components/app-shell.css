@@ -921,7 +921,8 @@
     color: var(--ink);
   }
 
-  .awards-race-card__description {
+  .awards-race-card__description,
+  .awards-race-card__threshold {
     margin: 0;
     font-family: var(--sans);
     font-size: 12px;
@@ -929,7 +930,7 @@
     color: var(--ink-3);
   }
 
-  .awards-race-card__leader {
+  .awards-race-card__row {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
@@ -937,10 +938,10 @@
   }
 
   .awards-race-card__leader-link {
-    font-family: var(--mono);
-    font-weight: 500;
-    font-size: 16px;
-    color: var(--link);
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--loyal-500);
     text-decoration: none;
   }
 
@@ -951,35 +952,56 @@
   .awards-race-card__leader-value {
     font-family: var(--serif);
     font-weight: 800;
-    font-size: 24px;
+    font-size: 22px;
     line-height: 1;
     letter-spacing: -0.02em;
     color: var(--ink);
     font-variant-numeric: tabular-nums;
   }
 
-  .awards-race-card__footer {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 4px;
-    padding-top: 8px;
-    border-top: 1px solid var(--line-2);
-    font-family: var(--sans);
-    font-size: 12px;
-    color: var(--ink-3);
+  .awards-race-card__progress-track {
+    height: 4px;
+    background-color: var(--surface-3);
+    border: 1px solid var(--line-2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .awards-race-card__progress-fill {
+    height: 100%;
+    background-color: var(--loyal-500);
+    border-radius: 2px;
+    transition: width 400ms ease;
+  }
+
+  .awards-race-card__progress-fill--won {
+    background-color: var(--yellow-500);
   }
 
   .awards-race-card__status {
-    font-weight: 500;
-  }
-
-  .awards-race-card__status--achieved {
-    color: var(--green-600);
-  }
-
-  .awards-race-card__hint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    font-family: var(--sans);
+    font-size: 11px;
     color: var(--ink-3);
+  }
+
+  .awards-race-card__status--won {
+    color: var(--yellow-600);
+  }
+
+  .awards-race-card__status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--ink-3);
+    flex-shrink: 0;
+  }
+
+  .awards-race-card__status--won .awards-race-card__status-dot {
+    background-color: var(--yellow-500);
   }
 
   .awards-race-card__empty {

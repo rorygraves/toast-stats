@@ -17,9 +17,12 @@ interface AwardsRaceSectionProps {
 
 interface AwardCardSpec {
   title: string
-  description: string
+  /** Threshold sub-line per design (e.g. "15 new charter strength clubs"). */
+  threshold: string
   /** Format the leader's value for display (e.g. "+14", "94.1%"). */
   formatValue: (value: number) => string
+  /** Compute progress percentage 0-100 from the leader's value. */
+  computeProgress: (value: number) => number
 }
 
 const AWARD_CARDS: ReadonlyArray<{
@@ -33,24 +36,29 @@ const AWARD_CARDS: ReadonlyArray<{
     key: 'extensionAward',
     spec: {
       title: "President's Extension Award",
-      description: 'Largest net club growth',
+      threshold: 'Most new paid clubs vs prior year',
       formatValue: v => (v >= 0 ? `+${v}` : `${v}`),
+      // Winners are flagged separately; non-winners progress against a
+      // soft target of 15 (matches the design's reference threshold).
+      computeProgress: v => Math.min(100, Math.max(0, (v / 15) * 100)),
     },
   },
   {
     key: 'twentyPlusAward',
     spec: {
       title: "President's 20-Plus Award",
-      description: 'Highest % clubs with 20+ paid members',
+      threshold: '% of paid clubs with 20+ members',
       formatValue: v => `${v.toFixed(1)}%`,
+      computeProgress: v => Math.min(100, Math.max(0, v)),
     },
   },
   {
     key: 'retentionAward',
     spec: {
       title: 'District Club Retention Award',
-      description: 'Top retention (≥90% paid clubs)',
+      threshold: '90% retention of last year’s clubs',
       formatValue: v => `${v.toFixed(1)}%`,
+      computeProgress: v => Math.min(100, Math.max(0, v)),
     },
   },
 ]
@@ -100,20 +108,22 @@ const AwardCard: React.FC<AwardCardProps> = ({ spec, entries }) => {
       <article className="awards-race-card">
         <header className="awards-race-card__header">
           <h3 className="awards-race-card__title">{spec.title}</h3>
-          <p className="awards-race-card__description">{spec.description}</p>
+          <p className="awards-race-card__threshold">{spec.threshold}</p>
         </header>
         <p className="awards-race-card__empty">No standings yet.</p>
       </article>
     )
   }
 
+  const progress = isAchieved ? 100 : spec.computeProgress(leader.value)
+
   return (
     <article className="awards-race-card">
       <header className="awards-race-card__header">
         <h3 className="awards-race-card__title">{spec.title}</h3>
-        <p className="awards-race-card__description">{spec.description}</p>
+        <p className="awards-race-card__threshold">{spec.threshold}</p>
       </header>
-      <div className="awards-race-card__leader">
+      <div className="awards-race-card__row">
         <Link
           to={`/district/${leader.districtId}`}
           className="awards-race-card__leader-link"
@@ -124,20 +134,36 @@ const AwardCard: React.FC<AwardCardProps> = ({ spec, entries }) => {
           {spec.formatValue(leader.value)}
         </span>
       </div>
-      <footer className="awards-race-card__footer">
+      <div
+        className="awards-race-card__progress-track"
+        role="progressbar"
+        aria-valuenow={Math.round(progress)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`${spec.title} progress`}
+      >
+        <div
+          className={
+            'awards-race-card__progress-fill' +
+            (isAchieved ? ' awards-race-card__progress-fill--won' : '')
+          }
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+      <footer
+        className={
+          'awards-race-card__status' +
+          (isAchieved ? ' awards-race-card__status--won' : '')
+        }
+      >
+        <span aria-hidden="true" className="awards-race-card__status-dot" />
         {isAchieved ? (
-          <>
-            <span className="awards-race-card__status awards-race-card__status--achieved">
-              ✓ Achieved
-            </span>
-            {winners.length > 1 && (
-              <span className="awards-race-card__hint">
-                · {winners.length} districts qualifying
-              </span>
-            )}
-          </>
+          <span>
+            ✓ Achieved
+            {winners.length > 1 && ` · ${winners.length} districts qualifying`}
+          </span>
         ) : (
-          <span className="awards-race-card__status">
+          <span>
             Leader · next contender at{' '}
             {entries[1] ? spec.formatValue(entries[1].value) : '—'}
           </span>
