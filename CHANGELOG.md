@@ -1,5 +1,34 @@
 # Changelog
 
+## [2.11.0](https://github.com/taverns-red/toast-stats/compare/toast-stats-v2.10.0...toast-stats-v2.11.0) (2026-05-10)
+
+
+### Features
+
+* **awards:** rebuild AwardsRaceSection as 3-card contender summary ([#357](https://github.com/taverns-red/toast-stats/issues/357)) ([#382](https://github.com/taverns-red/toast-stats/issues/382)) ([130ac87](https://github.com/taverns-red/toast-stats/commit/130ac87a7e86066f534d5faf50b53bef7977646d))
+* **awards:** ship /awards page with top-10 leaderboards ([#370](https://github.com/taverns-red/toast-stats/issues/370) [#371](https://github.com/taverns-red/toast-stats/issues/371) [#372](https://github.com/taverns-red/toast-stats/issues/372) [#373](https://github.com/taverns-red/toast-stats/issues/373)) ([#392](https://github.com/taverns-red/toast-stats/issues/392)) ([0a3129d](https://github.com/taverns-red/toast-stats/commit/0a3129d70051f1a69b416542f053e573cca9b011))
+* **club:** apply redesign panel chrome to ClubDetailPage ([#366](https://github.com/taverns-red/toast-stats/issues/366)) ([#389](https://github.com/taverns-red/toast-stats/issues/389)) ([071f970](https://github.com/taverns-red/toast-stats/commit/071f9709508881980b505ad16304255e13a8900a))
+* **district:** apply 2026 redesign chrome to DistrictDetailPage header ([#358](https://github.com/taverns-red/toast-stats/issues/358)) ([#383](https://github.com/taverns-red/toast-stats/issues/383)) ([9c5df23](https://github.com/taverns-red/toast-stats/commit/9c5df2368b0353d576af5dd73caafcfe8d72f33a))
+* **district:** extract DistrictDetailTabs primitive ([#359](https://github.com/taverns-red/toast-stats/issues/359)) ([#385](https://github.com/taverns-red/toast-stats/issues/385)) ([8c51940](https://github.com/taverns-red/toast-stats/commit/8c51940d6172cf778e23aa0da1462fa7a9ca0236))
+* **districts:** apply 2026 redesign chrome to LandingPage in place ([#356](https://github.com/taverns-red/toast-stats/issues/356)) ([#381](https://github.com/taverns-red/toast-stats/issues/381)) ([9dc6662](https://github.com/taverns-red/toast-stats/commit/9dc6662fdb4ac5928fb295746626d04cd2c7a612))
+* **history,methodology:** ship History year strip + full Methodology content ([#367](https://github.com/taverns-red/toast-stats/issues/367) [#368](https://github.com/taverns-red/toast-stats/issues/368)) ([#390](https://github.com/taverns-red/toast-stats/issues/390)) ([dbf6b0c](https://github.com/taverns-red/toast-stats/commit/dbf6b0c06ff7b283c094f437d69a818639b990f3))
+* **overview:** apply redesign panel chrome to Overview tab components ([#360](https://github.com/taverns-red/toast-stats/issues/360)) ([#387](https://github.com/taverns-red/toast-stats/issues/387)) ([b6de4bc](https://github.com/taverns-red/toast-stats/commit/b6de4bcf708dca5857d8160758896857e9ace3b5))
+* **routing:** wire /history + /methodology placeholder routes ([#355](https://github.com/taverns-red/toast-stats/issues/355)) ([#379](https://github.com/taverns-red/toast-stats/issues/379)) ([919f58e](https://github.com/taverns-red/toast-stats/commit/919f58e7a5ebf09a64af12f130bf50842f9086be))
+* **shell:** build AppShell — sticky top bar + minimalist footer ([#354](https://github.com/taverns-red/toast-stats/issues/354)) ([#378](https://github.com/taverns-red/toast-stats/issues/378)) ([bacbfe2](https://github.com/taverns-red/toast-stats/commit/bacbfe25cdb2cc2b316972ecf632a5c1056687a2))
+* **tabs:** bulk redesign panel chrome across all tab components ([#361](https://github.com/taverns-red/toast-stats/issues/361) [#362](https://github.com/taverns-red/toast-stats/issues/362) [#363](https://github.com/taverns-red/toast-stats/issues/363) [#364](https://github.com/taverns-red/toast-stats/issues/364) [#365](https://github.com/taverns-red/toast-stats/issues/365)) ([#388](https://github.com/taverns-red/toast-stats/issues/388)) ([26c4d10](https://github.com/taverns-red/toast-stats/commit/26c4d102bb36f8b6d42a7816ba02774d1027154e))
+* **tokens:** add 2026 redesign token system alongside tm-* ([#353](https://github.com/taverns-red/toast-stats/issues/353)) ([#374](https://github.com/taverns-red/toast-stats/issues/374)) ([00a25d9](https://github.com/taverns-red/toast-stats/commit/00a25d9020ecdedac0fabb401d33365717497802))
+
+
+### Bug Fixes
+
+* actually count new charters from district-performance.csv ([#336](https://github.com/taverns-red/toast-stats/issues/336)) ([#343](https://github.com/taverns-red/toast-stats/issues/343)) ([c6fc153](https://github.com/taverns-red/toast-stats/commit/c6fc153c08e6d5804b17d9c49e5090f3fd3ae4dd))
+* **shell:** drop double-v prefix on footer version ([#354](https://github.com/taverns-red/toast-stats/issues/354)) ([#380](https://github.com/taverns-red/toast-stats/issues/380)) ([50ae0cd](https://github.com/taverns-red/toast-stats/commit/50ae0cd2a7c0efd8d4bc0dc758d3b43114284b4d))
+
+
+### Documentation
+
+* **founder-log:** final summary — both epics complete ([#352](https://github.com/taverns-red/toast-stats/issues/352) [#370](https://github.com/taverns-red/toast-stats/issues/370)) ([#393](https://github.com/taverns-red/toast-stats/issues/393)) ([5246428](https://github.com/taverns-red/toast-stats/commit/5246428411306daa4abde9524fd81b1a041e0c68))
+
 ## [2.10.0](https://github.com/taverns-red/toast-stats/compare/toast-stats-v2.9.0...toast-stats-v2.10.0) (2026-04-22)
 
 
