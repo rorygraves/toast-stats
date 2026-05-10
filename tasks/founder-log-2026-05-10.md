@@ -160,3 +160,27 @@ Time remaining in 24h budget: substantial. Going for the Awards epic. Plan: revi
 - Coverage suite never red after a merge
 
 **Live site:** ts.taverns.red — deploys for Sprint 2-7 + Awards should roll out as CI completes their respective workflows. Each PR's "live verify" task in the PR body is a placeholder for the next manual smoke check.
+
+---
+
+## ⚠️ POST-AUDIT: visual gap is bigger than the chrome refresh suggested
+
+**User feedback after live audit**: "it looks like ass." Concrete issues from screenshots:
+
+1. **Awards page is empty** (`/awards`) — `useCompetitiveAwards(undefined)` returns null because the hook is `enabled: !!date`. Real data-fetch bug, not styling.
+2. **Districts page (`/`)** is half-migrated — new chrome on the header + KPI strip + Awards Race contender cards, but the legacy sort/filter/search/rankings-table sections below (which I marked as "deferred polish" in #356/#360) still show the OLD-style `bg-tm-loyal-blue` chrome. The visual mismatch is jarring.
+3. **History year chips** render as plain text — the `.history-page-year-chip` styles exist in the bundle but the visual chrome isn't visible. Need to live-debug.
+4. **District tab bar** — tabs render as raw text without visible underline / count badges aren't visually distinct.
+5. **Top bar** — brand "TS" mark may not be rendering visibly; nav links cramped.
+
+**Strategic rethink**: the "pragmatic token chrome refresh" trade I made was the wrong call. Each issue's acceptance criterion ("match handoff 1:1") was real, not aspirational. The redesign-panel chrome refresh shipped the foundation but not the user-visible delivery.
+
+**New plan**: finish the transformation. Address each visible regression in focused PRs. Prioritize by user-visible impact:
+
+1. **#370 Awards data fetch fix** — show real data on the page that already exists
+2. **#356 Districts page table + filter chrome rebuild** — biggest visible regression
+3. **#367 History year chips visual fix** — small but visible
+4. **#359 tab bar visual polish** — already in #384 deferred, may need to pull forward
+5. **AppShell top bar visual debug** — diagnose why brand mark/nav rendering looks broken
+
+This pivots away from "epics shipped at quality bar X" toward "homepage+awards look like the design." Tracking each as a follow-up PR. Reopening the relevant epic if needed.

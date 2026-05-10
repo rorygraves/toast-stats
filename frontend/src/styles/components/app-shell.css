@@ -21,9 +21,20 @@
     z-index: 40;
     height: 56px;
     border-bottom: 1px solid var(--line);
-    background-color: rgba(var(--rds-surface-rgb), 0.72);
-    backdrop-filter: saturate(140%) blur(8px);
+    /* Use a fully opaque surface as the fallback so the bar is visible
+       even when backdrop-filter is unsupported (still some Firefox).
+       Browsers that support backdrop-filter overlay the alpha-tinted
+       background on top so the blurred translucency works there. */
+    background-color: var(--surface);
     -webkit-backdrop-filter: saturate(140%) blur(8px);
+    backdrop-filter: saturate(140%) blur(8px);
+  }
+
+  @supports (backdrop-filter: blur(1px)) or
+    (-webkit-backdrop-filter: blur(1px)) {
+    .app-shell-top-bar {
+      background-color: rgba(var(--rds-surface-rgb), 0.85);
+    }
   }
 
   .app-shell-top-bar__inner {
@@ -313,6 +324,209 @@
   .districts-methodology-callout__link {
     color: var(--link);
     font-weight: 600;
+  }
+
+  /* Districts toolbar — sort segmented control + region pills + search.
+     Replaces the legacy bg-tm-loyal-blue Tailwind chrome on DistrictsPage. */
+  .districts-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-md);
+    box-shadow: var(--rds-shadow-sm);
+  }
+
+  .districts-toolbar__row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .districts-toolbar__label {
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-right: 4px;
+  }
+
+  /* Sort buttons — segmented control style */
+  .districts-toolbar__sort-btn {
+    border: 1px solid var(--line);
+    background-color: var(--surface);
+    color: var(--ink-2);
+    font-family: var(--sans);
+    font-weight: 500;
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: var(--rds-radius-sm);
+    cursor: pointer;
+    transition: background-color 150ms, border-color 150ms, color 150ms;
+  }
+
+  .districts-toolbar__sort-btn:hover {
+    background-color: var(--surface-3);
+  }
+
+  .districts-toolbar__sort-btn--active {
+    background-color: var(--loyal-500);
+    border-color: var(--loyal-500);
+    color: #ffffff;
+  }
+
+  .districts-toolbar__sort-btn--active:hover {
+    background-color: var(--loyal-600);
+  }
+
+  /* Region filter chips */
+  .districts-toolbar__region-chip {
+    border: 1px solid var(--line);
+    background-color: var(--surface);
+    color: var(--ink-2);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background-color 150ms, border-color 150ms, color 150ms;
+    min-width: 36px;
+    text-align: center;
+  }
+
+  .districts-toolbar__region-chip:hover {
+    border-color: var(--loyal-200);
+    color: var(--loyal-500);
+  }
+
+  .districts-toolbar__region-chip--active {
+    background-color: var(--loyal-500);
+    border-color: var(--loyal-500);
+    color: #ffffff;
+  }
+
+  .districts-toolbar__region-chip--active:hover {
+    background-color: var(--loyal-600);
+    border-color: var(--loyal-600);
+    color: #ffffff;
+  }
+
+  /* Search input */
+  .districts-toolbar__search {
+    position: relative;
+    flex: 1;
+    min-width: 240px;
+  }
+
+  .districts-toolbar__search-input {
+    width: 100%;
+    padding: 8px 12px 8px 36px;
+    background-color: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-sm);
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--ink);
+    transition: border-color 150ms, background-color 150ms;
+  }
+
+  .districts-toolbar__search-input::placeholder {
+    color: var(--ink-4);
+  }
+
+  .districts-toolbar__search-input:focus {
+    outline: none;
+    border-color: var(--loyal-400);
+    background-color: var(--surface);
+  }
+
+  .districts-toolbar__search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--ink-4);
+    pointer-events: none;
+  }
+
+  /* Rankings table chrome */
+  .districts-rankings-table-wrap {
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-md);
+    box-shadow: var(--rds-shadow-sm);
+    overflow: hidden;
+  }
+
+  .districts-rankings-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--ink);
+  }
+
+  .districts-rankings-table thead {
+    background-color: var(--surface-2);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .districts-rankings-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  .districts-rankings-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line-2);
+  }
+
+  .districts-rankings-table tbody tr:hover {
+    background-color: var(--surface-2);
+    cursor: pointer;
+  }
+
+  .districts-rankings-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .districts-filters-card__date-label {
+    font-family: var(--sans);
+    font-size: 12px;
+    color: var(--ink-3);
+    margin-bottom: 4px;
+    display: block;
+  }
+
+  .districts-filters-card__date-select {
+    width: 100%;
+    padding: 8px 12px;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-sm);
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--ink);
+  }
+
+  .districts-filters-card__date-help {
+    margin-top: 4px;
+    font-family: var(--sans);
+    font-size: 12px;
+    color: var(--ink-3);
   }
 
   /* Awards Race 3-card contender summary (#357). Sits between the
@@ -686,7 +900,8 @@
     gap: 6px;
     padding: 6px 12px;
     border-radius: 999px;
-    background-color: var(--surface-3);
+    background-color: var(--surface);
+    border: 1px solid var(--line);
     color: var(--ink-2);
     font-family: var(--sans);
     font-size: 13px;
@@ -695,7 +910,9 @@
 
   .history-page-year-chip--current {
     background-color: var(--loyal-50);
+    border-color: var(--loyal-200);
     color: var(--loyal-500);
+    font-weight: 600;
   }
 
   .history-page-year-chip__live {

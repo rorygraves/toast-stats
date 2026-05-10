@@ -580,65 +580,41 @@ const DistrictsPage: React.FC = () => {
         <AwardsRaceSection standings={competitiveAwards ?? null} />
 
         {/* Sort Controls + Region Filter Toolbar — compact (#83) */}
-        <div className="bg-white rounded-lg shadow-md p-3 mb-3">
-          <div className="flex items-center gap-2 mb-2 overflow-x-auto pb-1 -mx-3 px-3 sm:mx-0 sm:px-0 sm:pb-0 scrollbar-hide">
-            <span className="text-sm font-medium text-gray-700 mr-1">
-              Sort by:
-            </span>
+        <div className="districts-toolbar">
+          <div className="districts-toolbar__row">
+            <span className="districts-toolbar__label">Sort by:</span>
             <button
               onClick={() => setSortBy('aggregate')}
-              className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors font-tm-body ${
-                sortBy === 'aggregate'
-                  ? 'bg-tm-loyal-blue text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
+              className={`districts-toolbar__sort-btn${sortBy === 'aggregate' ? ' districts-toolbar__sort-btn--active' : ''}`}
             >
               Overall Score
             </button>
             <button
               onClick={() => setSortBy('clubs')}
-              className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors font-tm-body ${
-                sortBy === 'clubs'
-                  ? 'bg-tm-loyal-blue text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
+              className={`districts-toolbar__sort-btn${sortBy === 'clubs' ? ' districts-toolbar__sort-btn--active' : ''}`}
             >
               Paid Clubs
             </button>
             <button
               onClick={() => setSortBy('payments')}
-              className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors font-tm-body ${
-                sortBy === 'payments'
-                  ? 'bg-tm-loyal-blue text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
+              className={`districts-toolbar__sort-btn${sortBy === 'payments' ? ' districts-toolbar__sort-btn--active' : ''}`}
             >
               Total Payments
             </button>
             <button
               onClick={() => setSortBy('distinguished')}
-              className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors font-tm-body ${
-                sortBy === 'distinguished'
-                  ? 'bg-tm-loyal-blue text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
+              className={`districts-toolbar__sort-btn${sortBy === 'distinguished' ? ' districts-toolbar__sort-btn--active' : ''}`}
             >
               Distinguished Clubs
             </button>
           </div>
 
           {/* Region Filter — pill toggle bar (#326) */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-sm font-semibold text-gray-700 mr-1 font-tm-body">
-              Regions:
-            </span>
+          <div className="districts-toolbar__row">
+            <span className="districts-toolbar__label">Regions:</span>
             <button
               onClick={() => setSelectedRegions([])}
-              className={`px-2.5 py-1 text-xs font-medium rounded-full border transition-colors ${
-                selectedRegions.length === 0
-                  ? 'bg-tm-loyal-blue text-white border-tm-loyal-blue'
-                  : 'bg-white text-gray-600 border-gray-300 hover:border-tm-loyal-blue hover:text-tm-loyal-blue'
-              }`}
+              className={`districts-toolbar__region-chip${selectedRegions.length === 0 ? ' districts-toolbar__region-chip--active' : ''}`}
             >
               All
             </button>
@@ -655,11 +631,7 @@ const DistrictsPage: React.FC = () => {
                       setSelectedRegions([...selectedRegions, region])
                     }
                   }}
-                  className={`px-2.5 py-1 text-xs font-medium rounded-full border transition-colors ${
-                    isActive
-                      ? 'bg-tm-loyal-blue text-white border-tm-loyal-blue'
-                      : 'bg-white text-gray-600 border-gray-300 hover:border-tm-loyal-blue hover:text-tm-loyal-blue'
-                  }`}
+                  className={`districts-toolbar__region-chip${isActive ? ' districts-toolbar__region-chip--active' : ''}`}
                   aria-pressed={isActive}
                   aria-label={`Region ${region}`}
                 >
@@ -669,7 +641,13 @@ const DistrictsPage: React.FC = () => {
             })}
             {selectedRegions.length > 0 &&
               selectedRegions.length < regions.length && (
-                <span className="text-xs text-gray-500 ml-1 font-tm-body">
+                <span
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--ink-3)',
+                    marginLeft: 4,
+                  }}
+                >
                   {filteredRankings.length} districts
                 </span>
               )}
@@ -677,55 +655,63 @@ const DistrictsPage: React.FC = () => {
         </div>
 
         {/* Search Bar */}
-        <div className="mb-3">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        <div className="districts-toolbar__search" style={{ marginBottom: 12 }}>
+          <div className="districts-toolbar__search-icon">
+            <svg
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </div>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search by district number or name…"
+            aria-label="Search districts by number or name"
+            className="districts-toolbar__search-input"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              aria-label="Clear search"
+              onClick={() => setSearchQuery('')}
+              style={{
+                position: 'absolute',
+                right: 12,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'transparent',
+                border: 0,
+                color: 'var(--ink-3)',
+                cursor: 'pointer',
+              }}
+            >
               <svg
-                className="w-5 h-5 text-gray-400"
+                className="w-5 h-5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
-                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
-            </div>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search by district number or name…"
-              aria-label="Search districts by number or name"
-              className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white hover:border-tm-loyal-blue-50 focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue transition-colors font-tm-body"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                aria-label="Clear search"
-                onClick={() => setSearchQuery('')}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            )}
-          </div>
+            </button>
+          )}
         </div>
 
         {/* Comparison Panel (#93) */}
@@ -738,15 +724,15 @@ const DistrictsPage: React.FC = () => {
         />
 
         {/* Rankings Table */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="districts-rankings-table-wrap">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="districts-rankings-table">
+              <thead>
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 z-10 bg-gray-50">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 z-10">
                     Rank
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-[72px] z-10 bg-gray-50 sticky-column-shadow">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-[72px] z-10 sticky-column-shadow">
                     District
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -770,7 +756,7 @@ const DistrictsPage: React.FC = () => {
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody>
                 {displayRankings.map(district => {
                   const rank = district.displayRank
                   const isPinned = pinnedDistrictIds.has(district.districtId)
@@ -780,7 +766,7 @@ const DistrictsPage: React.FC = () => {
                     <tr
                       key={district.districtId}
                       onClick={() => handleDistrictClick(district.districtId)}
-                      className={`hover:bg-tm-loyal-blue-10 cursor-pointer transition-colors ${
+                      className={`cursor-pointer ${
                         isPinned ? 'bg-blue-50' : ''
                       }`}
                     >
