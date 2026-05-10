@@ -611,6 +611,37 @@ describe('ClubsTable', () => {
     })
   })
 
+  describe('Close-to-Distinguished quick-filter chip (#433)', () => {
+    it('clicking the chip filters to clubs needing 1–4 members (not exactly 1)', () => {
+      const onFilterChange = vi.fn()
+      const clubs = [createMockClub({ clubId: 'club-1' })]
+
+      render(
+        <ClubsTable
+          clubs={clubs}
+          districtId="test-district"
+          isLoading={false}
+          onFilterChange={onFilterChange}
+        />
+      )
+
+      const chip = screen.getByRole('button', {
+        name: /close to distinguished/i,
+      })
+      fireEvent.click(chip)
+
+      expect(onFilterChange).toHaveBeenCalled()
+      const lastCall =
+        onFilterChange.mock.calls[onFilterChange.mock.calls.length - 1]
+      const filterState = lastCall![0] as Record<
+        string,
+        { value: [number | null, number | null] }
+      >
+      expect(filterState.membersNeeded).toBeDefined()
+      expect(filterState.membersNeeded!.value).toEqual([1, 4])
+    })
+  })
+
   describe('Row Click Handler', () => {
     it('should call onClubClick when a row is clicked', () => {
       const onClubClick = vi.fn()

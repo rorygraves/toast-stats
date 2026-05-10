@@ -11,6 +11,7 @@ import { Pagination } from './Pagination'
 import { useColumnFilters } from '../hooks/useColumnFilters'
 import { ColumnHeader } from './ColumnHeader'
 import { SortField, SortDirection, COLUMN_CONFIGS } from './filters/types'
+import { CLOSE_TO_DISTINGUISHED_MAX_MEMBERS } from '../utils/closeToDistinguished'
 import ClubCard from './ClubCard'
 import { useIsMobile } from '../hooks/useIsMobile'
 
@@ -131,6 +132,26 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
     clearAllFiltersInternal()
     onFilterChange?.({})
   }, [clearAllFiltersInternal, onFilterChange])
+
+  // Quick-filter chip active flags — derived once per render from filterState.
+  // The membersNeeded filter is shared by two chips that interpret different
+  // ranges (#433 close-to-distinguished = [1, 4]; needs-members = [2, ∞)).
+  //
+  // NOTE: this chip uses `membersNeeded` (computeMembersToDistinguished —
+  // qualification-aware, includes Goal 7/8 paths), while ClubDetailPage's
+  // banner uses `gap.members` (raw tier gap). They share the numeric ≤4
+  // bound but are not perfectly equivalent — a club can appear in this
+  // chip's filtered results without firing the banner on its detail page
+  // (e.g. goalsAchieved=4 with a Goal-7 path) and vice versa.
+  const membersNeededValue = (() => {
+    const f = getFilter('membersNeeded')
+    return Array.isArray(f?.value) ? f.value : null
+  })()
+  const isCloseToDistinguishedActive =
+    membersNeededValue?.[0] === 1 &&
+    membersNeededValue?.[1] === CLOSE_TO_DISTINGUISHED_MAX_MEMBERS
+  const isNeedsMembersActive =
+    membersNeededValue?.[0] === 2 && membersNeededValue?.[1] === null
 
   // Get status badge styling
   const getStatusBadge = (
@@ -377,23 +398,18 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
           <div className="clubs-quick-filters">
             <span className="clubs-quick-filters__label">Quick filters:</span>
 
-            {/* ⭐ Close to Distinguished — clubs needing exactly 1 more member */}
+            {/* ⭐ Close to Distinguished — 1–4 more members (#433).
+                Threshold shared with ClubDetailPage banner. */}
             <button
               type="button"
               onClick={() => {
-                const current = getFilter('membersNeeded')
-                if (
-                  current &&
-                  Array.isArray(current.value) &&
-                  current.value[0] === 1 &&
-                  current.value[1] === 1
-                ) {
+                if (isCloseToDistinguishedActive) {
                   setFilter('membersNeeded', null)
                 } else {
                   setFilter('membersNeeded', {
                     field: 'membersNeeded',
                     type: 'numeric',
-                    value: [1, 1],
+                    value: [1, CLOSE_TO_DISTINGUISHED_MAX_MEMBERS],
                   })
                   setSortField('membersNeeded')
                   setSortDirection('asc')
@@ -402,23 +418,11 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
               }}
               className={
                 'clubs-quick-filter-chip' +
-                (() => {
-                  const f = getFilter('membersNeeded')
-                  return Array.isArray(f?.value) &&
-                    f.value[0] === 1 &&
-                    f.value[1] === 1
-                    ? ' clubs-quick-filter-chip--active'
-                    : ''
-                })()
+                (isCloseToDistinguishedActive
+                  ? ' clubs-quick-filter-chip--active'
+                  : '')
               }
-              aria-pressed={(() => {
-                const f = getFilter('membersNeeded')
-                return (
-                  Array.isArray(f?.value) &&
-                  f.value[0] === 1 &&
-                  f.value[1] === 1
-                )
-              })()}
+              aria-pressed={isCloseToDistinguishedActive}
             >
               <span
                 aria-hidden="true"
@@ -433,12 +437,7 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
             <button
               type="button"
               onClick={() => {
-                const current = getFilter('membersNeeded')
-                const isActive =
-                  Array.isArray(current?.value) &&
-                  current.value[0] === 2 &&
-                  current.value[1] === null
-                if (isActive) {
+                if (isNeedsMembersActive) {
                   setFilter('membersNeeded', null)
                 } else {
                   setFilter('membersNeeded', {
@@ -450,23 +449,9 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
               }}
               className={
                 'clubs-quick-filter-chip' +
-                (() => {
-                  const f = getFilter('membersNeeded')
-                  return Array.isArray(f?.value) &&
-                    f.value[0] === 2 &&
-                    f.value[1] === null
-                    ? ' clubs-quick-filter-chip--active'
-                    : ''
-                })()
+                (isNeedsMembersActive ? ' clubs-quick-filter-chip--active' : '')
               }
-              aria-pressed={(() => {
-                const f = getFilter('membersNeeded')
-                return (
-                  Array.isArray(f?.value) &&
-                  f.value[0] === 2 &&
-                  f.value[1] === null
-                )
-              })()}
+              aria-pressed={isNeedsMembersActive}
             >
               Needs members
             </button>

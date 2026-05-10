@@ -333,4 +333,56 @@ describe('Close-to-Distinguished call-out — ClubDetailPage', () => {
       screen.queryByRole('region', { name: /close to distinguished/i })
     ).not.toBeInTheDocument()
   })
+
+  it('renders the call-out at the upper boundary — exactly 4 members short (#433)', () => {
+    // 5 goals (gap=0). To get memberGap=4 we need both
+    //   absoluteGap = 20 - currentMembers = 4 → currentMembers = 16
+    //   growthGap   = 3  - netGrowth      ≥ 4 → netGrowth ≤ -1 → base ≥ 17
+    setClubOverrides({
+      membershipBase: 17,
+      membershipTrend: [{ date: '2026-03-15', count: 16 }],
+      dcpGoalsTrend: [{ date: '2026-03-15', goalsAchieved: 5 }],
+      distinguishedLevel: 'NotDistinguished',
+      aprilRenewals: 0,
+    })
+    renderWithRoute()
+
+    expect(
+      screen.getByRole('region', { name: /close to distinguished/i })
+    ).toBeInTheDocument()
+  })
+
+  it('does NOT render the call-out when 5 members short — just past the threshold (#433)', () => {
+    // 5 goals (gap=0). currentMembers=15, base=17 → netGrowth=-2,
+    // absoluteGap=5, growthGap=5, memberGap=5.
+    setClubOverrides({
+      membershipBase: 17,
+      membershipTrend: [{ date: '2026-03-15', count: 15 }],
+      dcpGoalsTrend: [{ date: '2026-03-15', goalsAchieved: 5 }],
+      distinguishedLevel: 'NotDistinguished',
+      aprilRenewals: 0,
+    })
+    renderWithRoute()
+
+    expect(
+      screen.queryByRole('region', { name: /close to distinguished/i })
+    ).not.toBeInTheDocument()
+  })
+
+  it('does NOT render the call-out when 12 members short — original bug case (#433)', () => {
+    // 5 goals (gap=0). currentMembers=8, base=17 → netGrowth=-9,
+    // absoluteGap=12, growthGap=12, memberGap=12. This is the screenshot.
+    setClubOverrides({
+      membershipBase: 17,
+      membershipTrend: [{ date: '2026-03-15', count: 8 }],
+      dcpGoalsTrend: [{ date: '2026-03-15', goalsAchieved: 5 }],
+      distinguishedLevel: 'NotDistinguished',
+      aprilRenewals: 0,
+    })
+    renderWithRoute()
+
+    expect(
+      screen.queryByRole('region', { name: /close to distinguished/i })
+    ).not.toBeInTheDocument()
+  })
 })

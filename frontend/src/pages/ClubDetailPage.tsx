@@ -21,6 +21,7 @@ import {
   type ClubDCPProjection,
   type DistinguishedLevel,
 } from '../utils/dcpProjections'
+import { isCloseToDistinguished } from '../utils/closeToDistinguished'
 import { LoadingSkeleton } from '../components/LoadingSkeleton'
 import { EmptyState } from '../components/ErrorDisplay'
 import ErrorBoundary from '../components/ErrorBoundary'
@@ -487,12 +488,12 @@ const ClubDetailPage: React.FC = () => {
             </div>
           </header>
 
-          {/* Close-to-Distinguished call-out (#366). Renders above the stats
-              grid when the club has met the goals threshold but is short on
-              members for Distinguished. */}
+          {/* Close-to-Distinguished call-out (#366, #433). Renders above the
+              stats grid when the club has met the 5-goal threshold AND is
+              within CLOSE_TO_DISTINGUISHED_MAX_MEMBERS members of qualifying.
+              Beyond that the banner is noise, not encouragement. */}
           {projection &&
-            projection.gapToDistinguished.goals === 0 &&
-            projection.gapToDistinguished.members > 0 && (
+            isCloseToDistinguished(projection.gapToDistinguished) && (
               <section
                 role="region"
                 aria-labelledby="close-to-distinguished-heading"
