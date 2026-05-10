@@ -1,5 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import InfoTooltip from './InfoTooltip'
 import type {
   CompetitiveAwardRanking,
   CompetitiveAwardStandings,
@@ -93,6 +94,7 @@ export const AwardsRaceSection: React.FC<AwardsRaceSectionProps> = ({
       <header className="awards-race__header">
         <h2 id="awards-race-heading" className="awards-race__title">
           Awards Race · Top contenders
+          <InfoTooltip text="Top-3 districts contending for each Toastmasters competitive award this program year. Source: All-Districts CSV. See How it works for definitions." />
         </h2>
         {updatedAt && (
           <span className="awards-race__meta">Updated {updatedAt}</span>

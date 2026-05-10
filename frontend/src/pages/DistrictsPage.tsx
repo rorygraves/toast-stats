@@ -577,10 +577,13 @@ const DistrictsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Global KPI strip (#356) */}
+        {/* Global KPI strip (#356, tooltips per #413) */}
         <div className="districts-kpi-strip">
           <div className="districts-kpi-card">
-            <p className="districts-kpi-card__label">Paid Clubs · Global</p>
+            <p className="districts-kpi-card__label">
+              Paid Clubs · Global
+              <InfoTooltip text="Sum of paid clubs across every tracked district worldwide. A 'paid club' has met its renewal obligations for the program year." />
+            </p>
             <div
               className="districts-kpi-card__value"
               data-testid="kpi-paid-clubs"
@@ -589,7 +592,10 @@ const DistrictsPage: React.FC = () => {
             </div>
           </div>
           <div className="districts-kpi-card">
-            <p className="districts-kpi-card__label">Total Payments</p>
+            <p className="districts-kpi-card__label">
+              Total Payments
+              <InfoTooltip text="Year-to-date membership payment count summed across every tracked district. Members typically pay twice/year so this approximately doubles total membership over a full program year." />
+            </p>
             <div
               className="districts-kpi-card__value"
               data-testid="kpi-total-payments"
@@ -598,7 +604,10 @@ const DistrictsPage: React.FC = () => {
             </div>
           </div>
           <div className="districts-kpi-card">
-            <p className="districts-kpi-card__label">Distinguished Clubs</p>
+            <p className="districts-kpi-card__label">
+              Distinguished Clubs
+              <InfoTooltip text="Clubs at Distinguished tier or higher (Distinguished / Select / President's / Smedley). See How it works for tier definitions." />
+            </p>
             <div
               className="districts-kpi-card__value"
               data-testid="kpi-distinguished-clubs"
@@ -607,7 +616,10 @@ const DistrictsPage: React.FC = () => {
             </div>
           </div>
           <div className="districts-kpi-card">
-            <p className="districts-kpi-card__label">Districts Tracked</p>
+            <p className="districts-kpi-card__label">
+              Districts Tracked
+              <InfoTooltip text="Number of districts in the current snapshot. Toastmasters has 117 districts worldwide; this counts those with usable data in the most recent rankings file." />
+            </p>
             <div
               className="districts-kpi-card__value"
               data-testid="kpi-districts-tracked"

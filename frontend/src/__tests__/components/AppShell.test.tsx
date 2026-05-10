@@ -53,7 +53,7 @@ describe('AppShell (#354)', () => {
       expect(brand).toHaveAttribute('href', '/')
     })
 
-    it('renders nav links: Districts, History, Methodology', () => {
+    it('renders nav links: Districts, History, How it works (#412)', () => {
       renderShell()
       const nav = screen.getByRole('navigation', { name: /primary/i })
       expect(
@@ -67,7 +67,7 @@ describe('AppShell (#354)', () => {
         within(nav).getByRole('link', { name: 'History' })
       ).toHaveAttribute('href', '/history')
       expect(
-        within(nav).getByRole('link', { name: 'Methodology' })
+        within(nav).getByRole('link', { name: 'How it works' })
       ).toHaveAttribute('href', '/methodology')
     })
 
@@ -81,17 +81,27 @@ describe('AppShell (#354)', () => {
       expect(regionsLink).toHaveAttribute('aria-disabled', 'true')
     })
 
-    it('renders the top-bar tools cluster (notifications, help, avatar)', () => {
+    it('renders the top-bar tools cluster (notifications stub, help link, avatar)', () => {
       // Design shows a bell + ? + JS avatar on the right side of the
-      // top bar. They are visual stubs until auth lands.
+      // top bar. The notifications bell + avatar remain visual stubs
+      // until auth lands; the help icon is now a Link to /methodology
+      // (#410) so users have one-click access to the canonical
+      // definitions.
       renderShell()
       const header = screen.getByRole('banner')
       expect(
         within(header).getByRole('button', { name: /notifications/i })
       ).toBeInTheDocument()
-      expect(
-        within(header).getByRole('button', { name: /help/i })
-      ).toBeInTheDocument()
+      // The text 'How it works' appears twice in the header — as the
+      // primary nav link AND as the help icon's aria-label. Scope the
+      // help icon assertion to the tools cluster (everything outside the
+      // primary nav).
+      const tools = header.querySelector('.app-shell-tools') as HTMLElement
+      expect(tools).toBeInTheDocument()
+      const helpLink = within(tools).getByRole('link', {
+        name: /how it works/i,
+      })
+      expect(helpLink).toHaveAttribute('href', '/methodology')
       expect(within(header).getByLabelText(/account/i)).toBeInTheDocument()
     })
 

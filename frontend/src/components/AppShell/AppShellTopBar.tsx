@@ -5,7 +5,7 @@ const NAV_ITEMS = [
   { to: '/', label: 'Districts', end: true },
   { to: '/awards', label: 'Awards', end: false },
   { to: '/history', label: 'History', end: false },
-  { to: '/methodology', label: 'Methodology', end: false },
+  { to: '/methodology', label: 'How it works', end: false },
 ] as const
 
 const AppShellTopBar: React.FC = () => {
@@ -63,11 +63,11 @@ const AppShellTopBar: React.FC = () => {
             <path d="M6.5 13.5a1.5 1.5 0 0 0 3 0" />
           </svg>
         </button>
-        <button
-          type="button"
+        <Link
+          to="/methodology"
           className="app-shell-icon-btn"
-          aria-label="Help"
-          title="Help"
+          aria-label="How it works"
+          title="How it works"
         >
           <svg
             width="16"
@@ -82,7 +82,7 @@ const AppShellTopBar: React.FC = () => {
             <path d="M6.2 6.2a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.6.5-.6.9V10" />
             <circle cx="8" cy="12" r=".4" fill="currentColor" />
           </svg>
-        </button>
+        </Link>
         <span
           className="app-shell-avatar"
           aria-label="Account (placeholder)"
