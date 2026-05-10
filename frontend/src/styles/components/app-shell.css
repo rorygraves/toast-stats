@@ -563,6 +563,77 @@
     pointer-events: none;
   }
 
+  /* Hero variant — promotes the search bar to a primary entry point (#435).
+     Larger input, larger icon, more breathing room. */
+  .districts-toolbar__search--hero .districts-toolbar__search-input {
+    padding: 14px 12px 14px 44px;
+    font-size: 16px;
+    border-width: 2px;
+  }
+
+  .districts-toolbar__search--hero .districts-toolbar__search-icon {
+    left: 14px;
+  }
+
+  /* Type-ahead suggestions dropdown */
+  .districts-toolbar__search-suggestions {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 20;
+    list-style: none;
+    margin: 0;
+    padding: 4px;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-md);
+    box-shadow: var(--rds-shadow-lg);
+    max-height: 320px;
+    overflow-y: auto;
+  }
+
+  .districts-toolbar__search-suggestions li {
+    margin: 0;
+    padding: 0;
+  }
+
+  .districts-toolbar__search-suggestion {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: var(--rds-radius-sm);
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--ink);
+    text-decoration: none;
+    transition: background-color 100ms;
+  }
+
+  .districts-toolbar__search-suggestion:hover,
+  .districts-toolbar__search-suggestion:focus-visible {
+    background-color: var(--surface-2);
+    outline: none;
+  }
+
+  .districts-toolbar__search-suggestion-num {
+    font-weight: 600;
+    color: var(--loyal-500);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .districts-toolbar__search-suggestion-name {
+    color: var(--ink-2);
+  }
+
+  .districts-toolbar__search-suggestion-rank {
+    font-size: 12px;
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+
   /* Rankings table chrome */
   .districts-rankings-table-wrap {
     background-color: var(--surface);

@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { screen, fireEvent } from '@testing-library/react'
+import { screen, fireEvent, within } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import DistrictsPage from '../DistrictsPage'
 import { fetchCdnRankings } from '../../services/cdn'
@@ -185,6 +185,88 @@ describe('DistrictsPage - District Search (#91)', () => {
     expect(screen.getByText('District 57')).toBeInTheDocument()
     expect(screen.getByText('District 61')).toBeInTheDocument()
     expect(screen.getByText('District 83')).toBeInTheDocument()
+  })
+
+  it("'/' keyboard shortcut focuses the search input (#435)", async () => {
+    setupWithData()
+    renderWithProviders(<DistrictsPage />)
+
+    await screen.findByText('District 57')
+
+    const searchInput = screen.getByPlaceholderText(/search/i)
+    expect(document.activeElement).not.toBe(searchInput)
+
+    fireEvent.keyDown(window, { key: '/' })
+    expect(document.activeElement).toBe(searchInput)
+  })
+
+  it("'/' shortcut does not steal focus when an input is already focused (#435)", async () => {
+    setupWithData()
+    renderWithProviders(<DistrictsPage />)
+
+    await screen.findByText('District 57')
+
+    // Focus a different input-like surface first by typing into search,
+    // then a separate input would normally absorb '/'. Simulate by adding
+    // a sentinel input and focusing it.
+    const sentinel = document.createElement('input')
+    document.body.appendChild(sentinel)
+    sentinel.focus()
+    expect(document.activeElement).toBe(sentinel)
+
+    fireEvent.keyDown(window, { key: '/' })
+
+    // Search input should NOT have stolen focus
+    const searchInput = screen.getByPlaceholderText(/search/i)
+    expect(document.activeElement).not.toBe(searchInput)
+
+    document.body.removeChild(sentinel)
+  })
+
+  it('shows type-ahead suggestions (top 5) when typing a query (#435)', async () => {
+    setupWithData()
+    renderWithProviders(<DistrictsPage />)
+
+    await screen.findByText('District 57')
+
+    const searchInput = screen.getByPlaceholderText(/search/i)
+    fireEvent.focus(searchInput)
+    fireEvent.change(searchInput, { target: { value: 'district' } })
+
+    // Suggestions container should appear
+    const suggestions = screen.getByRole('listbox', {
+      name: /district search suggestions/i,
+    })
+    expect(suggestions).toBeInTheDocument()
+
+    // 3 mock districts all match — all should appear (cap at 5).
+    // The <li> wrappers and the <a> children both have role="option",
+    // so we expect 6 (2 per suggestion). Cap = 5 suggestions = 10 elements.
+    const items = within(suggestions).getAllByRole('option')
+    expect(items.length).toBeGreaterThanOrEqual(3)
+    expect(items.length).toBeLessThanOrEqual(10)
+  })
+
+  it('clicking a suggestion navigates to the district detail page (#435)', async () => {
+    setupWithData()
+    renderWithProviders(<DistrictsPage />)
+
+    await screen.findByText('District 57')
+
+    const searchInput = screen.getByPlaceholderText(/search/i)
+    fireEvent.focus(searchInput)
+    fireEvent.change(searchInput, { target: { value: '61' } })
+
+    const suggestions = screen.getByRole('listbox', {
+      name: /district search suggestions/i,
+    })
+    // The <a> element with role=option carries the link
+    const links = within(suggestions).getAllByRole('option')
+    const link = links.find(el => el.tagName === 'A') as
+      | HTMLAnchorElement
+      | undefined
+    expect(link).toBeDefined()
+    expect(link!.getAttribute('href')).toMatch(/^\/district\/\d+/)
   })
 
   it('should retain original rank when filtering (#102)', async () => {

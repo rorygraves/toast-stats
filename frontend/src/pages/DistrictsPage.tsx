@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useRef, useEffect } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   fetchCdnSnapshotIndex,
@@ -34,6 +34,28 @@ const DistrictsPage: React.FC = () => {
   const [pinnedDistrictIds, setPinnedDistrictIds] = useState<Set<string>>(
     new Set()
   )
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const [searchFocused, setSearchFocused] = useState<boolean>(false)
+
+  // '/' keyboard shortcut focuses the search input — but only when no
+  // other input is currently focused (don't steal focus while typing).
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== '/') return
+      const ae = document.activeElement
+      if (
+        ae instanceof HTMLInputElement ||
+        ae instanceof HTMLTextAreaElement ||
+        (ae instanceof HTMLElement && ae.isContentEditable)
+      ) {
+        return
+      }
+      e.preventDefault()
+      searchInputRef.current?.focus()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
 
   // Fetch tracked districts to show indicator badges
   const { data: districtsData } = useDistricts()
@@ -260,6 +282,12 @@ const DistrictsPage: React.FC = () => {
         r.districtName.toLowerCase().includes(query)
     )
   }, [rankedRankings, searchQuery])
+
+  // Type-ahead suggestions for the search bar (#435). Top 5 matches.
+  const searchSuggestions = React.useMemo(() => {
+    if (!searchQuery.trim()) return []
+    return displayRankings.slice(0, 5)
+  }, [displayRankings, searchQuery])
 
   const handleDistrictClick = (districtId: string) => {
     navigate(`/district/${districtId}`)
@@ -747,12 +775,16 @@ const DistrictsPage: React.FC = () => {
           })()}
         </div>
 
-        {/* Search Bar */}
-        <div className="districts-toolbar__search" style={{ marginBottom: 12 }}>
+        {/* Search Bar — promoted to hero prominence (#435). Larger input,
+            type-ahead suggestions, '/' keyboard shortcut. */}
+        <div
+          className="districts-toolbar__search districts-toolbar__search--hero"
+          style={{ marginBottom: 12 }}
+        >
           <div className="districts-toolbar__search-icon">
             <svg
-              width="16"
-              height="16"
+              width="20"
+              height="20"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -767,11 +799,19 @@ const DistrictsPage: React.FC = () => {
             </svg>
           </div>
           <input
+            ref={searchInputRef}
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search by district number or name…"
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => {
+              // Delay so click on a suggestion can register before blur hides
+              window.setTimeout(() => setSearchFocused(false), 150)
+            }}
+            placeholder="Search by district number or name… (press /)"
             aria-label="Search districts by number or name"
+            aria-controls="district-search-suggestions"
+            aria-expanded={searchFocused && searchSuggestions.length > 0}
             className="districts-toolbar__search-input"
           />
           {searchQuery && (
@@ -804,6 +844,35 @@ const DistrictsPage: React.FC = () => {
                 />
               </svg>
             </button>
+          )}
+          {searchFocused && searchSuggestions.length > 0 && (
+            <ul
+              id="district-search-suggestions"
+              role="listbox"
+              aria-label="District search suggestions"
+              className="districts-toolbar__search-suggestions"
+            >
+              {searchSuggestions.map(s => (
+                <li key={s.districtId} role="option" aria-selected={false}>
+                  <Link
+                    to={`/district/${s.districtId}`}
+                    role="option"
+                    aria-selected={false}
+                    className="districts-toolbar__search-suggestion"
+                  >
+                    <span className="districts-toolbar__search-suggestion-num">
+                      D{s.districtId}
+                    </span>
+                    <span className="districts-toolbar__search-suggestion-name">
+                      {s.districtName}
+                    </span>
+                    <span className="districts-toolbar__search-suggestion-rank">
+                      #{s.displayRank}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
 
