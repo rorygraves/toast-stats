@@ -13,6 +13,7 @@
 @import './styles/tokens/typography.css';
 @import './styles/tokens/spacing.css';
 @import './styles/tokens/gradients.css';
+@import './styles/tokens/redesign.css';
 
 /* Base layer imports - element-level defaults */
 @import './styles/layers/base.css';

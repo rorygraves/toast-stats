@@ -1,0 +1,76 @@
+/* 2026 redesign tokens — live alongside --color-tm-* during the
+   page-by-page migration (Epic #352). Naming notes:
+   - Radii and shadows use a --rds- prefix because --radius-sm is already
+     declared in @theme (Tailwind v4 utility scale = 4px) and bare
+     --shadow-* would collide with Tailwind shadow utility tokens.
+   - Dark variants use the manual [data-theme='dark'] toggle (NOT
+     prefers-color-scheme) to match the existing dark-mode.css convention. */
+
+:root {
+  --loyal-50: #e6eef3;
+  --loyal-100: #cbdde7;
+  --loyal-200: #9ebccb;
+  --loyal-400: #2c6e90;
+  --loyal-500: #004165;
+  --loyal-600: #003352;
+  --loyal-700: #002438;
+
+  --maroon-500: #7b1828;
+  --maroon-600: #5a1120;
+
+  --yellow-300: #f9ecaa;
+  --yellow-500: #f2df74;
+  --yellow-600: #c9b748;
+
+  --green-500: #16a34a;
+  --green-600: #15803d;
+  --red-500: #dc2626;
+  --red-600: #b91c1c;
+
+  --bg: #f6f7f8;
+  --surface: #ffffff;
+  --surface-2: #f9fafb;
+  --surface-3: #f1f3f5;
+  --line: #e5e7eb;
+  --line-2: #eceef0;
+  --ink: #0f1720;
+  --ink-2: #344052;
+  --ink-3: #5b6675;
+  --ink-4: #8b94a3;
+  --link: var(--loyal-500);
+
+  --serif: 'Montserrat', system-ui, sans-serif;
+  --sans: 'Source Sans 3', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --rds-radius-sm: 6px;
+  --rds-radius-md: 8px;
+  --rds-radius-lg: 12px;
+
+  --rds-shadow-sm: 0 1px 2px rgba(15, 23, 32, .04);
+  --rds-shadow: 0 1px 2px rgba(15, 23, 32, .04), 0 1px 3px rgba(15, 23, 32, .06);
+  --rds-shadow-lg: 0 1px 2px rgba(15, 23, 32, .04), 0 8px 24px rgba(15, 23, 32, .08);
+}
+
+[data-theme='dark'] {
+  --bg: #0a0f15;
+  --surface: #111922;
+  --surface-2: #161f2a;
+  --surface-3: #1a2330;
+  --line: #1f2a38;
+  --line-2: #25313f;
+  --ink: #eef2f7;
+  --ink-2: #c8d1dd;
+  --ink-3: #8a96a6;
+  --ink-4: #5d6878;
+  --link: #60a5d8;
+  --loyal-50: #112432;
+  --loyal-100: #16344a;
+  --loyal-200: #1c4866;
+
+  /* Deeper rgba per handoff dark-mode spec — the light-mode hairlines
+     disappear at 4% opacity on dark backgrounds. */
+  --rds-shadow-sm: 0 1px 2px rgba(0, 0, 0, .3);
+  --rds-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 1px 3px rgba(0, 0, 0, .4);
+  --rds-shadow-lg: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .5);
+}

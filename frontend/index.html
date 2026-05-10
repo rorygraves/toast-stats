@@ -10,14 +10,19 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     
-    <!-- Preload Critical Font Files -->
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;900&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    
+    <!-- Preload Critical Font Files. Montserrat + Source Sans 3 are served
+         as single variable WOFF2 files, so adding the redesign weights
+         (Montserrat 600/800, Source Sans 500) is free — no extra bytes.
+         JetBrains Mono is intentionally NOT preloaded yet; the --mono
+         token in tokens/redesign.css falls back to ui-monospace until
+         a consumer ships in #354 (AppShell). -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+
     <!-- Fallback for JavaScript Disabled -->
     <noscript>
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;900&display=swap">
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap">
     </noscript>
     
     <!-- Font Loading Optimization Script -->
