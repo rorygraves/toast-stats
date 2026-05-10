@@ -314,4 +314,140 @@
     color: var(--link);
     font-weight: 600;
   }
+
+  /* Awards Race 3-card contender summary (#357). Sits between the
+     Districts page KPI strip and the rankings table. The deeper
+     top-10 leaderboards live on the future Awards page (Epic #370). */
+  .awards-race {
+    margin-bottom: 20px;
+  }
+
+  .awards-race__header {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 12px;
+  }
+
+  .awards-race__title {
+    margin: 0;
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: -0.005em;
+    color: var(--ink);
+  }
+
+  .awards-race__subtitle {
+    margin: 0;
+    font-family: var(--sans);
+    font-size: 12px;
+    color: var(--ink-3);
+  }
+
+  .awards-race__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  @media (min-width: 768px) {
+    .awards-race__grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .awards-race-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px 18px;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-md);
+    box-shadow: var(--rds-shadow-sm);
+  }
+
+  .awards-race-card__header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .awards-race-card__title {
+    margin: 0;
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--ink);
+  }
+
+  .awards-race-card__description {
+    margin: 0;
+    font-family: var(--sans);
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--ink-3);
+  }
+
+  .awards-race-card__leader {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .awards-race-card__leader-link {
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 16px;
+    color: var(--link);
+    text-decoration: none;
+  }
+
+  .awards-race-card__leader-link:hover {
+    text-decoration: underline;
+  }
+
+  .awards-race-card__leader-value {
+    font-family: var(--serif);
+    font-weight: 800;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .awards-race-card__footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line-2);
+    font-family: var(--sans);
+    font-size: 12px;
+    color: var(--ink-3);
+  }
+
+  .awards-race-card__status {
+    font-weight: 500;
+  }
+
+  .awards-race-card__status--achieved {
+    color: var(--green-600);
+  }
+
+  .awards-race-card__hint {
+    color: var(--ink-3);
+  }
+
+  .awards-race-card__empty {
+    margin: 0;
+    font-family: var(--sans);
+    font-size: 12px;
+    color: var(--ink-3);
+    font-style: italic;
+  }
 }

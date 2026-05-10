@@ -81,4 +81,12 @@
   --rds-shadow-lg: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .5);
 
   --rds-surface-rgb: 17, 25, 34;
+
+  /* Lift status colors so they read on the dark surface scale.
+     Light-mode --green-{500,600} are tuned for white backgrounds and
+     drop below 4.5:1 contrast on --surface in dark. */
+  --green-500: #4ade80;
+  --green-600: #22c55e;
+  --red-500: #f87171;
+  --red-600: #ef4444;
 }

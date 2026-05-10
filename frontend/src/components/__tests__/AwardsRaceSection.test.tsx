@@ -1,6 +1,9 @@
+/* AwardsRaceSection — 2026 redesign 3-card contender summary (#357).
+   The detailed top-10 lists move to the future Awards page (Epic #370). */
+
 import React from 'react'
 import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { AwardsRaceSection } from '../AwardsRaceSection'
 import type { CompetitiveAwardStandings } from '../../services/cdn'
@@ -16,93 +19,151 @@ const mockStandings: CompetitiveAwardStandings = {
   },
   extensionAward: [
     {
-      districtId: '1',
-      districtName: 'District 1',
-      region: '1',
+      districtId: '17',
+      districtName: 'District 17',
+      region: '5',
       rank: 1,
-      value: 15,
-      isWinner: true,
+      value: 14,
+      isWinner: false,
     },
     {
-      districtId: '2',
-      districtName: 'District 2',
-      region: '2',
+      districtId: '60',
+      districtName: 'District 60',
+      region: '8',
       rank: 2,
       value: 10,
-      isWinner: true,
+      isWinner: false,
     },
     {
-      districtId: '3',
-      districtName: 'District 3',
-      region: '3',
+      districtId: '93',
+      districtName: 'District 93',
+      region: '11',
       rank: 3,
-      value: 5,
-      isWinner: true,
-    },
-    {
-      districtId: '4',
-      districtName: 'District 4',
-      region: '4',
-      rank: 4,
-      value: 0,
+      value: 9,
       isWinner: false,
     },
   ],
   twentyPlusAward: [
     {
-      districtId: '1',
-      districtName: 'District 1',
-      region: '1',
+      districtId: '60',
+      districtName: 'District 60',
+      region: '8',
       rank: 1,
-      value: 90,
+      value: 22,
+      isWinner: true,
+    },
+    {
+      districtId: '57',
+      districtName: 'District 57',
+      region: '1',
+      rank: 2,
+      value: 18,
       isWinner: true,
     },
   ],
   retentionAward: [
     {
-      districtId: '1',
-      districtName: 'District 1',
-      region: '1',
+      districtId: '102',
+      districtName: 'District 102',
+      region: '14',
       rank: 1,
-      value: 100,
+      value: 94.1,
       isWinner: true,
     },
   ],
   byDistrict: {},
 }
 
-describe('AwardsRaceSection (#331)', () => {
-  it('should render three competitive award leaderboards', () => {
-    renderWithRouter(<AwardsRaceSection standings={mockStandings} />)
+const findCard = (cardTitle: RegExp) => {
+  const heading = screen.getByRole('heading', { name: cardTitle })
+  const card = heading.closest('.awards-race-card') as HTMLElement
+  expect(card).toBeTruthy()
+  return card
+}
 
-    // "Awards Race" is in a <summary> (not a heading element)
-    expect(screen.getByText(/Awards Race/i)).toBeInTheDocument()
+describe('AwardsRaceSection — 3-card redesign (#357)', () => {
+  it('renders the panel header naming the section', () => {
+    renderWithRouter(<AwardsRaceSection standings={mockStandings} />)
+    expect(screen.getByText(/awards race/i)).toBeInTheDocument()
+  })
+
+  it('renders three contender cards (Extension / 20-Plus / Retention)', () => {
+    renderWithRouter(<AwardsRaceSection standings={mockStandings} />)
     expect(
-      screen.getByRole('heading', { name: /Extension Award/i })
+      screen.getByRole('heading', { name: /president'?s extension award/i })
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('heading', { name: /20-Plus Award/i })
+      screen.getByRole('heading', { name: /president'?s 20-plus award/i })
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('heading', { name: /Retention Award/i })
+      screen.getByRole('heading', { name: /district club retention award/i })
     ).toBeInTheDocument()
   })
 
-  it('should highlight top 3 winners with medals', () => {
+  it('shows the leading district id + value on each card', () => {
     renderWithRouter(<AwardsRaceSection standings={mockStandings} />)
 
-    // Each leaderboard shows winners. District 1, 2, 3 should be marked
-    // as winners in the Extension award
-    const winners = screen.getAllByLabelText(/winner/i)
-    expect(winners.length).toBeGreaterThan(0)
+    const ext = findCard(/extension/i)
+    expect(within(ext).getByText(/D17/)).toBeInTheDocument()
+    expect(within(ext).getByText(/14/)).toBeInTheDocument()
+
+    const twenty = findCard(/20-plus/i)
+    expect(within(twenty).getByText(/D60/)).toBeInTheDocument()
+    expect(within(twenty).getByText(/22/)).toBeInTheDocument()
+
+    const ret = findCard(/retention/i)
+    expect(within(ret).getByText(/D102/)).toBeInTheDocument()
+    // Allow the renderer to format 94.1% how it likes — check substring
+    expect(within(ret).getByText(/94/)).toBeInTheDocument()
   })
 
-  it('should not render when standings is null', () => {
+  it('signals "Achieved" on cards where the leader has won', () => {
+    renderWithRouter(<AwardsRaceSection standings={mockStandings} />)
+    // 20-Plus + Retention leaders are winners in the fixture
+    const twenty = findCard(/20-plus/i)
+    expect(within(twenty).getByText(/achieved/i)).toBeInTheDocument()
+
+    const ret = findCard(/retention/i)
+    expect(within(ret).getByText(/achieved/i)).toBeInTheDocument()
+  })
+
+  it('does NOT signal "Achieved" on cards where no winner exists yet', () => {
+    renderWithRouter(<AwardsRaceSection standings={mockStandings} />)
+    // Extension fixture has zero winners — should show in-progress copy
+    const ext = findCard(/extension/i)
+    expect(within(ext).queryByText(/achieved/i)).not.toBeInTheDocument()
+  })
+
+  it('links the leader to its district detail page', () => {
+    renderWithRouter(<AwardsRaceSection standings={mockStandings} />)
+    const ext = findCard(/extension/i)
+    const link = within(ext).getByRole('link', { name: /D17/ })
+    expect(link).toHaveAttribute('href', '/district/17')
+  })
+
+  it('does NOT render top-10 leaderboards (deferred to Awards page Epic #370)', () => {
+    renderWithRouter(<AwardsRaceSection standings={mockStandings} />)
+    // No <table> rendered — the deeper top-10 list lives on /awards (deferred)
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+  })
+
+  it('does not render when standings is null', () => {
     const { container } = renderWithRouter(
       <AwardsRaceSection standings={null} />
     )
-    // The MemoryRouter wrapper renders an empty div, so check that
-    // AwardsRaceSection itself didn't render anything
-    expect(container.querySelector('details')).toBeNull()
+    expect(container.querySelector('.awards-race-card')).toBeNull()
+  })
+
+  it('does not render when all award arrays are empty', () => {
+    const empty: CompetitiveAwardStandings = {
+      ...mockStandings,
+      extensionAward: [],
+      twentyPlusAward: [],
+      retentionAward: [],
+    }
+    const { container } = renderWithRouter(
+      <AwardsRaceSection standings={empty} />
+    )
+    expect(container.querySelector('.awards-race-card')).toBeNull()
   })
 })
