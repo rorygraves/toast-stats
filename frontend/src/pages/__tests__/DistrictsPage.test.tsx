@@ -543,3 +543,124 @@ describe('DistrictsPage - Layout Order (#83)', () => {
     expect(regionPills.length).toBeGreaterThan(0)
   })
 })
+
+// ============================================================
+// Region filter — solo-select pattern (#434)
+// ============================================================
+describe('DistrictsPage - Region filter solo-select (#434)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // Multi-region fixture — three districts in three different regions so we
+  // can verify solo-isolation actually filters the table.
+  const setupThreeRegions = () => {
+    const baseRow = (
+      i: number,
+      region: string
+    ): import('../../services/cdn').AllDistrictsRanking => ({
+      districtId: `D${i}`,
+      districtName: `District ${i}`,
+      region,
+      paidClubs: 100,
+      paidClubBase: 90,
+      clubGrowthPercent: 0,
+      totalPayments: 5000,
+      paymentBase: 4500,
+      paymentGrowthPercent: 0,
+      activeClubs: 100,
+      distinguishedClubs: 50,
+      selectDistinguished: 20,
+      presidentsDistinguished: 10,
+      distinguishedPercent: 50,
+      clubsRank: i,
+      paymentsRank: i,
+      distinguishedRank: i,
+      aggregateScore: 300 - i,
+    })
+    mockedFetchCdnRankings.mockResolvedValueOnce({
+      rankings: [baseRow(1, '1'), baseRow(2, '2'), baseRow(3, '3')],
+      date: '2025-11-22',
+    })
+  }
+
+  it('clicking a region pill enters solo mode — only that region remains', async () => {
+    const { fireEvent } = await import('@testing-library/react')
+    setupThreeRegions()
+    renderWithProviders(<DistrictsPage />)
+
+    await screen.findByText('District 1')
+    expect(screen.getByText('District 2')).toBeInTheDocument()
+    expect(screen.getByText('District 3')).toBeInTheDocument()
+
+    const region2Pill = screen.getByRole('button', { name: 'Region 2' })
+    fireEvent.click(region2Pill)
+
+    // Only District 2 (region 2) should remain in the table
+    expect(screen.queryByText('District 1')).not.toBeInTheDocument()
+    expect(screen.getByText('District 2')).toBeInTheDocument()
+    expect(screen.queryByText('District 3')).not.toBeInTheDocument()
+
+    // Pill is marked active
+    expect(region2Pill).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('clicking the active solo pill returns to all regions', async () => {
+    const { fireEvent } = await import('@testing-library/react')
+    setupThreeRegions()
+    renderWithProviders(<DistrictsPage />)
+
+    await screen.findByText('District 1')
+    const region2Pill = screen.getByRole('button', { name: 'Region 2' })
+
+    // Solo Region 2
+    fireEvent.click(region2Pill)
+    expect(screen.queryByText('District 1')).not.toBeInTheDocument()
+
+    // Click again — back to all
+    fireEvent.click(region2Pill)
+    expect(screen.getByText('District 1')).toBeInTheDocument()
+    expect(screen.getByText('District 2')).toBeInTheDocument()
+    expect(screen.getByText('District 3')).toBeInTheDocument()
+  })
+
+  it('shift-click adds a region to the current solo selection (additive)', async () => {
+    const { fireEvent } = await import('@testing-library/react')
+    setupThreeRegions()
+    renderWithProviders(<DistrictsPage />)
+
+    await screen.findByText('District 1')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Region 2' }))
+    expect(screen.queryByText('District 3')).not.toBeInTheDocument()
+
+    // Shift-click Region 3 — add without removing Region 2
+    fireEvent.click(screen.getByRole('button', { name: 'Region 3' }), {
+      shiftKey: true,
+    })
+    expect(screen.getByText('District 2')).toBeInTheDocument()
+    expect(screen.getByText('District 3')).toBeInTheDocument()
+    expect(screen.queryByText('District 1')).not.toBeInTheDocument()
+  })
+
+  it('renders a state badge that reflects the current selection', async () => {
+    const { fireEvent } = await import('@testing-library/react')
+    setupThreeRegions()
+    renderWithProviders(<DistrictsPage />)
+
+    await screen.findByText('District 1')
+
+    // Default: showing all regions
+    expect(screen.getByText(/showing all regions/i)).toBeInTheDocument()
+
+    // Solo Region 2
+    fireEvent.click(screen.getByRole('button', { name: 'Region 2' }))
+    expect(screen.getByText(/showing region 2 only/i)).toBeInTheDocument()
+
+    // Shift-click Region 3 → 2 of 3 selected
+    fireEvent.click(screen.getByRole('button', { name: 'Region 3' }), {
+      shiftKey: true,
+    })
+    expect(screen.getByText(/showing 2 of 3 regions/i)).toBeInTheDocument()
+  })
+})

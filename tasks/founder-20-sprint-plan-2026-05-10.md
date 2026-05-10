@@ -32,6 +32,7 @@ After the surface is clean and the redesign is finished, Sprints 14–17 add the
 | 4   | #436  | Swap Rank/District columns + standalone district click target | Click affordance broken on the rankings table            |
 | 5   | #437  | Tab discoverability (Clubs / Divisions / Trends / Analytics)  | Most of District value hidden behind under-weighted tabs |
 | 6   | #438  | District Membership Trend methodology + tooltips              | Trust gap on the central trends chart                    |
+| 6.5 | #442  | Drop redundant 'Districts' breadcrumb crumb (duplicates nav)  | Flagship-page chrome bug; small fix, big visual win      |
 
 ### Tier A2 — Methodology corrections (Sprint 7)
 
@@ -82,6 +83,7 @@ These are valid but lower priority than the 20 sprints above. Re-evaluate after 
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | #371, #372, #373                       | Awards page suite — net-new IA, less urgent than fixing the surfaces leaders already use                                             |
 | #429 (#430 + #431 + #432, closes #407) | Find-A-Club enrichment — bumped from Sprint 20 by methodology corrections; net-new data, lower urgency than fixing existing surfaces |
+| #443 epic (#444–#449)                  | Club anniversaries — depends on #429 charter date; ship as a follow-on sprint cluster once Find-A-Club data lands                    |
 | #427                                   | Print stylesheet — niche workflow                                                                                                    |
 | #384                                   | Tablist arrow-key a11y — adjacent to #437 (Sprint 5); revisit if not naturally absorbed                                              |
 | #340, #375                             | setState-in-effect fixes + dependabot bumps — unblock dev-deps after feature work stabilises                                         |

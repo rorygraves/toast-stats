@@ -677,49 +677,74 @@ const DistrictsPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Region Filter — pill toggle bar (#326) */}
-          <div className="districts-toolbar__row">
-            <span className="districts-toolbar__label">Regions:</span>
-            <button
-              onClick={() => setSelectedRegions([])}
-              className={`districts-toolbar__region-chip${selectedRegions.length === 0 ? ' districts-toolbar__region-chip--active' : ''}`}
-            >
-              All
-            </button>
-            {regions.map(region => {
-              const isActive = selectedRegions.includes(region)
-              return (
+          {/* Region Filter — solo-select pill bar (#434).
+              Plain click = solo that region; click again = back to all.
+              Shift-click = additive toggle. The "All" pill explicitly
+              selects every region and is the active state when no
+              filtering is happening. */}
+          {(() => {
+            const isAllActive =
+              regions.length > 0 &&
+              (selectedRegions.length === 0 ||
+                selectedRegions.length === regions.length)
+            const handleRegionClick = (region: string, shiftKey: boolean) => {
+              if (shiftKey) {
+                setSelectedRegions(
+                  selectedRegions.includes(region)
+                    ? selectedRegions.filter(r => r !== region)
+                    : [...selectedRegions, region]
+                )
+                return
+              }
+              const isSoloActive =
+                selectedRegions.length === 1 && selectedRegions[0] === region
+              setSelectedRegions(isSoloActive ? regions : [region])
+            }
+            const stateLabel = isAllActive
+              ? 'Showing all regions'
+              : selectedRegions.length === 1
+                ? `Showing region ${selectedRegions[0]} only`
+                : `Showing ${selectedRegions.length} of ${regions.length} regions`
+            return (
+              <div className="districts-toolbar__row">
+                <span className="districts-toolbar__label">Regions:</span>
                 <button
-                  key={region}
-                  onClick={() => {
-                    if (isActive) {
-                      const next = selectedRegions.filter(r => r !== region)
-                      setSelectedRegions(next)
-                    } else {
-                      setSelectedRegions([...selectedRegions, region])
-                    }
-                  }}
-                  className={`districts-toolbar__region-chip${isActive ? ' districts-toolbar__region-chip--active' : ''}`}
-                  aria-pressed={isActive}
-                  aria-label={`Region ${region}`}
+                  type="button"
+                  onClick={() => setSelectedRegions(regions)}
+                  className={`districts-toolbar__region-chip${isAllActive ? ' districts-toolbar__region-chip--active' : ''}`}
+                  aria-pressed={isAllActive}
                 >
-                  {region}
+                  All
                 </button>
-              )
-            })}
-            {selectedRegions.length > 0 &&
-              selectedRegions.length < regions.length && (
+                {regions.map(region => {
+                  const isActive = selectedRegions.includes(region)
+                  return (
+                    <button
+                      key={region}
+                      type="button"
+                      onClick={e => handleRegionClick(region, e.shiftKey)}
+                      className={`districts-toolbar__region-chip${isActive && !isAllActive ? ' districts-toolbar__region-chip--active' : ''}`}
+                      aria-pressed={isActive && !isAllActive}
+                      aria-label={`Region ${region}`}
+                      title="Click to isolate · shift-click to add"
+                    >
+                      {region}
+                    </button>
+                  )
+                })}
                 <span
+                  className="districts-toolbar__region-state"
                   style={{
                     fontSize: 12,
                     color: 'var(--ink-3)',
                     marginLeft: 4,
                   }}
                 >
-                  {filteredRankings.length} districts
+                  {stateLabel}
                 </span>
-              )}
-          </div>
+              </div>
+            )
+          })()}
         </div>
 
         {/* Search Bar */}
