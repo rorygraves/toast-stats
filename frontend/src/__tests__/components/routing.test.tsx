@@ -18,7 +18,7 @@ const renderRoute = (Page: React.ComponentType, path: string) => {
 }
 
 describe('Routing scaffolding (#355)', () => {
-  describe('/history placeholder page', () => {
+  describe('/history page', () => {
     it('renders a heading naming the page', () => {
       renderRoute(HistoryPage, '/history')
       expect(
@@ -26,25 +26,65 @@ describe('Routing scaffolding (#355)', () => {
       ).toBeInTheDocument()
     })
 
-    it('signals the placeholder status until #367 ships the real content', () => {
+    it('renders the year strip with the current PY marked aria-current', () => {
       renderRoute(HistoryPage, '/history')
-      // Don't assert the exact copy — just that something explains the
-      // page is intentionally minimal.
-      expect(screen.getByText(/coming/i)).toBeInTheDocument()
+      // First chip in the year strip (current year) is announced as
+      // aria-current=page so screen-reader users can locate it quickly.
+      const strip = screen.getByRole('list')
+      const items = screen.getAllByRole('listitem')
+      expect(strip).toBeInTheDocument()
+      const current = items.find(i => i.getAttribute('aria-current') === 'page')
+      expect(current).toBeDefined()
+      expect(current?.textContent).toContain('LIVE')
+    })
+
+    it('points pre-2019 visitors to the official TI archive', () => {
+      renderRoute(HistoryPage, '/history')
+      const link = screen.getByRole('link', {
+        name: /toastmasters international archive/i,
+      })
+      expect(link).toHaveAttribute(
+        'href',
+        'https://dashboards.toastmasters.org'
+      )
     })
   })
 
-  describe('/methodology placeholder page', () => {
-    it('renders a heading naming the page', () => {
+  describe('/methodology page', () => {
+    it('renders the page heading', () => {
       renderRoute(MethodologyPage, '/methodology')
       expect(
         screen.getByRole('heading', { level: 1, name: /methodology/i })
       ).toBeInTheDocument()
     })
 
-    it('signals the placeholder status until #368 ships the real content', () => {
+    it('renders the anchor TOC with all 8 numbered sections', () => {
       renderRoute(MethodologyPage, '/methodology')
-      expect(screen.getByText(/coming/i)).toBeInTheDocument()
+      const nav = screen.getByRole('navigation', { name: /on this page/i })
+      expect(nav).toBeInTheDocument()
+      // Each section should be linked from the TOC and have a matching h2.
+      ;[
+        'Data source',
+        'Refresh cadence',
+        'Borda count',
+        'DCP tier',
+        'Club health',
+        'Glossary',
+        'Caveats',
+        'Changelog',
+      ].forEach(title => {
+        // TOC link
+        expect(
+          screen.getByRole('link', { name: new RegExp(title, 'i') })
+        ).toBeInTheDocument()
+        // Section h2
+        expect(
+          screen.getByRole('heading', {
+            level: 2,
+            name: new RegExp(title, 'i'),
+          })
+        ).toBeInTheDocument()
+      })
     })
   })
 })

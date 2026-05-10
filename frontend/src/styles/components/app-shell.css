@@ -671,4 +671,186 @@
     letter-spacing: -0.005em;
     color: var(--ink);
   }
+
+  /* History page year strip (#367) — chip row of archived years. */
+  .history-page-year-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 24px 0 0;
+  }
+
+  .history-page-year-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background-color: var(--surface-3);
+    color: var(--ink-2);
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .history-page-year-chip--current {
+    background-color: var(--loyal-50);
+    color: var(--loyal-500);
+  }
+
+  .history-page-year-chip__live {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: var(--green-600);
+    text-transform: uppercase;
+  }
+
+  .history-page-year-chip--gap {
+    font-style: italic;
+    color: var(--ink-3);
+    background-color: transparent;
+    border: 1px dashed var(--line);
+  }
+
+  /* Methodology page (#368) — TOC + numbered sections. */
+  .methodology-page {
+    max-width: 1280px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 40px 24px;
+    font-family: var(--sans);
+    color: var(--ink);
+  }
+
+  .methodology-page__header {
+    margin-bottom: 32px;
+  }
+
+  .methodology-toc {
+    margin-bottom: 40px;
+    padding: 18px;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-md);
+    box-shadow: var(--rds-shadow-sm);
+  }
+
+  .methodology-toc__title {
+    margin: 0 0 12px;
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  .methodology-toc__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px 16px;
+  }
+
+  @media (min-width: 640px) {
+    .methodology-toc__list {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .methodology-toc__item {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 14px;
+  }
+
+  .methodology-toc__num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-3);
+    min-width: 22px;
+  }
+
+  .methodology-toc__link {
+    color: var(--link);
+    text-decoration: none;
+  }
+
+  .methodology-toc__link:hover {
+    text-decoration: underline;
+  }
+
+  .methodology-section {
+    margin-bottom: 36px;
+    max-width: 70ch;
+    line-height: 1.65;
+    font-size: 14.5px;
+    color: var(--ink);
+  }
+
+  .methodology-section p,
+  .methodology-section ul,
+  .methodology-section ol,
+  .methodology-section dl {
+    margin: 0 0 14px;
+  }
+
+  .methodology-section ul,
+  .methodology-section ol {
+    padding-left: 1.5em;
+  }
+
+  .methodology-section li {
+    margin-bottom: 6px;
+  }
+
+  .methodology-section code {
+    font-family: var(--mono);
+    font-size: 0.9em;
+    background-color: var(--surface-3);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--ink-2);
+  }
+
+  .methodology-section__title {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin: 0 0 12px;
+    font-family: var(--serif);
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    scroll-margin-top: 80px;
+  }
+
+  .methodology-section__num {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-3);
+  }
+
+  .methodology-link {
+    color: var(--link);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+  }
+
+  .methodology-glossary dt {
+    font-weight: 700;
+    margin-top: 10px;
+  }
+
+  .methodology-glossary dd {
+    margin: 0 0 8px;
+    color: var(--ink-2);
+  }
 }
