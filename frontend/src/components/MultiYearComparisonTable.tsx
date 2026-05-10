@@ -32,25 +32,24 @@ const ChangeIndicator: React.FC<ChangeIndicatorProps> = ({
 
   const getIndicatorStyles = () => {
     if (isImproved) {
-      // Use Tailwind utility classes for TM brand colors with 10% opacity
       return {
-        bgClass: 'bg-tm-loyal-blue-10',
-        textClass: 'text-tm-loyal-blue',
+        bgStyle: { backgroundColor: 'var(--loyal-50)' },
+        textStyle: { color: 'var(--green-600)' },
         icon: '↑',
         label: 'improved',
       }
     }
     if (isDeclined) {
       return {
-        bgClass: 'bg-tm-true-maroon-10',
-        textClass: 'text-tm-true-maroon',
+        bgStyle: { backgroundColor: 'rgba(220, 38, 38, 0.08)' },
+        textStyle: { color: 'var(--red-600)' },
         icon: '↓',
         label: 'declined',
       }
     }
     return {
-      bgClass: 'bg-gray-200',
-      textClass: 'text-gray-600',
+      bgStyle: { backgroundColor: 'var(--surface-3)' },
+      textStyle: { color: 'var(--ink-3)' },
       icon: '→',
       label: 'unchanged',
     }
@@ -61,7 +60,8 @@ const ChangeIndicator: React.FC<ChangeIndicatorProps> = ({
 
   return (
     <span
-      className={`inline-flex items-center px-1.5 py-0.5 rounded-lg text-xs font-medium ${styles.bgClass} ${styles.textClass}`}
+      className="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-medium"
+      style={{ ...styles.bgStyle, ...styles.textStyle }}
       role="status"
       aria-label={`${metricLabel} ${styles.label}${!isUnchanged ? ` by ${absoluteChange} position${absoluteChange !== 1 ? 's' : ''}` : ''}`}
     >
@@ -181,7 +181,8 @@ interface MobileYearCardProps {
 
 const MobileYearCard: React.FC<MobileYearCardProps> = ({ ranking }) => (
   <div
-    className="bg-white border border-gray-300 rounded-lg p-4 mb-3"
+    className="redesign-panel"
+    style={{ marginBottom: 12 }}
     role="listitem"
     aria-label={`Rankings for ${ranking.programYear} program year`}
   >

@@ -255,31 +255,36 @@ describe('MultiYearComparisonTable', () => {
       expect(changeIndicators).toHaveLength(0)
     })
 
-    it('uses correct colors for improvement (blue)', () => {
+    it('uses token-driven color for improvement', () => {
       renderWithProviders(<MultiYearComparisonTable {...baseProps} />)
 
       const improvementIndicators = screen.getAllByRole('status', {
         name: /Overall rank improved by 5 positions/i,
       })
-      expect(improvementIndicators[0]).toHaveClass('text-tm-loyal-blue')
+      const indicator = improvementIndicators[0] as HTMLElement
+      expect(indicator.style.color).toBe('var(--green-600)')
+      expect(indicator.style.backgroundColor).toBe('var(--loyal-50)')
     })
 
-    it('uses correct colors for decline (maroon)', () => {
+    it('uses token-driven color for decline', () => {
       renderWithProviders(<MultiYearComparisonTable {...baseProps} />)
 
       const declineIndicators = screen.getAllByRole('status', {
         name: /Payments rank declined by 2 positions/i,
       })
-      expect(declineIndicators[0]).toHaveClass('text-tm-true-maroon')
+      const indicator = declineIndicators[0] as HTMLElement
+      expect(indicator.style.color).toBe('var(--red-600)')
     })
 
-    it('uses correct colors for unchanged (gray)', () => {
+    it('uses muted token color for unchanged', () => {
       renderWithProviders(<MultiYearComparisonTable {...baseProps} />)
 
       const unchangedIndicators = screen.getAllByRole('status', {
         name: /Distinguished rank unchanged/i,
       })
-      expect(unchangedIndicators[0]).toHaveClass('text-gray-600')
+      const indicator = unchangedIndicators[0] as HTMLElement
+      expect(indicator.style.color).toBe('var(--ink-3)')
+      expect(indicator.style.backgroundColor).toBe('var(--surface-3)')
     })
   })
 

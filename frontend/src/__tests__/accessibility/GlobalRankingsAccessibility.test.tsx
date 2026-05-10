@@ -1215,7 +1215,8 @@ describe('Global Rankings Accessibility Tests', () => {
 
         const buttons = screen.getAllByRole('button')
         buttons.forEach(button => {
-          expect(button).toHaveClass('min-h-[44px]')
+          // Chrome refresh moved the 44px min-height to an inline style.
+          expect(button.style.minHeight).toBe('44px')
         })
       })
     })

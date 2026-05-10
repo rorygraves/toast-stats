@@ -129,13 +129,14 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({
 
   return (
     <div
-      className="bg-white border border-gray-300 rounded-lg shadow-lg p-3 min-w-[180px]"
+      className="redesign-panel"
+      style={{ minWidth: 180, padding: 12 }}
       role="tooltip"
     >
       <p className="text-sm font-medium text-gray-900 mb-1 whitespace-nowrap">
         {formattedDate}
       </p>
-      <p className="text-sm text-tm-loyal-blue whitespace-nowrap">
+      <p className="text-sm whitespace-nowrap" style={{ color: 'var(--link)' }}>
         {metricConfig.shortLabel}: Rank #{value}
       </p>
     </div>
@@ -162,11 +163,11 @@ const MetricToggleButton: React.FC<MetricToggleButtonProps> = ({
   return (
     <button
       onClick={() => onSelect(metric)}
-      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors font-tm-body min-h-[44px] ${
-        isSelected
-          ? 'bg-tm-loyal-blue text-white'
-          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-      }`}
+      className={
+        'districts-toolbar__sort-btn' +
+        (isSelected ? ' districts-toolbar__sort-btn--active' : '')
+      }
+      style={{ minHeight: 44 }}
       aria-pressed={isSelected}
       aria-label={`View ${config.label}`}
     >

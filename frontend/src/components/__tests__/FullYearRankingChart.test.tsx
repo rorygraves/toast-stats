@@ -340,9 +340,11 @@ describe('FullYearRankingChart', () => {
     it('metric toggle buttons have minimum touch target size', () => {
       renderWithProviders(<FullYearRankingChart {...baseProps} />)
 
+      // Chrome refresh moved off the `min-h-[44px]` Tailwind class to an
+      // inline style attribute. The 44px guarantee remains.
       const buttons = screen.getAllByRole('button')
       buttons.forEach(button => {
-        expect(button).toHaveClass('min-h-[44px]')
+        expect(button.style.minHeight).toBe('44px')
       })
     })
 
@@ -499,7 +501,10 @@ describe('FullYearRankingChart', () => {
       expect(title).toHaveClass('font-tm-headline')
     })
 
-    it('selected metric button uses brand blue background', () => {
+    it('selected metric button is announced as pressed', () => {
+      // Chrome refresh moved off the `bg-tm-loyal-blue` Tailwind class to
+      // the shared `.districts-toolbar__sort-btn--active` token-driven
+      // class. The browser/screen-reader contract is `aria-pressed='true'`.
       renderWithProviders(
         <FullYearRankingChart {...baseProps} selectedMetric="clubs" />
       )
@@ -507,10 +512,10 @@ describe('FullYearRankingChart', () => {
       const selectedButton = screen.getByRole('button', {
         name: /View Paid Clubs Rank/i,
       })
-      expect(selectedButton).toHaveClass('bg-tm-loyal-blue')
+      expect(selectedButton).toHaveAttribute('aria-pressed', 'true')
     })
 
-    it('unselected metric buttons have neutral styling', () => {
+    it('unselected metric buttons are announced as not pressed', () => {
       renderWithProviders(
         <FullYearRankingChart {...baseProps} selectedMetric="clubs" />
       )
@@ -518,7 +523,7 @@ describe('FullYearRankingChart', () => {
       const unselectedButton = screen.getByRole('button', {
         name: /View Overall Rank/i,
       })
-      expect(unselectedButton).toHaveClass('bg-gray-200')
+      expect(unselectedButton).toHaveAttribute('aria-pressed', 'false')
     })
   })
 
