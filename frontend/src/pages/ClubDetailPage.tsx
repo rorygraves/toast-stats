@@ -95,7 +95,7 @@ function DCPProjectionCard({
           }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="redesign-panel">
       <h2 className="text-lg font-semibold text-gray-900 font-tm-headline mb-4 flex items-center gap-2">
         <svg
           className="w-5 h-5 text-tm-loyal-blue"
@@ -358,7 +358,7 @@ const ClubDetailPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen">
         <div className="container mx-auto px-4 py-8">
           <LoadingSkeleton variant="card" />
           <div className="mt-6">
@@ -373,7 +373,7 @@ const ClubDetailPage: React.FC = () => {
 
   if (!club) {
     return (
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen">
         <div className="container mx-auto px-4 py-8">
           <EmptyState
             title="Club Not Found"
@@ -393,7 +393,7 @@ const ClubDetailPage: React.FC = () => {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen">
         <div className="container mx-auto px-4 py-4 sm:py-8">
           {/* Breadcrumbs */}
           <nav
@@ -546,7 +546,7 @@ const ClubDetailPage: React.FC = () => {
           {/* Two-column layout for charts + projection */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             {/* Membership Trend Chart (2 cols) */}
-            <div className="lg:col-span-2 bg-white rounded-lg shadow-md p-6">
+            <div className="lg:col-span-2 redesign-panel">
               <h2 className="font-semibold text-gray-900 mb-1 flex items-center gap-2 font-tm-headline">
                 <svg
                   className="w-5 h-5 text-tm-loyal-blue"
@@ -766,7 +766,7 @@ const ClubDetailPage: React.FC = () => {
 
           {/* DCP Goals Timeline */}
           {filteredDcpGoalsTrend.length > 0 && (
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div className="redesign-panel mb-6">
               <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2 font-tm-headline">
                 <svg
                   className="w-5 h-5 text-green-600"
