@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useDistricts } from '../hooks/useDistricts'
+import { DistrictDetailHeader } from '../components/DistrictDetailHeader'
 import { useDistrictAnalytics, ClubTrend } from '../hooks/useDistrictAnalytics'
 import { useAggregatedAnalytics } from '../hooks/useAggregatedAnalytics'
 import { useDistrictStatistics } from '../hooks/useMembershipData'
@@ -14,7 +15,6 @@ import {
 } from '../hooks/useTimeSeriesYoY'
 import { useDistrictCachedDates } from '../hooks/useDistrictData'
 import { useUrlProgramYear } from '../hooks/useUrlProgramYear'
-import { ProgramYearSelector } from '../components/ProgramYearSelector'
 import {
   getAvailableProgramYears,
   filterDatesByProgramYear,
@@ -23,7 +23,6 @@ import {
   calculateProgramYearDay,
 } from '../utils/programYear'
 import type { MultiYearPaymentData } from '../hooks/usePaymentsTrend'
-import { formatDisplayDate } from '../utils/dateFormatting'
 import {
   parseFilterState,
   serializeFilterState,
@@ -507,16 +506,13 @@ const DistrictDetailPage: React.FC = () => {
     setSelectedDate(value === 'latest' ? undefined : value)
   }
 
-  // Format date for display (using utility to avoid UTC timezone shift)
-  const formatDate = (dateStr: string) => formatDisplayDate(dateStr)
-
   // If districts data has loaded but this district isn't in the tracked list,
   // show a limited page with Global Rankings (available for all districts)
   // instead of blank data. Only 6 districts have detailed per-district analytics.
   if (districtsData && !selectedDistrict && districtId) {
     return (
       <ErrorBoundary>
-        <div className="min-h-screen bg-gray-100">
+        <div className="district-detail-page-root">
           <div className="container mx-auto px-4 py-4 sm:py-8">
             <div className="mb-4 sm:mb-6">
               <button
@@ -587,91 +583,20 @@ const DistrictDetailPage: React.FC = () => {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gray-100">
-        <div className="container mx-auto px-4 py-4 sm:py-8">
-          {/* Header */}
-          <div className="mb-4 sm:mb-6">
-            <button
-              onClick={() => navigate('/')}
-              className="flex items-center gap-2 text-tm-loyal-blue hover:text-tm-loyal-blue-80 font-tm-headline font-medium transition-colors mb-4"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-              Back to Rankings
-            </button>
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-tm-headline font-bold text-tm-black">
-                  {districtName}
-                </h1>
-                <p className="text-sm sm:text-base font-tm-body text-gray-600 mt-1">
-                  District Statistics & Performance Analytics
-                </p>
-              </div>
-
-              {/* Program Year, Date Selector and Actions */}
-              <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-start">
-                {/* Program Year Selector */}
-                {availableProgramYears.length > 0 && (
-                  <div className="flex-shrink-0">
-                    <ProgramYearSelector
-                      availableProgramYears={availableProgramYears}
-                      selectedProgramYear={selectedProgramYear}
-                      onProgramYearChange={setSelectedProgramYear}
-                      showProgress={true}
-                    />
-                  </div>
-                )}
-
-                {/* Date Selector - Shows only dates in selected program year */}
-                {availableDates.length > 0 && (
-                  <div className="flex flex-col gap-2">
-                    <label
-                      htmlFor="global-date-selector"
-                      className="text-xs sm:text-sm font-tm-body font-medium text-gray-700"
-                    >
-                      View Specific Date
-                    </label>
-                    <select
-                      id="global-date-selector"
-                      value={selectedDate || 'latest'}
-                      onChange={handleDateChange}
-                      className="px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue focus:border-transparent bg-white text-gray-900 text-sm font-tm-body"
-                      style={{ color: 'var(--tm-black)' }}
-                    >
-                      <option value="latest" className="text-gray-900 bg-white">
-                        Latest in Program Year
-                      </option>
-                      {availableDates.map(date => (
-                        <option
-                          key={date}
-                          value={date}
-                          className="text-gray-900 bg-white"
-                        >
-                          {formatDate(date)}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="text-xs font-tm-body text-gray-500">
-                      {availableDates.length} date
-                      {availableDates.length !== 1 ? 's' : ''} in program year
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+      <div className="district-detail-page-root">
+        <div className="district-detail-page">
+          {districtId && (
+            <DistrictDetailHeader
+              districtId={districtId}
+              districtName={districtName}
+              selectedProgramYear={selectedProgramYear}
+              setSelectedProgramYear={setSelectedProgramYear}
+              availableProgramYears={availableProgramYears}
+              selectedDate={selectedDate}
+              onDateChange={handleDateChange}
+              availableDates={availableDates}
+            />
+          )}
 
           {/* Tabs */}
           <div className="bg-white rounded-lg shadow-md mb-4 sm:mb-6">

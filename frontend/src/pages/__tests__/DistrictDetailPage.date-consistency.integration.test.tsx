@@ -252,7 +252,7 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
 
       // Wait for the page to render
       await waitFor(() => {
-        expect(screen.getByText('Test District 1')).toBeInTheDocument()
+        expect(screen.getAllByText('Test District 1')[0]).toBeInTheDocument()
       })
 
       // Verify the hook was called with the expected date parameter
@@ -291,7 +291,7 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
 
       // Wait for the page to render
       await waitFor(() => {
-        expect(screen.getByText('Test District 1')).toBeInTheDocument()
+        expect(screen.getAllByText('Test District 1')[0]).toBeInTheDocument()
       })
 
       // Navigate to Divisions & Areas tab to see the DivisionPerformanceCards
@@ -339,7 +339,7 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
       renderDistrictDetailPage()
 
       await waitFor(() => {
-        expect(screen.getByText('Test District 1')).toBeInTheDocument()
+        expect(screen.getAllByText('Test District 1')[0]).toBeInTheDocument()
       })
 
       // The hook should be called with a date parameter (not undefined)
@@ -364,7 +364,7 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
 
       // Wait for the page to render
       await waitFor(() => {
-        expect(screen.getByText('Test District 1')).toBeInTheDocument()
+        expect(screen.getAllByText('Test District 1')[0]).toBeInTheDocument()
       })
 
       // Navigate to Divisions & Areas tab
@@ -406,7 +406,7 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
 
       // Wait for the page to render
       await waitFor(() => {
-        expect(screen.getByText('Test District 1')).toBeInTheDocument()
+        expect(screen.getAllByText('Test District 1')[0]).toBeInTheDocument()
       })
 
       // Navigate to Divisions & Areas tab
@@ -451,7 +451,7 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
 
       // Wait for the page to render
       await waitFor(() => {
-        expect(screen.getByText('Test District 1')).toBeInTheDocument()
+        expect(screen.getAllByText('Test District 1')[0]).toBeInTheDocument()
       })
 
       // Navigate to Divisions & Areas tab
@@ -504,7 +504,7 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
 
       // Wait for the page to render
       await waitFor(() => {
-        expect(screen.getByText('Test District 1')).toBeInTheDocument()
+        expect(screen.getAllByText('Test District 1')[0]).toBeInTheDocument()
       })
 
       // Navigate to Divisions & Areas tab
@@ -541,7 +541,7 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
 
       // Wait for the page to render
       await waitFor(() => {
-        expect(screen.getByText('Test District 1')).toBeInTheDocument()
+        expect(screen.getAllByText('Test District 1')[0]).toBeInTheDocument()
       })
 
       // Navigate to Divisions & Areas tab
@@ -580,7 +580,7 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
 
       // Wait for the page to render
       await waitFor(() => {
-        expect(screen.getByText('Test District 1')).toBeInTheDocument()
+        expect(screen.getAllByText('Test District 1')[0]).toBeInTheDocument()
       })
 
       // Navigate to Divisions & Areas tab
@@ -610,7 +610,7 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
 
       // Wait for the page to render
       await waitFor(() => {
-        expect(screen.getByText('Test District 1')).toBeInTheDocument()
+        expect(screen.getAllByText('Test District 1')[0]).toBeInTheDocument()
       })
 
       // Navigate to Divisions & Areas tab
@@ -653,7 +653,7 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
       renderDistrictDetailPage()
 
       await waitFor(() => {
-        expect(screen.getByText('Test District 1')).toBeInTheDocument()
+        expect(screen.getAllByText('Test District 1')[0]).toBeInTheDocument()
       })
 
       // The hook should be called with a date (the program year end date as fallback)
@@ -692,7 +692,7 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
       renderDistrictDetailPage()
 
       await waitFor(() => {
-        expect(screen.getByText('Test District 1')).toBeInTheDocument()
+        expect(screen.getAllByText('Test District 1')[0]).toBeInTheDocument()
       })
 
       // Change the date

@@ -450,4 +450,135 @@
     color: var(--ink-3);
     font-style: italic;
   }
+
+  /* District detail page redesign chrome (#358). Same Lesson 49/50 caveat
+     as .districts-page-root: NO min-height: 100vh — AppShell already owns
+     the viewport wrapper. */
+  .district-detail-page-root {
+    background-color: var(--bg);
+  }
+
+  .district-detail-page {
+    max-width: 1280px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 24px 24px 32px;
+  }
+
+  .district-detail-breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--ink-3);
+  }
+
+  .district-detail-breadcrumbs__link {
+    color: var(--link);
+    text-decoration: none;
+  }
+
+  .district-detail-breadcrumbs__link:hover {
+    text-decoration: underline;
+  }
+
+  .district-detail-breadcrumbs__separator {
+    color: var(--ink-4);
+  }
+
+  .district-detail-breadcrumbs__current {
+    color: var(--ink-2);
+    font-weight: 500;
+  }
+
+  .district-detail-page-header {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  @media (min-width: 980px) {
+    .district-detail-page-header {
+      flex-direction: row;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+  }
+
+  .district-detail-page-header__intro {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .district-detail-page-header__eyebrow {
+    margin: 0;
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--maroon-500);
+  }
+
+  .district-detail-page-header__title {
+    margin: 8px 0 8px;
+    font-family: var(--serif);
+    font-weight: 800;
+    font-size: 28px;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+  }
+
+  .district-detail-page-header__lede {
+    margin: 0;
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--ink-2);
+    max-width: 60ch;
+  }
+
+  .district-detail-page-header__actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Share button (primary loyal). Mirrors the design's "Share" CTA. */
+  .district-detail-share-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: var(--rds-radius-sm);
+    background-color: var(--loyal-500);
+    color: #ffffff;
+    border: 1px solid var(--loyal-500);
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 150ms ease;
+  }
+
+  .district-detail-share-button:hover {
+    background-color: var(--loyal-600);
+  }
+
+  .district-detail-share-button[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .district-detail-share-button__feedback {
+    margin-left: 6px;
+    font-weight: 400;
+    font-size: 12px;
+    color: var(--green-500);
+  }
 }
