@@ -257,10 +257,9 @@ describe('DistrictDetailPage - Global Rankings Tab Navigation Integration', () =
       })
       fireEvent.click(globalRankingsTab)
 
-      // Verify the tab becomes active (has the active styling class)
+      // Verify the tab becomes active
       await waitFor(() => {
-        expect(globalRankingsTab).toHaveClass('border-tm-loyal-blue')
-        expect(globalRankingsTab).toHaveClass('text-tm-loyal-blue')
+        expect(globalRankingsTab).toHaveAttribute('aria-selected', 'true')
       })
     })
 
@@ -365,7 +364,7 @@ describe('DistrictDetailPage - Global Rankings Tab Navigation Integration', () =
   })
 
   describe('Tab Styling Consistency (Requirement 1.3)', () => {
-    it('should have consistent inactive styling with other tabs', () => {
+    it('should have consistent inactive aria-selected signal with other tabs', () => {
       renderWithProviders()
 
       const globalRankingsTab = screen.getByRole('tab', {
@@ -379,12 +378,12 @@ describe('DistrictDetailPage - Global Rankings Tab Navigation Integration', () =
         btn.textContent?.toLowerCase().includes('trends')
       )
 
-      // Both should have the same inactive styling classes
-      expect(globalRankingsTab).toHaveClass('text-gray-600')
-      expect(trendsTab).toHaveClass('text-gray-600')
+      // Both should be inactive on initial render (Overview is the default)
+      expect(globalRankingsTab).toHaveAttribute('aria-selected', 'false')
+      expect(trendsTab).toHaveAttribute('aria-selected', 'false')
     })
 
-    it('should have consistent active styling with other tabs', async () => {
+    it('should expose the active state via aria-selected when selected', async () => {
       renderWithProviders()
 
       // Click on Global Rankings tab
@@ -393,51 +392,10 @@ describe('DistrictDetailPage - Global Rankings Tab Navigation Integration', () =
       })
       fireEvent.click(globalRankingsTab)
 
-      // Verify active styling
+      // Verify active state
       await waitFor(() => {
-        expect(globalRankingsTab).toHaveClass('border-b-2')
-        expect(globalRankingsTab).toHaveClass('border-tm-loyal-blue')
-        expect(globalRankingsTab).toHaveClass('text-tm-loyal-blue')
+        expect(globalRankingsTab).toHaveAttribute('aria-selected', 'true')
       })
-    })
-
-    it('should use Toastmasters brand font for tab label', () => {
-      renderWithProviders()
-
-      const globalRankingsTab = screen.getByRole('tab', {
-        name: /global rankings/i,
-      })
-
-      // Should use the headline font
-      expect(globalRankingsTab).toHaveClass('font-tm-headline')
-      expect(globalRankingsTab).toHaveClass('font-medium')
-    })
-
-    it('should have proper padding consistent with other tabs', () => {
-      renderWithProviders()
-
-      const globalRankingsTab = screen.getByRole('tab', {
-        name: /global rankings/i,
-      })
-
-      // Should have responsive padding
-      expect(globalRankingsTab).toHaveClass('px-4')
-      expect(globalRankingsTab).toHaveClass('sm:px-6')
-      expect(globalRankingsTab).toHaveClass('py-3')
-      expect(globalRankingsTab).toHaveClass('sm:py-4')
-    })
-
-    it('should have hover styling for inactive state', () => {
-      renderWithProviders()
-
-      const globalRankingsTab = screen.getByRole('tab', {
-        name: /global rankings/i,
-      })
-
-      // Should have hover classes
-      expect(globalRankingsTab).toHaveClass('hover:text-gray-900')
-      expect(globalRankingsTab).toHaveClass('hover:border-b-2')
-      expect(globalRankingsTab).toHaveClass('hover:border-tm-cool-gray')
     })
   })
 
@@ -479,7 +437,7 @@ describe('DistrictDetailPage - Global Rankings Tab Navigation Integration', () =
 
       // Verify tab is activated
       await waitFor(() => {
-        expect(globalRankingsTab).toHaveClass('text-tm-loyal-blue')
+        expect(globalRankingsTab).toHaveAttribute('aria-selected', 'true')
       })
     })
 
@@ -491,20 +449,6 @@ describe('DistrictDetailPage - Global Rankings Tab Navigation Integration', () =
       })
 
       expect(globalRankingsTab.tagName).toBe('BUTTON')
-    })
-
-    it('should have minimum touch target size', () => {
-      renderWithProviders()
-
-      const globalRankingsTab = screen.getByRole('tab', {
-        name: /global rankings/i,
-      })
-
-      // The tab should have sufficient padding for 44px touch target
-      // py-3 = 12px top + 12px bottom = 24px + text height
-      // px-4 = 16px left + 16px right = 32px + text width
-      expect(globalRankingsTab).toHaveClass('py-3')
-      expect(globalRankingsTab).toHaveClass('px-4')
     })
   })
 
@@ -520,7 +464,7 @@ describe('DistrictDetailPage - Global Rankings Tab Navigation Integration', () =
 
       // Verify Global Rankings is active
       await waitFor(() => {
-        expect(globalRankingsTab).toHaveClass('text-tm-loyal-blue')
+        expect(globalRankingsTab).toHaveAttribute('aria-selected', 'true')
       })
 
       // Click on Clubs tab
@@ -529,8 +473,8 @@ describe('DistrictDetailPage - Global Rankings Tab Navigation Integration', () =
 
       // Verify Clubs is now active and Global Rankings is inactive
       await waitFor(() => {
-        expect(clubsTab).toHaveClass('text-tm-loyal-blue')
-        expect(globalRankingsTab).toHaveClass('text-gray-600')
+        expect(clubsTab).toHaveAttribute('aria-selected', 'true')
+        expect(globalRankingsTab).toHaveAttribute('aria-selected', 'false')
       })
 
       // Click back on Global Rankings
@@ -538,8 +482,8 @@ describe('DistrictDetailPage - Global Rankings Tab Navigation Integration', () =
 
       // Verify Global Rankings is active again
       await waitFor(() => {
-        expect(globalRankingsTab).toHaveClass('text-tm-loyal-blue')
-        expect(clubsTab).toHaveClass('text-gray-600')
+        expect(globalRankingsTab).toHaveAttribute('aria-selected', 'true')
+        expect(clubsTab).toHaveAttribute('aria-selected', 'false')
       })
     })
 
@@ -571,35 +515,8 @@ describe('DistrictDetailPage - Global Rankings Tab Navigation Integration', () =
     })
   })
 
-  describe('Responsive Behavior', () => {
-    it('should have responsive text size classes', () => {
-      renderWithProviders()
-
-      const globalRankingsTab = screen.getByRole('tab', {
-        name: /global rankings/i,
-      })
-
-      // Should have responsive text size
-      expect(globalRankingsTab).toHaveClass('text-xs')
-      expect(globalRankingsTab).toHaveClass('sm:text-sm')
-    })
-
-    it('should have whitespace-nowrap to prevent text wrapping', () => {
-      renderWithProviders()
-
-      const globalRankingsTab = screen.getByRole('tab', {
-        name: /global rankings/i,
-      })
-
-      expect(globalRankingsTab).toHaveClass('whitespace-nowrap')
-    })
-
-    it('should be in a horizontally scrollable container', () => {
-      const { container } = renderWithProviders()
-
-      // The nav should have overflow-x-auto for horizontal scrolling
-      const nav = container.querySelector('[role="tablist"]')
-      expect(nav).toHaveClass('overflow-x-auto')
-    })
-  })
+  // Note: After #359 the tab bar is rendered by <DistrictDetailTabs />.
+  // Pure-style responsive concerns (font size, whitespace, overflow) are now
+  // CSS-level details verified via the component's own test file:
+  // src/components/__tests__/DistrictDetailTabs.test.tsx.
 })

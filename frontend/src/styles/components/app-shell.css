@@ -581,4 +581,72 @@
     font-size: 12px;
     color: var(--green-500);
   }
+
+  /* District detail tab bar (#359). Horizontal scroll on narrow,
+     active state via --loyal-500 underline + text color. */
+  .district-detail-tabs {
+    display: flex;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 20px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .district-detail-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .district-detail-tabs__tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    /* min-height: 44px ensures WCAG 2.5.5 touch-target size (replaces
+       the explicit class assertion that was removed during the test
+       migration). */
+    min-height: 44px;
+    padding: 14px 16px;
+    margin-bottom: -1px;
+    border: 0;
+    background: transparent;
+    color: var(--ink-2);
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 13px;
+    white-space: nowrap;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 150ms ease, border-color 150ms ease;
+  }
+
+  .district-detail-tabs__tab:hover {
+    color: var(--ink);
+  }
+
+  .district-detail-tabs__tab[aria-selected='true'] {
+    color: var(--loyal-500);
+    border-bottom-color: var(--loyal-500);
+  }
+
+  .district-detail-tabs__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    padding: 0 6px;
+    height: 18px;
+    border-radius: 999px;
+    background-color: var(--surface-3);
+    color: var(--ink-3);
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 11px;
+    line-height: 1;
+  }
+
+  .district-detail-tabs__tab[aria-selected='true']
+    .district-detail-tabs__count {
+    background-color: var(--loyal-50);
+    color: var(--loyal-500);
+  }
 }

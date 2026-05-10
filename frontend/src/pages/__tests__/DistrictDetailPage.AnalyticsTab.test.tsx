@@ -211,7 +211,7 @@ describe('DistrictDetailPage - Analytics Tab (#78)', () => {
       // After removing LeadershipInsights (#183), the first visible content
       // on the analytics tab is TopGrowthClubs (which shows empty state)
       await waitFor(() => {
-        expect(analyticsTab).toHaveClass('text-tm-loyal-blue')
+        expect(analyticsTab).toHaveAttribute('aria-selected', 'true')
       })
     })
 
@@ -224,7 +224,7 @@ describe('DistrictDetailPage - Analytics Tab (#78)', () => {
 
       // Should render without crashing — Analytics tab should become active
       await waitFor(() => {
-        expect(analyticsTab).toHaveClass('text-tm-loyal-blue')
+        expect(analyticsTab).toHaveAttribute('aria-selected', 'true')
       })
     })
   })

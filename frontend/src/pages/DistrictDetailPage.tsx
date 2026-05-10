@@ -1,7 +1,8 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useDistricts } from '../hooks/useDistricts'
 import { DistrictDetailHeader } from '../components/DistrictDetailHeader'
+import { DistrictDetailTabs } from '../components/DistrictDetailTabs'
 import { useDistrictAnalytics, ClubTrend } from '../hooks/useDistrictAnalytics'
 import { useAggregatedAnalytics } from '../hooks/useAggregatedAnalytics'
 import { useDistrictStatistics } from '../hooks/useMembershipData'
@@ -193,31 +194,6 @@ const DistrictDetailPage: React.FC = () => {
     },
     [setSearchParams]
   )
-
-  // Tab scroll-fade detection refs (#86)
-  const tabScrollRef = React.useRef<HTMLDivElement>(null)
-  const tabNavRef = React.useRef<HTMLDivElement>(null)
-  const [isTabScrollableRight, setIsTabScrollableRight] = useState(false)
-
-  React.useEffect(() => {
-    const nav = tabNavRef.current
-    if (!nav) return
-
-    const checkScroll = () => {
-      const canScrollRight =
-        nav.scrollLeft + nav.clientWidth < nav.scrollWidth - 1
-      setIsTabScrollableRight(canScrollRight)
-    }
-
-    checkScroll()
-    nav.addEventListener('scroll', checkScroll, { passive: true })
-    window.addEventListener('resize', checkScroll)
-
-    return () => {
-      nav.removeEventListener('scroll', checkScroll)
-      window.removeEventListener('resize', checkScroll)
-    }
-  }, [])
 
   // Use URL-synced program year and date (#272)
   const {
@@ -485,15 +461,11 @@ const DistrictDetailPage: React.FC = () => {
     b.localeCompare(a)
   )
 
-  // Tab configuration
-  const tabs: Array<{ id: TabType; label: string; disabled?: boolean }> = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'clubs', label: 'Clubs' },
-    { id: 'divisions', label: 'Divisions & Areas' },
-    { id: 'trends', label: 'Trends' },
-    { id: 'analytics', label: 'Analytics' },
-    { id: 'globalRankings', label: 'Global Rankings' },
-  ]
+  // Tab badge counts (passed to DistrictDetailTabs)
+  const clubsCount = analytics?.allClubs?.length ?? 0
+  const divisionsCount = districtStatistics
+    ? extractDivisionPerformance(districtStatistics).length
+    : 0
 
   // Handle club click — navigate to subpage (#208)
   const handleClubClick = (club: ClubTrend) => {
@@ -598,50 +570,12 @@ const DistrictDetailPage: React.FC = () => {
             />
           )}
 
-          {/* Tabs */}
-          <div className="bg-white rounded-lg shadow-md mb-4 sm:mb-6">
-            <div className="border-b border-gray-200">
-              <div
-                className="tab-scroll-fade"
-                ref={tabScrollRef}
-                data-scrollable-right={isTabScrollableRight}
-              >
-                <div
-                  className="flex -mb-px overflow-x-auto scrollbar-hide"
-                  ref={tabNavRef}
-                  role="tablist"
-                  aria-label="District analysis tabs"
-                >
-                  {tabs.map(tab => (
-                    <button
-                      key={tab.id}
-                      onClick={() => !tab.disabled && setActiveTab(tab.id)}
-                      disabled={tab.disabled}
-                      role="tab"
-                      aria-selected={activeTab === tab.id}
-                      className={`
-                        px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-tm-headline font-medium whitespace-nowrap transition-colors
-                        ${
-                          activeTab === tab.id
-                            ? 'border-b-2 border-tm-loyal-blue text-tm-loyal-blue'
-                            : tab.disabled
-                              ? 'text-gray-400 cursor-not-allowed'
-                              : 'text-gray-600 hover:text-gray-900 hover:border-b-2 hover:border-tm-cool-gray'
-                        }
-                      `}
-                    >
-                      {tab.label}
-                      {tab.disabled && (
-                        <span className="ml-2 text-xs font-tm-body text-gray-400">
-                          (Coming Soon)
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+          <DistrictDetailTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            clubsCount={clubsCount}
+            divisionsCount={divisionsCount}
+          />
 
           {/* Data freshness banner (#214) */}
           <DataAsOfBanner

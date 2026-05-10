@@ -763,7 +763,7 @@ describe('DistrictDetailPage - Division and Area Recognition Panel Integration',
         const activeTab = screen.getByRole('tab', {
           name: /Divisions & Areas/i,
         })
-        expect(activeTab).toHaveClass('border-tm-loyal-blue')
+        expect(activeTab).toHaveAttribute('aria-selected', 'true')
       })
     })
 

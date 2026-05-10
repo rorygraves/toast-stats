@@ -32,13 +32,11 @@ describe('Issue #86 — Tab bar scroll fade indicator', () => {
     expect(css).toMatch(/pointer-events:\s*none/)
   })
 
-  it('DistrictDetailPage should use tab-scroll-fade class on the tab container', () => {
-    const source = fs.readFileSync(
-      path.join(SRC_DIR, 'pages', 'DistrictDetailPage.tsx'),
-      'utf-8'
-    )
-    expect(source).toContain('tab-scroll-fade')
-  })
+  // Note: After #359 extracted the tab bar into <DistrictDetailTabs />, native
+  // overflow-x: auto handles tab scrolling and the .tab-scroll-fade class is
+  // no longer applied to the tab container in DistrictDetailPage.tsx. The CSS
+  // class itself is retained for any future use. Tab behaviour coverage now
+  // lives in `src/components/__tests__/DistrictDetailTabs.test.tsx`.
 })
 
 // ---- Issue #85: Sticky table columns ----

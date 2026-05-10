@@ -486,7 +486,7 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
         const activeTab = screen.getByRole('tab', {
           name: /divisions & areas/i,
         })
-        expect(activeTab).toHaveClass('border-tm-loyal-blue')
+        expect(activeTab).toHaveAttribute('aria-selected', 'true')
       })
     })
 

@@ -606,10 +606,10 @@ describe('DistrictDetailPage - Trends Tab Data Source Wiring', () => {
       const trendsTab = screen.getByRole('tab', { name: /Trends/i })
       await user.click(trendsTab)
 
-      // Verify the Trends tab is active by checking its text styling
+      // Verify the Trends tab is active
       await waitFor(() => {
         const trendsButton = screen.getByRole('tab', { name: /Trends/i })
-        expect(trendsButton.className).toContain('border-tm-loyal-blue')
+        expect(trendsButton).toHaveAttribute('aria-selected', 'true')
       })
 
       // Neither component should be rendered
@@ -649,10 +649,10 @@ describe('DistrictDetailPage - Trends Tab Data Source Wiring', () => {
       const trendsTab = screen.getByRole('tab', { name: /Trends/i })
       await user.click(trendsTab)
 
-      // Verify the Trends tab is active by checking its text styling
+      // Verify the Trends tab is active
       await waitFor(() => {
         const trendsButton = screen.getByRole('tab', { name: /Trends/i })
-        expect(trendsButton.className).toContain('border-tm-loyal-blue')
+        expect(trendsButton).toHaveAttribute('aria-selected', 'true')
       })
 
       // Neither component should be rendered despite analytics being available
