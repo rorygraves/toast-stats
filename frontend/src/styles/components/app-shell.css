@@ -643,6 +643,25 @@
     overflow: hidden;
   }
 
+  /* District-number chip on each ranking row (#436). Standalone visual
+     element so the click affordance reads as obviously interactive. */
+  .districts-rankings-table__district-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 48px;
+    padding: 4px 10px;
+    background-color: var(--loyal-50);
+    color: var(--loyal-600);
+    border: 1px solid var(--loyal-200);
+    border-radius: var(--rds-radius-sm);
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+  }
+
   .districts-rankings-table {
     width: 100%;
     border-collapse: collapse;

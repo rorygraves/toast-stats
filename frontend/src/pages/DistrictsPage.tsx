@@ -891,11 +891,13 @@ const DistrictsPage: React.FC = () => {
             <table className="districts-rankings-table">
               <thead>
                 <tr>
+                  {/* District first (#436) — primary entity reads left-to-right.
+                      Rank moves to second column. */}
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 z-10">
-                    Rank
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-[72px] z-10 sticky-column-shadow">
                     District
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-[200px] z-10 sticky-column-shadow">
+                    Rank
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Region
@@ -932,50 +934,18 @@ const DistrictsPage: React.FC = () => {
                         isPinned ? 'bg-blue-50' : ''
                       }`}
                     >
+                      {/* District cell first (#436) — primary entity. The
+                          number is rendered as a standalone chip so the
+                          click affordance reads as obviously interactive. */}
                       <td className="px-6 py-4 whitespace-nowrap sticky left-0 z-10 bg-white">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={e => {
-                              e.stopPropagation()
-                              togglePin(district.districtId)
-                            }}
-                            disabled={pinDisabled}
-                            aria-label={
-                              isPinned
-                                ? `Unpin District ${district.districtId}`
-                                : `Pin District ${district.districtId}`
-                            }
-                            className={`flex-shrink-0 w-6 h-6 flex items-center justify-center rounded transition-colors ${
-                              isPinned
-                                ? 'text-tm-loyal-blue hover:text-red-500'
-                                : pinDisabled
-                                  ? 'text-gray-300 cursor-not-allowed'
-                                  : 'text-gray-400 hover:text-tm-loyal-blue'
-                            }`}
-                          >
-                            <svg
-                              className="w-4 h-4"
-                              fill={isPinned ? 'currentColor' : 'none'}
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                              />
-                            </svg>
-                          </button>
+                        <div className="flex items-center gap-3 flex-wrap">
                           <span
-                            className={`inline-flex items-center justify-center w-10 h-10 rounded-full font-bold ${getRankBadgeColor(rank)}`}
+                            data-testid={`district-number-chip-D${district.districtId}`}
+                            className="districts-rankings-table__district-chip"
+                            aria-hidden="true"
                           >
-                            {rank}
+                            D{district.districtId}
                           </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap sticky left-[72px] z-10 bg-white sticky-column-shadow">
-                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-sm font-medium text-gray-900">
                             {district.districtName}
                           </span>
@@ -1034,6 +1004,51 @@ const DistrictsPage: React.FC = () => {
                         </div>
                         <div className="text-sm text-gray-500">
                           {district.activeClubs} active clubs
+                        </div>
+                      </td>
+                      {/* Rank cell — now second column (#436). Pin button
+                          stays adjacent to rank badge for symmetry with
+                          the existing comparison-pin UX. */}
+                      <td className="px-6 py-4 whitespace-nowrap sticky left-[200px] z-10 bg-white sticky-column-shadow">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={e => {
+                              e.stopPropagation()
+                              togglePin(district.districtId)
+                            }}
+                            disabled={pinDisabled}
+                            aria-label={
+                              isPinned
+                                ? `Unpin District ${district.districtId}`
+                                : `Pin District ${district.districtId}`
+                            }
+                            className={`flex-shrink-0 w-6 h-6 flex items-center justify-center rounded transition-colors ${
+                              isPinned
+                                ? 'text-tm-loyal-blue hover:text-red-500'
+                                : pinDisabled
+                                  ? 'text-gray-300 cursor-not-allowed'
+                                  : 'text-gray-400 hover:text-tm-loyal-blue'
+                            }`}
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill={isPinned ? 'currentColor' : 'none'}
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                              />
+                            </svg>
+                          </button>
+                          <span
+                            className={`inline-flex items-center justify-center w-10 h-10 rounded-full font-bold ${getRankBadgeColor(rank)}`}
+                          >
+                            {rank}
+                          </span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

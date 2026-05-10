@@ -545,6 +545,70 @@ describe('DistrictsPage - Layout Order (#83)', () => {
 })
 
 // ============================================================
+// Rankings table — column order + click affordance (#436)
+// ============================================================
+describe('DistrictsPage - Rankings column order (#436)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  const setupSingleRow = () => {
+    mockedFetchCdnRankings.mockResolvedValueOnce({
+      rankings: [
+        {
+          districtId: '61',
+          districtName: 'District 61',
+          region: '7',
+          paidClubs: 100,
+          paidClubBase: 90,
+          clubGrowthPercent: 11.1,
+          totalPayments: 5000,
+          paymentBase: 4500,
+          paymentGrowthPercent: 11.1,
+          activeClubs: 100,
+          distinguishedClubs: 50,
+          selectDistinguished: 20,
+          presidentsDistinguished: 10,
+          distinguishedPercent: 50,
+          clubsRank: 1,
+          paymentsRank: 1,
+          distinguishedRank: 1,
+          aggregateScore: 300,
+        },
+      ],
+      date: '2025-11-22',
+    })
+  }
+
+  it('renders District as the leftmost column header (before Rank)', async () => {
+    setupSingleRow()
+    renderWithProviders(<DistrictsPage />)
+
+    await screen.findByText('District 61')
+
+    const headers = screen.getAllByRole('columnheader')
+    const headerTexts = headers.map(h => h.textContent?.trim() ?? '')
+    const districtIdx = headerTexts.findIndex(t => /^district$/i.test(t))
+    const rankIdx = headerTexts.findIndex(t => /^rank$/i.test(t))
+    expect(districtIdx).toBeGreaterThanOrEqual(0)
+    expect(rankIdx).toBeGreaterThan(districtIdx)
+  })
+
+  it('renders the district number as a standalone visual chip (#436)', async () => {
+    setupSingleRow()
+    renderWithProviders(<DistrictsPage />)
+
+    await screen.findByText('District 61')
+
+    // The number "61" should appear as its own element (chip) — not just
+    // inline within "District 61"
+    const chip = screen.getByTestId('district-number-chip-D61')
+    expect(chip).toBeInTheDocument()
+    expect(chip.textContent).toMatch(/61/)
+  })
+})
+
+// ============================================================
 // Region filter — solo-select pattern (#434)
 // ============================================================
 describe('DistrictsPage - Region filter solo-select (#434)', () => {
