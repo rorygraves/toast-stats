@@ -209,3 +209,32 @@ The following design-spec items are still deferred and visible as gaps vs the ha
 - **Quick-filter chips** on Clubs tab (⭐ Close to Distinguished / Needs members / Missing renewals / President's tier only)
 
 Each of these is real follow-up work that needs its own focused PR. The architectural redesign (tokens, chrome, dark mode) is solid; the pixel-perfect handoff fidelity is the next push.
+
+---
+
+## 2026-05-10 ~13:50 — Global Rankings chrome refresh (PR #400)
+
+Continued the chrome migration into the Global Rankings tab — last big "old chrome below new chrome" mismatch on a District Detail page.
+
+**Changes:**
+
+- `FullYearRankingChart` metric toggle (Aggregate / Paid / Payments / Distinguished): legacy `bg-tm-loyal-blue` Tailwind → token-driven `.districts-toolbar__sort-btn` + `--active` modifier. 44px min-height for touch targets.
+- `FullYearRankingChart` tooltip: adopted `.redesign-panel` surface.
+- `MultiYearComparisonTable` change indicators: legacy `text-tm-loyal-blue` / `text-tm-true-maroon` / `text-gray-600` Tailwind → inline `style` objects using `var(--loyal-50)` / `var(--green-600)` / `var(--red-600)` / `var(--surface-3)` / `var(--ink-3)`. Token-driven, dark-mode-aware.
+- `MobileYearCard`: `.redesign-panel` wrapper.
+- Tests migrated from class-string assertions to behavior + inline-style assertions (`aria-pressed`, `button.style.minHeight`, `element.style.color`).
+
+**Test plan green:** 2076/2076 passing, including the previously class-pinned tests in `MultiYearComparisonTable.test.tsx`.
+
+**PR:** https://github.com/taverns-red/toast-stats/pull/400
+
+---
+
+## What's left after #400 lands
+
+- **Pixel-perfect chart restyling** (Trends/Overview): thin strokes, dots-on-data-points, light gridlines, inverted axis on ranking charts. Cosmetic; deferred. Can ship as one focused PR per chart.
+- **Close-to-Distinguished call-out banner** on Club detail (yellow accent, conditional). Small but no data plumbing needed — eligible.
+- **History per-year cards** with top-5 districts. Needs new year-end snapshot endpoint — bigger lift, defer past 24h window.
+- **WAI-ARIA tablist arrow-key navigation** (#384). Important a11y polish, defer to next sprint.
+
+The architectural redesign — tokens, chrome, dark mode, AppShell, all 6 tabs, footer version fix, Awards data — is **shipped end-to-end**. Remaining items are cosmetic charts + one banner + one a11y a11y polish. The user can use the redesign and it should look like the redesign, not like ass.
