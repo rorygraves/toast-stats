@@ -1320,27 +1320,34 @@
        the explicit class assertion that was removed during the test
        migration). */
     min-height: 44px;
-    padding: 14px 16px;
+    padding: 14px 18px;
     margin-bottom: -1px;
     border: 0;
     background: transparent;
     color: var(--ink-2);
     font-family: var(--serif);
-    font-weight: 600;
-    font-size: 13px;
+    font-weight: 700;
+    font-size: 14px;
     white-space: nowrap;
     cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: color 150ms ease, border-color 150ms ease;
+    border-bottom: 3px solid transparent;
+    transition: color 150ms ease, background-color 150ms ease,
+      border-color 150ms ease;
   }
 
+  /* Discoverability bumps (#437): hover gets a subtle bg-tint + a 50%
+     underline preview so users can see the tab is interactive before
+     they click. */
   .district-detail-tabs__tab:hover {
     color: var(--ink);
+    background-color: var(--surface-2);
+    border-bottom-color: var(--loyal-200);
   }
 
   .district-detail-tabs__tab[aria-selected='true'] {
     color: var(--loyal-500);
     border-bottom-color: var(--loyal-500);
+    border-bottom-width: 3px;
   }
 
   .district-detail-tabs__count {

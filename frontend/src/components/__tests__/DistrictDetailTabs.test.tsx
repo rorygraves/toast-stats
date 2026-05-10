@@ -124,4 +124,39 @@ describe('DistrictDetailTabs (#359)', () => {
       expect(stripped).toMatch(/min-height\s*:\s*44px\s*;/)
     })
   })
+
+  describe('discoverability (#437)', () => {
+    const css = readFileSync(
+      resolve(__dirname, '../../styles/components/app-shell.css'),
+      'utf-8'
+    )
+
+    it('uses font-size 14px (up from 13px) for legibility', () => {
+      const rule = css.match(
+        /\.district-detail-tabs__tab\s*\{([\s\S]*?)\n\s*\}/
+      )
+      const stripped = (rule?.[1] ?? '').replace(/\/\*[\s\S]*?\*\//g, '')
+      expect(stripped).toMatch(/font-size\s*:\s*14px\s*;/)
+    })
+
+    it('uses border-bottom-width 3px on the active tab (up from 2px)', () => {
+      const activeRule = css.match(
+        /\.district-detail-tabs__tab\[aria-selected='true'\]\s*\{([\s\S]*?)\n\s*\}/
+      )
+      const stripped = (activeRule?.[1] ?? '').replace(/\/\*[\s\S]*?\*\//g, '')
+      expect(stripped).toMatch(/border-bottom-width\s*:\s*3px\s*;/)
+    })
+
+    it('hover state preserves underline preview to advertise interactivity', () => {
+      const hoverRule = css.match(
+        /\.district-detail-tabs__tab:hover\s*\{([\s\S]*?)\n\s*\}/
+      )
+      const stripped = (hoverRule?.[1] ?? '').replace(/\/\*[\s\S]*?\*\//g, '')
+      // Hover should have a background-color OR a border-bottom hint to
+      // advertise interactivity beyond a color shift.
+      expect(
+        /background-color\s*:|border-bottom-color\s*:/.test(stripped)
+      ).toBe(true)
+    })
+  })
 })
