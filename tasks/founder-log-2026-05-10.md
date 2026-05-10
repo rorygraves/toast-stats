@@ -183,4 +183,29 @@ Time remaining in 24h budget: substantial. Going for the Awards epic. Plan: revi
 4. **#359 tab bar visual polish** — already in #384 deferred, may need to pull forward
 5. **AppShell top bar visual debug** — diagnose why brand mark/nav rendering looks broken
 
-This pivots away from "epics shipped at quality bar X" toward "homepage+awards look like the design." Tracking each as a follow-up PR. Reopening the relevant epic if needed.
+### Post-audit fix branch — PR #394 merged + deployed
+
+Five visual regressions fixed in one focused PR:
+
+1. **Awards page empty** — `useCompetitiveAwards(undefined)` was disabled. Hook now resolves the latest snapshot via `fetchCdnManifest()` when no date is passed. `/awards` now shows real data.
+2. **Top bar invisible** — translucent `rgba(var(--rds-surface-rgb), 0.72)` rendered too pale on the live deploy. Switched to opaque `var(--surface)` fallback with the glass effect gated behind `@supports (backdrop-filter: blur(1px))`. Bar is now visible regardless of backdrop-filter support.
+3. **History year chips were raw text** — `var(--surface-3)` background blended with `var(--bg)`. Added 1px `var(--line)` border to all chips and `var(--loyal-200)` border + bumped weight on the active chip.
+4. **Districts page toolbar + rankings table chrome** — sort buttons / region filter / search input / table were still on legacy Tailwind chrome. Added `.districts-toolbar*` and `.districts-rankings-table*` token-driven classes, agent rewrote the JSX to use them. Sort is now a segmented control, region chips are properly sized, table has `--surface-2` thead with mono numerics.
+5. **Date selector** got matching token classes for typographic consistency.
+
+Live verified: CSS bundle on prod has all 10 new `.districts-toolbar*` classes + the `@supports` rule + the opaque top-bar fallback.
+
+### What's NOT done (residual visual gap from the original handoff)
+
+The following design-spec items are still deferred and visible as gaps vs the handoff:
+
+- **Pixel-perfect chart restyling** on Trends/Overview tabs (thin strokes, dots on data points, light gridlines, axis-inverted ranking charts)
+- **Ranking progression chart with metric toggle** (Aggregate/Paid/Payments/Distinguished segmented control) on Global Rankings tab
+- **Multi-year comparison table** with Δ chips on Global Rankings tab
+- **History per-year cards** with top-5 districts + headline metrics (needs new year-end snapshot endpoint)
+- **Club detail hero header redesign** (loyal-blue panel with charter info eyebrow + health/DCP tier pills on right)
+- **Close-to-Distinguished call-out banner** on Club detail (yellow accent, conditional)
+- **WAI-ARIA tablist arrow-key navigation** on `DistrictDetailTabs` (filed as #384)
+- **Quick-filter chips** on Clubs tab (⭐ Close to Distinguished / Needs members / Missing renewals / President's tier only)
+
+Each of these is real follow-up work that needs its own focused PR. The architectural redesign (tokens, chrome, dark mode) is solid; the pixel-perfect handoff fidelity is the next push.
