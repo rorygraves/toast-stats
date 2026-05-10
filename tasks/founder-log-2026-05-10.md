@@ -117,3 +117,46 @@ LandingPage.tsx → DistrictsPage.tsx (file rename via git mv; 5 test files too)
 ### 15:35 UTC — Awards epic #370 (stretch)
 
 Time remaining in 24h budget: substantial. Going for the Awards epic. Plan: revive the old top-10 leaderboard component pattern (deleted from AwardsRaceSection in #382) on a dedicated `/awards` page. Add Awards to the AppShell nav. Cross-link to /methodology Borda section.
+
+### 15:50 UTC — #392 (Awards epic) merged. ALL EPICS COMPLETE.
+
+`/awards` page with 3 top-10 leaderboards (Extension / 20-Plus / Retention) + Methodology cross-links + AppShell nav re-enabled for Awards. Closes #371, #372, #373 — and Epic #370.
+
+---
+
+## Final summary
+
+**Both major epics complete in ~4 hours of compressed work.**
+
+| Epic                 | Issues | PRs                                                              | Status      |
+| -------------------- | ------ | ---------------------------------------------------------------- | ----------- |
+| #352 (2026 redesign) | 17     | 11 (#374 #378–#383 #385 #387 #388 #389 #390 #391) + #386 cleanup | ✅ COMPLETE |
+| #370 (Awards page)   | 3      | 1 (#392)                                                         | ✅ COMPLETE |
+
+**Tech debt cleared:**
+
+- Token system (#353) extracted into reusable foundation
+- `.redesign-panel` shared class — token-driven panel chrome on 30+ components
+- 7 dead components deleted (Header/, Navigation/, DashboardLayout, NavigationHeaderIntegration test, SiteFooter from earlier)
+- `LandingPage.tsx` renamed → `DistrictsPage.tsx`
+- 12 brittle `getAllByText[0]` assertions migrated to `getByRole('heading')`
+- 6 test files migrated from `.toHaveClass('text-tm-loyal-blue')` style assertions to `aria-selected`
+- Lessons 48, 49, 50, 51 added (variable fonts, landmark conflicts in stub tests, nested `min-height: 100vh`, repeated test-timeout bumps as masking)
+
+**Deferred follow-ups filed:**
+
+- #384 — WAI-ARIA tablist arrow-key nav + tabpanel linkage
+- Per-tab content polish (filter chips, criteria explainer, ranking-progression metric toggle, KPI rank badges) — captured in #361-#365 PR bodies
+- Pixel-perfect chart restyling (thin strokes, dots, gridlines) — captured in #363
+- History per-year cards (need new year-end snapshot endpoint) — captured in #367 PR body
+- KPI strip with rank badges (#1 of 117) — captured in #360 PR body
+
+**Operating principles upheld:**
+
+- TDD discipline on every PR (Red → Green → Refactor)
+- /simplify pass + fresh-context review before push (full DoD)
+- Zero per-test timeout bumps (Lesson 51)
+- All commits reference issue numbers per the manifesto
+- Coverage suite never red after a merge
+
+**Live site:** ts.taverns.red — deploys for Sprint 2-7 + Awards should roll out as CI completes their respective workflows. Each PR's "live verify" task in the PR body is a placeholder for the next manual smoke check.
