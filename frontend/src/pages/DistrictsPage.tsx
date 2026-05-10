@@ -23,6 +23,7 @@ import {
 } from '../utils/programYear'
 import { formatDisplayDate } from '../utils/dateFormatting'
 import { DistrictRanking } from '../types/districts'
+import { arrayToCSV, downloadCSV } from '../utils/csvExport'
 
 const DistrictsPage: React.FC = () => {
   const navigate = useNavigate()
@@ -478,6 +479,73 @@ const DistrictsPage: React.FC = () => {
           </div>
           <div className="districts-page-header__actions">
             <DataFreshnessBadge />
+            <button
+              type="button"
+              className="districts-action-btn"
+              onClick={() => {
+                const header = [
+                  'Rank',
+                  'District',
+                  'Region',
+                  'Paid Clubs',
+                  'Total Payments',
+                  'Distinguished Clubs',
+                  'Aggregate Score',
+                ]
+                const rows: (string | number)[][] = sortedRankings.map(
+                  (r, i) => [
+                    i + 1,
+                    `D${r.districtId}`,
+                    r.region,
+                    r.paidClubs,
+                    r.totalPayments,
+                    r.distinguishedClubs,
+                    r.aggregateScore,
+                  ]
+                )
+                const csv = arrayToCSV([header, ...rows])
+                const dateLabel = (effectiveRankingsDate ?? 'latest').replace(
+                  /[^0-9a-z-]/gi,
+                  ''
+                )
+                downloadCSV(csv, `district-rankings-${dateLabel}.csv`)
+              }}
+            >
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                aria-hidden="true"
+              >
+                <path d="M3 10v3h10v-3M8 2v9M5 8l3 3 3-3" />
+              </svg>
+              Export CSV
+            </button>
+            <button
+              type="button"
+              className="districts-action-btn districts-action-btn--primary"
+              onClick={() => {
+                if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                  void navigator.clipboard.writeText(window.location.href)
+                }
+              }}
+            >
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                aria-hidden="true"
+              >
+                <path d="M8 11.5V3.5M5 6l3-3 3 3M3 13h10" />
+              </svg>
+              Share
+            </button>
           </div>
         </div>
 
@@ -532,7 +600,7 @@ const DistrictsPage: React.FC = () => {
                   availableProgramYears={availableProgramYears}
                   selectedProgramYear={selectedProgramYear}
                   onProgramYearChange={setSelectedProgramYear}
-                  showProgress={true}
+                  showProgress={false}
                 />
               </div>
             )}

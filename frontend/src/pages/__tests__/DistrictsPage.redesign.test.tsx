@@ -196,6 +196,35 @@ describe('Districts page redesign chrome (#356)', () => {
     })
   })
 
+  describe('action cluster (#357 follow-up)', () => {
+    it('renders Export CSV + Share buttons on the page header', async () => {
+      setupWithData()
+      renderWithProviders(<DistrictsPage />)
+      await screen.findByText('District 1')
+
+      expect(
+        screen.getByRole('button', { name: /export csv/i })
+      ).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /share/i })).toBeInTheDocument()
+    })
+
+    it('Share button copies the current URL to the clipboard', async () => {
+      setupWithData()
+      const writeText = vi.fn().mockResolvedValue(undefined)
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText },
+        writable: true,
+        configurable: true,
+      })
+      renderWithProviders(<DistrictsPage />)
+      await screen.findByText('District 1')
+
+      const shareBtn = screen.getByRole('button', { name: /share/i })
+      shareBtn.click()
+      expect(writeText).toHaveBeenCalledTimes(1)
+    })
+  })
+
   describe('AppShell integration (Lesson 49 — prior PR shipped a regression that only manifests when nested under the real shell)', () => {
     it('does not declare its own min-height: 100vh — that belongs to AppShell', () => {
       // Static check: the .districts-page-root rule must NOT set min-height

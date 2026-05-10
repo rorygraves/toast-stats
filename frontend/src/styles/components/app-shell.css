@@ -332,6 +332,42 @@
     flex-wrap: wrap;
   }
 
+  /* Action cluster buttons (#357 follow-up). Mirrors the design's .btn /
+     .btn-primary chrome; namespaced .districts-* so they don't collide
+     with the legacy .tm-btn-* classes. */
+  .districts-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: var(--surface);
+    color: var(--ink-2);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-sm);
+    padding: 7px 12px;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .districts-action-btn:hover {
+    background-color: var(--surface-3);
+    color: var(--ink);
+  }
+
+  .districts-action-btn--primary {
+    background-color: var(--loyal-500);
+    color: #ffffff;
+    border-color: var(--loyal-500);
+  }
+
+  .districts-action-btn--primary:hover {
+    background-color: var(--loyal-600);
+    border-color: var(--loyal-600);
+    color: #ffffff;
+  }
+
   /* 4-card KPI strip */
   .districts-kpi-strip {
     display: grid;
