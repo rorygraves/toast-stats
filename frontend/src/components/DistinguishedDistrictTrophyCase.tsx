@@ -112,7 +112,7 @@ export const DistinguishedDistrictTrophyCase: React.FC<
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
           <h2 className="text-lg font-bold text-gray-900 font-tm-headline mb-1">
-            District Recognition
+            Distinguished District Status
           </h2>
           <p className="text-sm text-gray-500 font-tm-body">
             Distinguished District Program (Item 1490)
