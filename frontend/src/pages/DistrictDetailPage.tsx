@@ -46,6 +46,8 @@ import {
   LazyYearOverYearComparison as YearOverYearComparison,
 } from '../components/LazyCharts'
 import { TopGrowthClubs } from '../components/TopGrowthClubs'
+import { EducationLevelsCard } from '../components/EducationLevelsCard'
+import { extractEducationLevels } from '../utils/extractEducationLevels'
 import { DivisionPerformanceCards } from '../components/DivisionPerformanceCards'
 import DistinguishedProgramCriteriaExplainer from '../components/DistinguishedProgramCriteriaExplainer'
 import { DivisionAreaRecognitionPanel } from '../components/DivisionAreaRecognitionPanel'
@@ -917,6 +919,22 @@ const DistrictDetailPage: React.FC = () => {
                     />
                   ) : (
                     isLoadingAnalytics && <LoadingSkeleton variant="card" />
+                  )}
+
+                  {/* Education Levels rollup (#426) — sums Level 1/2/3
+                      and the bundled Level 4 / Path / DTM column across
+                      all clubs in the district. */}
+                  {districtStatistics ? (
+                    <EducationLevelsCard
+                      totals={extractEducationLevels(districtStatistics)}
+                    />
+                  ) : (
+                    isLoadingStatistics && (
+                      <EducationLevelsCard
+                        totals={extractEducationLevels(null)}
+                        isLoading
+                      />
+                    )
                   )}
                 </>
               )}
