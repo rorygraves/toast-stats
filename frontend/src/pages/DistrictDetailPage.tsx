@@ -2,7 +2,11 @@ import React, { useCallback, useMemo } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useDistricts } from '../hooks/useDistricts'
 import { DistrictDetailHeader } from '../components/DistrictDetailHeader'
-import { DistrictDetailTabs } from '../components/DistrictDetailTabs'
+import {
+  DistrictDetailTabs,
+  panelIdFor,
+  tabIdFor,
+} from '../components/DistrictDetailTabs'
 import { useDistrictAnalytics, ClubTrend } from '../hooks/useDistrictAnalytics'
 import { useAggregatedAnalytics } from '../hooks/useAggregatedAnalytics'
 import { useDistrictStatistics } from '../hooks/useMembershipData'
@@ -593,295 +597,345 @@ const DistrictDetailPage: React.FC = () => {
               />
             )}
 
-          {/* Tab Content */}
+          {/* Tab Content — each panel has a stable id + aria-labelledby
+              even when its body is conditionally rendered, so the
+              tablist's aria-controls always resolves (#384). */}
           <div className="space-y-4 sm:space-y-6">
-            {activeTab === 'overview' && districtId && hasOverviewData && (
-              <>
-                {/* District Overview - Now uses global date selector */}
-                {hasValidDates && effectiveProgramYear && (
-                  <DistrictOverview
-                    districtId={districtId}
-                    {...(effectiveEndDate && {
-                      selectedDate: effectiveEndDate,
-                    })}
-                    programYearStartDate={effectiveProgramYear.startDate}
-                    performanceTargets={performanceTargets ?? undefined}
-                    netMemberChange={
-                      // #170: prefer time-series member change (base membership based)
-                      timeSeries?.memberChange
+            <div
+              role="tabpanel"
+              id={panelIdFor('overview')}
+              aria-labelledby={tabIdFor('overview')}
+              hidden={activeTab !== 'overview'}
+            >
+              {activeTab === 'overview' && districtId && hasOverviewData && (
+                <>
+                  {/* District Overview - Now uses global date selector */}
+                  {hasValidDates && effectiveProgramYear && (
+                    <DistrictOverview
+                      districtId={districtId}
+                      {...(effectiveEndDate && {
+                        selectedDate: effectiveEndDate,
+                      })}
+                      programYearStartDate={effectiveProgramYear.startDate}
+                      performanceTargets={performanceTargets ?? undefined}
+                      netMemberChange={
+                        // #170: prefer time-series member change (base membership based)
+                        timeSeries?.memberChange
+                      }
+                    />
+                  )}
+
+                  {/* Distinguished District Trophy Case (#332) */}
+                  <DistinguishedDistrictTrophyCase
+                    status={distinguishedDistrictStatus}
+                    clubStrengthQualifies={clubStrengthResult?.qualifies}
+                    clubStrengthGrowth={clubStrengthResult?.growthPercent}
+                    leadershipExcellenceQualifies={
+                      leadershipExcellenceResult?.qualifies
+                    }
+                    leadershipExcellenceYears={
+                      leadershipExcellenceResult?.consecutiveYears
+                    }
+                    educationTrainingQualifies={
+                      officerAwardsResult?.educationTraining?.qualifies
+                    }
+                    clubGrowthQualifies={
+                      officerAwardsResult?.clubGrowth?.qualifies
                     }
                   />
-                )}
 
-                {/* Distinguished District Trophy Case (#332) */}
-                <DistinguishedDistrictTrophyCase
-                  status={distinguishedDistrictStatus}
-                  clubStrengthQualifies={clubStrengthResult?.qualifies}
-                  clubStrengthGrowth={clubStrengthResult?.growthPercent}
-                  leadershipExcellenceQualifies={
-                    leadershipExcellenceResult?.qualifies
-                  }
-                  leadershipExcellenceYears={
-                    leadershipExcellenceResult?.consecutiveYears
-                  }
-                  educationTrainingQualifies={
-                    officerAwardsResult?.educationTraining?.qualifies
-                  }
-                  clubGrowthQualifies={
-                    officerAwardsResult?.clubGrowth?.qualifies
-                  }
-                />
-
-                {/* Payment Composition + Distinguished Progress legacy
+                  {/* Payment Composition + Distinguished Progress legacy
                     sections retired in #472 — the new redesign panels in
                     DistrictOverview (DistinguishedCompositionBar +
                     PaymentCompositionDonut) cover the same data. */}
-              </>
-            )}
+                </>
+              )}
+            </div>
 
-            {activeTab === 'clubs' && districtId && (
-              <ClubsTable
-                clubs={allClubs}
-                districtId={districtId}
-                isLoading={isLoadingAnalytics}
-                onClubClick={handleClubClick}
-                initialSortField={initialSortField}
-                initialSortDirection={initialSortDir}
-                onSortChange={handleSortChange}
-                initialPage={initialPage}
-                onPageChange={handlePageChange}
-                initialFilterState={initialFilterState}
-                onFilterChange={handleFilterChange}
-              />
-            )}
+            <div
+              role="tabpanel"
+              id={panelIdFor('clubs')}
+              aria-labelledby={tabIdFor('clubs')}
+              hidden={activeTab !== 'clubs'}
+            >
+              {activeTab === 'clubs' && districtId && (
+                <ClubsTable
+                  clubs={allClubs}
+                  districtId={districtId}
+                  isLoading={isLoadingAnalytics}
+                  onClubClick={handleClubClick}
+                  initialSortField={initialSortField}
+                  initialSortDirection={initialSortDir}
+                  onSortChange={handleSortChange}
+                  initialPage={initialPage}
+                  onPageChange={handlePageChange}
+                  initialFilterState={initialFilterState}
+                  onFilterChange={handleFilterChange}
+                />
+              )}
+            </div>
 
-            {activeTab === 'divisions' && (
-              <>
-                {/* Division Performance Cards */}
-                {districtStatistics ? (
-                  <DivisionPerformanceCards
-                    districtSnapshot={districtStatistics}
-                    isLoading={isLoadingStatistics}
-                    snapshotTimestamp={districtStatistics.asOfDate}
-                  />
-                ) : (
-                  isLoadingStatistics && <LoadingSkeleton variant="card" />
-                )}
+            <div
+              role="tabpanel"
+              id={panelIdFor('divisions')}
+              aria-labelledby={tabIdFor('divisions')}
+              hidden={activeTab !== 'divisions'}
+            >
+              {activeTab === 'divisions' && (
+                <>
+                  {/* Division Performance Cards */}
+                  {districtStatistics ? (
+                    <DivisionPerformanceCards
+                      districtSnapshot={districtStatistics}
+                      isLoading={isLoadingStatistics}
+                      snapshotTimestamp={districtStatistics.asOfDate}
+                    />
+                  ) : (
+                    isLoadingStatistics && <LoadingSkeleton variant="card" />
+                  )}
 
-                {/* Distinguished Program criteria explainer (#362). Sits
+                  {/* Distinguished Program criteria explainer (#362). Sits
                     between the per-division cards and the
                     DivisionAreaRecognitionPanel so users see the rules
                     before reading any specific division's status. */}
-                <DistinguishedProgramCriteriaExplainer />
+                  <DistinguishedProgramCriteriaExplainer />
 
-                {/* Division and Area Recognition Panel */}
-                {districtStatistics ? (
-                  <DivisionAreaRecognitionPanel
-                    divisions={extractDivisionPerformance(districtStatistics)}
-                    isLoading={isLoadingStatistics}
-                  />
-                ) : (
-                  isLoadingStatistics && (
-                    <LoadingSkeleton variant="table" count={3} />
-                  )
-                )}
-              </>
-            )}
-
-            {activeTab === 'trends' && (
-              <>
-                {/* Membership Trend Chart */}
-                {aggregatedAnalytics ? (
-                  <LazyChart height="400px">
-                    <MembershipTrendChart
-                      membershipTrend={
-                        // #170: prefer time-series monthly data over inline 1-point trend
-                        timeSeries?.years[
-                          timeSeries.currentProgramYear
-                        ]?.dataPoints.map(dp => ({
-                          date: dp.date,
-                          count: dp.membership,
-                        })) ?? aggregatedAnalytics.trends.membership
-                      }
-                      isLoading={isLoadingAggregated}
-                      priorYearTrends={
-                        // #238: overlay prior years for YoY comparison
-                        timeSeries
-                          ? timeSeries.availableYears
-                              .filter(y => y !== timeSeries.currentProgramYear)
-                              .map(y => ({
-                                label: y,
-                                data:
-                                  timeSeries.years[y]?.dataPoints.map(dp => ({
-                                    date: dp.date,
-                                    count: dp.membership,
-                                  })) ?? [],
-                              }))
-                              .filter(yt => yt.data.length > 0)
-                          : undefined
-                      }
+                  {/* Division and Area Recognition Panel */}
+                  {districtStatistics ? (
+                    <DivisionAreaRecognitionPanel
+                      divisions={extractDivisionPerformance(districtStatistics)}
+                      isLoading={isLoadingStatistics}
                     />
-                  </LazyChart>
-                ) : (
-                  isLoadingAggregated && (
-                    <LoadingSkeleton variant="chart" height="400px" />
-                  )
-                )}
+                  ) : (
+                    isLoadingStatistics && (
+                      <LoadingSkeleton variant="table" count={3} />
+                    )
+                  )}
+                </>
+              )}
+            </div>
 
-                {/* Membership Payments Chart (#243) */}
-                {paymentsTrendData ? (
-                  <LazyChart height="450px">
-                    <MembershipPaymentsChart
-                      paymentsTrend={paymentsTrendData.currentYearTrend}
-                      multiYearData={
-                        // #243: Build multi-year payment data from time-series CDN
-                        // (analytics CDN only has current year payments)
-                        timeSeries
-                          ? ((): MultiYearPaymentData => {
-                              const currentPY = timeSeries.currentProgramYear
-                              const currentData =
-                                timeSeries.years[currentPY]?.dataPoints.map(
-                                  dp => ({
-                                    date: dp.date,
-                                    payments: dp.payments,
-                                    programYearDay: calculateProgramYearDay(
-                                      dp.date
-                                    ),
-                                  })
-                                ) ?? []
-                              const previousYears = timeSeries.availableYears
-                                .filter(y => y !== currentPY)
+            <div
+              role="tabpanel"
+              id={panelIdFor('trends')}
+              aria-labelledby={tabIdFor('trends')}
+              hidden={activeTab !== 'trends'}
+            >
+              {activeTab === 'trends' && (
+                <>
+                  {/* Membership Trend Chart */}
+                  {aggregatedAnalytics ? (
+                    <LazyChart height="400px">
+                      <MembershipTrendChart
+                        membershipTrend={
+                          // #170: prefer time-series monthly data over inline 1-point trend
+                          timeSeries?.years[
+                            timeSeries.currentProgramYear
+                          ]?.dataPoints.map(dp => ({
+                            date: dp.date,
+                            count: dp.membership,
+                          })) ?? aggregatedAnalytics.trends.membership
+                        }
+                        isLoading={isLoadingAggregated}
+                        priorYearTrends={
+                          // #238: overlay prior years for YoY comparison
+                          timeSeries
+                            ? timeSeries.availableYears
+                                .filter(
+                                  y => y !== timeSeries.currentProgramYear
+                                )
                                 .map(y => ({
                                   label: y,
                                   data:
                                     timeSeries.years[y]?.dataPoints.map(dp => ({
                                       date: dp.date,
+                                      count: dp.membership,
+                                    })) ?? [],
+                                }))
+                                .filter(yt => yt.data.length > 0)
+                            : undefined
+                        }
+                      />
+                    </LazyChart>
+                  ) : (
+                    isLoadingAggregated && (
+                      <LoadingSkeleton variant="chart" height="400px" />
+                    )
+                  )}
+
+                  {/* Membership Payments Chart (#243) */}
+                  {paymentsTrendData ? (
+                    <LazyChart height="450px">
+                      <MembershipPaymentsChart
+                        paymentsTrend={paymentsTrendData.currentYearTrend}
+                        multiYearData={
+                          // #243: Build multi-year payment data from time-series CDN
+                          // (analytics CDN only has current year payments)
+                          timeSeries
+                            ? ((): MultiYearPaymentData => {
+                                const currentPY = timeSeries.currentProgramYear
+                                const currentData =
+                                  timeSeries.years[currentPY]?.dataPoints.map(
+                                    dp => ({
+                                      date: dp.date,
                                       payments: dp.payments,
                                       programYearDay: calculateProgramYearDay(
                                         dp.date
                                       ),
-                                    })) ?? [],
-                                }))
-                                .filter(yt => yt.data.length > 0)
-                              return {
-                                currentYear: {
-                                  label: currentPY,
-                                  data: currentData,
-                                },
-                                previousYears,
-                              }
-                            })()
-                          : paymentsTrendData.multiYearData
-                      }
-                      statistics={
-                        // #269: Override YoY when time-series data provides
-                        // multi-year payment history (analytics CDN is current-year-only)
-                        (() => {
-                          const tsYoY = computePaymentYoYFromTimeSeries(
-                            timeSeries ?? null
-                          )
-                          if (tsYoY) {
-                            // Use time-series payments for consistency (#319)
-                            const tsPayments = getLatestPayments(
+                                    })
+                                  ) ?? []
+                                const previousYears = timeSeries.availableYears
+                                  .filter(y => y !== currentPY)
+                                  .map(y => ({
+                                    label: y,
+                                    data:
+                                      timeSeries.years[y]?.dataPoints.map(
+                                        dp => ({
+                                          date: dp.date,
+                                          payments: dp.payments,
+                                          programYearDay:
+                                            calculateProgramYearDay(dp.date),
+                                        })
+                                      ) ?? [],
+                                  }))
+                                  .filter(yt => yt.data.length > 0)
+                                return {
+                                  currentYear: {
+                                    label: currentPY,
+                                    data: currentData,
+                                  },
+                                  previousYears,
+                                }
+                              })()
+                            : paymentsTrendData.multiYearData
+                        }
+                        statistics={
+                          // #269: Override YoY when time-series data provides
+                          // multi-year payment history (analytics CDN is current-year-only)
+                          (() => {
+                            const tsYoY = computePaymentYoYFromTimeSeries(
                               timeSeries ?? null
                             )
-                            return {
-                              ...paymentsTrendData.statistics,
-                              ...(tsPayments !== null && {
-                                currentPayments: tsPayments,
-                              }),
-                              yearOverYearChange: tsYoY.yearOverYearChange,
-                              trendDirection: tsYoY.trendDirection,
+                            if (tsYoY) {
+                              // Use time-series payments for consistency (#319)
+                              const tsPayments = getLatestPayments(
+                                timeSeries ?? null
+                              )
+                              return {
+                                ...paymentsTrendData.statistics,
+                                ...(tsPayments !== null && {
+                                  currentPayments: tsPayments,
+                                }),
+                                yearOverYearChange: tsYoY.yearOverYearChange,
+                                trendDirection: tsYoY.trendDirection,
+                              }
                             }
-                          }
-                          return paymentsTrendData.statistics
-                        })()
-                      }
-                      isLoading={isLoadingPaymentsTrend}
+                            return paymentsTrendData.statistics
+                          })()
+                        }
+                        isLoading={isLoadingPaymentsTrend}
+                      />
+                    </LazyChart>
+                  ) : (
+                    isLoadingPaymentsTrend && (
+                      <LoadingSkeleton variant="chart" height="450px" />
+                    )
+                  )}
+
+                  {/* Year-Over-Year Comparison */}
+                  {aggregatedAnalytics ? (
+                    <LazyChart height="300px">
+                      <YearOverYearComparison
+                        {...(computeYearOverYear(timeSeries ?? null) && {
+                          yearOverYear: computeYearOverYear(
+                            timeSeries ?? null
+                          )!,
+                        })}
+                        currentYear={{
+                          // Use time-series membership when available (#319)
+                          // to match the membership chart above
+                          totalMembership:
+                            timeSeries?.currentMembership ??
+                            aggregatedAnalytics.summary.totalMembership,
+                          distinguishedClubs:
+                            aggregatedAnalytics.summary.distinguishedClubs
+                              .total,
+                          thrivingClubs:
+                            aggregatedAnalytics.summary.clubCounts.thriving,
+                          totalClubs:
+                            aggregatedAnalytics.summary.clubCounts.total,
+                        }}
+                        isLoading={isLoadingAggregated}
+                      />
+                    </LazyChart>
+                  ) : (
+                    isLoadingAggregated && (
+                      <LoadingSkeleton variant="chart" height="300px" />
+                    )
+                  )}
+                </>
+              )}
+            </div>
+
+            <div
+              role="tabpanel"
+              id={panelIdFor('analytics')}
+              aria-labelledby={tabIdFor('analytics')}
+              hidden={activeTab !== 'analytics'}
+            >
+              {activeTab === 'analytics' && (
+                <>
+                  {/* Top Growth Clubs */}
+                  {analytics ? (
+                    <TopGrowthClubs
+                      topGrowthClubs={analytics.topGrowthClubs}
+                      topDCPClubs={analytics.allClubs
+                        .filter(club => club.dcpGoalsTrend.length > 0)
+                        .map(club => ({
+                          clubId: club.clubId,
+                          clubName: club.clubName,
+                          goalsAchieved:
+                            club.dcpGoalsTrend[club.dcpGoalsTrend.length - 1]
+                              ?.goalsAchieved || 0,
+                          ...(club.distinguishedLevel &&
+                            [
+                              'Smedley',
+                              'President',
+                              'Select',
+                              'Distinguished',
+                            ].includes(club.distinguishedLevel) && {
+                              distinguishedLevel: club.distinguishedLevel as
+                                | 'Smedley'
+                                | 'President'
+                                | 'Select'
+                                | 'Distinguished',
+                            }),
+                        }))
+                        .sort((a, b) => b.goalsAchieved - a.goalsAchieved)
+                        .slice(0, 10)}
+                      isLoading={isLoadingAnalytics}
                     />
-                  </LazyChart>
-                ) : (
-                  isLoadingPaymentsTrend && (
-                    <LoadingSkeleton variant="chart" height="450px" />
-                  )
-                )}
+                  ) : (
+                    isLoadingAnalytics && <LoadingSkeleton variant="card" />
+                  )}
+                </>
+              )}
+            </div>
 
-                {/* Year-Over-Year Comparison */}
-                {aggregatedAnalytics ? (
-                  <LazyChart height="300px">
-                    <YearOverYearComparison
-                      {...(computeYearOverYear(timeSeries ?? null) && {
-                        yearOverYear: computeYearOverYear(timeSeries ?? null)!,
-                      })}
-                      currentYear={{
-                        // Use time-series membership when available (#319)
-                        // to match the membership chart above
-                        totalMembership:
-                          timeSeries?.currentMembership ??
-                          aggregatedAnalytics.summary.totalMembership,
-                        distinguishedClubs:
-                          aggregatedAnalytics.summary.distinguishedClubs.total,
-                        thrivingClubs:
-                          aggregatedAnalytics.summary.clubCounts.thriving,
-                        totalClubs:
-                          aggregatedAnalytics.summary.clubCounts.total,
-                      }}
-                      isLoading={isLoadingAggregated}
-                    />
-                  </LazyChart>
-                ) : (
-                  isLoadingAggregated && (
-                    <LoadingSkeleton variant="chart" height="300px" />
-                  )
-                )}
-              </>
-            )}
-
-            {activeTab === 'analytics' && (
-              <>
-                {/* Top Growth Clubs */}
-                {analytics ? (
-                  <TopGrowthClubs
-                    topGrowthClubs={analytics.topGrowthClubs}
-                    topDCPClubs={analytics.allClubs
-                      .filter(club => club.dcpGoalsTrend.length > 0)
-                      .map(club => ({
-                        clubId: club.clubId,
-                        clubName: club.clubName,
-                        goalsAchieved:
-                          club.dcpGoalsTrend[club.dcpGoalsTrend.length - 1]
-                            ?.goalsAchieved || 0,
-                        ...(club.distinguishedLevel &&
-                          [
-                            'Smedley',
-                            'President',
-                            'Select',
-                            'Distinguished',
-                          ].includes(club.distinguishedLevel) && {
-                            distinguishedLevel: club.distinguishedLevel as
-                              | 'Smedley'
-                              | 'President'
-                              | 'Select'
-                              | 'Distinguished',
-                          }),
-                      }))
-                      .sort((a, b) => b.goalsAchieved - a.goalsAchieved)
-                      .slice(0, 10)}
-                    isLoading={isLoadingAnalytics}
-                  />
-                ) : (
-                  isLoadingAnalytics && <LoadingSkeleton variant="card" />
-                )}
-              </>
-            )}
-
-            {activeTab === 'globalRankings' && districtId && (
-              <GlobalRankingsTab
-                districtId={districtId}
-                districtName={districtName}
-                selectedProgramYear={selectedProgramYear}
-              />
-            )}
+            <div
+              role="tabpanel"
+              id={panelIdFor('globalRankings')}
+              aria-labelledby={tabIdFor('globalRankings')}
+              hidden={activeTab !== 'globalRankings'}
+            >
+              {activeTab === 'globalRankings' && districtId && (
+                <GlobalRankingsTab
+                  districtId={districtId}
+                  districtName={districtName}
+                  selectedProgramYear={selectedProgramYear}
+                />
+              )}
+            </div>
           </div>
         </div>
       </div>

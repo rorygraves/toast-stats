@@ -1,7 +1,19 @@
-import React from 'react'
+import React, { useRef } from 'react'
 
 /* District detail tab bar (#359). Pure presentational tablist — the
-   parent owns activeTab state and routing/URL sync. */
+   parent owns activeTab state and routing/URL sync.
+
+   WAI-ARIA tablist pattern (#384):
+   - role=tablist on the container, role=tab on each button
+   - Roving tabIndex: active tab is tabIndex=0, others are tabIndex=-1
+   - Arrow keys (←/→) move focus with wrap; Home/End jump to first/last
+   - Manual activation (Space/Enter) — focus moves on arrows but the
+     activeTab only changes when the user explicitly activates, because
+     tab content is heavy
+   - aria-controls links each tab to its tabpanel id; the parent renders
+     the panel with role=tabpanel + id + aria-labelledby. See
+     `tabIdFor` / `panelIdFor` exports.
+   Reference: https://www.w3.org/WAI/ARIA/apg/patterns/tabs/ */
 
 export type DistrictTabId =
   | 'overview'
@@ -10,6 +22,9 @@ export type DistrictTabId =
   | 'trends'
   | 'analytics'
   | 'globalRankings'
+
+export const tabIdFor = (id: DistrictTabId) => `district-tab-${id}`
+export const panelIdFor = (id: DistrictTabId) => `district-tabpanel-${id}`
 
 interface DistrictDetailTabsProps {
   activeTab: DistrictTabId
@@ -41,10 +56,37 @@ export const DistrictDetailTabs: React.FC<DistrictDetailTabsProps> = ({
   clubsCount,
   divisionsCount,
 }) => {
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([])
+
   const handleClick = (tabId: DistrictTabId) => {
     if (tabId !== activeTab) {
       onTabChange(tabId)
     }
+  }
+
+  const handleKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    currentIndex: number
+  ) => {
+    let nextIndex = currentIndex
+    switch (event.key) {
+      case 'ArrowRight':
+        nextIndex = (currentIndex + 1) % TABS.length
+        break
+      case 'ArrowLeft':
+        nextIndex = (currentIndex - 1 + TABS.length) % TABS.length
+        break
+      case 'Home':
+        nextIndex = 0
+        break
+      case 'End':
+        nextIndex = TABS.length - 1
+        break
+      default:
+        return
+    }
+    event.preventDefault()
+    tabRefs.current[nextIndex]?.focus()
   }
 
   return (
@@ -53,7 +95,7 @@ export const DistrictDetailTabs: React.FC<DistrictDetailTabsProps> = ({
       role="tablist"
       aria-label="District analysis tabs"
     >
-      {TABS.map(tab => {
+      {TABS.map((tab, index) => {
         const isActive = activeTab === tab.id
         const count =
           tab.countKey === 'clubsCount'
@@ -66,10 +108,17 @@ export const DistrictDetailTabs: React.FC<DistrictDetailTabsProps> = ({
         return (
           <button
             key={tab.id}
+            ref={el => {
+              tabRefs.current[index] = el
+            }}
             type="button"
             role="tab"
+            id={tabIdFor(tab.id)}
             aria-selected={isActive}
+            aria-controls={panelIdFor(tab.id)}
+            tabIndex={isActive ? 0 : -1}
             onClick={() => handleClick(tab.id)}
+            onKeyDown={event => handleKeyDown(event, index)}
             className={
               'district-detail-tabs__tab' +
               (isActive ? ' district-detail-tabs__tab--active' : '')

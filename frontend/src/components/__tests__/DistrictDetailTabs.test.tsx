@@ -99,6 +99,78 @@ describe('DistrictDetailTabs (#359)', () => {
     })
   })
 
+  describe('keyboard navigation (#384)', () => {
+    // WAI-ARIA tabs pattern: roving tabIndex, arrow keys move focus,
+    // Home/End jump, Space/Enter activate. Focus moves manually because
+    // tab content is heavy.
+    it('puts the active tab at tabIndex=0 and others at tabIndex=-1', () => {
+      renderTabs({ activeTab: 'clubs' })
+      const tablist = screen.getByRole('tablist')
+      const tabs = within(tablist).getAllByRole('tab')
+      tabs.forEach(t => {
+        const expected = t.getAttribute('aria-selected') === 'true' ? '0' : '-1'
+        expect(t).toHaveAttribute('tabindex', expected)
+      })
+    })
+
+    it('ArrowRight moves focus to the next tab (with wrap)', () => {
+      renderTabs({ activeTab: 'overview' })
+      const tablist = screen.getByRole('tablist')
+      const tabs = within(tablist).getAllByRole('tab')
+      tabs[0].focus()
+      fireEvent.keyDown(tabs[0], { key: 'ArrowRight' })
+      expect(tabs[1]).toHaveFocus()
+      // wrap at end
+      tabs[5].focus()
+      fireEvent.keyDown(tabs[5], { key: 'ArrowRight' })
+      expect(tabs[0]).toHaveFocus()
+    })
+
+    it('ArrowLeft moves focus to the previous tab (with wrap)', () => {
+      renderTabs({ activeTab: 'overview' })
+      const tablist = screen.getByRole('tablist')
+      const tabs = within(tablist).getAllByRole('tab')
+      tabs[2].focus()
+      fireEvent.keyDown(tabs[2], { key: 'ArrowLeft' })
+      expect(tabs[1]).toHaveFocus()
+      // wrap at start
+      tabs[0].focus()
+      fireEvent.keyDown(tabs[0], { key: 'ArrowLeft' })
+      expect(tabs[5]).toHaveFocus()
+    })
+
+    it('Home jumps focus to the first tab; End jumps to the last', () => {
+      renderTabs({ activeTab: 'overview' })
+      const tablist = screen.getByRole('tablist')
+      const tabs = within(tablist).getAllByRole('tab')
+      tabs[3].focus()
+      fireEvent.keyDown(tabs[3], { key: 'End' })
+      expect(tabs[5]).toHaveFocus()
+      fireEvent.keyDown(tabs[5], { key: 'Home' })
+      expect(tabs[0]).toHaveFocus()
+    })
+
+    it('does not change activeTab on arrow keys — manual activation only', () => {
+      const onTabChange = vi.fn()
+      renderTabs({ activeTab: 'overview', onTabChange })
+      const tablist = screen.getByRole('tablist')
+      const tabs = within(tablist).getAllByRole('tab')
+      tabs[0].focus()
+      fireEvent.keyDown(tabs[0], { key: 'ArrowRight' })
+      expect(onTabChange).not.toHaveBeenCalled()
+    })
+
+    it('each tab has aria-controls pointing at its tabpanel id', () => {
+      renderTabs()
+      const tablist = screen.getByRole('tablist')
+      const tabs = within(tablist).getAllByRole('tab')
+      tabs.forEach(t => {
+        const controls = t.getAttribute('aria-controls')
+        expect(controls).toMatch(/^district-tabpanel-/)
+      })
+    })
+  })
+
   describe('accessibility', () => {
     it('exposes a tablist landmark with an aria-label', () => {
       renderTabs()
