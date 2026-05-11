@@ -395,6 +395,126 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
             )}
           </div>
 
+          {/* Status segmented filter (#361) — All / Thriving / Vulnerable
+              / Intervention with counts, per design mockup. Sits above the
+              quick-filter chips so users can narrow by club health first,
+              then refine. */}
+          {(() => {
+            const statusFilter = getFilter('status')
+            const activeStatuses =
+              statusFilter && Array.isArray(statusFilter.value)
+                ? (statusFilter.value as string[])
+                : []
+            const isActive = (status: string) =>
+              activeStatuses.length === 1 && activeStatuses[0] === status
+            const isAllActive = activeStatuses.length === 0
+            const counts = {
+              all: clubs.length,
+              thriving: clubs.filter(c => c.currentStatus === 'thriving')
+                .length,
+              vulnerable: clubs.filter(c => c.currentStatus === 'vulnerable')
+                .length,
+              intervention: clubs.filter(
+                c => c.currentStatus === 'intervention-required'
+              ).length,
+            }
+            const setStatus = (status: string | null) => {
+              if (status === null) {
+                setFilter('status', null)
+              } else {
+                setFilter('status', {
+                  field: 'status',
+                  type: 'categorical',
+                  value: [status],
+                })
+              }
+            }
+            return (
+              <div
+                className="clubs-status-segmented"
+                role="tablist"
+                aria-label="Filter clubs by health status"
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={isAllActive}
+                  onClick={() => setStatus(null)}
+                  className={
+                    'clubs-status-segmented__btn' +
+                    (isAllActive ? ' clubs-status-segmented__btn--active' : '')
+                  }
+                >
+                  All{' '}
+                  <span className="clubs-status-segmented__count">
+                    {counts.all}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive('thriving')}
+                  onClick={() =>
+                    setStatus(isActive('thriving') ? null : 'thriving')
+                  }
+                  className={
+                    'clubs-status-segmented__btn' +
+                    (isActive('thriving')
+                      ? ' clubs-status-segmented__btn--active'
+                      : '')
+                  }
+                >
+                  Thriving{' '}
+                  <span className="clubs-status-segmented__count">
+                    {counts.thriving}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive('vulnerable')}
+                  onClick={() =>
+                    setStatus(isActive('vulnerable') ? null : 'vulnerable')
+                  }
+                  className={
+                    'clubs-status-segmented__btn' +
+                    (isActive('vulnerable')
+                      ? ' clubs-status-segmented__btn--active'
+                      : '')
+                  }
+                >
+                  Vulnerable{' '}
+                  <span className="clubs-status-segmented__count">
+                    {counts.vulnerable}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive('intervention-required')}
+                  onClick={() =>
+                    setStatus(
+                      isActive('intervention-required')
+                        ? null
+                        : 'intervention-required'
+                    )
+                  }
+                  className={
+                    'clubs-status-segmented__btn' +
+                    (isActive('intervention-required')
+                      ? ' clubs-status-segmented__btn--active'
+                      : '')
+                  }
+                >
+                  Intervention{' '}
+                  <span className="clubs-status-segmented__count">
+                    {counts.intervention}
+                  </span>
+                </button>
+              </div>
+            )
+          })()}
+
           <div className="clubs-quick-filters">
             <span className="clubs-quick-filters__label">Quick filters:</span>
 

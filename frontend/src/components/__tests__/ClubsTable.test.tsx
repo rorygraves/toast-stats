@@ -559,7 +559,7 @@ describe('ClubsTable', () => {
         }),
       ]
 
-      render(
+      const { container } = render(
         <ClubsTable
           clubs={clubs}
           districtId="test-district"
@@ -567,7 +567,11 @@ describe('ClubsTable', () => {
         />
       )
 
-      expect(screen.getByText('Thriving')).toBeInTheDocument()
+      // 'Thriving' appears in the status segmented filter button (#361)
+      // and as the status badge on the table row. Scope to the table body.
+      const tbody = container.querySelector('tbody')
+      expect(tbody).toBeTruthy()
+      expect(tbody!.textContent).toMatch(/Thriving/)
     })
 
     it('should display "Vulnerable" status badge for vulnerable clubs', () => {
@@ -579,7 +583,7 @@ describe('ClubsTable', () => {
         }),
       ]
 
-      render(
+      const { container } = render(
         <ClubsTable
           clubs={clubs}
           districtId="test-district"
@@ -587,7 +591,9 @@ describe('ClubsTable', () => {
         />
       )
 
-      expect(screen.getByText('Vulnerable')).toBeInTheDocument()
+      const tbody = container.querySelector('tbody')
+      expect(tbody).toBeTruthy()
+      expect(tbody!.textContent).toMatch(/Vulnerable/)
     })
 
     it('should display "Intervention Required" status badge for intervention-required clubs', () => {
