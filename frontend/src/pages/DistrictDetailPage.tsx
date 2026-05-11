@@ -33,10 +33,8 @@ import { extractDivisionPerformance } from '../utils/extractDivisionPerformance'
 import { DistrictOverview } from '../components/DistrictOverview'
 import DataAsOfBanner from '../components/DataAsOfBanner'
 import { DistinguishedDistrictTrophyCase } from '../components/DistinguishedDistrictTrophyCase'
-import { PaymentCompositionCard } from '../components/PaymentCompositionCard'
 import { useCompetitiveAwards } from '../hooks/useCompetitiveAwards'
 
-import { DistinguishedProgressChart } from '../components/DistinguishedProgressChart'
 import { ClubsTable } from '../components/ClubsTable'
 import {
   LazyMembershipTrendChart as MembershipTrendChart,
@@ -62,22 +60,6 @@ type TabType =
   | 'trends'
   | 'analytics'
   | 'globalRankings'
-
-/**
- * Helper function to extract distinguished projection value from either
- * a number or an object (backend returns object from /analytics endpoint)
- */
-function getDistinguishedProjectionValue(
-  projection: number | { projectedDistinguished?: number } | null | undefined
-): number {
-  if (projection === null || projection === undefined) {
-    return 0
-  }
-  if (typeof projection === 'number') {
-    return projection
-  }
-  return projection.projectedDistinguished ?? 0
-}
 
 const DistrictDetailPage: React.FC = () => {
   const { districtId } = useParams<{ districtId: string }>()
@@ -440,12 +422,6 @@ const DistrictDetailPage: React.FC = () => {
     }
   }, [districtId, competitiveAwards])
 
-  // Payment breakdown for this district (#327)
-  const paymentBreakdown = React.useMemo(() => {
-    if (!districtId || !competitiveAwards?.paymentBreakdown) return null
-    return competitiveAwards.paymentBreakdown[districtId] ?? null
-  }, [districtId, competitiveAwards])
-
   // Determine if we have data for the overview tab
   // Use aggregated data if available, otherwise fall back to full analytics
   const hasOverviewData = overviewData !== null || analytics !== null
@@ -656,44 +632,10 @@ const DistrictDetailPage: React.FC = () => {
                   }
                 />
 
-                {/* Payment Composition (#327) */}
-                {paymentBreakdown && (
-                  <PaymentCompositionCard
-                    newPayments={paymentBreakdown.newPayments}
-                    aprilPayments={paymentBreakdown.aprilPayments}
-                    octoberPayments={paymentBreakdown.octoberPayments}
-                    latePayments={paymentBreakdown.latePayments}
-                    charterPayments={paymentBreakdown.charterPayments}
-                    totalPayments={paymentBreakdown.totalPayments}
-                  />
-                )}
-
-                {/* Distinguished Progress Chart - uses aggregated data for faster load */}
-                {/* Falls back to full analytics if aggregated not available */}
-                <LazyChart height="300px">
-                  <DistinguishedProgressChart
-                    distinguishedClubs={
-                      overviewData?.distinguishedClubs ??
-                      analytics?.distinguishedClubs ?? {
-                        smedley: 0,
-                        presidents: 0,
-                        select: 0,
-                        distinguished: 0,
-                        total: 0,
-                      }
-                    }
-                    distinguishedProjection={getDistinguishedProjectionValue(
-                      overviewData?.distinguishedProjection ??
-                        analytics?.distinguishedProjection
-                    )}
-                    totalClubs={
-                      overviewData?.clubCounts.total ??
-                      analytics?.allClubs.length ??
-                      0
-                    }
-                    isLoading={isLoadingOverview}
-                  />
-                </LazyChart>
+                {/* Payment Composition + Distinguished Progress legacy
+                    sections retired in #472 — the new redesign panels in
+                    DistrictOverview (DistinguishedCompositionBar +
+                    PaymentCompositionDonut) cover the same data. */}
               </>
             )}
 

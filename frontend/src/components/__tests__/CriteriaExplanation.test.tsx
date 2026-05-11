@@ -22,14 +22,15 @@
  */
 
 import { describe, it, expect, afterEach } from 'vitest'
-import { screen, fireEvent } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+
+// Provider-free unit-test render (#473): the component under test
+// uses no router / no React Query, so wrapping each render in a
+// fresh QueryClient + memory router was pure contention amplifier.
+const renderWithProviders = (ui: React.ReactElement) => render(ui)
+const cleanupAllResources = () => cleanup()
 import '@testing-library/jest-dom'
 import { CriteriaExplanation } from '../CriteriaExplanation'
-import {
-  renderWithProviders,
-  cleanupAllResources,
-} from '../../__tests__/utils/componentTestUtils'
-
 describe('CriteriaExplanation', () => {
   afterEach(() => {
     cleanupAllResources()

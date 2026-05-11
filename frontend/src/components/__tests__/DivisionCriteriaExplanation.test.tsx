@@ -19,17 +19,21 @@
  */
 
 import { describe, it, expect, afterEach } from 'vitest'
-import { screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, cleanup } from '@testing-library/react'
 import '@testing-library/jest-dom'
+import type { ReactElement } from 'react'
 import { DivisionCriteriaExplanation } from '../DivisionCriteriaExplanation'
-import {
-  renderWithProviders,
-  cleanupAllResources,
-} from '../../__tests__/utils/componentTestUtils'
+
+// DivisionCriteriaExplanation is provider-free (useState only). Skipping
+// the heavy renderWithProviders wrapper (QueryClient + memory router +
+// performance wrapper) eliminates ~3 wrappers per test × 24 tests, which
+// pushes this file from a Lesson 51 landmine under worker contention to
+// a stable unit-test (#473).
+const renderComponent = (ui: ReactElement) => render(ui)
 
 describe('DivisionCriteriaExplanation', () => {
   afterEach(() => {
-    cleanupAllResources()
+    cleanup()
   })
 
   describe('Criteria Content Display', () => {
@@ -39,9 +43,7 @@ describe('DivisionCriteriaExplanation', () => {
      * THE Criteria_Display SHALL explain that divisions must have no net club loss
      */
     it('should display eligibility gate section with no net club loss requirement', () => {
-      renderWithProviders(
-        <DivisionCriteriaExplanation defaultExpanded={true} />
-      )
+      renderComponent(<DivisionCriteriaExplanation defaultExpanded={true} />)
 
       // Check eligibility gate heading is present
       expect(screen.getByText('Eligibility Gate')).toBeInTheDocument()
@@ -58,9 +60,7 @@ describe('DivisionCriteriaExplanation', () => {
      * Unlike DAP, DDP does NOT have club visit requirements
      */
     it('should display note about no club visit requirements (unlike DAP)', () => {
-      renderWithProviders(
-        <DivisionCriteriaExplanation defaultExpanded={true} />
-      )
+      renderComponent(<DivisionCriteriaExplanation defaultExpanded={true} />)
 
       // Check that the note about no club visit requirements is present
       // The text is split across elements due to <strong> tag, so we use a function matcher
@@ -80,9 +80,7 @@ describe('DivisionCriteriaExplanation', () => {
      * THE Criteria_Display SHALL show that paid clubs must be at least equal to club base (no net loss)
      */
     it('should display no net club loss requirement section', () => {
-      renderWithProviders(
-        <DivisionCriteriaExplanation defaultExpanded={true} />
-      )
+      renderComponent(<DivisionCriteriaExplanation defaultExpanded={true} />)
 
       expect(
         screen.getByText('No Net Club Loss Requirement')
@@ -101,9 +99,7 @@ describe('DivisionCriteriaExplanation', () => {
      * THE Criteria_Display SHALL explain what statuses disqualify a club
      */
     it('should display what qualifies and disqualifies as paid club', () => {
-      renderWithProviders(
-        <DivisionCriteriaExplanation defaultExpanded={true} />
-      )
+      renderComponent(<DivisionCriteriaExplanation defaultExpanded={true} />)
 
       // What qualifies
       expect(screen.getByText('Qualifies as Paid Club')).toBeInTheDocument()
@@ -124,9 +120,7 @@ describe('DivisionCriteriaExplanation', () => {
      * DDP uses 45%/50%/55% thresholds (different from DAP's 50%/50%+1/50%+1)
      */
     it('should display all three recognition levels with correct DDP thresholds', () => {
-      renderWithProviders(
-        <DivisionCriteriaExplanation defaultExpanded={true} />
-      )
+      renderComponent(<DivisionCriteriaExplanation defaultExpanded={true} />)
 
       expect(screen.getByText('Recognition Levels')).toBeInTheDocument()
 
@@ -152,9 +146,7 @@ describe('DivisionCriteriaExplanation', () => {
      * THE Criteria_Display SHALL indicate percentages are calculated against club base, not paid clubs
      */
     it('should display note about percentages calculated against club base', () => {
-      renderWithProviders(
-        <DivisionCriteriaExplanation defaultExpanded={true} />
-      )
+      renderComponent(<DivisionCriteriaExplanation defaultExpanded={true} />)
 
       // Check for the important note about calculation basis
       expect(
@@ -171,9 +163,7 @@ describe('DivisionCriteriaExplanation', () => {
      * THE Criteria_Display SHALL present recognition levels in ascending order of achievement
      */
     it('should display recognition levels in ascending order', () => {
-      renderWithProviders(
-        <DivisionCriteriaExplanation defaultExpanded={true} />
-      )
+      renderComponent(<DivisionCriteriaExplanation defaultExpanded={true} />)
 
       const table = screen.getByRole('table', {
         name: /Division recognition level requirements/i,
@@ -200,9 +190,7 @@ describe('DivisionCriteriaExplanation', () => {
      * DDP requires base/base+1/base+2 (different from DAP's base/base/base+1)
      */
     it('should display correct paid clubs thresholds for each recognition level', () => {
-      renderWithProviders(
-        <DivisionCriteriaExplanation defaultExpanded={true} />
-      )
+      renderComponent(<DivisionCriteriaExplanation defaultExpanded={true} />)
 
       const table = screen.getByRole('table', {
         name: /Division recognition level requirements/i,
@@ -222,9 +210,7 @@ describe('DivisionCriteriaExplanation', () => {
      * THE Criteria_Display SHALL show key differences from DAP
      */
     it('should display key differences from DAP section', () => {
-      renderWithProviders(
-        <DivisionCriteriaExplanation defaultExpanded={true} />
-      )
+      renderComponent(<DivisionCriteriaExplanation defaultExpanded={true} />)
 
       // Check for the key differences section
       expect(
@@ -247,7 +233,7 @@ describe('DivisionCriteriaExplanation', () => {
      * Tests that component starts collapsed by default
      */
     it('should start collapsed by default', () => {
-      renderWithProviders(<DivisionCriteriaExplanation />)
+      renderComponent(<DivisionCriteriaExplanation />)
 
       const toggleButton = screen.getByRole('button', {
         name: /Distinguished Division Program Criteria/i,
@@ -263,9 +249,7 @@ describe('DivisionCriteriaExplanation', () => {
      * Tests that component starts expanded when defaultExpanded={true}
      */
     it('should start expanded when defaultExpanded is true', () => {
-      renderWithProviders(
-        <DivisionCriteriaExplanation defaultExpanded={true} />
-      )
+      renderComponent(<DivisionCriteriaExplanation defaultExpanded={true} />)
 
       const toggleButton = screen.getByRole('button', {
         name: /Distinguished Division Program Criteria/i,
@@ -281,7 +265,7 @@ describe('DivisionCriteriaExplanation', () => {
      * Tests that clicking toggle button expands/collapses content
      */
     it('should toggle content visibility when button is clicked', () => {
-      renderWithProviders(<DivisionCriteriaExplanation />)
+      renderComponent(<DivisionCriteriaExplanation />)
 
       const toggleButton = screen.getByRole('button', {
         name: /Distinguished Division Program Criteria/i,
@@ -307,7 +291,7 @@ describe('DivisionCriteriaExplanation', () => {
      * Tests that content visibility changes appropriately with expand/collapse
      */
     it('should change content visibility classes appropriately', () => {
-      renderWithProviders(<DivisionCriteriaExplanation />)
+      renderComponent(<DivisionCriteriaExplanation />)
 
       const toggleButton = screen.getByRole('button', {
         name: /Distinguished Division Program Criteria/i,
@@ -333,7 +317,7 @@ describe('DivisionCriteriaExplanation', () => {
      * Toggle button has aria-expanded attribute
      */
     it('should have aria-expanded attribute on toggle button', () => {
-      renderWithProviders(<DivisionCriteriaExplanation />)
+      renderComponent(<DivisionCriteriaExplanation />)
 
       const toggleButton = screen.getByRole('button', {
         name: /Distinguished Division Program Criteria/i,
@@ -346,7 +330,7 @@ describe('DivisionCriteriaExplanation', () => {
      * Toggle button has aria-controls attribute
      */
     it('should have aria-controls attribute on toggle button', () => {
-      renderWithProviders(<DivisionCriteriaExplanation />)
+      renderComponent(<DivisionCriteriaExplanation />)
 
       const toggleButton = screen.getByRole('button', {
         name: /Distinguished Division Program Criteria/i,
@@ -362,7 +346,7 @@ describe('DivisionCriteriaExplanation', () => {
      * Content section has aria-hidden attribute
      */
     it('should have aria-hidden attribute on content section', () => {
-      renderWithProviders(<DivisionCriteriaExplanation />)
+      renderComponent(<DivisionCriteriaExplanation />)
 
       const content = document.getElementById('division-criteria-content')
       expect(content).toHaveAttribute('aria-hidden')
@@ -373,9 +357,7 @@ describe('DivisionCriteriaExplanation', () => {
      * Sections have proper aria-labelledby attributes
      */
     it('should have proper aria-labelledby attributes on sections', () => {
-      renderWithProviders(
-        <DivisionCriteriaExplanation defaultExpanded={true} />
-      )
+      renderComponent(<DivisionCriteriaExplanation defaultExpanded={true} />)
 
       // Eligibility section
       const eligibilitySection = document.querySelector(
@@ -410,7 +392,7 @@ describe('DivisionCriteriaExplanation', () => {
      * Card has aria-label for screen readers
      */
     it('should have aria-label on the main card', () => {
-      const { container } = renderWithProviders(<DivisionCriteriaExplanation />)
+      const { container } = renderComponent(<DivisionCriteriaExplanation />)
 
       const card = container.querySelector(
         '[aria-label="Distinguished Division Program criteria explanation"]'
@@ -423,9 +405,7 @@ describe('DivisionCriteriaExplanation', () => {
      * Table has aria-label for screen readers
      */
     it('should have aria-label on the recognition levels table', () => {
-      renderWithProviders(
-        <DivisionCriteriaExplanation defaultExpanded={true} />
-      )
+      renderComponent(<DivisionCriteriaExplanation defaultExpanded={true} />)
 
       const table = screen.getByRole('table', {
         name: /Division recognition level requirements/i,
@@ -438,9 +418,7 @@ describe('DivisionCriteriaExplanation', () => {
      * Table headers have proper scope attributes
      */
     it('should have proper scope attributes on table headers', () => {
-      renderWithProviders(
-        <DivisionCriteriaExplanation defaultExpanded={true} />
-      )
+      renderComponent(<DivisionCriteriaExplanation defaultExpanded={true} />)
 
       const table = screen.getByRole('table', {
         name: /Division recognition level requirements/i,
@@ -457,7 +435,7 @@ describe('DivisionCriteriaExplanation', () => {
      * Decorative icons are hidden from screen readers
      */
     it('should hide decorative icons from screen readers', () => {
-      const { container } = renderWithProviders(
+      const { container } = renderComponent(
         <DivisionCriteriaExplanation defaultExpanded={true} />
       )
 
@@ -472,7 +450,7 @@ describe('DivisionCriteriaExplanation', () => {
      * Toggle button meets minimum touch target size
      */
     it('should have minimum 44px touch target on toggle button', () => {
-      renderWithProviders(<DivisionCriteriaExplanation />)
+      renderComponent(<DivisionCriteriaExplanation />)
 
       const toggleButton = screen.getByRole('button', {
         name: /Distinguished Division Program Criteria/i,
@@ -485,7 +463,7 @@ describe('DivisionCriteriaExplanation', () => {
      * Toggle button has visible focus indicator
      */
     it('should have visible focus indicator on toggle button', () => {
-      renderWithProviders(<DivisionCriteriaExplanation />)
+      renderComponent(<DivisionCriteriaExplanation />)
 
       const toggleButton = screen.getByRole('button', {
         name: /Distinguished Division Program Criteria/i,
@@ -498,9 +476,7 @@ describe('DivisionCriteriaExplanation', () => {
      * Semantic HTML structure with proper headings
      */
     it('should use semantic HTML with proper heading hierarchy', () => {
-      renderWithProviders(
-        <DivisionCriteriaExplanation defaultExpanded={true} />
-      )
+      renderComponent(<DivisionCriteriaExplanation defaultExpanded={true} />)
 
       // Main heading (h3)
       const mainHeading = screen.getByRole('heading', {

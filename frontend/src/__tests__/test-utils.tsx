@@ -1,7 +1,7 @@
 import React from 'react'
 import { render } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { createMemoryRouter, RouterProvider } from 'react-router-dom'
+import { MemoryRouter } from 'react-router-dom'
 
 import { ProgramYearProvider } from '../contexts/ProgramYearContext'
 
@@ -77,23 +77,15 @@ export const renderWithProviders = (
     },
   })
 
-  // Create a memory router for testing
-  const router = createMemoryRouter(
-    [
-      {
-        path: '*',
-        element: ui,
-      },
-    ],
-    {
-      initialEntries,
-    }
-  )
-
+  // MemoryRouter is materially lighter than createMemoryRouter +
+  // RouterProvider (no data-router setup, no loaders, no boundary
+  // transitions). The 20+ test files that mount full pages don't need
+  // any data-router features — they just need a router context for
+  // useNavigate / useLocation / useSearchParams (#473).
   return render(
     <QueryClientProvider client={queryClient}>
       <ProgramYearProvider>
-        <RouterProvider router={router} />
+        <MemoryRouter initialEntries={initialEntries}>{ui}</MemoryRouter>
       </ProgramYearProvider>
     </QueryClientProvider>
   )

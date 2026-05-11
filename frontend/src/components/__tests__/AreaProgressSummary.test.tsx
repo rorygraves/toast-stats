@@ -20,18 +20,19 @@
  */
 
 import { describe, it, expect, afterEach } from 'vitest'
-import { screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
+
+// Provider-free unit-test render (#473): the component under test
+// uses no router / no React Query, so wrapping each render in a
+// fresh QueryClient + memory router was pure contention amplifier.
+const renderWithProviders = (ui: React.ReactElement) => render(ui)
+const cleanupAllResources = () => cleanup()
 import '@testing-library/jest-dom'
 import { DivisionAreaProgressSummary } from '../DivisionAreaProgressSummary'
 import type {
   DivisionPerformance,
   AreaPerformance,
 } from '../../utils/divisionStatus'
-import {
-  renderWithProviders,
-  cleanupAllResources,
-} from '../../__tests__/utils/componentTestUtils'
-
 /**
  * Test data factory for creating area data
  */

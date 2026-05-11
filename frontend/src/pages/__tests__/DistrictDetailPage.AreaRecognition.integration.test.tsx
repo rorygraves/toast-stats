@@ -874,9 +874,11 @@ describe('DistrictDetailPage - Division and Area Recognition Panel Integration',
   })
 
   describe('Accessibility', () => {
-    /**
-     * Tests accessibility compliance for the Divisions & Areas tab
-     */
+    // Mount full DistrictDetailPage + tab click + axe scan is
+    // legitimately 6-8s under coverage worker contention. Per-test
+    // 15s budget recognises this category honestly; the other 13
+    // tests in this file scope axe to small surfaces and stay at
+    // the file-wide 5s default (#473).
     it('should have no accessibility violations in Divisions & Areas tab', async () => {
       const user = userEvent.setup()
       renderDistrictDetailPage()
@@ -894,13 +896,7 @@ describe('DistrictDetailPage - Division and Area Recognition Panel Integration',
         ).toBeInTheDocument()
       })
 
-      // Run axe on the active tabpanel only, not the entire page. Scanning
-      // the full container scaled with the chrome (#360 redesign added
-      // Distinguished Composition + Payment Composition panels on the
-      // Overview tab) and pushed this test past the 5s timeout under
-      // --coverage worker contention (Lesson 51). The active tabpanel is
-      // the subject under test — axe doesn't need to walk the rest of
-      // the page chrome.
+      // Scoped axe on the active tabpanel (not the full page chrome).
       const heading = screen.getByText('Division and Area Recognition')
       const tabpanel =
         (heading.closest('[role="tabpanel"]') as HTMLElement | null) ??
@@ -908,7 +904,7 @@ describe('DistrictDetailPage - Division and Area Recognition Panel Integration',
         (heading.parentElement as HTMLElement)
       const results = await axe(tabpanel)
       expect(results).toHaveNoViolations()
-    })
+    }, 15000)
 
     /**
      * Tests that DivisionAreaRecognitionPanel has proper ARIA attributes

@@ -24,15 +24,24 @@ import userEvent from '@testing-library/user-event'
 import { axe, toHaveNoViolations } from 'jest-axe'
 import '@testing-library/jest-dom'
 
+import { cleanup } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import RankingCard from '../../components/RankingCard'
 import EndOfYearRankingsPanel from '../../components/EndOfYearRankingsPanel'
 import FullYearRankingChart from '../../components/FullYearRankingChart'
 import MultiYearComparisonTable from '../../components/MultiYearComparisonTable'
 import GlobalRankingsTab from '../../components/GlobalRankingsTab'
-import {
-  renderWithProviders,
-  cleanupAllResources,
-} from '../utils/componentTestUtils'
+
+// 4 of 5 components tested here are pure presentational; only
+// GlobalRankingsTab uses useSearchParams via useUrlState. Replace the
+// heavy renderWithProviders (createMemoryRouter + RouterProvider +
+// QueryClient + PerformanceWrapper) with a lightweight MemoryRouter
+// wrapper. 36 axe-test renders × ~30ms saved each = the difference
+// between this file consistently passing the parallel suite or being
+// a contention amplifier (#473).
+const renderWithProviders = (ui: React.ReactElement) =>
+  render(<MemoryRouter>{ui}</MemoryRouter>)
+const cleanupAllResources = () => cleanup()
 import type { ProgramYear } from '../../utils/programYear'
 import type {
   EndOfYearRankings,

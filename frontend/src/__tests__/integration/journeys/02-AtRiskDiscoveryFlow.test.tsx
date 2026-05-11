@@ -16,6 +16,11 @@ import App from '../../../App'
 
 import { setupCdnFetchMock } from '../utils/mockCdnData'
 
+// Journey tests render <App /> and click through multi-step flows; the
+// full-page scope is the test. 15s recognises that category — unit
+// tests still inherit the 5s cap from vitest.config.ts (#473).
+vi.setConfig({ testTimeout: 15000 })
+
 // Mock LazyChart to immediately render its children in integration tests
 vi.mock('../../../components/LazyChart', () => ({
   LazyChart: ({ children }: { children: React.ReactNode }) => <>{children}</>,

@@ -1,6 +1,11 @@
 import React from 'react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, cleanup } from '@testing-library/react'
+
+// Journey tests render <App /> and click through multi-step flows; the
+// full-page scope is the test. 15s recognises that category — unit
+// tests still inherit the 5s cap from vitest.config.ts (#473).
+vi.setConfig({ testTimeout: 15000 })
 import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom'
 import App from '../../../App'
