@@ -962,6 +962,97 @@
     font-weight: 600;
   }
 
+  /* Distinguished Program criteria explainer (#362). Collapsible
+     <details> on the Divisions & Areas tab. */
+  .ddp-criteria {
+    margin: 14px 0;
+    padding: 0;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-md);
+    overflow: hidden;
+  }
+
+  .ddp-criteria__summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 12px 16px;
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 13.5px;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+  }
+
+  .ddp-criteria__summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .ddp-criteria__summary::after {
+    content: '▾';
+    color: var(--ink-3);
+    font-size: 12px;
+    transition: transform 150ms ease;
+  }
+
+  .ddp-criteria[open] .ddp-criteria__summary::after {
+    transform: rotate(180deg);
+  }
+
+  .ddp-criteria__body {
+    padding: 4px 16px 16px;
+    border-top: 1px solid var(--line);
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--ink-2);
+  }
+
+  .ddp-criteria__body p {
+    margin: 12px 0;
+  }
+
+  .ddp-criteria__levels {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 6px 16px;
+  }
+
+  .ddp-criteria__levels > li {
+    display: contents;
+  }
+
+  .ddp-criteria__level-name {
+    font-weight: 700;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+
+  .ddp-criteria__level-name--presidents {
+    color: var(--yellow-700, #b45309);
+  }
+  .ddp-criteria__level-name--select {
+    color: var(--loyal-500);
+  }
+  .ddp-criteria__level-name--distinguished {
+    color: var(--maroon-500);
+  }
+  .ddp-criteria__level-name--loss {
+    color: var(--maroon-500);
+  }
+
+  .ddp-criteria__source {
+    font-size: 12px;
+    color: var(--ink-3);
+    margin-top: 12px;
+  }
+
   /* Clubs tab segmented status filter (#361). Larger primary filter
      above the quick-filter chip strip — All / Thriving / Vulnerable /
      Intervention with counts. */

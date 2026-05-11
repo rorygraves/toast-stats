@@ -45,6 +45,7 @@ import {
 } from '../components/LazyCharts'
 import { TopGrowthClubs } from '../components/TopGrowthClubs'
 import { DivisionPerformanceCards } from '../components/DivisionPerformanceCards'
+import DistinguishedProgramCriteriaExplainer from '../components/DistinguishedProgramCriteriaExplainer'
 import { DivisionAreaRecognitionPanel } from '../components/DivisionAreaRecognitionPanel'
 
 import ErrorBoundary from '../components/ErrorBoundary'
@@ -724,6 +725,12 @@ const DistrictDetailPage: React.FC = () => {
                 ) : (
                   isLoadingStatistics && <LoadingSkeleton variant="card" />
                 )}
+
+                {/* Distinguished Program criteria explainer (#362). Sits
+                    between the per-division cards and the
+                    DivisionAreaRecognitionPanel so users see the rules
+                    before reading any specific division's status. */}
+                <DistinguishedProgramCriteriaExplainer />
 
                 {/* Division and Area Recognition Panel */}
                 {districtStatistics ? (
