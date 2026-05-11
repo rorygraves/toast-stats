@@ -88,12 +88,15 @@ describe('Journey 03: The DCP Progress Flow', () => {
     )
     expect(memPaymentsCard).toBeInTheDocument()
 
-    const distClubsCard = await screen.findByText(
+    // The Overview redesign (#360 slice 2) adds a 'Distinguished Clubs ·
+    // Composition' panel, so 'Distinguished Clubs' now appears multiple
+    // times on the page. The KPI card is the FIRST occurrence.
+    const distClubsCards = await screen.findAllByText(
       /Distinguished Clubs/i,
       {},
       { timeout: 5000 }
     )
-    expect(distClubsCard).toBeInTheDocument()
+    expect(distClubsCards.length).toBeGreaterThan(0)
 
     // Step 3: Verify DCP badge details (Smedley, Presidents, Select) within the Distinguished Clubs card region
     const smedleyBadge = await screen.findByText(

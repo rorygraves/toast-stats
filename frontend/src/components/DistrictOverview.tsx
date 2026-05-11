@@ -4,6 +4,7 @@ import type { DistrictPerformanceTargets } from '../hooks/useDistrictAnalytics'
 import { LoadingSkeleton } from './LoadingSkeleton'
 import { ErrorDisplay, EmptyState } from './ErrorDisplay'
 import { TargetProgressCard } from './TargetProgressCard'
+import DistinguishedCompositionBar from './DistinguishedCompositionBar'
 
 interface DistrictOverviewProps {
   districtId: string
@@ -294,6 +295,19 @@ export const DistrictOverview: React.FC<DistrictOverviewProps> = ({
                 {analytics.allClubs.length === 1 ? '' : 's'}
               </span>
             }
+          />
+        </div>
+      )}
+
+      {/* Distinguished Composition stack-bar (#360 redesign slice 2). */}
+      {!isLoading && !error && analytics && analytics.allClubs.length > 0 && (
+        <div className="mt-4">
+          <DistinguishedCompositionBar
+            smedley={analytics.distinguishedClubs.smedley}
+            presidents={analytics.distinguishedClubs.presidents}
+            select={analytics.distinguishedClubs.select}
+            distinguished={analytics.distinguishedClubs.distinguished}
+            totalClubs={analytics.allClubs.length}
           />
         </div>
       )}
