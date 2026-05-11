@@ -123,7 +123,7 @@ export const DistrictOverview: React.FC<DistrictOverviewProps> = ({
 
       {/* Key Metrics */}
       {!isLoading && !error && analytics && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           {/* Paid Clubs - replaces Total Clubs */}
           <TargetProgressCard
             title="Paid Clubs"
@@ -257,6 +257,42 @@ export const DistrictOverview: React.FC<DistrictOverviewProps> = ({
                   </span>
                 )}
               </>
+            }
+          />
+
+          {/* Total Members (#428) — sums latest active-member counts across
+              every club in the district. Distinct from Membership Payments
+              (which counts payment events; members typically pay twice/yr). */}
+          <TargetProgressCard
+            title="Total Members"
+            icon={
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
+            }
+            current={analytics.allClubs.reduce((sum, c) => {
+              const last = c.membershipTrend[c.membershipTrend.length - 1]
+              return sum + (last?.count ?? 0)
+            }, 0)}
+            base={null}
+            targets={null}
+            achievedLevel={null}
+            rankings={nullRankings}
+            colorScheme="blue"
+            tooltipContent="Sum of current paid members across every club in this district. Distinct from Membership Payments — members typically pay twice per year, so payments ≈ 2× members over a full program year."
+            badges={
+              <span
+                className="text-xs font-tm-body text-tm-loyal-blue bg-tm-loyal-blue-10 px-2 py-1 rounded"
+                title="Active clubs included in the sum"
+              >
+                across {analytics.allClubs.length} club
+                {analytics.allClubs.length === 1 ? '' : 's'}
+              </span>
             }
           />
         </div>
