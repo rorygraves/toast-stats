@@ -184,9 +184,22 @@ export const TargetProgressCard: React.FC<TargetProgressCardProps> = ({
 
   return (
     <div
-      className={`${colors.gradient} rounded-lg p-4 border ${colors.border}`}
+      className={`${colors.gradient} rounded-lg p-4 border ${colors.border} relative`}
       data-testid="target-progress-card"
     >
+      {/* Top-right rank badge (#360 redesign parity) — promoted from the
+          bottom chip for higher visibility per design mockup. Renders only
+          when world rank data is available. */}
+      {rankings.worldRank !== null && rankings.totalDistricts > 0 && (
+        <span
+          className="absolute top-3 right-3 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-white/70 text-gray-700 border border-gray-200 backdrop-blur-sm"
+          data-testid="kpi-rank-badge"
+          title={`World rank ${rankings.worldRank} out of ${rankings.totalDistricts} districts`}
+        >
+          #{rankings.worldRank} of {rankings.totalDistricts}
+        </span>
+      )}
+
       {/* Header with title, value, and icon */}
       <div className="flex items-center justify-between">
         <div>
