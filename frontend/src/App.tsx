@@ -30,6 +30,12 @@ const AwardsPage = React.lazy(() => import('./pages/AwardsPage'))
 // Code-split: RegionPage — /region/:n landing (#423)
 const RegionPage = React.lazy(() => import('./pages/RegionPage'))
 
+// Code-split: DivisionPage — /district/:districtId/division/:divId (#424)
+const DivisionPage = React.lazy(() => import('./pages/DivisionPage'))
+
+// Code-split: AreaPage — /district/:districtId/division/:divId/area/:areaId (#425)
+const AreaPage = React.lazy(() => import('./pages/AreaPage'))
+
 /** Loading fallback for lazy-loaded pages */
 function PageLoadingFallback(): React.JSX.Element {
   // AppShell owns the <main id="main-content"> landmark; this fallback
@@ -108,6 +114,22 @@ const router = createBrowserRouter(
           element: (
             <Suspense fallback={<PageLoadingFallback />}>
               <RegionPage />
+            </Suspense>
+          ),
+        },
+        {
+          path: 'district/:districtId/division/:divId',
+          element: (
+            <Suspense fallback={<PageLoadingFallback />}>
+              <DivisionPage />
+            </Suspense>
+          ),
+        },
+        {
+          path: 'district/:districtId/division/:divId/area/:areaId',
+          element: (
+            <Suspense fallback={<PageLoadingFallback />}>
+              <AreaPage />
             </Suspense>
           ),
         },
