@@ -20,10 +20,9 @@ export const DateRangeSelector = ({
 
   const [startDate, setStartDate] = useState(thirtyDaysAgo)
   const [endDate, setEndDate] = useState(today)
-  const [error, setError] = useState<string | null>(null)
 
-  // Validation using useMemo instead of useEffect
-  const validationError = useMemo(() => {
+  // Derived during render — no mirror-into-state effect (#340).
+  const error = useMemo(() => {
     if (!startDate || !endDate) {
       return 'Both start and end dates are required'
     }
@@ -46,17 +45,12 @@ export const DateRangeSelector = ({
     return null
   }, [startDate, endDate, maxDays])
 
-  // Update error state when validation changes
-  useEffect(() => {
-    setError(validationError)
-  }, [validationError])
-
   // Emit valid date ranges
   useEffect(() => {
-    if (!validationError && startDate && endDate) {
+    if (!error && startDate && endDate) {
       onDateRangeChange(startDate, endDate)
     }
-  }, [startDate, endDate, validationError, onDateRangeChange])
+  }, [startDate, endDate, error, onDateRangeChange])
 
   const handlePresetRange = (days: number) => {
     const end = new Date()

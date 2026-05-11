@@ -99,13 +99,19 @@ const TestFunctionalComponent: React.FC<TestComponentProps> = ({
   )
 }
 
-// Component with hooks for testing
+// Component with hooks for testing. Tracks variant-prop changes via the
+// render-phase setState pattern instead of a useEffect mirror to avoid
+// the react-hooks/set-state-in-effect violation (#340). See React docs:
+// https://react.dev/reference/react/useState#storing-information-from-previous-renders
 const TestHooksComponent: React.FC<TestComponentProps> = props => {
   const [count, setCount] = React.useState(0)
-
-  React.useEffect(() => {
+  const [prevVariant, setPrevVariant] = React.useState<string | undefined>(
+    undefined
+  )
+  if (prevVariant !== props.variant) {
+    setPrevVariant(props.variant)
     setCount(prev => prev + 1)
-  }, [props.variant])
+  }
 
   return (
     <div data-testid="hooks-wrapper">

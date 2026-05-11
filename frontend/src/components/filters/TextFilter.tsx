@@ -27,14 +27,17 @@ export const TextFilter: React.FC<TextFilterProps> = ({
   const [operator, setOperator] = useState<'contains' | 'startsWith'>(
     'contains'
   )
+  // Track the prop value to detect external resets (e.g. "Clear all").
+  // Render-phase sync avoids setState-in-effect (#340); see React docs:
+  // https://react.dev/reference/react/useState#storing-information-from-previous-renders
+  const [trackedValue, setTrackedValue] = useState(value)
+  if (value !== trackedValue) {
+    setTrackedValue(value)
+    setLocalValue(value)
+  }
 
   // Debounce the local value with 300ms delay for performance optimization
   const debouncedValue = useDebounce(localValue, 300)
-
-  // Update local value when prop changes
-  useEffect(() => {
-    setLocalValue(value)
-  }, [value])
 
   // Call onChange when debounced value changes
   useEffect(() => {

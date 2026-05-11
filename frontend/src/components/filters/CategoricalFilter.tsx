@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { CategoricalFilterProps } from './types'
 
 /**
@@ -24,11 +24,16 @@ export const CategoricalFilter: React.FC<CategoricalFilterProps> = ({
   className = '',
 }) => {
   const [localSelected, setLocalSelected] = useState<string[]>(selectedValues)
-
-  // Update local selection when props change
-  useEffect(() => {
+  // Render-phase sync: when the parent resets selectedValues (e.g. "Clear
+  // all filters") propagate it to local state without setState-in-effect
+  // (#340). See React docs:
+  // https://react.dev/reference/react/useState#storing-information-from-previous-renders
+  const [trackedSelected, setTrackedSelected] =
+    useState<string[]>(selectedValues)
+  if (selectedValues !== trackedSelected) {
+    setTrackedSelected(selectedValues)
     setLocalSelected(selectedValues)
-  }, [selectedValues])
+  }
 
   // Handle option toggle
   const handleToggle = (option: string) => {

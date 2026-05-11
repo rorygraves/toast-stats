@@ -32,14 +32,15 @@ export const NumericFilter: React.FC<NumericFilterProps> = ({
   )
   const [error, setError] = useState<string>('')
 
-  // Sync local state with props when they change
-  React.useEffect(() => {
-    const newMin = value[0]?.toString() || ''
-    const newMax = value[1]?.toString() || ''
-
-    setLocalMin(newMin)
-    setLocalMax(newMax)
-  }, [value])
+  // Render-phase sync: when the parent updates `value` (e.g. external
+  // "Clear all filters"), propagate it to local inputs without
+  // setState-in-effect (#340).
+  const [trackedValue, setTrackedValue] = useState(value)
+  if (value !== trackedValue) {
+    setTrackedValue(value)
+    setLocalMin(value[0]?.toString() || '')
+    setLocalMax(value[1]?.toString() || '')
+  }
 
   // Validate and update filter
   const updateFilter = (minStr: string, maxStr: string) => {
