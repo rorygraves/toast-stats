@@ -350,6 +350,34 @@
     vertical-align: 1px;
   }
 
+  /* "What changed since last visit" diff strip (#418). Loyal-blue tinted
+     pill that surfaces only when the user has visited before AND the
+     snapshot date has changed. */
+  .districts-page-header__diff-strip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0 0;
+    padding: 6px 12px;
+    background-color: var(--loyal-50);
+    border: 1px solid var(--loyal-200);
+    border-radius: var(--rds-radius-sm);
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--loyal-600);
+  }
+
+  .districts-page-header__diff-strip strong {
+    color: var(--loyal-700);
+    font-weight: 700;
+  }
+
+  .districts-page-header__diff-strip time {
+    font-variant-numeric: tabular-nums;
+    color: var(--loyal-500);
+  }
+
   .districts-page-header__actions {
     display: inline-flex;
     align-items: center;

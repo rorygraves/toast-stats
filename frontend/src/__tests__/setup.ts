@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
 import 'jest-axe/extend-expect'
-import { vi } from 'vitest'
+import { beforeEach, vi } from 'vitest'
 
 // Import brand CSS to make design tokens available in tests
 import '../styles/brand.css'
@@ -81,4 +81,12 @@ Object.defineProperty(window, 'localStorage', {
       Object.keys(store).forEach(k => delete store[k])
     }),
   },
+})
+
+// Clear localStorage between every test so persisted state from one test
+// (e.g. selectedRegions, my-district-id, sortBy) does not leak into the
+// next. Required after #416 (filter persistence) wired filter state to
+// localStorage on the Districts page.
+beforeEach(() => {
+  Object.keys(store).forEach(k => delete store[k])
 })

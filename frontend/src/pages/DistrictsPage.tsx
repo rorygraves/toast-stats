@@ -15,6 +15,8 @@ import { ProgramYearSelector } from '../components/ProgramYearSelector'
 import { useRankHistory } from '../hooks/useRankHistory'
 import InfoTooltip from '../components/InfoTooltip'
 import { useMyDistrict } from '../hooks/useMyDistrict'
+import { usePersistedState } from '../hooks/usePersistedState'
+import { useLastVisit } from '../hooks/useLastVisit'
 import DataFreshnessBadge from '../components/DataFreshnessBadge'
 import { LazyComparisonPanel as ComparisonPanel } from '../components/LazyCharts'
 import {
@@ -28,9 +30,11 @@ import { arrayToCSV, downloadCSV } from '../utils/csvExport'
 
 const DistrictsPage: React.FC = () => {
   const navigate = useNavigate()
-  const [sortBy, setSortBy] = useState<
+  // sortBy persists across visits (#416). Default 'aggregate'.
+  const [sortBy, setSortBy] = usePersistedState<
     'aggregate' | 'clubs' | 'payments' | 'distinguished'
-  >('aggregate')
+  >('districts-sort-by', 'aggregate')
+  // Intentionally NOT persisted — search query should reset between visits.
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [pinnedDistrictIds, setPinnedDistrictIds] = useState<Set<string>>(
     new Set()
@@ -66,7 +70,13 @@ const DistrictsPage: React.FC = () => {
     districtsData?.districts?.forEach(d => ids.add(d.id))
     return ids
   }, [districtsData])
-  const [selectedRegions, setSelectedRegions] = useState<string[]>([])
+  // selectedRegions persists across visits (#416). Default = all (empty list,
+  // which the existing useEffect inflates to all-known-regions on first
+  // data render).
+  const [selectedRegions, setSelectedRegions] = usePersistedState<string[]>(
+    'districts-selected-regions',
+    []
+  )
 
   // Use URL-synced program year and date (#272)
   const {
@@ -284,6 +294,28 @@ const DistrictsPage: React.FC = () => {
         r.districtName.toLowerCase().includes(query)
     )
   }, [rankedRankings, searchQuery])
+
+  // 'What changed since last visit' diff strip (#418). Compares the
+  // current snapshot date + my-district rank to the previous-visit
+  // snapshot stored in localStorage.
+  const myDistrictCurrentRank = React.useMemo(() => {
+    if (!myDistrictId) return null
+    const row = rankedRankings.find(r => r.districtId === myDistrictId)
+    return row?.displayRank ?? null
+  }, [rankedRankings, myDistrictId])
+
+  const { diff: lastVisitDiff, commit: commitLastVisit } = useLastVisit({
+    currentDate: data?.date ?? null,
+    currentMyRank: myDistrictCurrentRank,
+    currentMyDistrictId: myDistrictId,
+  })
+
+  // Stamp the current visit forward whenever the snapshot date changes,
+  // so the next visit reads it as the previous one. The effect runs once
+  // per data load.
+  React.useEffect(() => {
+    if (data?.date) commitLastVisit()
+  }, [data?.date, commitLastVisit])
 
   // Sticky-pin 'my district' to the top of the rankings table (#417).
   // Reorder ONLY for visual placement; ranks stay correct.
@@ -528,6 +560,42 @@ const DistrictsPage: React.FC = () => {
               by number or name. Star (★) a district to keep it pinned at the
               top across visits.
             </p>
+            {/* What changed since last visit (#418) — only renders when the
+                user has visited before AND the snapshot date has changed.
+                Quiet, no dismiss control needed (it self-clears next visit). */}
+            {lastVisitDiff.isNewSnapshot && (
+              <p
+                className="districts-page-header__diff-strip"
+                data-testid="last-visit-diff-strip"
+              >
+                <span aria-hidden="true">📍</span>
+                <span>
+                  New snapshot since your last visit
+                  {lastVisitDiff.previousDate && (
+                    <>
+                      {' '}
+                      (<time>{lastVisitDiff.previousDate}</time>).
+                    </>
+                  )}
+                  {lastVisitDiff.myRankDelta !== null &&
+                    lastVisitDiff.myRankDelta !== 0 && (
+                      <>
+                        {' '}
+                        Your district moved{' '}
+                        <strong>
+                          {lastVisitDiff.myRankDelta > 0
+                            ? `up ${lastVisitDiff.myRankDelta}`
+                            : `down ${Math.abs(lastVisitDiff.myRankDelta)}`}
+                        </strong>{' '}
+                        {Math.abs(lastVisitDiff.myRankDelta) === 1
+                          ? 'place'
+                          : 'places'}
+                        .
+                      </>
+                    )}
+                </span>
+              </p>
+            )}
           </div>
           <div className="districts-page-header__actions">
             <DataFreshnessBadge />
