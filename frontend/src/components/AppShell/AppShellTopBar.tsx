@@ -44,25 +44,8 @@ const AppShellTopBar: React.FC = () => {
       </nav>
 
       <div className="app-shell-tools">
-        <button
-          type="button"
-          className="app-shell-icon-btn"
-          aria-label="Notifications"
-          title="Notifications"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            aria-hidden="true"
-          >
-            <path d="M3 13h10l-1.5-2v-3.5a3.5 3.5 0 0 0-7 0V11L3 13Z" />
-            <path d="M6.5 13.5a1.5 1.5 0 0 0 3 0" />
-          </svg>
-        </button>
+        {/* Bell stub removed per #411 — a non-functional icon erodes
+            trust. Re-add when there's real notification content. */}
         <Link
           to="/methodology"
           className="app-shell-icon-btn"

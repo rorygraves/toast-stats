@@ -94,17 +94,15 @@ describe('AppShell (#354)', () => {
       expect(regionsLink).toHaveAttribute('aria-disabled', 'true')
     })
 
-    it('renders the top-bar tools cluster (notifications stub, help link, avatar)', () => {
-      // Design shows a bell + ? + JS avatar on the right side of the
-      // top bar. The notifications bell + avatar remain visual stubs
-      // until auth lands; the help icon is now a Link to /methodology
-      // (#410) so users have one-click access to the canonical
-      // definitions.
+    it('renders the top-bar tools cluster (help link, avatar)', () => {
+      // Bell stub was removed in #411 — a non-functional icon erodes
+      // trust. The help icon is a Link to /methodology (#410); the
+      // avatar remains a visual stub until auth lands.
       renderShell()
       const header = screen.getByRole('banner')
       expect(
-        within(header).getByRole('button', { name: /notifications/i })
-      ).toBeInTheDocument()
+        within(header).queryByRole('button', { name: /notifications/i })
+      ).not.toBeInTheDocument()
       // The text 'How it works' appears twice in the header — as the
       // primary nav link AND as the help icon's aria-label. Scope the
       // help icon assertion to the tools cluster (everything outside the
