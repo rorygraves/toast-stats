@@ -39,6 +39,7 @@
 @import './styles/components/app-shell.css';
 @import './styles/responsive.css';
 @import './styles/dark-mode.css';
+@import './styles/print.css';
 
 /* Tailwind v4 Theme Configuration - replaces tailwind.config.js */
 @theme {

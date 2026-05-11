@@ -1,0 +1,145 @@
+/* Print stylesheet (#427).
+
+   Goal: when a District Director hits Cmd-P on /, /district/:id, or
+   /district/:id/club/:clubId, produce a clean letter-sized printout
+   suitable for board meetings. Drop interactive chrome, force light
+   colours even for dark-mode users, avoid splitting cards across
+   pages, and surface the URL in the page margin.
+
+   Acceptance per the issue: top-bar / action cluster / footer hidden,
+   light-mode forced, page margins set, URL in footer, no page breaks
+   inside cards. */
+
+@media print {
+  /* ----- Page setup ----- */
+  @page {
+    size: letter;
+    margin: 0.6in 0.5in 0.7in 0.5in;
+  }
+
+  /* ----- Force light mode regardless of theme attribute ----- */
+  :root,
+  :root[data-theme='dark'],
+  [data-theme='dark'] {
+    color-scheme: light;
+    --tm-bg: #ffffff;
+    --tm-fg: #000000;
+    --tm-text: #000000;
+    --tm-text-muted: #333333;
+    --tm-surface: #ffffff;
+    --tm-surface-elevated: #ffffff;
+    --tm-card-bg: #ffffff;
+    --tm-border: #cccccc;
+    --tm-border-strong: #888888;
+  }
+
+  html,
+  body,
+  .app-shell,
+  .app-shell__main,
+  .districts-page,
+  .districts-page-root,
+  .district-detail-page {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* ----- Hide app chrome ----- */
+  .app-shell-top-bar,
+  .app-shell-footer,
+  .tm-skip-link,
+  .command-palette,
+  .districts-page-header__actions,
+  .district-detail-tabs,
+  /* Hide everything that's purely interactive */
+  button[aria-label*='Filter'],
+  button[aria-label='Toggle theme'] {
+    display: none !important;
+  }
+
+  /* ----- Per-page tabpanel reveal -----
+     DistrictDetailTabs only mounts the active panel; we keep that
+     behaviour for print (it represents what the user is looking at).
+     The role=tabpanel containers themselves use `hidden`, which
+     browsers respect in print. Nothing more to do. */
+
+  /* ----- Page-break behaviour ----- */
+  /* Avoid splitting cards / charts / table rows across pages. */
+  .districts-kpi-card,
+  .district-overview__card,
+  .district-kpi-card,
+  .districts-page-header__diff-strip,
+  .award-tier-card,
+  .ranking-card,
+  .division-card,
+  .area-performance-table,
+  .clubs-table tbody tr,
+  .recharts-wrapper,
+  .global-rankings-tab section,
+  .progression-chart {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  /* ----- Surface the source in the page margin -----
+     Browsers don't expose live URLs to @page boxes; print a stable
+     source attribution at the bottom of the document instead. The
+     hyperlinks inside the body still get their hrefs printed via the
+     `a[href]::after` rule below, so users can find any specific
+     district / club URL they were looking at. */
+  .app-shell__main::after {
+    content: 'ts.taverns.red — Toastmasters District Statistics Visualizer';
+    display: block;
+    margin-top: 1rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #cccccc;
+    font-size: 9pt;
+    color: #555555;
+  }
+
+  /* ----- Layout simplifications -----
+     Drop the top sticky-positioned banner padding so the first card
+     doesn't get a giant gap. */
+  .app-shell__main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Recharts SVGs can fall off the right edge on letter — clamp. */
+  .recharts-wrapper,
+  .recharts-surface {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Tables print better with full width and visible borders. */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+  th,
+  td {
+    border: 1px solid #cccccc !important;
+    padding: 4px 8px !important;
+  }
+
+  /* Links: print the URL alongside the text for navigation context. */
+  a[href]:not([href^='#'])::after {
+    content: ' (' attr(href) ')';
+    font-size: 9pt;
+    color: #555555;
+  }
+  /* But not for internal navigation links the user already sees. */
+  .app-shell-nav__link::after,
+  .clubs-table a::after {
+    content: '' !important;
+  }
+}
