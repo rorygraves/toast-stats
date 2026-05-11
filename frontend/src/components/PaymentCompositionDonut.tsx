@@ -7,6 +7,7 @@
 import React from 'react'
 
 interface PaymentCompositionDonutProps {
+  /** Number of currently-paid members (the cohort, not the events). */
   totalMembership: number
   newMembers: number
   aprilRenewals: number
@@ -30,15 +31,18 @@ const PaymentCompositionDonut: React.FC<PaymentCompositionDonutProps> = ({
   aprilRenewals,
   octoberRenewals,
 }) => {
-  if (totalMembership <= 0) return null
-
-  const known = newMembers + aprilRenewals + octoberRenewals
-  const other = Math.max(0, totalMembership - known)
+  // Total PAYMENTS is the sum of payment events across the program year
+  // (a single member can show up in multiple buckets — paid as new, then
+  // renewed in April, then renewed in October). The previous version used
+  // totalMembership (= cohort count) as the denominator, which conflated
+  // two different metrics and produced percentages > 100%.
+  const totalPayments = newMembers + aprilRenewals + octoberRenewals
+  if (totalPayments <= 0) return null
 
   const segments: Segment[] = [
     {
       key: 'new',
-      label: 'New members',
+      label: 'New member payments',
       count: newMembers,
       color: 'var(--tm-loyal-blue, #004165)',
     },
@@ -54,25 +58,19 @@ const PaymentCompositionDonut: React.FC<PaymentCompositionDonutProps> = ({
       count: octoberRenewals,
       color: 'rgb(22 163 74)',
     },
-    {
-      key: 'other',
-      label: 'Late / charter',
-      count: other,
-      color: 'var(--tm-true-maroon, #772432)',
-    },
   ].filter(s => s.count > 0)
 
   // Compute cumulative offsets along the circle.
   let cumulative = 0
   const arcs = segments.map(seg => {
-    const length = (seg.count / totalMembership) * CIRCUMFERENCE
+    const length = (seg.count / totalPayments) * CIRCUMFERENCE
     const offset = -cumulative
     cumulative += length
     return {
       ...seg,
       length,
       offset,
-      percent: Math.round((seg.count / totalMembership) * 100),
+      percent: Math.round((seg.count / totalPayments) * 100),
     }
   })
 
@@ -94,8 +92,11 @@ const PaymentCompositionDonut: React.FC<PaymentCompositionDonutProps> = ({
         >
           Payment Composition
         </h2>
-        <span className="text-sm text-gray-600 font-tm-body">
-          {totalMembership.toLocaleString()} total
+        <span
+          className="text-sm text-gray-600 font-tm-body"
+          title={`${totalPayments.toLocaleString()} payment events across ${totalMembership.toLocaleString()} current members`}
+        >
+          {totalPayments.toLocaleString()} payment events
         </span>
       </div>
 
@@ -104,7 +105,7 @@ const PaymentCompositionDonut: React.FC<PaymentCompositionDonutProps> = ({
           width="118"
           height="118"
           viewBox="0 0 120 120"
-          aria-label={`Donut chart of payment composition, ${totalMembership} total payments`}
+          aria-label={`Donut chart of payment composition, ${totalPayments} total payment events`}
           role="img"
           className="flex-shrink-0"
         >
