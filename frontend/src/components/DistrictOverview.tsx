@@ -1,5 +1,6 @@
 import React from 'react'
 import { useDistrictAnalytics } from '../hooks/useDistrictAnalytics'
+import { useDistrictRanking } from '../hooks/useDistrictRanking'
 import type { DistrictPerformanceTargets } from '../hooks/useDistrictAnalytics'
 import { LoadingSkeleton } from './LoadingSkeleton'
 import { ErrorDisplay, EmptyState } from './ErrorDisplay'
@@ -40,6 +41,10 @@ export const DistrictOverview: React.FC<DistrictOverviewProps> = ({
     isLoading: isLoadingAnalytics,
     error,
   } = useDistrictAnalytics(districtId, programYearStartDate, selectedDate)
+
+  // Fetch the district's row from rankings.json for district-level fields
+  // not carried in the per-club analytics (payment breakdowns).
+  const { ranking: districtRanking } = useDistrictRanking(districtId)
 
   // Get club counts from the new separate arrays
   const interventionRequiredClubsCount = React.useMemo(() => {
@@ -314,18 +319,11 @@ export const DistrictOverview: React.FC<DistrictOverviewProps> = ({
           />
           <PaymentCompositionDonut
             totalMembership={analytics.totalMembership}
-            newMembers={analytics.allClubs.reduce(
-              (sum, c) => sum + (c.newMembers ?? 0),
-              0
-            )}
-            aprilRenewals={analytics.allClubs.reduce(
-              (sum, c) => sum + (c.aprilRenewals ?? 0),
-              0
-            )}
-            octoberRenewals={analytics.allClubs.reduce(
-              (sum, c) => sum + (c.octoberRenewals ?? 0),
-              0
-            )}
+            newPayments={districtRanking?.newPayments ?? 0}
+            aprilPayments={districtRanking?.aprilPayments ?? 0}
+            octoberPayments={districtRanking?.octoberPayments ?? 0}
+            latePayments={districtRanking?.latePayments ?? 0}
+            charterPayments={districtRanking?.charterPayments ?? 0}
           />
         </div>
       )}

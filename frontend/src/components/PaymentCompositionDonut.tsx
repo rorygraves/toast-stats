@@ -7,11 +7,13 @@
 import React from 'react'
 
 interface PaymentCompositionDonutProps {
-  /** Number of currently-paid members (the cohort, not the events). */
+  /** Number of currently-paid members (the cohort — for the tooltip only). */
   totalMembership: number
-  newMembers: number
-  aprilRenewals: number
-  octoberRenewals: number
+  newPayments: number
+  aprilPayments: number
+  octoberPayments: number
+  latePayments: number
+  charterPayments: number
 }
 
 interface Segment {
@@ -27,36 +29,53 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 
 const PaymentCompositionDonut: React.FC<PaymentCompositionDonutProps> = ({
   totalMembership,
-  newMembers,
-  aprilRenewals,
-  octoberRenewals,
+  newPayments,
+  aprilPayments,
+  octoberPayments,
+  latePayments,
+  charterPayments,
 }) => {
   // Total PAYMENTS is the sum of payment events across the program year
-  // (a single member can show up in multiple buckets — paid as new, then
-  // renewed in April, then renewed in October). The previous version used
-  // totalMembership (= cohort count) as the denominator, which conflated
-  // two different metrics and produced percentages > 100%.
-  const totalPayments = newMembers + aprilRenewals + octoberRenewals
+  // (a single member can show up in multiple buckets). All 5 categories
+  // are sourced from the all-districts-rankings.json file.
+  const totalPayments =
+    newPayments +
+    aprilPayments +
+    octoberPayments +
+    latePayments +
+    charterPayments
   if (totalPayments <= 0) return null
 
   const segments: Segment[] = [
     {
       key: 'new',
       label: 'New member payments',
-      count: newMembers,
+      count: newPayments,
       color: 'var(--tm-loyal-blue, #004165)',
     },
     {
       key: 'april',
       label: 'April renewals',
-      count: aprilRenewals,
+      count: aprilPayments,
       color: 'var(--tm-loyal-blue-80, #3D7AA0)',
     },
     {
       key: 'october',
       label: 'October renewals',
-      count: octoberRenewals,
+      count: octoberPayments,
       color: 'rgb(22 163 74)',
+    },
+    {
+      key: 'late',
+      label: 'Late payments',
+      count: latePayments,
+      color: 'var(--tm-true-maroon, #772432)',
+    },
+    {
+      key: 'charter',
+      label: 'Charter payments',
+      count: charterPayments,
+      color: 'var(--yellow-500, #f59e0b)',
     },
   ].filter(s => s.count > 0)
 
