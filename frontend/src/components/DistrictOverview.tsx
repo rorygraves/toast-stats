@@ -5,6 +5,7 @@ import { LoadingSkeleton } from './LoadingSkeleton'
 import { ErrorDisplay, EmptyState } from './ErrorDisplay'
 import { TargetProgressCard } from './TargetProgressCard'
 import DistinguishedCompositionBar from './DistinguishedCompositionBar'
+import PaymentCompositionDonut from './PaymentCompositionDonut'
 
 interface DistrictOverviewProps {
   districtId: string
@@ -299,15 +300,32 @@ export const DistrictOverview: React.FC<DistrictOverviewProps> = ({
         </div>
       )}
 
-      {/* Distinguished Composition stack-bar (#360 redesign slice 2). */}
+      {/* Distinguished Composition stack-bar + Payment Composition donut
+          (#360 redesign slices 2 + 3). 2-up grid on wide viewports,
+          stacked on narrow per mockup. */}
       {!isLoading && !error && analytics && analytics.allClubs.length > 0 && (
-        <div className="mt-4">
+        <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
           <DistinguishedCompositionBar
             smedley={analytics.distinguishedClubs.smedley}
             presidents={analytics.distinguishedClubs.presidents}
             select={analytics.distinguishedClubs.select}
             distinguished={analytics.distinguishedClubs.distinguished}
             totalClubs={analytics.allClubs.length}
+          />
+          <PaymentCompositionDonut
+            totalMembership={analytics.totalMembership}
+            newMembers={analytics.allClubs.reduce(
+              (sum, c) => sum + (c.newMembers ?? 0),
+              0
+            )}
+            aprilRenewals={analytics.allClubs.reduce(
+              (sum, c) => sum + (c.aprilRenewals ?? 0),
+              0
+            )}
+            octoberRenewals={analytics.allClubs.reduce(
+              (sum, c) => sum + (c.octoberRenewals ?? 0),
+              0
+            )}
           />
         </div>
       )}

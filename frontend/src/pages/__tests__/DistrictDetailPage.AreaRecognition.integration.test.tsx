@@ -879,7 +879,7 @@ describe('DistrictDetailPage - Division and Area Recognition Panel Integration',
      */
     it('should have no accessibility violations in Divisions & Areas tab', async () => {
       const user = userEvent.setup()
-      const { container } = renderDistrictDetailPage()
+      renderDistrictDetailPage()
 
       // Navigate to Divisions & Areas tab
       const divisionsTab = screen.getByRole('tab', {
@@ -894,8 +894,19 @@ describe('DistrictDetailPage - Division and Area Recognition Panel Integration',
         ).toBeInTheDocument()
       })
 
-      // Run axe accessibility tests
-      const results = await axe(container)
+      // Run axe on the active tabpanel only, not the entire page. Scanning
+      // the full container scaled with the chrome (#360 redesign added
+      // Distinguished Composition + Payment Composition panels on the
+      // Overview tab) and pushed this test past the 5s timeout under
+      // --coverage worker contention (Lesson 51). The active tabpanel is
+      // the subject under test — axe doesn't need to walk the rest of
+      // the page chrome.
+      const heading = screen.getByText('Division and Area Recognition')
+      const tabpanel =
+        (heading.closest('[role="tabpanel"]') as HTMLElement | null) ??
+        (heading.closest('section') as HTMLElement | null) ??
+        (heading.parentElement as HTMLElement)
+      const results = await axe(tabpanel)
       expect(results).toHaveNoViolations()
     })
 
