@@ -1,10 +1,18 @@
 /* AppShell behavior contract — Epic #352 / Issue #354. */
 
-import { describe, it, expect } from 'vitest'
+import React from 'react'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import AppShell from '../../components/AppShell/AppShell'
 import { DarkModeProvider } from '../../contexts/DarkModeContext'
+
+// Mock the CDN service the CommandPalette (#422) lazy-fetches when the
+// shell mounts — keeps these tests isolated from the network layer.
+vi.mock('../../services/cdn', () => ({
+  fetchCdnRankings: vi.fn().mockResolvedValue({ rankings: [], date: '' }),
+}))
 
 const renderShell = (initialPath = '/') => {
   const router = createMemoryRouter(
@@ -31,10 +39,15 @@ const renderShell = (initialPath = '/') => {
     ],
     { initialEntries: [initialPath] }
   )
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
   return render(
-    <DarkModeProvider>
-      <RouterProvider router={router} />
-    </DarkModeProvider>
+    <QueryClientProvider client={client}>
+      <DarkModeProvider>
+        <RouterProvider router={router} />
+      </DarkModeProvider>
+    </QueryClientProvider>
   )
 }
 
