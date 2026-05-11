@@ -1,10 +1,15 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 
 /* Methodology page (#368). Authored fresh from analytics-core as the
    source of truth — Borda formula, DCP thresholds, club health
    classifications, refresh cadence. Future updates should land here
    first; the codebase comments reference this page for canonical
-   definitions. */
+   definitions.
+
+   #373: borda-count, dcp-tiers, and caveats sections link reciprocally
+   back to the /awards page so readers can pivot between the formula
+   and the live leaderboard. */
 
 const SECTIONS: ReadonlyArray<{ id: string; num: string; title: string }> = [
   { id: 'data-source', num: '01', title: 'Data source & access' },
@@ -114,6 +119,15 @@ const MethodologyPage: React.FC = () => {
           points (higher is better). This is the standard Borda count method; it
           weights all three categories equally.
         </p>
+        <p className="methodology-source">
+          See the live{' '}
+          <Link to="/awards" className="methodology-link">
+            District Awards leaderboards
+          </Link>{' '}
+          for the three competitive recognitions ranked from this data:
+          President's Extension, President's 20-Plus, and District Club
+          Retention.
+        </p>
       </section>
 
       <section id="dcp-tiers" className="methodology-section">
@@ -153,6 +167,15 @@ const MethodologyPage: React.FC = () => {
           determination logic lives in{' '}
           <code>frontend/src/utils/dcpProjections.ts</code> (
           <code>determineLevel</code>).
+        </p>
+        <p className="methodology-source">
+          The{' '}
+          <Link to="/awards" className="methodology-link">
+            President's 20-Plus Award leaderboard
+          </Link>{' '}
+          ranks districts by the percentage of clubs achieving 20+ paid members
+          — the same denominator that underpins the Distinguished tier
+          definitions above.
         </p>
       </section>
 
@@ -306,6 +329,15 @@ const MethodologyPage: React.FC = () => {
             <code>district-performance.csv</code> use a 2-digit year format (
             <code>04/15/26</code>); the parser explicitly handles this. See{' '}
             <code>tasks/lessons.md</code> Lesson 47 for context.
+          </li>
+          <li>
+            <strong>Extension and Retention award rounding</strong> — the live{' '}
+            <Link to="/awards" className="methodology-link">
+              District Awards leaderboards
+            </Link>{' '}
+            display computed values to one decimal place. Ties at that precision
+            are broken by raw paid-club counts; the underlying ranking uses
+            unrounded values.
           </li>
         </ul>
       </section>
