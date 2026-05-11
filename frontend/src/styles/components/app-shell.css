@@ -325,6 +325,31 @@
     max-width: 60ch;
   }
 
+  /* Orientation strip (#415) — first-time-visitor primer below the lede.
+     Quieter than the lede but still legible. Inline `kbd` styling carries
+     the keyboard-shortcut hint. */
+  .districts-page-header__orientation {
+    margin: 8px 0 0;
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--ink-3);
+    max-width: 70ch;
+  }
+
+  .districts-page-header__orientation kbd {
+    display: inline-block;
+    padding: 0 5px;
+    margin: 0 1px;
+    font-family: var(--mono, ui-monospace, SFMono-Regular, monospace);
+    font-size: 11px;
+    color: var(--ink-2);
+    background-color: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    vertical-align: 1px;
+  }
+
   .districts-page-header__actions {
     display: inline-flex;
     align-items: center;

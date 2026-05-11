@@ -520,6 +520,14 @@ const DistrictsPage: React.FC = () => {
               Compare district performance across paid clubs, payments, and
               distinguished clubs.
             </p>
+            {/* Orientation strip (#415) — orients first-time visitors. */}
+            <p className="districts-page-header__orientation">
+              Each row below is one of the 117 Toastmasters districts worldwide.
+              Click a district to drill into its clubs, divisions, and trends.
+              Use the search bar (or press <kbd>/</kbd>) to jump to a district
+              by number or name. Star (★) a district to keep it pinned at the
+              top across visits.
+            </p>
           </div>
           <div className="districts-page-header__actions">
             <DataFreshnessBadge />
