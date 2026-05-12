@@ -49,7 +49,8 @@ describe('MilestonesCallout (#447)', () => {
       }),
     ]
     renderCallout(clubs)
-    expect(screen.getByText(/no milestones/i)).toBeInTheDocument()
+    // Copy was tightened in #511 ("None this PY — next is ...").
+    expect(screen.getByText(/none this py/i)).toBeInTheDocument()
     expect(screen.getByText(/Brand New Club/)).toBeInTheDocument()
   })
 

@@ -4,9 +4,8 @@ import type { ClubTrend } from '../hooks/useDistrictAnalytics'
 import { isMilestoneYear } from '../utils/clubAnniversary'
 import { getCurrentProgramYear } from '../utils/programYear'
 
-/* MilestonesCallout (#447) — district-level program-year milestone roster.
-   Groups clubs hitting a 5/10/15/.../100 year milestone within the
-   program year window (Jul 1 → Jun 30 inclusive). */
+/* MilestonesCallout (#447 / #511) — district-level program-year
+   milestone roster. Tight, single-line groups per milestone year. */
 
 export interface MilestonesCalloutProps {
   clubs: ClubTrend[]
@@ -26,8 +25,6 @@ interface NextUpcomingEntry {
   anniversaryDate: Date
 }
 
-/* Parse a Toastmasters charter date in UTC, supporting ISO YYYY-MM-DD and
-   the legacy /Date(ms)/ format the TI Find-A-Club endpoint returns. */
 const parseCharterUtc = (input: string): Date | null => {
   const dotNetMatch = /^\/Date\((-?\d+)\)\/$/.exec(input)
   if (dotNetMatch) {
@@ -49,38 +46,29 @@ const parseCharterUtc = (input: string): Date | null => {
 }
 
 const MONTHS = [
-  'January',
-  'February',
-  'March',
-  'April',
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
   'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
 ]
 
-const formatAnniversaryDate = (d: Date): string =>
-  `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`
-
-const formatCharterMonth = (d: Date): string =>
+const formatShortDate = (d: Date): string =>
   `${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`
 
-/* Compute the anniversary date that falls inside the program year window.
-   Falls back to Feb 28 if the charter is Feb 29 and the anniversary year
-   is non-leap. Returns null when no anniversary falls in the window. */
 const anniversaryInProgramYear = (
   charter: Date,
   programYearStart: number
 ): Date | null => {
   const charterMonth = charter.getUTCMonth()
   const charterDay = charter.getUTCDate()
-  // Anniversary year inside the window:
-  //   month >= 6 (Jul-Dec): in programYearStart
-  //   month <  6 (Jan-Jun): in programYearStart + 1
   const annivYear = charterMonth >= 6 ? programYearStart : programYearStart + 1
   let day = charterDay
   if (charterMonth === 1 && charterDay === 29) {
@@ -98,7 +86,7 @@ export const MilestonesCallout: React.FC<MilestonesCalloutProps> = ({
 }) => {
   const pyStart = programYearStart ?? getCurrentProgramYear().year
 
-  const { groups, nextUpcoming, pyLabel } = useMemo(() => {
+  const { groups, nextUpcoming, pyLabel, totalCount } = useMemo(() => {
     const milestones: MilestoneEntry[] = []
     const upcomingCandidates: NextUpcomingEntry[] = []
 
@@ -118,8 +106,6 @@ export const MilestonesCallout: React.FC<MilestonesCalloutProps> = ({
         })
         continue
       }
-      // Not a milestone in this PY — find the next future milestone
-      // anniversary so the empty state can point somewhere useful.
       const charterMonth = charter.getUTCMonth()
       const charterDay = charter.getUTCDate()
       const today = new Date()
@@ -141,7 +127,6 @@ export const MilestonesCallout: React.FC<MilestonesCalloutProps> = ({
       }
     }
 
-    // Group milestones by year, descending.
     const grouped = new Map<number, MilestoneEntry[]>()
     for (const entry of milestones) {
       const arr = grouped.get(entry.milestoneYears) ?? []
@@ -167,39 +152,38 @@ export const MilestonesCallout: React.FC<MilestonesCalloutProps> = ({
         : null
 
     const pyLabel = `${pyStart}-${(pyStart + 1).toString().slice(-2)}`
+    const totalCount = milestones.length
 
-    return { groups, nextUpcoming, pyLabel }
+    return { groups, nextUpcoming, pyLabel, totalCount }
   }, [clubs, pyStart])
+
+  const clubHref = (clubId: string) =>
+    `/club/${clubId}${districtId ? `?district=${districtId}` : ''}`
 
   if (groups.length === 0) {
     return (
-      <section
-        aria-labelledby="milestones-heading"
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6"
-      >
-        <h2
-          id="milestones-heading"
-          className="text-lg font-semibold text-gray-900 dark:text-gray-100"
-        >
-          Milestones — Program Year {pyLabel}
-        </h2>
+      <section aria-labelledby="milestones-heading" className="redesign-panel">
+        <h3 id="milestones-heading" className="redesign-panel__header">
+          Milestones · PY {pyLabel}
+        </h3>
         {nextUpcoming ? (
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-            No milestones in this program year — next milestone is{' '}
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-tm-body">
+            None this PY — next is{' '}
             <Link
-              to={`/club/${nextUpcoming.club.clubId}${
-                districtId ? `?district=${districtId}` : ''
-              }`}
+              to={clubHref(nextUpcoming.club.clubId)}
               className="text-tm-loyal-blue hover:underline"
             >
               {nextUpcoming.club.clubName}
             </Link>{' '}
-            at {nextUpcoming.milestoneYears} years on{' '}
-            {formatAnniversaryDate(nextUpcoming.anniversaryDate)}.
+            at{' '}
+            <strong className="font-semibold text-gray-700 dark:text-gray-200">
+              {nextUpcoming.milestoneYears}y
+            </strong>{' '}
+            in {formatShortDate(nextUpcoming.anniversaryDate)}.
           </p>
         ) : (
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-            No milestones in this program year.
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-tm-body">
+            None this PY.
           </p>
         )}
       </section>
@@ -207,59 +191,52 @@ export const MilestonesCallout: React.FC<MilestonesCalloutProps> = ({
   }
 
   return (
-    <section
-      aria-labelledby="milestones-heading"
-      className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6"
-    >
-      <h2
-        id="milestones-heading"
-        className="text-lg font-semibold text-gray-900 dark:text-gray-100"
-      >
-        Milestones — Program Year {pyLabel}
-      </h2>
-      <div className="mt-3 space-y-4">
-        {groups.map(group => (
-          <div key={group.years} data-testid="milestone-group">
-            <h3 className="text-sm font-semibold text-yellow-900 dark:text-yellow-200">
-              🥇 {group.years} Years
-            </h3>
-            <ul className="mt-1 divide-y divide-gray-200 dark:divide-gray-700">
-              {group.entries.map(entry => {
-                const charter = parseCharterUtc(
-                  entry.club.charterDate as string
-                )
-                return (
-                  <li
-                    key={entry.club.clubId}
-                    className="py-2 text-sm flex flex-wrap items-baseline gap-x-2"
-                  >
-                    <Link
-                      data-testid="milestone-club"
-                      to={`/club/${entry.club.clubId}${
-                        districtId ? `?district=${districtId}` : ''
-                      }`}
-                      className="font-medium text-tm-loyal-blue hover:underline"
-                    >
-                      {entry.club.clubName}
-                    </Link>
-                    {charter && (
-                      <span className="text-gray-500 dark:text-gray-400">
-                        · chartered {formatCharterMonth(charter)}
-                      </span>
-                    )}
-                    <span className="text-gray-500 dark:text-gray-400">
-                      · {entry.club.areaName}
-                    </span>
-                    <span className="text-gray-500 dark:text-gray-400">
-                      · {entry.club.divisionName}
-                    </span>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-        ))}
+    <section aria-labelledby="milestones-heading" className="redesign-panel">
+      <div className="flex items-baseline justify-between gap-2 mb-2">
+        <h3 id="milestones-heading" className="redesign-panel__header !mb-0">
+          Milestones · PY {pyLabel}
+        </h3>
+        <span className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-tm-body">
+          {totalCount} club{totalCount === 1 ? '' : 's'}
+        </span>
       </div>
+      <ul className="divide-y divide-gray-100 dark:divide-gray-800 -mx-1">
+        {groups.map(group => (
+          <li
+            key={group.years}
+            data-testid="milestone-group"
+            className="flex items-baseline gap-3 px-2 py-1.5 text-sm font-tm-body"
+          >
+            <span className="w-10 shrink-0 tabular-nums text-xs font-bold text-tm-true-maroon">
+              {group.years} Years
+            </span>
+            <span className="flex-1 min-w-0 flex flex-wrap gap-x-2 gap-y-0.5">
+              {group.entries.map((entry, i) => (
+                <span
+                  key={entry.club.clubId}
+                  className="inline-flex items-baseline gap-1"
+                >
+                  <Link
+                    data-testid="milestone-club"
+                    to={clubHref(entry.club.clubId)}
+                    className="text-tm-loyal-blue hover:underline truncate"
+                  >
+                    {entry.club.clubName}
+                  </Link>
+                  <span className="text-[11px] text-gray-500 dark:text-gray-400 tabular-nums">
+                    {formatShortDate(entry.anniversaryDate)}
+                  </span>
+                  {i < group.entries.length - 1 && (
+                    <span aria-hidden="true" className="text-gray-300">
+                      ·
+                    </span>
+                  )}
+                </span>
+              ))}
+            </span>
+          </li>
+        ))}
+      </ul>
     </section>
   )
 }

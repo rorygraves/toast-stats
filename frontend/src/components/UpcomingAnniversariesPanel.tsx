@@ -7,9 +7,9 @@ import {
   type ClubAnniversary,
 } from '../utils/clubAnniversary'
 
-/* UpcomingAnniversariesPanel (#446) — district-level recognition planner.
-   Lists clubs with anniversaries in the next UPCOMING_WINDOW_DAYS days,
-   sorted by date proximity. */
+/* UpcomingAnniversariesPanel (#446 / #511) — district-level recognition
+   planner. Tight, dense rows of clubs whose next anniversary is within
+   UPCOMING_WINDOW_DAYS days, sorted by date proximity. */
 
 export const UPCOMING_WINDOW_DAYS = 60
 const DEFAULT_ROW_LIMIT = 5
@@ -73,35 +73,38 @@ export const UpcomingAnniversariesPanel: React.FC<
     return { upcoming, nextBeyondWindow }
   }, [clubs, referenceDate])
 
+  const clubHref = (clubId: string) =>
+    `/club/${clubId}${districtId ? `?district=${districtId}` : ''}`
+
   if (upcoming.length === 0) {
     return (
       <section
         aria-labelledby="upcoming-anniversaries-heading"
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6"
+        className="redesign-panel"
       >
-        <h2
+        <h3
           id="upcoming-anniversaries-heading"
-          className="text-lg font-semibold text-gray-900 dark:text-gray-100"
+          className="redesign-panel__header"
         >
-          Upcoming Anniversaries
-        </h2>
+          Upcoming anniversaries
+        </h3>
         {nextBeyondWindow ? (
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-            All quiet on the anniversary front — next anniversary in{' '}
-            {nextBeyondWindow.anniversary.daysUntilNext} days at{' '}
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-tm-body">
+            All quiet — next in{' '}
+            <strong className="font-semibold text-gray-700 dark:text-gray-200">
+              {nextBeyondWindow.anniversary.daysUntilNext}d
+            </strong>{' '}
+            at{' '}
             <Link
-              to={`/club/${nextBeyondWindow.club.clubId}${
-                districtId ? `?district=${districtId}` : ''
-              }`}
+              to={clubHref(nextBeyondWindow.club.clubId)}
               className="text-tm-loyal-blue hover:underline"
             >
               {nextBeyondWindow.club.clubName}
             </Link>
-            .
           </p>
         ) : (
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-            All quiet on the anniversary front — no charter dates available.
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-tm-body">
+            All quiet — no charter dates available.
           </p>
         )}
       </section>
@@ -114,23 +117,25 @@ export const UpcomingAnniversariesPanel: React.FC<
   return (
     <section
       aria-labelledby="upcoming-anniversaries-heading"
-      className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6"
+      className="redesign-panel"
     >
-      <h2
-        id="upcoming-anniversaries-heading"
-        className="text-lg font-semibold text-gray-900 dark:text-gray-100"
-      >
-        Upcoming Anniversaries
-      </h2>
-      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        Within the next {UPCOMING_WINDOW_DAYS} days
-      </p>
-      <ul className="mt-3 divide-y divide-gray-200 dark:divide-gray-700">
+      <div className="flex items-baseline justify-between gap-2 mb-2">
+        <h3
+          id="upcoming-anniversaries-heading"
+          className="redesign-panel__header !mb-0"
+        >
+          Upcoming anniversaries
+        </h3>
+        <span className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-tm-body">
+          Next {UPCOMING_WINDOW_DAYS}d · {upcoming.length}
+        </span>
+      </div>
+      <ul className="divide-y divide-gray-100 dark:divide-gray-800 -mx-1">
         {visible.map(row => {
           const { club, anniversary } = row
-          // For the upcoming panel, milestone means the UPCOMING anniversary
-          // year hits 5/10/15/... — distinct from isUpcomingMilestone,
-          // which fires on the CURRENT years count.
+          // Milestone for this row = milestone on the UPCOMING year count.
+          // anniversary.isMilestone fires on the CURRENT count (N-1 until
+          // the day-of), so the panel computes its own flag.
           const isUpcomingMilestone = isMilestoneYear(anniversary.upcomingYears)
           const ord = `${anniversary.upcomingYears}${ordinalSuffix(
             anniversary.upcomingYears
@@ -138,47 +143,48 @@ export const UpcomingAnniversariesPanel: React.FC<
           const dayCopy =
             anniversary.daysUntilNext === 0
               ? 'today'
-              : `in ${anniversary.daysUntilNext} day${
-                  anniversary.daysUntilNext === 1 ? '' : 's'
-                }`
+              : `${anniversary.daysUntilNext}d`
           return (
             <li
               key={club.clubId}
               data-testid="upcoming-anniversary-row"
               data-milestone={isUpcomingMilestone}
               className={
-                'py-2 flex flex-wrap items-baseline gap-x-2 ' +
+                'flex items-center gap-2 px-2 py-1.5 text-sm font-tm-body ' +
                 (isUpcomingMilestone
-                  ? 'bg-yellow-50/50 dark:bg-yellow-900/10 -mx-2 px-2 rounded'
-                  : '')
+                  ? 'border-l-2 border-tm-happy-yellow bg-tm-happy-yellow/10'
+                  : 'border-l-2 border-transparent')
               }
             >
-              <Link
-                to={`/club/${club.clubId}${
-                  districtId ? `?district=${districtId}` : ''
-                }`}
-                className="font-medium text-tm-loyal-blue hover:underline"
-              >
-                {club.clubName}
-              </Link>
-              <span className="text-sm text-gray-500 dark:text-gray-400">
-                · {club.areaName}
-              </span>
               <span
                 className={
-                  'text-sm ' +
-                  (isUpcomingMilestone
-                    ? 'font-semibold text-yellow-800 dark:text-yellow-200'
+                  'w-10 shrink-0 text-right tabular-nums text-xs font-semibold ' +
+                  (anniversary.daysUntilNext <= 7
+                    ? 'text-tm-true-maroon'
                     : 'text-gray-700 dark:text-gray-300')
                 }
               >
-                {ord} anniversary {dayCopy}
+                {dayCopy}
               </span>
-              {isUpcomingMilestone && (
-                <span className="text-xs px-1.5 py-0.5 rounded-full bg-yellow-100 text-yellow-900 ring-1 ring-yellow-400 dark:bg-yellow-900/40 dark:text-yellow-100 dark:ring-yellow-500">
-                  🥇 milestone
-                </span>
-              )}
+              <Link
+                to={clubHref(club.clubId)}
+                className="flex-1 min-w-0 truncate text-tm-loyal-blue hover:underline"
+              >
+                {club.clubName}
+              </Link>
+              <span className="hidden sm:inline text-xs text-gray-500 dark:text-gray-400 truncate max-w-[8rem]">
+                {club.areaName}
+              </span>
+              <span
+                className={
+                  'shrink-0 tabular-nums text-xs font-semibold ' +
+                  (isUpcomingMilestone
+                    ? 'text-tm-true-maroon'
+                    : 'text-gray-600 dark:text-gray-300')
+                }
+              >
+                {ord}
+              </span>
             </li>
           )
         })}
@@ -187,7 +193,7 @@ export const UpcomingAnniversariesPanel: React.FC<
         <button
           type="button"
           onClick={() => setExpanded(true)}
-          className="mt-3 text-sm text-tm-loyal-blue hover:underline"
+          className="mt-2 text-xs font-semibold text-tm-loyal-blue hover:underline font-tm-body"
         >
           Show all ({upcoming.length})
         </button>

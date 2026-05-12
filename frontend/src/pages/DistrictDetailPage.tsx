@@ -648,14 +648,19 @@ const DistrictDetailPage: React.FC = () => {
                     }
                   />
 
-                  {/* Club Anniversaries (#443 epic). Two surfaces:
-                    - Upcoming anniversaries within 60 days (#446)
-                    - Milestone clubs in the current program year (#447) */}
-                  <UpcomingAnniversariesPanel
-                    clubs={allClubs}
-                    districtId={districtId}
-                  />
-                  <MilestonesCallout clubs={allClubs} districtId={districtId} />
+                  {/* Club Anniversaries (#443 epic, layout #511). Side-by-side
+                    on md+ so they share a row in the Overview tab; stack on
+                    mobile. */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                    <UpcomingAnniversariesPanel
+                      clubs={allClubs}
+                      districtId={districtId}
+                    />
+                    <MilestonesCallout
+                      clubs={allClubs}
+                      districtId={districtId}
+                    />
+                  </div>
 
                   {/* Payment Composition + Distinguished Progress legacy
                     sections retired in #472 — the new redesign panels in
