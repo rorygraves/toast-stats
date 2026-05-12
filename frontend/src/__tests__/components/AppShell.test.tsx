@@ -84,14 +84,16 @@ describe('AppShell (#354)', () => {
       ).toHaveAttribute('href', '/methodology')
     })
 
-    it('renders Regions as a disabled "soon" stub per design parity', () => {
-      // Design (screenshots/01-districts.png) shows Regions in the primary
-      // nav with a soon badge. Awards shipped (#371) so it is a real link.
+    it('renders Regions as an enabled nav link to /regions (#497)', () => {
+      // /regions overview shipped in epic #492; the previous "soon"
+      // stub is retired. Link must be a real router link with no
+      // aria-disabled / --soon styling.
       renderShell()
       const nav = screen.getByRole('navigation', { name: /primary/i })
       const regionsLink = within(nav).getByRole('link', { name: /regions/i })
-      expect(regionsLink).toHaveClass('app-shell-nav__link--soon')
-      expect(regionsLink).toHaveAttribute('aria-disabled', 'true')
+      expect(regionsLink).toHaveAttribute('href', '/regions')
+      expect(regionsLink).not.toHaveAttribute('aria-disabled')
+      expect(regionsLink).not.toHaveClass('app-shell-nav__link--soon')
     })
 
     it('renders the top-bar tools cluster (help link, avatar)', () => {

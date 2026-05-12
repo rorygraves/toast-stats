@@ -22,15 +22,9 @@ const AppShellTopBar: React.FC = () => {
         <NavLink to="/" end className="app-shell-nav__link">
           Districts
         </NavLink>
-        <a
-          href="#regions"
-          aria-disabled="true"
-          tabIndex={-1}
-          onClick={e => e.preventDefault()}
-          className="app-shell-nav__link app-shell-nav__link--soon"
-        >
+        <NavLink to="/regions" className="app-shell-nav__link">
           Regions
-        </a>
+        </NavLink>
         {NAV_ITEMS.filter(i => i.to !== '/').map(item => (
           <NavLink
             key={item.to}

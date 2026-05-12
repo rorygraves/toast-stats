@@ -30,6 +30,9 @@ const AwardsPage = React.lazy(() => import('./pages/AwardsPage'))
 // Code-split: RegionPage — /region/:n landing (#423)
 const RegionPage = React.lazy(() => import('./pages/RegionPage'))
 
+// Code-split: RegionsPage — /regions overview (#496, epic #492)
+const RegionsPage = React.lazy(() => import('./pages/RegionsPage'))
+
 // Code-split: DivisionPage — /district/:districtId/division/:divId (#424)
 const DivisionPage = React.lazy(() => import('./pages/DivisionPage'))
 
@@ -114,6 +117,14 @@ const router = createBrowserRouter(
           element: (
             <Suspense fallback={<PageLoadingFallback />}>
               <RegionPage />
+            </Suspense>
+          ),
+        },
+        {
+          path: 'regions',
+          element: (
+            <Suspense fallback={<PageLoadingFallback />}>
+              <RegionsPage />
             </Suspense>
           ),
         },
