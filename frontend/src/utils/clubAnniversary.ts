@@ -30,7 +30,7 @@ export interface ClubAnniversary {
   upcomingYears: number
 }
 
-const MILESTONE_YEARS: ReadonlySet<number> = new Set([
+export const MILESTONE_YEARS: ReadonlySet<number> = new Set([
   5, 10, 15, 20, 25, 30, 40, 50, 60, 75, 100,
 ])
 

@@ -35,6 +35,8 @@ import {
 } from '../utils/filterUrlCodec'
 import { extractDivisionPerformance } from '../utils/extractDivisionPerformance'
 import { DistrictOverview } from '../components/DistrictOverview'
+import { UpcomingAnniversariesPanel } from '../components/UpcomingAnniversariesPanel'
+import { MilestonesCallout } from '../components/MilestonesCallout'
 import DataAsOfBanner from '../components/DataAsOfBanner'
 import { DistinguishedDistrictTrophyCase } from '../components/DistinguishedDistrictTrophyCase'
 import { useCompetitiveAwards } from '../hooks/useCompetitiveAwards'
@@ -645,6 +647,15 @@ const DistrictDetailPage: React.FC = () => {
                       officerAwardsResult?.clubGrowth?.qualifies
                     }
                   />
+
+                  {/* Club Anniversaries (#443 epic). Two surfaces:
+                    - Upcoming anniversaries within 60 days (#446)
+                    - Milestone clubs in the current program year (#447) */}
+                  <UpcomingAnniversariesPanel
+                    clubs={allClubs}
+                    districtId={districtId}
+                  />
+                  <MilestonesCallout clubs={allClubs} districtId={districtId} />
 
                   {/* Payment Composition + Distinguished Progress legacy
                     sections retired in #472 — the new redesign panels in
