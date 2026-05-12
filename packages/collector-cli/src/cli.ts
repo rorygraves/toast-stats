@@ -1164,5 +1164,149 @@ export function createCLI(): Command {
       }
     )
 
+  // Find-A-Club enrichment fetch (#430). Hits the public TI
+  // Find-A-Club Search endpoint per-district, writes raw JSON to
+  // <cacheDir>/find-a-club/<date>/district_<id>.json. Pipeline
+  // integration (snapshot merge + GCS upload) is a deliberate
+  // follow-up; this command is the foundational data acquisition.
+  program
+    .command('fetch-find-a-club')
+    .description(
+      'Fetch per-district club enrichment from the public TI Find-A-Club Search endpoint (#430)'
+    )
+    .option(
+      '-d, --date <YYYY-MM-DD>',
+      'Output date subdirectory (default: today)',
+      (value: string) => {
+        if (!validateDateFormat(value)) {
+          console.error(
+            `Error: Invalid date format "${value}". Use YYYY-MM-DD.`
+          )
+          process.exit(ExitCode.COMPLETE_FAILURE)
+        }
+        return value
+      }
+    )
+    .option(
+      '--districts <list>',
+      'Comma-separated district IDs to fetch (default: read from config)',
+      parseDistrictList
+    )
+    .option(
+      '--include-undistricted',
+      'Also fetch the U (Undistricted) bucket',
+      false
+    )
+    .option(
+      '--rate-ms <ms>',
+      'Min ms between requests (default 1100 ≈ 0.9 req/sec)',
+      (value: string) => parseInt(value, 10),
+      1100
+    )
+    .option('-v, --verbose', 'Enable detailed logging output', false)
+    .option('-c, --config <path>', 'Alternative configuration file path')
+    .action(
+      async (options: {
+        date?: string
+        districts?: string[]
+        includeUndistricted: boolean
+        rateMs: number
+        verbose: boolean
+        config?: string
+      }) => {
+        const { FindAClubService } =
+          await import('./services/FindAClubService.js')
+        const { writeFile, mkdir, readFile } = await import('fs/promises')
+        const { join } = await import('path')
+
+        const targetDate = options.date ?? getCurrentDateString()
+        const resolvedConfig = resolveConfiguration({
+          configPath: options.config,
+        })
+        const { cacheDir, districtConfigPath } = resolvedConfig
+
+        let districts: string[]
+        if (options.districts && options.districts.length > 0) {
+          districts = options.districts
+        } else {
+          const districtsConfig = JSON.parse(
+            await readFile(districtConfigPath, 'utf-8')
+          ) as { districts: Array<{ id: string }> }
+          districts = districtsConfig.districts.map(d => d.id)
+        }
+        if (options.includeUndistricted) districts.push('U')
+
+        if (options.verbose) {
+          console.error(`[INFO] Fetching ${districts.length} districts`)
+          console.error(`[INFO] Date: ${targetDate}`)
+          console.error(`[INFO] Rate limit: ${options.rateMs}ms between reqs`)
+          console.error(`[INFO] Cache: ${cacheDir}`)
+        }
+
+        const service = new FindAClubService({
+          requestIntervalMs: options.rateMs,
+        })
+
+        const outDir = join(cacheDir, 'find-a-club', targetDate)
+        await mkdir(outDir, { recursive: true })
+
+        const results: Array<{
+          districtId: string
+          clubCount: number
+          ok: boolean
+          error?: string
+        }> = []
+
+        for (const districtId of districts) {
+          try {
+            const { rawJson, clubs } = await service.fetchDistrict(districtId)
+            const fileName = `district_${districtId}.json`
+            await writeFile(
+              join(outDir, fileName),
+              JSON.stringify(rawJson, null, 2),
+              'utf-8'
+            )
+            results.push({
+              districtId,
+              clubCount: clubs.length,
+              ok: true,
+            })
+            if (options.verbose) {
+              console.error(
+                `[INFO] district ${districtId}: ${clubs.length} clubs → ${fileName}`
+              )
+            }
+          } catch (err) {
+            // Per-district try/catch: one failure doesn't fail the run.
+            const message = err instanceof Error ? err.message : String(err)
+            results.push({
+              districtId,
+              clubCount: 0,
+              ok: false,
+              error: message,
+            })
+            if (options.verbose) {
+              console.error(`[ERROR] district ${districtId}: ${message}`)
+            }
+          }
+        }
+
+        const summary = {
+          date: targetDate,
+          outDir,
+          totalDistricts: results.length,
+          succeeded: results.filter(r => r.ok).length,
+          failed: results.filter(r => !r.ok).length,
+          totalClubs: results.reduce((sum, r) => sum + r.clubCount, 0),
+          results,
+        }
+        console.log(JSON.stringify(summary, null, 2))
+
+        process.exit(
+          summary.failed === 0 ? ExitCode.SUCCESS : ExitCode.PARTIAL_FAILURE
+        )
+      }
+    )
+
   return program
 }
