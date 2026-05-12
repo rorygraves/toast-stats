@@ -1,0 +1,229 @@
+import { describe, it, expect } from 'vitest'
+import {
+  mergeFacIntoSnapshot,
+  normaliseClubNumber,
+} from '../FindAClubMerger.js'
+
+/* Fixtures based on the real shapes — TI Find-A-Club response and a
+   district snapshot's clubPerformance row. Kept minimal — only the
+   fields the merger actually reads / writes. */
+
+const ottawaFacClub = {
+  Identification: { Id: { Value: '00000180' } },
+  Address: {
+    Street: '300 Ottawa Ave',
+    City: 'Ottawa',
+    PrimaryRegion: { Value: 'ON' },
+    PostalCode: 'K1A 0A0',
+    Coordinates: { Latitude: 45.42, Longitude: -75.69 },
+  },
+  CountryName: 'Canada',
+  CharterDate: '/Date(197190000000)/',
+  Email: 'officers-180@toastmastersclubs.org',
+  Website: 'http://180.toastmastersclubs.org/',
+  MeetingDay: 'Tuesday',
+  MeetingTime: '7:00 pm',
+  AllowsVirtualAttendance: false,
+  IsProspective: false,
+}
+
+const ottawaSnapshotRow = {
+  'Club Number': '00000180',
+  'Club Name': 'Causeurs Ottawa Speakers Club',
+  Division: 'A',
+  Area: 'A1',
+  'Club Status': 'Active',
+  'Mem. Base': '20',
+  'Active Members': '23',
+  'Goals Met': '5',
+}
+
+const suspendedSnapshotOnly = {
+  'Club Number': '00099999',
+  'Club Name': 'Suspended Toastmasters',
+  Division: 'B',
+  Area: 'B1',
+  'Club Status': 'Suspended',
+  'Mem. Base': '15',
+  'Active Members': '0',
+}
+
+const prospectiveFacOnlyClub = {
+  Identification: { Id: { Value: '00088888' } },
+  Address: {
+    Street: '12 New Way',
+    City: 'Toronto',
+    PrimaryRegion: { Value: 'ON' },
+  },
+  CharterDate: null,
+  CountryName: 'Canada',
+  IsProspective: true,
+}
+
+describe('normaliseClubNumber', () => {
+  it('zero-pads numeric strings to 8 chars', () => {
+    expect(normaliseClubNumber('180')).toBe('00000180')
+    expect(normaliseClubNumber('1399')).toBe('00001399')
+    expect(normaliseClubNumber('12345678')).toBe('12345678')
+  })
+
+  it('zero-pads numeric inputs', () => {
+    expect(normaliseClubNumber(180)).toBe('00000180')
+  })
+
+  it('strips non-digits before padding (handles CSV quirks)', () => {
+    expect(normaliseClubNumber("'180")).toBe('00000180')
+    expect(normaliseClubNumber('Club 180')).toBe('00000180')
+    expect(normaliseClubNumber('  00000180  ')).toBe('00000180')
+  })
+
+  it('returns null for inputs without digits', () => {
+    expect(normaliseClubNumber('')).toBeNull()
+    expect(normaliseClubNumber('   ')).toBeNull()
+    expect(normaliseClubNumber(null)).toBeNull()
+    expect(normaliseClubNumber(undefined)).toBeNull()
+    expect(normaliseClubNumber('abc')).toBeNull()
+  })
+})
+
+describe('mergeFacIntoSnapshot', () => {
+  it('enriches a matched club with FAC fields without losing snapshot fields', () => {
+    const result = mergeFacIntoSnapshot(
+      {
+        districtId: '61',
+        data: { clubPerformance: [ottawaSnapshotRow] },
+      },
+      { Clubs: [ottawaFacClub] }
+    )
+
+    expect(result.matched).toBe(1)
+    expect(result.snapshotOnly).toBe(0)
+    expect(result.facOnly).toBe(0)
+
+    const merged = (result.snapshot.data?.clubPerformance ?? [])[0] as Record<
+      string,
+      unknown
+    >
+    // Snapshot fields preserved
+    expect(merged['Club Number']).toBe('00000180')
+    expect(merged['Club Name']).toBe('Causeurs Ottawa Speakers Club')
+    expect(merged['Club Status']).toBe('Active')
+    expect(merged['Goals Met']).toBe('5')
+    // FAC fields layered on
+    expect(merged['charterDate']).toBe('1976-04-01')
+    expect(merged['coordinates']).toEqual({ lat: 45.42, lng: -75.69 })
+    expect(merged['address']).toEqual({
+      street: '300 Ottawa Ave',
+      city: 'Ottawa',
+      region: 'ON',
+      postalCode: 'K1A 0A0',
+      country: 'Canada',
+    })
+    expect(merged['email']).toBe('officers-180@toastmastersclubs.org')
+    expect(merged['meetingDay']).toBe('Tuesday')
+  })
+
+  it('leaves snapshot-only rows untouched and counts them', () => {
+    const result = mergeFacIntoSnapshot(
+      {
+        districtId: '61',
+        data: {
+          clubPerformance: [ottawaSnapshotRow, suspendedSnapshotOnly],
+        },
+      },
+      { Clubs: [ottawaFacClub] }
+    )
+
+    expect(result.matched).toBe(1)
+    expect(result.snapshotOnly).toBe(1)
+    expect(result.facOnly).toBe(0)
+
+    const suspended = (result.snapshot.data?.clubPerformance ??
+      [])[1] as Record<string, unknown>
+    expect(suspended).toEqual(suspendedSnapshotOnly)
+    expect(suspended['charterDate']).toBeUndefined()
+  })
+
+  it('captures FAC-only clubs (ATOs / prospective) separately, not in clubPerformance', () => {
+    const result = mergeFacIntoSnapshot(
+      {
+        districtId: '61',
+        data: { clubPerformance: [ottawaSnapshotRow] },
+      },
+      { Clubs: [ottawaFacClub, prospectiveFacOnlyClub] }
+    )
+
+    expect(result.matched).toBe(1)
+    expect(result.facOnly).toBe(1)
+    expect(result.facOnlyClubs).toHaveLength(1)
+    expect(result.facOnlyClubs[0]?.clubId).toBe('00088888')
+    expect(result.facOnlyClubs[0]?.isProspective).toBe(true)
+    // The prospective club must NOT have been merged into clubPerformance
+    expect(result.snapshot.data?.clubPerformance).toHaveLength(1)
+  })
+
+  it('is idempotent — merging twice produces the same enriched output', () => {
+    const input = {
+      districtId: '61',
+      data: { clubPerformance: [ottawaSnapshotRow] },
+    }
+    const fac = { Clubs: [ottawaFacClub] }
+    const once = mergeFacIntoSnapshot(input, fac)
+    const twice = mergeFacIntoSnapshot(once.snapshot, fac)
+    expect(twice.snapshot.data?.clubPerformance).toEqual(
+      once.snapshot.data?.clubPerformance
+    )
+    expect(twice.matched).toBe(1)
+  })
+
+  it('handles FAC = null (TI returned no clubs) by leaving snapshot untouched', () => {
+    const result = mergeFacIntoSnapshot(
+      {
+        districtId: '61',
+        data: { clubPerformance: [ottawaSnapshotRow] },
+      },
+      { Clubs: null }
+    )
+
+    expect(result.matched).toBe(0)
+    expect(result.snapshotOnly).toBe(1)
+    expect(result.facOnly).toBe(0)
+    expect((result.snapshot.data?.clubPerformance ?? [])[0]).toEqual(
+      ottawaSnapshotRow
+    )
+  })
+
+  it('handles snapshot with no clubPerformance array (defensive)', () => {
+    const result = mergeFacIntoSnapshot(
+      { districtId: '61', data: {} },
+      { Clubs: [ottawaFacClub] }
+    )
+    expect(result.matched).toBe(0)
+    expect(result.snapshotOnly).toBe(0)
+    // FAC-only counting requires the matched-id set to know what was
+    // joined; when there's no snapshot side, EVERY FAC club is
+    // technically unmatched. But the contract is 'FAC-only = clubs
+    // we DELIBERATELY chose not to merge into clubPerformance', so
+    // this case returns 0 (defensive: don't surprise callers by
+    // creating a prospective-clubs list for a clubPerformance-less
+    // snapshot).
+    expect(result.facOnly).toBe(0)
+  })
+
+  it('matches across CSV-quoting variants of Club Number (suspended/active rows)', () => {
+    const result = mergeFacIntoSnapshot(
+      {
+        districtId: '61',
+        data: {
+          clubPerformance: [
+            { ...ottawaSnapshotRow, 'Club Number': '180' }, // unpadded
+            { ...ottawaSnapshotRow, 'Club Number': "'00000180" }, // leading apostrophe
+          ],
+        },
+      },
+      { Clubs: [ottawaFacClub] }
+    )
+    // Both rows are the same club; both should match.
+    expect(result.matched).toBe(2)
+  })
+})

@@ -314,6 +314,43 @@ jobs:
             | "| \(.districtId) | \(.clubCount) | \(.snapshotClubCount) | \(if .extraInFac > 0 then "+" else "" end)\(.extraInFac) |"' \
             /tmp/fac-output.json >> "$GITHUB_STEP_SUMMARY"
 
+      # ── Daily Step 3c: Find-A-Club snapshot merge (#429) ──
+      # Joins the raw FAC JSON written above into each district
+      # snapshot (charterDate / coordinates / address / contact /
+      # meeting fields). Idempotent — runs before Upload so the
+      # published snapshots carry the enrichment. Non-blocking; a
+      # merge failure must not stall the daily run because the
+      # underlying snapshot is still valid without enrichment.
+      # FAC-only clubs (ATOs / prospective — #489) are counted but
+      # NOT merged into clubPerformance.
+      - name: '[daily] Merge Find-A-Club into snapshots'
+        if: steps.mode.outputs.mode == 'daily' && steps.daily-fac-fetch.outcome == 'success'
+        id: daily-fac-merge
+        continue-on-error: true
+        run: |
+          SNAPSHOT_DATE="${{ steps.daily-scrape.outputs.snapshot_date }}"
+          if [ -z "${SNAPSHOT_DATE}" ]; then
+            SNAPSHOT_DATE="${{ steps.daily-scrape.outputs.date }}"
+          fi
+          ARGS="--fac-dir ./cache/find-a-club/${SNAPSHOT_DATE}"
+          ARGS="$ARGS --snapshot-dir ./cache/snapshots/${SNAPSHOT_DATE}"
+          ARGS="$ARGS --verbose"
+
+          echo "Running: npx collector-cli merge-find-a-club $ARGS"
+          npx collector-cli merge-find-a-club $ARGS | tee /tmp/fac-merge-output.json
+
+          echo "## 🔗 Find-A-Club Snapshot Merge (#429)" >> "$GITHUB_STEP_SUMMARY"
+          MATCHED=$(jq -r '.totalMatched' /tmp/fac-merge-output.json)
+          SNAP_ONLY=$(jq -r '.totalSnapshotOnly' /tmp/fac-merge-output.json)
+          FAC_ONLY=$(jq -r '.totalFacOnly' /tmp/fac-merge-output.json)
+          SUCCEEDED=$(jq -r '.succeeded' /tmp/fac-merge-output.json)
+          FAILED=$(jq -r '.failed' /tmp/fac-merge-output.json)
+          echo "- **Districts merged**: ${SUCCEEDED}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Districts failed**: ${FAILED}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Clubs enriched** (matched): ${MATCHED}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Snapshot-only** (no FAC match — typically suspended; #490): ${SNAP_ONLY}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **FAC-only** (ATOs / prospective; #489): ${FAC_ONLY}" >> "$GITHUB_STEP_SUMMARY"
+
       # ── Daily Step 4: Compute Analytics ──
       - name: '[daily] Compute Analytics'
         if: steps.mode.outputs.mode == 'daily'

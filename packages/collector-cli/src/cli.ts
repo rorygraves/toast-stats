@@ -1371,5 +1371,122 @@ export function createCLI(): Command {
       }
     )
 
+  // Merge previously-fetched FAC raw JSON into district snapshots
+  // (#429 follow-up). Reads <fac-dir>/district_<id>.json + the
+  // corresponding <snapshot-dir>/district_<id>.json, applies the
+  // left-outer-join semantics from FindAClubMerger, writes the
+  // enriched snapshot back to <snapshot-dir>. Idempotent.
+  program
+    .command('merge-find-a-club')
+    .description(
+      'Merge previously-fetched Find-A-Club JSON into district snapshots (#429)'
+    )
+    .requiredOption(
+      '--fac-dir <dir>',
+      'Directory containing district_<id>.json files from fetch-find-a-club'
+    )
+    .requiredOption(
+      '--snapshot-dir <dir>',
+      'Directory containing district snapshot files (target — rewritten in-place)'
+    )
+    .option(
+      '--districts <list>',
+      'Comma-separated district IDs to merge (default: every district that has both a FAC file and a snapshot file)',
+      parseDistrictList
+    )
+    .option('-v, --verbose', 'Enable detailed logging output', false)
+    .action(
+      async (options: {
+        facDir: string
+        snapshotDir: string
+        districts?: string[]
+        verbose: boolean
+      }) => {
+        const { mergeFacIntoSnapshot } =
+          await import('./services/FindAClubMerger.js')
+        const { readFile, writeFile, readdir } = await import('fs/promises')
+        const { join } = await import('path')
+
+        // Discover districts when not specified: intersection of FAC
+        // and snapshot files.
+        let districts = options.districts ?? []
+        if (districts.length === 0) {
+          const FILE_PATTERN = /^district_(.+)\.json$/
+          const facFiles = (await readdir(options.facDir).catch(() => []))
+            .map(f => FILE_PATTERN.exec(f)?.[1])
+            .filter((id): id is string => Boolean(id))
+          const snapshotFiles = new Set(
+            (await readdir(options.snapshotDir).catch(() => []))
+              .map(f => FILE_PATTERN.exec(f)?.[1])
+              .filter((id): id is string => Boolean(id))
+          )
+          districts = facFiles.filter(id => snapshotFiles.has(id)).sort()
+        }
+
+        const results: Array<{
+          districtId: string
+          ok: boolean
+          matched?: number
+          snapshotOnly?: number
+          facOnly?: number
+          error?: string
+        }> = []
+
+        for (const districtId of districts) {
+          try {
+            const facPath = join(options.facDir, `district_${districtId}.json`)
+            const snapshotPath = join(
+              options.snapshotDir,
+              `district_${districtId}.json`
+            )
+            const facRaw = JSON.parse(await readFile(facPath, 'utf-8'))
+            const snapshot = JSON.parse(await readFile(snapshotPath, 'utf-8'))
+            const result = mergeFacIntoSnapshot(snapshot, facRaw)
+            await writeFile(
+              snapshotPath,
+              JSON.stringify(result.snapshot, null, 2),
+              'utf-8'
+            )
+            results.push({
+              districtId,
+              ok: true,
+              matched: result.matched,
+              snapshotOnly: result.snapshotOnly,
+              facOnly: result.facOnly,
+            })
+            if (options.verbose) {
+              console.error(
+                `[INFO] district ${districtId}: matched=${result.matched}, snapshot-only=${result.snapshotOnly}, fac-only=${result.facOnly}`
+              )
+            }
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err)
+            results.push({ districtId, ok: false, error: message })
+            if (options.verbose) {
+              console.error(`[ERROR] district ${districtId}: ${message}`)
+            }
+          }
+        }
+
+        const summary = {
+          totalDistricts: results.length,
+          succeeded: results.filter(r => r.ok).length,
+          failed: results.filter(r => !r.ok).length,
+          totalMatched: results.reduce((s, r) => s + (r.matched ?? 0), 0),
+          totalSnapshotOnly: results.reduce(
+            (s, r) => s + (r.snapshotOnly ?? 0),
+            0
+          ),
+          totalFacOnly: results.reduce((s, r) => s + (r.facOnly ?? 0), 0),
+          results,
+        }
+        console.log(JSON.stringify(summary, null, 2))
+
+        process.exit(
+          summary.failed === 0 ? ExitCode.SUCCESS : ExitCode.PARTIAL_FAILURE
+        )
+      }
+    )
+
   return program
 }
