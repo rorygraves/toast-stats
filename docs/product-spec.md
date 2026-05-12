@@ -41,23 +41,27 @@ A data visualization platform for **Toastmasters district leaders** to track clu
 
 ### District Detail Page
 
-| Feature                     | Description                                                                             | Status     |
-| --------------------------- | --------------------------------------------------------------------------------------- | ---------- |
-| **Overview tab**            | Membership count, +/- badge, club counts, world/region rank                             | ✅ Shipped |
-| **Clubs tab**               | Sortable table of all clubs with health status, filters                                 | ✅ Shipped |
-| **Divisions tab**           | Division/Area performance cards, recognition tracking                                   | ✅ Shipped |
-| **Analytics tab**           | DCP projections, leadership insights, educational awards                                | ✅ Shipped |
-| **Trends tab**              | Membership trend chart, payments chart, YoY comparison                                  | ✅ Shipped |
-| Club detail page            | Per-club membership chart, DCP timeline, base/current/change stats                      | ✅ Shipped |
-| Provisional Distinguished   | Pre-April indicator with confirmed fallback level per tier                              | ✅ Shipped |
-| CSP status on club page     | Club Success Plan submission status (✓/✗/—) on club detail page                         | ✅ Shipped |
-| District Recognition trophy | Distinguished District tier badge + 5-prerequisite checklist + gap analysis on Overview | ✅ Shipped |
-| Club health classification  | Thriving / Vulnerable / Intervention Required                                           | ✅ Shipped |
-| Distinguished projections   | Project year-end Distinguished club count                                               | ✅ Shipped |
-| Division/Area recognition   | DAP/DDP status tracking per rules reference                                             | ✅ Shipped |
-| Performance targets         | World rank, percentile, target thresholds from CDN                                      | ✅ Shipped |
-| Date selector               | Browse historical snapshots within a program year                                       | ✅ Shipped |
-| Deep links (URL state)      | Program year, date, tab, sort, filters, pagination synced to URL                        | ✅ Shipped |
+| Feature                     | Description                                                                                   | Status     |
+| --------------------------- | --------------------------------------------------------------------------------------------- | ---------- |
+| **Overview tab**            | Membership count, +/- badge, club counts, world/region rank                                   | ✅ Shipped |
+| **Clubs tab**               | Sortable table of all clubs with health status, filters                                       | ✅ Shipped |
+| **Divisions tab**           | Division/Area performance cards, recognition tracking                                         | ✅ Shipped |
+| **Analytics tab**           | DCP projections, leadership insights, educational awards                                      | ✅ Shipped |
+| **Trends tab**              | Membership trend chart, payments chart, YoY comparison                                        | ✅ Shipped |
+| Club detail page            | Per-club membership chart, DCP timeline, base/current/change stats                            | ✅ Shipped |
+| Provisional Distinguished   | Pre-April indicator with confirmed fallback level per tier                                    | ✅ Shipped |
+| CSP status on club page     | Club Success Plan submission status (✓/✗/—) on club detail page                               | ✅ Shipped |
+| District Recognition trophy | Distinguished District tier badge + 5-prerequisite checklist + gap analysis on Overview       | ✅ Shipped |
+| Club health classification  | Thriving / Vulnerable / Intervention Required                                                 | ✅ Shipped |
+| Distinguished projections   | Project year-end Distinguished club count                                                     | ✅ Shipped |
+| Division/Area recognition   | DAP/DDP status tracking per rules reference                                                   | ✅ Shipped |
+| Performance targets         | World rank, percentile, target thresholds from CDN                                            | ✅ Shipped |
+| Date selector               | Browse historical snapshots within a program year                                             | ✅ Shipped |
+| Deep links (URL state)      | Program year, date, tab, sort, filters, pagination synced to URL                              | ✅ Shipped |
+| Upcoming Anniversaries      | Overview panel listing clubs whose next charter anniversary is within 60 days (#446)          | ✅ Shipped |
+| Milestone clubs of the PY   | Overview callout grouping 5/10/.../100-year milestone clubs by milestone, this PY (#447)      | ✅ Shipped |
+| Club anniversary badge      | Club hero pill: quiet / milestone-gold / upcoming countdown for charter anniversaries (#445)  | ✅ Shipped |
+| Years Chartered column      | Sortable "Years" column in the Clubs table — years since charter, em-dash when unknown (#448) | ✅ Shipped |
 
 ### Observability
 
