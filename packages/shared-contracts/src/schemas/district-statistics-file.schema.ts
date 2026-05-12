@@ -82,6 +82,40 @@ export const ClubStatisticsFileSchema = z.object({
 
   /** CSP (Club Success Plan) submission status (2025-2026+) */
   cspSubmitted: z.boolean().optional(),
+
+  /**
+   * Find-A-Club enrichment fields (#429 / #431).
+   * All optional — populated by the daily collector from the public
+   * TI Find-A-Club Search endpoint when available.
+   */
+  coordinates: z
+    .object({
+      lat: z.number(),
+      lng: z.number(),
+    })
+    .optional(),
+  address: z
+    .object({
+      street: z.string().optional(),
+      city: z.string().optional(),
+      region: z.string().optional(),
+      postalCode: z.string().optional(),
+      country: z.string().optional(),
+    })
+    .optional(),
+  email: z.string().optional(),
+  facebookLink: z.string().optional(),
+  allowsVirtualAttendance: z.boolean().optional(),
+  meetingSchedule: z
+    .array(
+      z.object({
+        day: z.string(),
+        startTime: z.string(),
+        endTime: z.string(),
+        timeZone: z.string().optional(),
+      })
+    )
+    .optional(),
 })
 
 /**

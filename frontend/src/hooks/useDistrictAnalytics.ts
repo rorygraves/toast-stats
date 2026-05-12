@@ -41,6 +41,13 @@ export interface ClubTrend {
   isProvisionallyDistinguished?: boolean
   /** Club Success Plan submission status (2025-2026+). Undefined for pre-2025 data. */
   cspSubmitted?: boolean
+  /**
+   * Charter date (ISO) — populated from the public Find-A-Club Search
+   * endpoint when the daily pipeline (#430) ran successfully. Absent
+   * when the endpoint hasn't been fetched yet for this snapshot.
+   * (#429 / #432)
+   */
+  charterDate?: string
 }
 
 export interface DivisionAnalytics {

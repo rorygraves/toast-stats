@@ -11,6 +11,7 @@ import {
   type ProgramYear,
 } from '../utils/programYear'
 import { formatDisplayDate } from '../utils/dateFormatting'
+import { formatCharterDate } from '../utils/formatCharterDate'
 import {
   isProvisionallyDistinguished,
   getConfirmedLevel,
@@ -418,10 +419,21 @@ const ClubDetailPage: React.FC = () => {
 
           {/* Redesigned hero per handoff (#23 follow-up). Loyal-blue panel
               with charter-style eyebrow + h1 + sub-line + right-side
-              health & DCP tier pills. */}
+              health & DCP tier pills.
+
+              #432: append ' · Chartered <Month YYYY>' to the eyebrow when
+              the daily Find-A-Club enrichment (#430) populated charterDate
+              on the ClubTrend. Silently skipped when absent so the
+              eyebrow stays clean. */}
           <header className="club-hero">
             <div className="club-hero__intro">
-              <p className="club-hero__eyebrow">Club #{clubId}</p>
+              <p className="club-hero__eyebrow">
+                Club #{clubId}
+                {(() => {
+                  const formatted = formatCharterDate(club.charterDate)
+                  return formatted ? ` · Chartered ${formatted}` : ''
+                })()}
+              </p>
               <h1 className="club-hero__title">{club.clubName}</h1>
               <p className="club-hero__sub">
                 <span>{club.areaName}</span>

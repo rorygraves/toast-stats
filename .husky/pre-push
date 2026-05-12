@@ -1,4 +1,21 @@
-npm run test --workspace=@toastmasters/shared-contracts -- --coverage
-npm run test --workspace=@toastmasters/analytics-core -- --coverage
-npm run test --workspace=frontend -- --coverage
-npm run test --workspace=@toastmasters/collector-cli -- --coverage
+# Pre-push removed 2026-05-11. The previous behaviour ran the full
+# coverage suite across all 4 workspaces, which became chronically
+# flaky on multi-core local hardware under v8 coverage instrumentation
+# (Lesson 53). Each round of Lesson-51-style refactoring bought a
+# week of reliability before new tests pushed the suite back across
+# the contention cliff.
+#
+# Carving out the heavy tests would have required excluding ~30 files
+# from pre-push (page mounts, axe scans, integration tests, large
+# Recharts component tests). That ratio (30 excluded / 90 kept) is a
+# clear smell that the architecture needs a deeper fix — either
+# splitting unit vs integration as first-class vitest projects, or
+# matching the CI worker config locally so the test env is identical.
+#
+# Both are sprint-scale changes. Until then: CI is the gate. CI runs
+# the full coverage suite in a single-tenant 2-CPU runner and has
+# always been reliable. Local devs can run `npm test` workspaces
+# directly when they want a quick check.
+#
+# Follow-up tracking the proper fix: #482.
+exit 0

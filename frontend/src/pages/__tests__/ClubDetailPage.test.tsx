@@ -165,6 +165,32 @@ describe('ClubDetailPage (#208)', () => {
     expect(screen.getByText('Distinguished Outlook')).toBeInTheDocument()
   })
 
+  // #432 — CHARTERED <Month YYYY> in club hero eyebrow. Only one
+  // page-mount test here (the "present" case proves the wiring); the
+  // absent case is implicitly covered by all other tests in the file
+  // (none of which set charterDate). Keeping integration tests narrow
+  // honours Lesson 51 / 53 — every page mount adds parallel-coverage
+  // contention pressure.
+  it('renders the chartered date segment in the eyebrow when charterDate is present', () => {
+    const mockedHook = vi.mocked(useDistrictAnalytics)
+    mockedHook.mockReturnValueOnce({
+      data: {
+        districtId: '61',
+        allClubs: [{ ...baseMockClub, charterDate: '1987-02-15' }],
+      },
+      isLoading: false,
+      error: null,
+    } as ReturnType<typeof useDistrictAnalytics>)
+
+    renderWithRoute()
+
+    // The eyebrow text concatenates the club id + chartered date.
+    // CSS uppercases it; the JSX source uses mixed case.
+    expect(
+      screen.getByText(/club #00000606 · chartered february 1987/i)
+    ).toBeInTheDocument()
+  })
+
   it('renders DCP Goals Progress section', () => {
     renderWithRoute()
 

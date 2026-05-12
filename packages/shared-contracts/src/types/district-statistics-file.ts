@@ -130,6 +130,40 @@ export interface ClubStatisticsFile {
    * Present from 2025-2026 program year onward; undefined for earlier years
    */
   cspSubmitted?: boolean
+
+  /**
+   * Find-A-Club enrichment fields (#429 / #431).
+   * All optional — populated nightly from the public TI Find-A-Club
+   * Search endpoint when available; absent when TI's endpoint is down
+   * or hasn't yet been fetched for this snapshot.
+   */
+  /** Geographic coordinates from the Find-A-Club registry. */
+  coordinates?: {
+    lat: number
+    lng: number
+  }
+  /** Mailing / meeting address from the Find-A-Club registry. */
+  address?: {
+    street?: string
+    city?: string
+    /** State / province (e.g. 'ON', 'CA'). */
+    region?: string
+    postalCode?: string
+    country?: string
+  }
+  /** Club contact email. */
+  email?: string
+  /** Public Facebook page URL. */
+  facebookLink?: string
+  /** Whether the club lists virtual attendance as supported. */
+  allowsVirtualAttendance?: boolean
+  /** Recurring meeting schedule. */
+  meetingSchedule?: Array<{
+    day: string
+    startTime: string
+    endTime: string
+    timeZone?: string
+  }>
 }
 
 /**
