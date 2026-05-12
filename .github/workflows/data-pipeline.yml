@@ -261,6 +261,59 @@ jobs:
           echo "- **Club-trends files**: ${CT_COUNT}" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Prev-year snapshots**: ${PREV_COUNT}" >> "$GITHUB_STEP_SUMMARY"
 
+      # ── Daily Step 3b: Find-A-Club enrichment fetch (#430) ──
+      # Hits the public TI Find-A-Club Search endpoint per district and
+      # writes raw JSON to ./cache/find-a-club/<date>/district_<id>.json.
+      # Non-blocking — TI's endpoint is public/unauth'd and could change
+      # or rate-limit at any time, so a failure here must NOT break the
+      # daily snapshot. `--compare-snapshot-dir` surfaces the FAC-vs-
+      # snapshot diff per district so we can watch for ATO/prospective
+      # clubs (extraInFac > 0) and pipeline drift.
+      # Snapshot merge + GCS upload are deliberate follow-up PRs after
+      # we observe a week of clean runs.
+      - name: '[daily] Fetch Find-A-Club enrichment'
+        if: steps.mode.outputs.mode == 'daily'
+        id: daily-fac-fetch
+        continue-on-error: true
+        run: |
+          SNAPSHOT_DATE="${{ steps.daily-scrape.outputs.snapshot_date }}"
+          if [ -z "${SNAPSHOT_DATE}" ]; then
+            SNAPSHOT_DATE="${{ steps.daily-scrape.outputs.date }}"
+          fi
+          DISTRICT_LIST="${{ steps.daily-config.outputs.districts }}"
+          ARGS="--districts ${DISTRICT_LIST} --include-undistricted --verbose"
+          ARGS="$ARGS --date ${SNAPSHOT_DATE}"
+          ARGS="$ARGS --compare-snapshot-dir ./cache/snapshots/${SNAPSHOT_DATE}"
+
+          echo "Running: npx collector-cli fetch-find-a-club $ARGS"
+          npx collector-cli fetch-find-a-club $ARGS | tee /tmp/fac-output.json
+
+          echo "## 🔍 Find-A-Club Enrichment (#430)" >> "$GITHUB_STEP_SUMMARY"
+          SUCCEEDED=$(jq '.succeeded' /tmp/fac-output.json)
+          FAILED=$(jq '.failed' /tmp/fac-output.json)
+          TOTAL_CLUBS=$(jq '.totalClubs' /tmp/fac-output.json)
+          EXTRA_IN_FAC=$(jq '.compare.totalExtraInFac // "n/a"' /tmp/fac-output.json)
+          SNAPSHOT_TOTAL=$(jq '.compare.totalSnapshotClubs // "n/a"' /tmp/fac-output.json)
+          echo "- **Districts succeeded**: ${SUCCEEDED}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Districts failed**: ${FAILED}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **FAC clubs total**: ${TOTAL_CLUBS}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Snapshot clubs total**: ${SNAPSHOT_TOTAL}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Extra in FAC** (ATO / prospective): ${EXTRA_IN_FAC}" >> "$GITHUB_STEP_SUMMARY"
+
+          # Top 5 districts by extraInFac for quick visual scan.
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Top 5 districts by ATO/prospective surplus" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| District | FAC | Snapshot | Extra |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|----------|-----|----------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          jq -r '.results
+            | map(select(.extraInFac != null))
+            | sort_by(.extraInFac)
+            | reverse
+            | .[0:5][]
+            | "| \(.districtId) | \(.clubCount) | \(.snapshotClubCount) | \(if .extraInFac > 0 then "+" else "" end)\(.extraInFac) |"' \
+            /tmp/fac-output.json >> "$GITHUB_STEP_SUMMARY"
+
       # ── Daily Step 4: Compute Analytics ──
       - name: '[daily] Compute Analytics'
         if: steps.mode.outputs.mode == 'daily'

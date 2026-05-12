@@ -1203,6 +1203,13 @@ export function createCLI(): Command {
       (value: string) => parseInt(value, 10),
       1100
     )
+    .option(
+      '--compare-snapshot-dir <dir>',
+      'For each district, also count clubPerformance entries in ' +
+        '<dir>/district_<id>.json and report the FAC-vs-snapshot diff. ' +
+        'Extra FAC entries are typically ATO/prospective clubs not yet ' +
+        'in the dashboard.'
+    )
     .option('-v, --verbose', 'Enable detailed logging output', false)
     .option('-c, --config <path>', 'Alternative configuration file path')
     .action(
@@ -1211,6 +1218,7 @@ export function createCLI(): Command {
         districts?: string[]
         includeUndistricted: boolean
         rateMs: number
+        compareSnapshotDir?: string
         verbose: boolean
         config?: string
       }) => {
@@ -1218,6 +1226,27 @@ export function createCLI(): Command {
           await import('./services/FindAClubService.js')
         const { writeFile, mkdir, readFile } = await import('fs/promises')
         const { join } = await import('path')
+
+        // Helper: count clubs in a snapshot file. Returns null if the
+        // file is missing or shape doesn't match.
+        const countSnapshotClubs = async (
+          districtId: string
+        ): Promise<number | null> => {
+          if (!options.compareSnapshotDir) return null
+          try {
+            const path = join(
+              options.compareSnapshotDir,
+              `district_${districtId}.json`
+            )
+            const raw = JSON.parse(await readFile(path, 'utf-8')) as {
+              data?: { clubPerformance?: unknown[] }
+            }
+            const cp = raw?.data?.clubPerformance
+            return Array.isArray(cp) ? cp.length : null
+          } catch {
+            return null
+          }
+        }
 
         const targetDate = options.date ?? getCurrentDateString()
         const resolvedConfig = resolveConfiguration({
@@ -1255,6 +1284,8 @@ export function createCLI(): Command {
           clubCount: number
           ok: boolean
           error?: string
+          snapshotClubCount?: number | null
+          extraInFac?: number | null
         }> = []
 
         for (const districtId of districts) {
@@ -1266,14 +1297,25 @@ export function createCLI(): Command {
               JSON.stringify(rawJson, null, 2),
               'utf-8'
             )
+            const snapshotClubCount = await countSnapshotClubs(districtId)
+            const extraInFac =
+              snapshotClubCount === null
+                ? null
+                : clubs.length - snapshotClubCount
             results.push({
               districtId,
               clubCount: clubs.length,
               ok: true,
+              ...(snapshotClubCount !== null && { snapshotClubCount }),
+              ...(extraInFac !== null && { extraInFac }),
             })
             if (options.verbose) {
+              const diff =
+                extraInFac !== null && snapshotClubCount !== null
+                  ? ` (snapshot=${snapshotClubCount}, extra=${extraInFac >= 0 ? '+' : ''}${extraInFac})`
+                  : ''
               console.error(
-                `[INFO] district ${districtId}: ${clubs.length} clubs → ${fileName}`
+                `[INFO] district ${districtId}: ${clubs.length} clubs${diff} → ${fileName}`
               )
             }
           } catch (err) {
@@ -1291,13 +1333,34 @@ export function createCLI(): Command {
           }
         }
 
+        const succeeded = results.filter(r => r.ok)
+        const withCompare = results.filter(
+          r => typeof r.extraInFac === 'number'
+        )
         const summary = {
           date: targetDate,
           outDir,
           totalDistricts: results.length,
-          succeeded: results.filter(r => r.ok).length,
+          succeeded: succeeded.length,
           failed: results.filter(r => !r.ok).length,
           totalClubs: results.reduce((sum, r) => sum + r.clubCount, 0),
+          // FAC-vs-snapshot diff aggregate (only when --compare-snapshot-dir
+          // was supplied). extraInFac > 0 means FAC has clubs the dashboard
+          // doesn't — typically ATO/prospective clubs.
+          compare:
+            withCompare.length > 0
+              ? {
+                  districtsCompared: withCompare.length,
+                  totalSnapshotClubs: withCompare.reduce(
+                    (sum, r) => sum + (r.snapshotClubCount ?? 0),
+                    0
+                  ),
+                  totalExtraInFac: withCompare.reduce(
+                    (sum, r) => sum + (r.extraInFac ?? 0),
+                    0
+                  ),
+                }
+              : undefined,
           results,
         }
         console.log(JSON.stringify(summary, null, 2))
