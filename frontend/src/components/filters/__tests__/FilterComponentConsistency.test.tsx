@@ -118,7 +118,9 @@ describe('Filter Component Consistency', () => {
         col => col.filterType === 'numeric'
       )
 
-      // Should have expected numeric columns
+      // Should have expected numeric columns. yearsChartered (#448) is
+      // numeric but display-only — it carries filterable: false because
+      // a years-since-charter range filter wasn't part of the epic.
       expect(numericColumns.map(c => c.field)).toEqual([
         'membership',
         'dcpGoals',
@@ -126,11 +128,17 @@ describe('Filter Component Consistency', () => {
         'octoberRenewals',
         'aprilRenewals',
         'newMembers',
+        'yearsChartered',
       ])
 
-      // Each numeric column should be filterable
+      // Each numeric column should be filterable, except the display-only
+      // yearsChartered column (#448).
       numericColumns.forEach(column => {
-        expect(column.filterable).toBe(true)
+        if (column.field === 'yearsChartered') {
+          expect(column.filterable).toBe(false)
+        } else {
+          expect(column.filterable).toBe(true)
+        }
       })
     })
   })

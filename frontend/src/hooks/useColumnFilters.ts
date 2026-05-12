@@ -27,7 +27,8 @@ export {
  */
 export const useColumnFilters = (
   clubs: ClubTrend[],
-  initialFilterState?: FilterState
+  initialFilterState?: FilterState,
+  referenceDate?: Date
 ) => {
   const [filterState, setFilterState] = useState<FilterState>(
     initialFilterState ?? {}
@@ -37,8 +38,8 @@ export const useColumnFilters = (
    * Process clubs with computed properties for filtering
    */
   const processedClubs = useMemo((): ProcessedClubTrend[] => {
-    return processClubs(clubs)
-  }, [clubs])
+    return processClubs(clubs, referenceDate)
+  }, [clubs, referenceDate])
 
   /**
    * Apply a single filter to the club data

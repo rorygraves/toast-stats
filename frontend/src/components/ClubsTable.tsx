@@ -45,6 +45,9 @@ interface ClubsTableProps {
   onFilterChange?:
     | ((state: import('./filters/types').FilterState) => void)
     | undefined
+  /** Reference date for anniversary computation. Defaults to `new Date()`.
+   *  Tests inject a fixed date to keep year counts deterministic (#448). */
+  referenceDate?: Date
 }
 
 /**
@@ -91,6 +94,7 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
   onPageChange,
   initialFilterState,
   onFilterChange,
+  referenceDate,
 }) => {
   const [sortField, setSortField] = useState<SortField>(
     initialSortField ?? 'name'
@@ -109,7 +113,7 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
     getFilter,
     hasActiveFilters,
     activeFilterCount,
-  } = useColumnFilters(clubs, initialFilterState)
+  } = useColumnFilters(clubs, initialFilterState, referenceDate)
 
   // Wrap setFilter to notify parent of changes for URL sync
   const setFilter = useCallback(
@@ -257,6 +261,12 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
         case 'clubStatus':
           aValue = a.clubStatus?.toLowerCase()
           bValue = b.clubStatus?.toLowerCase()
+          break
+        case 'yearsChartered':
+          // null (missing charterDate) falls through to the
+          // undefined-handling below, sorting to end either direction.
+          aValue = a.yearsChartered ?? undefined
+          bValue = b.yearsChartered ?? undefined
           break
         default:
           return 0
@@ -910,6 +920,15 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
                         }
                       >
                         {club.newMembers}
+                      </span>
+                    ) : (
+                      <span className="text-gray-500">—</span>
+                    )}
+                  </td>
+                  <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center">
+                    {club.yearsChartered !== null ? (
+                      <span className="text-gray-900">
+                        {club.yearsChartered}
                       </span>
                     ) : (
                       <span className="text-gray-500">—</span>

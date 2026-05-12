@@ -10,6 +10,7 @@ import type {
   ColumnFilter,
   ProcessedClubTrend,
 } from '../components/filters/types'
+import { getClubAnniversary } from './clubAnniversary'
 import {
   deriveGoalContext,
   computeMembersToDistinguished,
@@ -61,13 +62,21 @@ export function getMembersNeeded(club: ClubTrend): number {
 /**
  * Process clubs with computed properties for filtering
  */
-export function processClubs(clubs: ClubTrend[]): ProcessedClubTrend[] {
+export function processClubs(
+  clubs: ClubTrend[],
+  referenceDate: Date = new Date()
+): ProcessedClubTrend[] {
   return clubs.map(club => ({
     ...club,
     latestMembership: getLatestMembership(club),
     latestDcpGoals: getLatestDcpGoals(club),
     distinguishedOrder: getDistinguishedOrder(club),
     membersNeeded: getMembersNeeded(club),
+    // #448 — Years Chartered column. null when charterDate is absent
+    // or invalid, which the table renders as em-dash and sorts to end.
+    yearsChartered: club.charterDate
+      ? (getClubAnniversary(club.charterDate, referenceDate)?.years ?? null)
+      : null,
   }))
 }
 

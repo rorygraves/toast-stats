@@ -492,7 +492,9 @@ describe('ClubsTable', () => {
   })
 
   describe('Table Column Structure', () => {
-    it('should render 10 columns in the table', () => {
+    // Years Chartered column was added in #448 (epic #443).
+    // 12 → 13 reflects that new column.
+    it('should render 13 columns in the table', () => {
       const clubs = [createMockClub()]
 
       render(
@@ -505,10 +507,10 @@ describe('ClubsTable', () => {
 
       const headerRow = screen.getAllByRole('row')[0]
       const headerCells = headerRow.querySelectorAll('th')
-      expect(headerCells.length).toBe(12)
+      expect(headerCells.length).toBe(13)
     })
 
-    it('should render 11 cells per data row', () => {
+    it('should render 13 cells per data row', () => {
       const clubs = [createMockClub()]
 
       render(
@@ -521,7 +523,54 @@ describe('ClubsTable', () => {
 
       const dataRow = screen.getAllByRole('row')[1]
       const cells = dataRow.querySelectorAll('td')
-      expect(cells.length).toBe(12)
+      expect(cells.length).toBe(13)
+    })
+  })
+
+  describe('Years Chartered column (#448)', () => {
+    // #448 — Years column shows whole years since charter, sortable;
+    // missing charterDate renders as em-dash, sorts to end.
+    const referenceDate = new Date('2026-05-12T00:00:00Z')
+
+    it('renders the Years header label', () => {
+      render(
+        <ClubsTable
+          clubs={[createMockClub({ charterDate: '1987-03-01' })]}
+          districtId="test-district"
+          isLoading={false}
+          referenceDate={referenceDate}
+        />
+      )
+      expect(
+        screen.getByRole('columnheader', { name: /years/i })
+      ).toBeInTheDocument()
+    })
+
+    it('displays the years count for a chartered club', () => {
+      render(
+        <ClubsTable
+          clubs={[createMockClub({ charterDate: '2016-05-12' })]}
+          districtId="test-district"
+          isLoading={false}
+          referenceDate={referenceDate}
+        />
+      )
+      // 2026-05-12 minus 2016-05-12 = 10 years (milestone)
+      const dataRow = screen.getAllByRole('row')[1]
+      expect(dataRow.textContent).toMatch(/\b10\b/)
+    })
+
+    it('renders em-dash for clubs without a charter date', () => {
+      render(
+        <ClubsTable
+          clubs={[createMockClub({ charterDate: undefined })]}
+          districtId="test-district"
+          isLoading={false}
+          referenceDate={referenceDate}
+        />
+      )
+      const dataRow = screen.getAllByRole('row')[1]
+      expect(dataRow.textContent).toContain('—')
     })
   })
 

@@ -12,6 +12,8 @@ import {
 } from '../utils/programYear'
 import { formatDisplayDate } from '../utils/dateFormatting'
 import { formatCharterDate } from '../utils/formatCharterDate'
+import { getClubAnniversary } from '../utils/clubAnniversary'
+import { ClubAnniversaryBadge } from '../components/ClubAnniversaryBadge'
 import {
   isProvisionallyDistinguished,
   getConfirmedLevel,
@@ -453,6 +455,21 @@ const ClubDetailPage: React.FC = () => {
             </div>
 
             <div className="club-hero__pills">
+              {/* #445 — anniversary badge surfaces years chartered, milestones,
+                  and an upcoming countdown when within ±30 days. Returns null
+                  when charterDate is missing so layout stays clean. */}
+              {(() => {
+                if (!club.charterDate) return null
+                const charterLabel = formatCharterDate(club.charterDate)
+                return (
+                  <ClubAnniversaryBadge
+                    anniversary={getClubAnniversary(club.charterDate)}
+                    {...(charterLabel
+                      ? { charterDateLabel: charterLabel }
+                      : {})}
+                  />
+                )
+              })()}
               <span
                 className={
                   'club-hero__pill ' +

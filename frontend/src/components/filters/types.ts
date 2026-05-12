@@ -20,6 +20,7 @@ export type SortField =
   | 'newMembers'
   | 'clubStatus'
   | 'membersNeeded'
+  | 'yearsChartered'
 
 /**
  * Sort direction types
@@ -128,6 +129,9 @@ export interface ProcessedClubTrend extends ClubTrend {
   latestDcpGoals: number
   distinguishedOrder: number // For proper Distinguished column sorting
   membersNeeded: number // For "Members Needed" column filtering/sorting
+  /** Whole years since charter, or null when charterDate is missing
+   *  or invalid. Powers the Years Chartered column (#448) + sorting. */
+  yearsChartered: number | null
 }
 
 /**
@@ -237,6 +241,13 @@ export const COLUMN_CONFIGS: ColumnConfig[] = [
     label: 'New',
     sortable: true,
     filterable: true,
+    filterType: 'numeric',
+  },
+  {
+    field: 'yearsChartered',
+    label: 'Years',
+    sortable: true,
+    filterable: false,
     filterType: 'numeric',
   },
 ]
