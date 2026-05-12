@@ -27,9 +27,19 @@ export interface RegionRollup {
   distinguishedClubs: number
   /** Derived: distinguishedClubs / paidClubs × 100. 0 when paidClubs is 0. */
   distinguishedPercent: number
-  /** Sum of district aggregate scores. Higher is better. */
+  /** Region's rank by clubGrowthPercent. 1 = best across all regions. */
+  clubsRank: number
+  /** Region's rank by paymentGrowthPercent. 1 = best. */
+  paymentsRank: number
+  /** Region's rank by distinguishedPercent. 1 = best. */
+  distinguishedRank: number
+  /** Region-level Borda count (#501): sum of points across the 3
+   *  category ranks, where rank #1 gets N points and rank #N gets 1.
+   *  With 14 regions the max possible is 42 (1st in all three). This
+   *  mirrors the district-level Borda described on /methodology and
+   *  is unbiased by region size. */
   aggregateScore: number
-  /** District with highest aggregateScore in this region. */
+  /** District with highest district-level aggregateScore in this region. */
   leadingDistrictId: string
   leadingDistrictName: string
   /** Per-requirement counts: how many districts met / total in region. */
@@ -59,6 +69,28 @@ const isValidRegion = (region: string): boolean => /^\d+$/.test(region)
 const pct = (num: number, denom: number): number =>
   denom > 0 ? (num / denom) * 100 : 0
 
+/** Assign ranks (1 = highest value) across rollups for a metric. Stable
+ *  for ties: insertion order within an equal-value group is preserved. */
+function rankBy<
+  K extends
+    | 'clubGrowthPercent'
+    | 'paymentGrowthPercent'
+    | 'distinguishedPercent',
+>(rollups: ReadonlyArray<RegionRollup>, metric: K): Map<string, number> {
+  const indexed = rollups.map((r, idx) => ({
+    region: r.region,
+    value: r[metric],
+    idx,
+  }))
+  indexed.sort((a, b) => {
+    if (b.value !== a.value) return b.value - a.value
+    return a.idx - b.idx // stable tie-break
+  })
+  const ranks = new Map<string, number>()
+  indexed.forEach((entry, i) => ranks.set(entry.region, i + 1))
+  return ranks
+}
+
 export function aggregateRegions(
   rankings: ReadonlyArray<DistrictRanking>
 ): RegionRollup[] {
@@ -73,8 +105,13 @@ export function aggregateRegions(
     byRegion.set(r.region, list)
   }
 
-  // Build rollups; sort by region number ascending.
-  const rollups: RegionRollup[] = []
+  // First pass: compute the derived totals + growth percents for each
+  // region. aggregateScore + per-category ranks come in the second pass
+  // because they depend on cross-region ordering.
+  const initial: Omit<
+    RegionRollup,
+    'clubsRank' | 'paymentsRank' | 'distinguishedRank' | 'aggregateScore'
+  >[] = []
   for (const [region, districts] of byRegion) {
     if (districts.length === 0) continue
 
@@ -85,7 +122,6 @@ export function aggregateRegions(
         acc.totalPayments += d.totalPayments ?? 0
         acc.paymentBase += d.paymentBase ?? 0
         acc.distinguishedClubs += d.distinguishedClubs ?? 0
-        acc.aggregateScore += d.aggregateScore ?? 0
         return acc
       },
       {
@@ -94,7 +130,6 @@ export function aggregateRegions(
         totalPayments: 0,
         paymentBase: 0,
         distinguishedClubs: 0,
-        aggregateScore: 0,
       }
     )
 
@@ -113,7 +148,7 @@ export function aggregateRegions(
       {} as RegionRollup['requirements']
     )
 
-    rollups.push({
+    initial.push({
       region,
       districtCount: districts.length,
       paidClubs: totals.paidClubs,
@@ -130,12 +165,37 @@ export function aggregateRegions(
       ),
       distinguishedClubs: totals.distinguishedClubs,
       distinguishedPercent: pct(totals.distinguishedClubs, totals.paidClubs),
-      aggregateScore: totals.aggregateScore,
       leadingDistrictId: leading.districtId,
       leadingDistrictName: leading.districtName,
       requirements,
     })
   }
+
+  // Second pass: rank regions in each of the 3 growth categories, then
+  // sum the Borda points (N = number of valid regions). With N regions,
+  // rank #1 → N points, rank #N → 1 point. Region aggregateScore = sum
+  // across the 3 categories. Mirrors the district-level Borda described
+  // at /methodology#borda-count (#501).
+  const N = initial.length
+  const placeholder = initial as RegionRollup[]
+  const clubsRanks = rankBy(placeholder, 'clubGrowthPercent')
+  const paymentsRanks = rankBy(placeholder, 'paymentGrowthPercent')
+  const distinguishedRanks = rankBy(placeholder, 'distinguishedPercent')
+
+  const rollups: RegionRollup[] = initial.map(r => {
+    const clubsRank = clubsRanks.get(r.region) ?? N
+    const paymentsRank = paymentsRanks.get(r.region) ?? N
+    const distinguishedRank = distinguishedRanks.get(r.region) ?? N
+    const aggregateScore =
+      N - clubsRank + 1 + (N - paymentsRank + 1) + (N - distinguishedRank + 1)
+    return {
+      ...r,
+      clubsRank,
+      paymentsRank,
+      distinguishedRank,
+      aggregateScore,
+    }
+  })
 
   rollups.sort((a, b) => Number(a.region) - Number(b.region))
   return rollups

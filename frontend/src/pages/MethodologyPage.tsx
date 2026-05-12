@@ -15,16 +15,17 @@ const SECTIONS: ReadonlyArray<{ id: string; num: string; title: string }> = [
   { id: 'data-source', num: '01', title: 'Data source & access' },
   { id: 'refresh-cadence', num: '02', title: 'Refresh cadence' },
   { id: 'borda-count', num: '03', title: 'Borda count scoring' },
-  { id: 'dcp-tiers', num: '04', title: 'DCP tier definitions' },
-  { id: 'club-health', num: '05', title: 'Club health classifications' },
+  { id: 'regions-borda', num: '04', title: 'Region-level scoring' },
+  { id: 'dcp-tiers', num: '05', title: 'DCP tier definitions' },
+  { id: 'club-health', num: '06', title: 'Club health classifications' },
   {
     id: 'district-membership-trend',
-    num: '06',
+    num: '07',
     title: 'District Membership Trend',
   },
-  { id: 'glossary', num: '07', title: 'Glossary' },
-  { id: 'caveats', num: '08', title: 'Caveats & known issues' },
-  { id: 'changelog', num: '09', title: 'Changelog' },
+  { id: 'glossary', num: '08', title: 'Glossary' },
+  { id: 'caveats', num: '09', title: 'Caveats & known issues' },
+  { id: 'changelog', num: '10', title: 'Changelog' },
 ]
 
 const MethodologyPage: React.FC = () => {
@@ -130,9 +131,60 @@ const MethodologyPage: React.FC = () => {
         </p>
       </section>
 
-      <section id="dcp-tiers" className="methodology-section">
+      <section id="regions-borda" className="methodology-section">
         <h2 className="methodology-section__title">
           <span className="methodology-section__num">04</span>
+          Region-level scoring
+        </h2>
+        <p>
+          The{' '}
+          <Link to="/regions" className="methodology-link">
+            Regions overview
+          </Link>{' '}
+          ranks all 14 numbered Toastmasters regions using the same Borda count
+          method described above for districts, but with{' '}
+          <strong>per-region growth-percent values</strong> in three categories:
+        </p>
+        <ul>
+          <li>
+            <strong>Paid Clubs growth</strong> — sum of paid clubs across the
+            region's districts, divided by the sum of paid-club bases, minus
+            one.
+          </li>
+          <li>
+            <strong>Payments growth</strong> — sum of total payments across the
+            region's districts, divided by the sum of payment bases, minus one.
+          </li>
+          <li>
+            <strong>Distinguished share</strong> — sum of distinguished clubs
+            across the region, divided by the sum of paid clubs.
+          </li>
+        </ul>
+        <p>
+          Regions are ranked separately in each category. With N=14 regions,
+          rank #1 in a category gets 14 points, rank #14 gets 1. The region
+          <strong> aggregate score</strong> is the sum of points across the
+          three ranks — a number between 3 and 42. This mirrors the district
+          aggregate above so the framing transfers, and (unlike a raw sum of
+          district scores) it{' '}
+          <em>isn't biased by how many districts a region happens to have</em>.
+        </p>
+        <p className="methodology-source">
+          Implementation: <code>frontend/src/utils/aggregateRegions.ts</code> (
+          <code>rankBy</code>). Tested in{' '}
+          <code>frontend/src/utils/__tests__/aggregateRegions.test.ts</code>.
+          The DNAR sentinel (district-not-assigned-region) is excluded from the
+          ranking; its districts surface as a footnote on{' '}
+          <Link to="/regions" className="methodology-link">
+            /regions
+          </Link>{' '}
+          only when non-zero.
+        </p>
+      </section>
+
+      <section id="dcp-tiers" className="methodology-section">
+        <h2 className="methodology-section__title">
+          <span className="methodology-section__num">05</span>
           DCP tier definitions
         </h2>
         <p>Distinguished Club Program tiers, in ascending order:</p>
@@ -181,7 +233,7 @@ const MethodologyPage: React.FC = () => {
 
       <section id="club-health" className="methodology-section">
         <h2 className="methodology-section__title">
-          <span className="methodology-section__num">05</span>
+          <span className="methodology-section__num">06</span>
           Club health classifications
         </h2>
         <p>
@@ -227,7 +279,7 @@ const MethodologyPage: React.FC = () => {
 
       <section id="district-membership-trend" className="methodology-section">
         <h2 className="methodology-section__title">
-          <span className="methodology-section__num">06</span>
+          <span className="methodology-section__num">07</span>
           District Membership Trend
         </h2>
         <p>
@@ -272,7 +324,7 @@ const MethodologyPage: React.FC = () => {
 
       <section id="glossary" className="methodology-section">
         <h2 className="methodology-section__title">
-          <span className="methodology-section__num">07</span>
+          <span className="methodology-section__num">08</span>
           Glossary
         </h2>
         <dl className="methodology-glossary">
@@ -310,7 +362,7 @@ const MethodologyPage: React.FC = () => {
 
       <section id="caveats" className="methodology-section">
         <h2 className="methodology-section__title">
-          <span className="methodology-section__num">08</span>
+          <span className="methodology-section__num">09</span>
           Caveats &amp; known issues
         </h2>
         <ul>
@@ -344,7 +396,7 @@ const MethodologyPage: React.FC = () => {
 
       <section id="changelog" className="methodology-section">
         <h2 className="methodology-section__title">
-          <span className="methodology-section__num">09</span>
+          <span className="methodology-section__num">10</span>
           Changelog
         </h2>
         <p>

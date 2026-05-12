@@ -116,12 +116,93 @@ describe('aggregateRegions (#493)', () => {
     expect(rollups[0]?.distinguishedClubs).toBe(72)
   })
 
-  it('sums aggregateScore across districts in the region', () => {
+  // #501: aggregateScore is now a region-level Borda count of growth-
+  // percent ranks across 3 categories, NOT a sum of district scores.
+  // With N regions, rank #1 in a category gets N points, #N gets 1.
+  it('aggregateScore is a region-level Borda count (3 ranks × N points)', () => {
+    // 3 regions with distinct growth-percent profiles in each category.
+    // Region A: clubs=top (3pts), payments=mid (2pts), distinguished=top (3pts) → 8
+    // Region B: clubs=mid (2pts), payments=top (3pts), distinguished=mid (2pts) → 7
+    // Region C: clubs=bot (1pt), payments=bot (1pt), distinguished=bot (1pt) → 3
     const rollups = aggregateRegions([
-      mk({ region: '01', aggregateScore: 300 }),
-      mk({ region: '01', aggregateScore: 250 }),
+      // Region 01 — strongest clubs growth (10%), strongest distinguished
+      mk({
+        region: '01',
+        paidClubs: 110,
+        paidClubBase: 100,
+        totalPayments: 1050,
+        paymentBase: 1000,
+        distinguishedClubs: 50,
+      }),
+      // Region 02 — strongest payments growth (10%), mid clubs & dist
+      mk({
+        region: '02',
+        paidClubs: 105,
+        paidClubBase: 100,
+        totalPayments: 1100,
+        paymentBase: 1000,
+        distinguishedClubs: 30,
+      }),
+      // Region 03 — weakest on all three
+      mk({
+        region: '03',
+        paidClubs: 101,
+        paidClubBase: 100,
+        totalPayments: 1010,
+        paymentBase: 1000,
+        distinguishedClubs: 20,
+      }),
     ])
-    expect(rollups[0]?.aggregateScore).toBe(550)
+
+    const byRegion = Object.fromEntries(rollups.map(r => [r.region, r]))
+    // With N=3: rank #1 → 3 points, #2 → 2 points, #3 → 1 point
+    expect(byRegion['01']?.aggregateScore).toBe(3 + 2 + 3) // 8
+    expect(byRegion['02']?.aggregateScore).toBe(2 + 3 + 2) // 7
+    expect(byRegion['03']?.aggregateScore).toBe(1 + 1 + 1) // 3
+  })
+
+  it('exposes per-category ranks (clubsRank, paymentsRank, distinguishedRank)', () => {
+    const rollups = aggregateRegions([
+      mk({
+        region: '01',
+        paidClubs: 110,
+        paidClubBase: 100, // 10% growth — top
+        totalPayments: 1050,
+        paymentBase: 1000, // 5% growth
+        distinguishedClubs: 50,
+      }),
+      mk({
+        region: '02',
+        paidClubs: 105,
+        paidClubBase: 100, // 5% growth
+        totalPayments: 1100,
+        paymentBase: 1000, // 10% growth — top
+        distinguishedClubs: 30,
+      }),
+    ])
+    const byRegion = Object.fromEntries(rollups.map(r => [r.region, r]))
+    expect(byRegion['01']?.clubsRank).toBe(1)
+    expect(byRegion['01']?.paymentsRank).toBe(2)
+    expect(byRegion['02']?.clubsRank).toBe(2)
+    expect(byRegion['02']?.paymentsRank).toBe(1)
+  })
+
+  it('single-region input → all ranks = 1, aggregateScore = 3', () => {
+    const rollups = aggregateRegions([mk({ region: '01' })])
+    expect(rollups[0]?.clubsRank).toBe(1)
+    expect(rollups[0]?.paymentsRank).toBe(1)
+    expect(rollups[0]?.distinguishedRank).toBe(1)
+    expect(rollups[0]?.aggregateScore).toBe(3)
+  })
+
+  it('DNAR is excluded from ranking (no rank inflation)', () => {
+    const rollups = aggregateRegions([
+      mk({ region: '01' }),
+      mk({ region: 'DNAR' }), // must not occupy a rank slot
+    ])
+    // Only one valid region → ranks all 1, aggregateScore = 3
+    expect(rollups).toHaveLength(1)
+    expect(rollups[0]?.aggregateScore).toBe(3)
   })
 
   it('derives clubGrowthPercent from sums', () => {
