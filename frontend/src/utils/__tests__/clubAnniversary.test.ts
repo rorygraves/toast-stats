@@ -64,6 +64,9 @@ describe('getClubAnniversary (#444)', () => {
   })
 
   describe('milestone flag', () => {
+    // #509 — every multiple of 5 from 5 through 100 is a milestone.
+    // Districts recognize 35/45/55/65/70/etc. anniversaries even though
+    // TI doesn't issue recognition pins for those exact increments.
     it.each([
       [5, true],
       [10, true],
@@ -71,10 +74,19 @@ describe('getClubAnniversary (#444)', () => {
       [20, true],
       [25, true],
       [30, true],
+      [35, true],
       [40, true],
+      [45, true],
       [50, true],
+      [55, true],
       [60, true],
+      [65, true],
+      [70, true],
       [75, true],
+      [80, true],
+      [85, true],
+      [90, true],
+      [95, true],
       [100, true],
     ])('marks %d years as a milestone', (y, expected) => {
       const charter = `${2026 - y}-05-12`
@@ -87,15 +99,9 @@ describe('getClubAnniversary (#444)', () => {
       [1, false],
       [3, false],
       [7, false],
-      [35, false],
-      [45, false],
-      [55, false],
-      [65, false],
-      [70, false],
-      [80, false],
-      [85, false],
-      [90, false],
-      [95, false],
+      [11, false],
+      [42, false],
+      [99, false],
     ])('does NOT mark %d years as a milestone', (y, expected) => {
       const charter = `${2026 - y}-05-12`
       const result = getClubAnniversary(charter, ref('2026-05-12'))

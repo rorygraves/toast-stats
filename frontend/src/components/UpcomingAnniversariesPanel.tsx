@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import type { ClubTrend } from '../hooks/useDistrictAnalytics'
 import {
   getClubAnniversary,
-  MILESTONE_YEARS,
+  isMilestoneYear,
   type ClubAnniversary,
 } from '../utils/clubAnniversary'
 
@@ -131,9 +131,7 @@ export const UpcomingAnniversariesPanel: React.FC<
           // For the upcoming panel, milestone means the UPCOMING anniversary
           // year hits 5/10/15/... — distinct from isUpcomingMilestone,
           // which fires on the CURRENT years count.
-          const isUpcomingMilestone = MILESTONE_YEARS.has(
-            anniversary.upcomingYears
-          )
+          const isUpcomingMilestone = isMilestoneYear(anniversary.upcomingYears)
           const ord = `${anniversary.upcomingYears}${ordinalSuffix(
             anniversary.upcomingYears
           )}`

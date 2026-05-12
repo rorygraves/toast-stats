@@ -38,9 +38,12 @@ Two consumers of the same utility, two different milestone questions:
 - **UpcomingAnniversariesPanel** (forward-looking recognition planner):
   derive the flag locally from `MILESTONE_YEARS.has(upcomingYears)`.
 
-`MILESTONE_YEARS` is now exported from `clubAnniversary.ts` for exactly
+`isMilestoneYear()` is exported from `clubAnniversary.ts` for exactly
 this reason — consumers with different temporal framing recompute the
-flag themselves rather than asking the utility to take a side.
+flag themselves rather than asking the utility to take a side. (Originally
+exported as the Set `MILESTONE_YEARS`; later refactored to a predicate
+function in #509 once the rule shifted to "every multiple of 5,
+unbounded" — TI was founded in 1924 so 105+y milestones appear in 2029.)
 
 **Why this is a lesson, not just a bug fix:** the temptation when adding
 a new consumer is to extend the utility ("just add an `isUpcomingMilestone`
@@ -51,5 +54,6 @@ site.
 
 ## Related
 
-- `frontend/src/components/UpcomingAnniversariesPanel.tsx:130-136`
-- `frontend/src/utils/clubAnniversary.ts:33` — `MILESTONE_YEARS` export
+- `frontend/src/components/UpcomingAnniversariesPanel.tsx` — `isMilestoneYear(anniversary.upcomingYears)`
+- `frontend/src/utils/clubAnniversary.ts` — `isMilestoneYear()` export
+- #509 — widening the rule from TI's recognition-pin schedule to every-multiple-of-5

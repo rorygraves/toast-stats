@@ -14,10 +14,11 @@
 export interface ClubAnniversary {
   /** Whole years since charter, measured against referenceDate. */
   years: number
-  /** True for 5-year increments per the Toastmasters recognition set:
-   *  5, 10, 15, 20, 25, 30, 40, 50, 60, 75, 100.
-   *  Note: 35, 45, 55, 65, 70, 80, 85, 90, 95 are NOT milestones —
-   *  TI doesn't issue recognition pins for those increments. */
+  /** True for every multiple of 5 years (5, 10, 15, ... unbounded above).
+   *  Districts recognize every 5-year anniversary; TI's recognition-pin
+   *  schedule is more selective but irrelevant for district-level planning.
+   *  Note: TI was founded in 1924, so 105+y milestones start appearing
+   *  in 2029 — keep this rule unbounded. */
   isMilestone: boolean
   /** Days until the next anniversary. Zero on the exact day; never
    *  negative (always in [0, ~365]). */
@@ -30,9 +31,10 @@ export interface ClubAnniversary {
   upcomingYears: number
 }
 
-export const MILESTONE_YEARS: ReadonlySet<number> = new Set([
-  5, 10, 15, 20, 25, 30, 40, 50, 60, 75, 100,
-])
+/** True for every multiple of 5 years from 5 upward. See ClubAnniversary
+ *  doc-comment for rationale. */
+export const isMilestoneYear = (years: number): boolean =>
+  Number.isInteger(years) && years >= 5 && years % 5 === 0
 
 const UPCOMING_WINDOW_DAYS = 30
 const MIN_YEAR = 1900
@@ -128,7 +130,7 @@ export function getClubAnniversary(
 
   return {
     years,
-    isMilestone: MILESTONE_YEARS.has(years),
+    isMilestone: isMilestoneYear(years),
     daysUntilNext,
     isUpcoming,
     upcomingYears,

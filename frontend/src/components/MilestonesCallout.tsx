@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import type { ClubTrend } from '../hooks/useDistrictAnalytics'
-import { MILESTONE_YEARS } from '../utils/clubAnniversary'
+import { isMilestoneYear } from '../utils/clubAnniversary'
 import { getCurrentProgramYear } from '../utils/programYear'
 
 /* MilestonesCallout (#447) — district-level program-year milestone roster.
@@ -110,7 +110,7 @@ export const MilestonesCallout: React.FC<MilestonesCalloutProps> = ({
       if (!annivInPy) continue
       const yearsAtAnniv = annivInPy.getUTCFullYear() - charter.getUTCFullYear()
       if (yearsAtAnniv <= 0) continue
-      if (MILESTONE_YEARS.has(yearsAtAnniv)) {
+      if (isMilestoneYear(yearsAtAnniv)) {
         milestones.push({
           club,
           milestoneYears: yearsAtAnniv,
@@ -126,7 +126,7 @@ export const MilestonesCallout: React.FC<MilestonesCalloutProps> = ({
       let candidateYear = today.getUTCFullYear()
       while (candidateYear - charter.getUTCFullYear() <= 101) {
         const years = candidateYear - charter.getUTCFullYear()
-        if (years > 0 && MILESTONE_YEARS.has(years)) {
+        if (isMilestoneYear(years)) {
           const d = new Date(Date.UTC(candidateYear, charterMonth, charterDay))
           if (d.getTime() >= today.getTime()) {
             upcomingCandidates.push({
