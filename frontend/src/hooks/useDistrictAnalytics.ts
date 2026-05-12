@@ -42,12 +42,30 @@ export interface ClubTrend {
   /** Club Success Plan submission status (2025-2026+). Undefined for pre-2025 data. */
   cspSubmitted?: boolean
   /**
-   * Charter date (ISO) — populated from the public Find-A-Club Search
-   * endpoint when the daily pipeline (#430) ran successfully. Absent
-   * when the endpoint hasn't been fetched yet for this snapshot.
-   * (#429 / #432)
+   * Find-A-Club enrichment fields (#429 / #432 / #503). All optional.
+   * Populated by FindAClubMerger from the public TI Find-A-Club Search
+   * endpoint and propagated through ClubHealthAnalyticsModule onto
+   * each ClubTrend in the analytics JSON. Absent until the daily
+   * pipeline has run with the merger active for the snapshot.
    */
   charterDate?: string
+  coordinates?: { lat: number; lng: number }
+  address?: {
+    street?: string
+    city?: string
+    region?: string
+    postalCode?: string
+    country?: string
+  }
+  email?: string
+  phone?: string
+  website?: string
+  facebookLink?: string
+  twitterLink?: string
+  meetingDay?: string
+  meetingTime?: string
+  allowsVirtualAttendance?: boolean
+  isProspective?: boolean
 }
 
 export interface DivisionAnalytics {

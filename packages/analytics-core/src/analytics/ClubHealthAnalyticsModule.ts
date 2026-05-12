@@ -222,6 +222,25 @@ export class ClubHealthAnalyticsModule {
         clubStatus: club.clubStatus,
         // CSP submission status — use getCSPStatus() to normalize undefined → true for pre-2025
         cspSubmitted: getCSPStatus(club),
+        // Find-A-Club enrichment (#503). Propagate any FAC fields the
+        // merger wrote onto ClubStatistics. All optional — present
+        // only when FAC matched the club.
+        ...(club.charterDate && { charterDate: club.charterDate }),
+        ...(club.coordinates && { coordinates: club.coordinates }),
+        ...(club.address && { address: club.address }),
+        ...(club.email && { email: club.email }),
+        ...(club.phone && { phone: club.phone }),
+        ...(club.website && { website: club.website }),
+        ...(club.facebookLink && { facebookLink: club.facebookLink }),
+        ...(club.twitterLink && { twitterLink: club.twitterLink }),
+        ...(club.meetingDay && { meetingDay: club.meetingDay }),
+        ...(club.meetingTime && { meetingTime: club.meetingTime }),
+        ...(typeof club.allowsVirtualAttendance === 'boolean' && {
+          allowsVirtualAttendance: club.allowsVirtualAttendance,
+        }),
+        ...(typeof club.isProspective === 'boolean' && {
+          isProspective: club.isProspective,
+        }),
       })
     }
 

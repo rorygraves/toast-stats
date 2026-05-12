@@ -86,6 +86,130 @@ describe('normaliseClubNumber', () => {
   })
 })
 
+describe('mergeFacIntoSnapshot — clubs[] propagation (#503)', () => {
+  // Critical regression: the merger originally only wrote onto
+  // .data.clubPerformance[] (raw scraped records). But analytics-core
+  // builds ClubTrend from .data.clubs[] (parsed ClubStatisticsFile),
+  // so FAC enrichment never reached the analytics JSON the frontend
+  // reads. The merger must update BOTH arrays.
+  it('enriches the .data.clubs[] entry that matches by clubId', () => {
+    const result = mergeFacIntoSnapshot(
+      {
+        districtId: '61',
+        data: {
+          clubPerformance: [ottawaSnapshotRow],
+          // parsed ClubStatisticsFile shape — what analytics-core reads
+          clubs: [
+            {
+              clubId: '00000180',
+              clubName: 'Causeurs Ottawa Speakers Club',
+              divisionId: 'A',
+              divisionName: 'Division A',
+              areaId: 'A1',
+              areaName: 'Area A1',
+              membershipCount: 23,
+              membershipBase: 20,
+              paymentsCount: 5,
+              dcpGoals: 5,
+              status: 'Distinguished',
+              octoberRenewals: 3,
+              aprilRenewals: 2,
+              newMembers: 1,
+              clubStatus: 'Active',
+            },
+          ],
+        },
+      },
+      { Clubs: [ottawaFacClub] }
+    )
+
+    expect(result.matched).toBe(1)
+    const parsedClubs = (result.snapshot.data?.['clubs'] ?? []) as Array<
+      Record<string, unknown>
+    >
+    expect(parsedClubs).toHaveLength(1)
+    expect(parsedClubs[0]?.['clubId']).toBe('00000180')
+    // Parsed snapshot fields preserved
+    expect(parsedClubs[0]?.['clubName']).toBe('Causeurs Ottawa Speakers Club')
+    expect(parsedClubs[0]?.['membershipCount']).toBe(23)
+    // FAC enrichment landed on .clubs[]
+    expect(parsedClubs[0]?.['charterDate']).toBe('1976-04-01')
+    expect(parsedClubs[0]?.['coordinates']).toEqual({
+      lat: 45.42,
+      lng: -75.69,
+    })
+    expect(parsedClubs[0]?.['email']).toBe('officers-180@toastmastersclubs.org')
+    expect(parsedClubs[0]?.['meetingDay']).toBe('Tuesday')
+  })
+
+  it('leaves .data.clubs[] alone for snapshot-only clubs (no FAC match)', () => {
+    const result = mergeFacIntoSnapshot(
+      {
+        districtId: '61',
+        data: {
+          clubPerformance: [ottawaSnapshotRow, suspendedSnapshotOnly],
+          clubs: [
+            {
+              clubId: '00000180',
+              clubName: 'Causeurs',
+              divisionId: 'A',
+              divisionName: 'A',
+              areaId: 'A1',
+              areaName: 'A1',
+              membershipCount: 23,
+              membershipBase: 20,
+              paymentsCount: 5,
+              dcpGoals: 5,
+              status: 'Distinguished',
+              octoberRenewals: 3,
+              aprilRenewals: 2,
+              newMembers: 1,
+            },
+            {
+              clubId: '00099999',
+              clubName: 'Suspended',
+              divisionId: 'B',
+              divisionName: 'B',
+              areaId: 'B1',
+              areaName: 'B1',
+              membershipCount: 0,
+              membershipBase: 15,
+              paymentsCount: 0,
+              dcpGoals: 0,
+              status: 'Suspended',
+              octoberRenewals: 0,
+              aprilRenewals: 0,
+              newMembers: 0,
+            },
+          ],
+        },
+      },
+      { Clubs: [ottawaFacClub] }
+    )
+    const parsedClubs = (result.snapshot.data?.['clubs'] ?? []) as Array<
+      Record<string, unknown>
+    >
+    // Suspended club must NOT acquire FAC fields
+    expect(parsedClubs[1]?.['clubId']).toBe('00099999')
+    expect(parsedClubs[1]?.['charterDate']).toBeUndefined()
+  })
+
+  it('handles snapshots without a .clubs[] array (defensive)', () => {
+    // Older snapshots may only have .clubPerformance — merger must
+    // still work and not throw.
+    const result = mergeFacIntoSnapshot(
+      {
+        districtId: '61',
+        data: { clubPerformance: [ottawaSnapshotRow] },
+      },
+      { Clubs: [ottawaFacClub] }
+    )
+    expect(result.matched).toBe(1)
+    // .clubs[] absent → nothing to update → no crash
+    expect(result.snapshot.data?.['clubs']).toBeUndefined()
+  })
+})
+
 describe('mergeFacIntoSnapshot', () => {
   it('enriches a matched club with FAC fields without losing snapshot fields', () => {
     const result = mergeFacIntoSnapshot(

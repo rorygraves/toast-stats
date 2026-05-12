@@ -98,6 +98,28 @@ export interface ClubTrend {
 
   /** Club Success Plan submission status (2025-2026+). Undefined for pre-2025 data. (#288) */
   cspSubmitted?: boolean
+
+  // Find-A-Club enrichment (#429 / #503). All optional — propagated
+  // from ClubStatistics by analytics. Surfaces in the Club hero
+  // CHARTERED eyebrow + future map / contact panels.
+  charterDate?: string
+  coordinates?: { lat: number; lng: number }
+  address?: {
+    street?: string
+    city?: string
+    region?: string
+    postalCode?: string
+    country?: string
+  }
+  email?: string
+  phone?: string
+  website?: string
+  facebookLink?: string
+  twitterLink?: string
+  meetingDay?: string
+  meetingTime?: string
+  allowsVirtualAttendance?: boolean
+  isProspective?: boolean
 }
 
 /**

@@ -561,6 +561,80 @@ describe('ClubHealthAnalyticsModule', () => {
     })
   })
 
+  describe('Find-A-Club Enrichment Propagation (#503)', () => {
+    // Regression: snapshots produced by the daily pipeline carry FAC
+    // enrichment fields (charterDate / coordinates / address / email /
+    // etc.) on each ClubStatistics row after FindAClubMerger runs.
+    // Analytics must forward these onto ClubTrend so the frontend
+    // Club hero (which reads from the analytics JSON) can render the
+    // CHARTERED eyebrow.
+    it('forwards charterDate from ClubStatistics to ClubTrend', () => {
+      const module = new ClubHealthAnalyticsModule()
+      const club = {
+        ...createMockClub({ clubId: '1' }),
+        charterDate: '1987-02-15',
+      }
+      const snapshot = createMockSnapshot('2024-01-15', [club])
+
+      const result = module.generateClubHealthData([snapshot])
+
+      expect(result.allClubs[0]?.charterDate).toBe('1987-02-15')
+    })
+
+    it('forwards coordinates / address / contact / meeting fields', () => {
+      const module = new ClubHealthAnalyticsModule()
+      const enriched = {
+        ...createMockClub({ clubId: '1' }),
+        charterDate: '1987-02-15',
+        coordinates: { lat: 45.42, lng: -75.69 },
+        address: {
+          street: '300 Ottawa Ave',
+          city: 'Ottawa',
+          region: 'ON',
+          postalCode: 'K1A 0A0',
+          country: 'Canada',
+        },
+        email: 'officers-180@toastmastersclubs.org',
+        phone: '+13039128450',
+        website: 'http://180.toastmastersclubs.org/',
+        facebookLink: 'https://www.facebook.com/test',
+        meetingDay: 'Tuesday',
+        meetingTime: '7:00 pm',
+        allowsVirtualAttendance: false,
+        isProspective: false,
+      }
+      const snapshot = createMockSnapshot('2024-01-15', [enriched])
+
+      const result = module.generateClubHealthData([snapshot])
+      const out = result.allClubs[0]
+
+      expect(out?.charterDate).toBe('1987-02-15')
+      expect(out?.coordinates).toEqual({ lat: 45.42, lng: -75.69 })
+      expect(out?.address?.city).toBe('Ottawa')
+      expect(out?.email).toBe('officers-180@toastmastersclubs.org')
+      expect(out?.phone).toBe('+13039128450')
+      expect(out?.website).toBe('http://180.toastmastersclubs.org/')
+      expect(out?.facebookLink).toBe('https://www.facebook.com/test')
+      expect(out?.meetingDay).toBe('Tuesday')
+      expect(out?.meetingTime).toBe('7:00 pm')
+      expect(out?.allowsVirtualAttendance).toBe(false)
+      expect(out?.isProspective).toBe(false)
+    })
+
+    it('leaves FAC fields undefined when ClubStatistics has none (graceful absence)', () => {
+      const module = new ClubHealthAnalyticsModule()
+      const bare = createMockClub({ clubId: '1' })
+      const snapshot = createMockSnapshot('2024-01-15', [bare])
+
+      const result = module.generateClubHealthData([snapshot])
+      const out = result.allClubs[0]
+
+      expect(out?.charterDate).toBeUndefined()
+      expect(out?.coordinates).toBeUndefined()
+      expect(out?.email).toBeUndefined()
+    })
+  })
+
   describe('Payment Field Extraction (Requirement 2.4)', () => {
     it('should extract all payment fields when present', () => {
       const module = new ClubHealthAnalyticsModule()

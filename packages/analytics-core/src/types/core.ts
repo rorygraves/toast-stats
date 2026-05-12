@@ -144,6 +144,32 @@ export interface ClubTrend {
 
   // Club operational status (Requirement 1.8)
   clubStatus?: string
+
+  // CSP submission status — already on ClubStatistics, surfaced here
+  // so /district/:id/club/:cid can render it (#290 / pre-existing).
+  cspSubmitted?: boolean
+
+  // Find-A-Club enrichment (#429 / #503). All optional — propagated
+  // from ClubStatistics by analytics. Surfaces in the Club hero
+  // CHARTERED eyebrow + future map / contact panels.
+  charterDate?: string
+  coordinates?: { lat: number; lng: number }
+  address?: {
+    street?: string
+    city?: string
+    region?: string
+    postalCode?: string
+    country?: string
+  }
+  email?: string
+  phone?: string
+  website?: string
+  facebookLink?: string
+  twitterLink?: string
+  meetingDay?: string
+  meetingTime?: string
+  allowsVirtualAttendance?: boolean
+  isProspective?: boolean
 }
 
 /**

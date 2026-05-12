@@ -74,6 +74,28 @@ export interface ClubStatistics {
 
   // Exact list of 10 boolean flags representing which DCP goals were achieved
   dcpGoalsAchieved?: boolean[]
+
+  // Find-A-Club enrichment (#429 / #503). All optional — populated by
+  // FindAClubMerger from the public TI Find-A-Club Search endpoint.
+  // Analytics propagates these onto ClubTrend so the frontend Club
+  // hero can render CHARTERED + meeting / contact info.
+  coordinates?: { lat: number; lng: number }
+  address?: {
+    street?: string
+    city?: string
+    region?: string
+    postalCode?: string
+    country?: string
+  }
+  email?: string
+  phone?: string
+  website?: string
+  facebookLink?: string
+  twitterLink?: string
+  meetingDay?: string
+  meetingTime?: string
+  allowsVirtualAttendance?: boolean
+  isProspective?: boolean
 }
 
 /**

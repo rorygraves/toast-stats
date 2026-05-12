@@ -86,6 +86,34 @@ export function mergeFacIntoSnapshot(
   let snapshotOnly = 0
   const matchedIds = new Set<string>()
 
+  // Build a flat enrichment-by-clubId map. The same enrichment object is
+  // applied to BOTH .data.clubPerformance[] (raw scraped records keyed
+  // by 'Club Number') and .data.clubs[] (parsed ClubStatisticsFile
+  // keyed by clubId). analytics-core reads from .clubs, so the latter
+  // is what reaches the frontend (#503).
+  const enrichmentByClubId = new Map<string, Record<string, unknown>>()
+  for (const [clubId, facHit] of facByClubId) {
+    if (!facHit) continue
+    const enrichment: Record<string, unknown> = {}
+    if (facHit.charterDate) enrichment['charterDate'] = facHit.charterDate
+    if (facHit.coordinates) enrichment['coordinates'] = facHit.coordinates
+    if (facHit.address) enrichment['address'] = facHit.address
+    if (facHit.email) enrichment['email'] = facHit.email
+    if (facHit.phone) enrichment['phone'] = facHit.phone
+    if (facHit.website) enrichment['website'] = facHit.website
+    if (facHit.facebookLink) enrichment['facebookLink'] = facHit.facebookLink
+    if (facHit.twitterLink) enrichment['twitterLink'] = facHit.twitterLink
+    if (facHit.meetingDay) enrichment['meetingDay'] = facHit.meetingDay
+    if (facHit.meetingTime) enrichment['meetingTime'] = facHit.meetingTime
+    if (typeof facHit.allowsVirtualAttendance === 'boolean') {
+      enrichment['allowsVirtualAttendance'] = facHit.allowsVirtualAttendance
+    }
+    if (typeof facHit.isProspective === 'boolean') {
+      enrichment['isProspective'] = facHit.isProspective
+    }
+    enrichmentByClubId.set(clubId, enrichment)
+  }
+
   // Mutating the snapshot in-place would couple us to JSON.parse'd
   // shapes; clone the array so callers can hold onto the original
   // for diffing.
@@ -107,30 +135,32 @@ export function mergeFacIntoSnapshot(
     }
     matched += 1
     matchedIds.add(clubId)
+    const enrichment = enrichmentByClubId.get(clubId) ?? {}
     // Spread the FAC enrichment alongside the existing snapshot fields.
     // Snapshot fields win on collision — TI dashboard is canonical for
     // DCP / payments / status; FAC is only authoritative for the
     // optional enrichment fields it adds.
-    return {
-      ...row,
-      ...(facHit.charterDate && { charterDate: facHit.charterDate }),
-      ...(facHit.coordinates && { coordinates: facHit.coordinates }),
-      ...(facHit.address && { address: facHit.address }),
-      ...(facHit.email && { email: facHit.email }),
-      ...(facHit.phone && { phone: facHit.phone }),
-      ...(facHit.website && { website: facHit.website }),
-      ...(facHit.facebookLink && { facebookLink: facHit.facebookLink }),
-      ...(facHit.twitterLink && { twitterLink: facHit.twitterLink }),
-      ...(facHit.meetingDay && { meetingDay: facHit.meetingDay }),
-      ...(facHit.meetingTime && { meetingTime: facHit.meetingTime }),
-      ...(typeof facHit.allowsVirtualAttendance === 'boolean' && {
-        allowsVirtualAttendance: facHit.allowsVirtualAttendance,
-      }),
-      ...(typeof facHit.isProspective === 'boolean' && {
-        isProspective: facHit.isProspective,
-      }),
-    }
+    return { ...row, ...enrichment }
   })
+
+  // Also enrich the parsed .data.clubs[] array if present. This is the
+  // array analytics-core reads to build ClubTrend, so it's the path
+  // by which charterDate etc. reach the frontend Club hero (#503).
+  const parsedClubsRaw = (
+    snapshot.data as Record<string, unknown> | undefined
+  )?.['clubs']
+  let enrichedParsedClubs: unknown[] | undefined
+  if (Array.isArray(parsedClubsRaw)) {
+    enrichedParsedClubs = parsedClubsRaw.map(raw => {
+      if (typeof raw !== 'object' || raw === null) return raw
+      const parsed = raw as Record<string, unknown>
+      const clubId =
+        typeof parsed['clubId'] === 'string' ? parsed['clubId'] : null
+      if (!clubId) return raw
+      const enrichment = enrichmentByClubId.get(clubId)
+      return enrichment ? { ...parsed, ...enrichment } : raw
+    })
+  }
 
   // FAC-only clubs: in FAC but not in snapshot. These are typically
   // ATOs / prospective (#489). We don't merge them into clubPerformance
@@ -149,6 +179,12 @@ export function mergeFacIntoSnapshot(
       data: {
         ...snapshot.data,
         clubPerformance: enrichedClubs,
+        // Only spread .clubs[] back when we actually had one to enrich.
+        // Undefined when the snapshot lacked the parsed array (older
+        // shape) so we don't fabricate it.
+        ...(enrichedParsedClubs !== undefined && {
+          clubs: enrichedParsedClubs,
+        }),
       },
     },
     matched,
