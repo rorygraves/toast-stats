@@ -231,7 +231,9 @@ export function normaliseDistrictParam(districtId: string): string {
 const NET_DATE_PATTERN = /\/Date\((-?\d+)\)\//
 
 /** Parse a .NET-style /Date(ms)/ string to ISO. Returns undefined for
- *  unparseable input or pre-1900 / post-2200 sanity-band violations. */
+ *  unparseable input or pre-1900 / post-2200 sanity-band violations.
+ *  #486 L3: handles extreme-magnitude ms that produce Invalid Date —
+ *  without this guard, `toISOString()` throws RangeError downstream. */
 export function parseNetDate(input: unknown): string | undefined {
   if (typeof input !== 'string') return undefined
   const match = NET_DATE_PATTERN.exec(input)
@@ -239,6 +241,7 @@ export function parseNetDate(input: unknown): string | undefined {
   const ms = Number(match[1])
   if (!Number.isFinite(ms)) return undefined
   const date = new Date(ms)
+  if (Number.isNaN(date.getTime())) return undefined
   const year = date.getUTCFullYear()
   if (year < 1900 || year > 2200) return undefined
   return date.toISOString().slice(0, 10) // YYYY-MM-DD

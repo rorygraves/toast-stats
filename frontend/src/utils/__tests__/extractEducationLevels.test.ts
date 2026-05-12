@@ -63,6 +63,35 @@ describe('extractEducationLevels (#426)', () => {
     expect(result.totalClubs).toBe(2)
   })
 
+  // #486 M1: when a snapshot carries BOTH a primary column name and
+  // its legacy alias for the same value (e.g. 'Level 4s' alongside
+  // 'Level 4s, Path Completions, or DTM Awards'), the alias names
+  // must be treated as first-match-wins fallbacks, not summed. The
+  // old implementation double-counted these clubs.
+  it('does not double-count when a club carries primary + legacy-alias column names', () => {
+    const snapshot = {
+      data: {
+        clubPerformance: [
+          {
+            'Club Name': 'A',
+            'Level 4s, Path Completions, or DTM Awards': 3,
+            'Level 4s': 3, // legacy alias for the same value
+            'Add. Level 4s, Path Completions, or DTM award': 1,
+            'Add. Level 4s': 1, // legacy alias
+            'Level 2s': 2,
+            'Add. Level 2s': 1,
+            'Add Level 2s': 1, // legacy alias (no period)
+          },
+        ],
+      },
+    }
+    const result = extractEducationLevels(snapshot)
+    // L4: primary=3 (not 3+3=6), additional=1 (not 1+1=2). Total=4.
+    expect(result.level4PathDtm).toBe(4)
+    // L2: primary=2, additional=1 (not 1+1=2). Total=3.
+    expect(result.level2).toBe(3)
+  })
+
   it('includes Add. Level columns and the bundled Level 4 column', () => {
     const snapshot = {
       data: {

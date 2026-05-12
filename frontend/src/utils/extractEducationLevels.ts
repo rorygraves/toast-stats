@@ -34,16 +34,36 @@ export interface EducationLevelsTotals {
   totalClubs: number
 }
 
-const PRIMARY_KEYS = {
-  level1: ['Level 1s'],
-  level2: ['Level 2s', 'Add. Level 2s', 'Add Level 2s'],
-  level3: ['Level 3s'],
-  level4PathDtm: [
-    'Level 4s, Path Completions, or DTM Awards',
-    'Level 4s',
-    'Add. Level 4s, Path Completions, or DTM award',
-    'Add. Level 4s',
-  ],
+/* Each bucket has a primary column and an optional additional-awards
+   column. The CSV pipeline renames the schema across years (e.g.
+   'Level 4s, Path Completions, or DTM Awards' is sometimes shortened
+   to 'Level 4s'), so we treat the listed names as fallback aliases:
+   first match wins for each (primary, additional) pair. Summing all
+   aliases as if they were distinct columns would double-count clubs
+   whose snapshot carries both old and new names (#486 M1).
+
+   Mirrors the first-match-wins extraction in
+   analytics-core/src/transformation/DataTransformer.ts (extractNumber). */
+const LEVEL_DEFS = {
+  level1: {
+    primary: ['Level 1s'],
+    additional: [],
+  },
+  level2: {
+    primary: ['Level 2s'],
+    additional: ['Add. Level 2s', 'Add Level 2s'],
+  },
+  level3: {
+    primary: ['Level 3s'],
+    additional: [],
+  },
+  level4PathDtm: {
+    primary: ['Level 4s, Path Completions, or DTM Awards', 'Level 4s'],
+    additional: [
+      'Add. Level 4s, Path Completions, or DTM award',
+      'Add. Level 4s',
+    ],
+  },
 } as const
 
 const toNumber = (raw: unknown): number => {
@@ -53,10 +73,23 @@ const toNumber = (raw: unknown): number => {
   return Number.isFinite(parsed) ? parsed : 0
 }
 
-const sumForKeys = (
+const firstPresent = (
   club: Record<string, unknown>,
   keys: ReadonlyArray<string>
-): number => keys.reduce((acc, key) => acc + toNumber(club[key]), 0)
+): number => {
+  for (const key of keys) {
+    if (key in club && club[key] != null && club[key] !== '') {
+      return toNumber(club[key])
+    }
+  }
+  return 0
+}
+
+const bucketTotal = (
+  club: Record<string, unknown>,
+  def: { primary: ReadonlyArray<string>; additional: ReadonlyArray<string> }
+): number =>
+  firstPresent(club, def.primary) + firstPresent(club, def.additional)
 
 export function extractEducationLevels(
   districtSnapshot: unknown
@@ -91,10 +124,10 @@ export function extractEducationLevels(
     if (typeof clubRaw !== 'object' || clubRaw === null) continue
     const club = clubRaw as Record<string, unknown>
 
-    const l1 = sumForKeys(club, PRIMARY_KEYS.level1)
-    const l2 = sumForKeys(club, PRIMARY_KEYS.level2)
-    const l3 = sumForKeys(club, PRIMARY_KEYS.level3)
-    const l4 = sumForKeys(club, PRIMARY_KEYS.level4PathDtm)
+    const l1 = bucketTotal(club, LEVEL_DEFS.level1)
+    const l2 = bucketTotal(club, LEVEL_DEFS.level2)
+    const l3 = bucketTotal(club, LEVEL_DEFS.level3)
+    const l4 = bucketTotal(club, LEVEL_DEFS.level4PathDtm)
 
     totals.level1 += l1
     totals.level2 += l2

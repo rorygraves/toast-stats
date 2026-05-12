@@ -156,7 +156,8 @@ const PaymentCompositionDonut: React.FC<PaymentCompositionDonutProps> = ({
               </title>
             </circle>
           ))}
-          {/* Center label */}
+          {/* Center label — payment-events count, NOT membership count.
+              The two were swapped (#486 / observed on production). */}
           <text
             x="60"
             y="58"
@@ -165,7 +166,7 @@ const PaymentCompositionDonut: React.FC<PaymentCompositionDonutProps> = ({
             fontWeight="700"
             fill="currentColor"
           >
-            {formatK(totalMembership)}
+            {formatK(totalPayments)}
           </text>
           <text
             x="60"

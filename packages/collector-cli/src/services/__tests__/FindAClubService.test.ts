@@ -89,6 +89,14 @@ describe('parseNetDate', () => {
     // Sanity bounds — year < 1900
     expect(parseNetDate('/Date(-9999999999999)/')).toBeUndefined()
   })
+
+  // #486 L3: extreme finite values produce Invalid Date, whose
+  // getUTCFullYear() returns NaN. NaN compared with anything is false,
+  // so the year-band check is no defence; toISOString() then throws.
+  it('returns undefined for extreme-magnitude ms (Invalid Date)', () => {
+    expect(parseNetDate('/Date(99999999999999999999)/')).toBeUndefined()
+    expect(parseNetDate('/Date(-99999999999999999999)/')).toBeUndefined()
+  })
 })
 
 describe('normaliseTiClub', () => {
