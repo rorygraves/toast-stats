@@ -10,6 +10,51 @@ import { fetchCdnRankings } from '../services/cdn'
 import { LoadingSkeleton } from '../components/LoadingSkeleton'
 import { EmptyState } from '../components/ErrorDisplay'
 import type { DistrictRanking } from '../types/districts'
+import { computeTiedRanks } from '../utils/tieRankingUtils'
+
+interface KpiCardProps {
+  label: string
+  base: number
+  current: number
+}
+
+/** KPI card with a base → current → Δ → ±% rhythm. Negative deltas
+ *  render in maroon. Percent is omitted when base is 0 (avoid /0; the
+ *  Distinguished case in particular relies on this). */
+const KpiCard: React.FC<KpiCardProps> = ({ label, base, current }) => {
+  const delta = current - base
+  const percent = base === 0 ? null : ((current - base) / base) * 100
+  const sign = delta >= 0 ? '+' : ''
+  const deltaTone = delta >= 0 ? 'text-green-700' : 'text-tm-true-maroon'
+  return (
+    <div className="districts-kpi-card" aria-label={`${label} KPI`}>
+      <p className="districts-kpi-card__label">{label}</p>
+      <div className="districts-kpi-card__value">
+        {current.toLocaleString()}
+      </div>
+      <p className="text-xs text-gray-500 tabular-nums mt-1">
+        <span data-testid="kpi-base">Base {base.toLocaleString()}</span> ·{' '}
+        <span data-testid="kpi-delta" className={`font-semibold ${deltaTone}`}>
+          {sign}
+          {delta.toLocaleString()}
+        </span>
+        {percent !== null && (
+          <>
+            {' '}
+            ·{' '}
+            <span
+              data-testid="kpi-percent"
+              className={`font-semibold ${deltaTone}`}
+            >
+              {sign}
+              {percent.toFixed(1)}%
+            </span>
+          </>
+        )}
+      </p>
+    </div>
+  )
+}
 
 const RegionPage: React.FC = () => {
   const { n } = useParams<{ n: string }>()
@@ -31,8 +76,15 @@ const RegionPage: React.FC = () => {
     data?.rankings && region
       ? data.rankings
           .filter(r => r.region === region)
-          .sort((a, b) => (a.overallRank ?? 0) - (b.overallRank ?? 0))
+          .sort((a, b) => (b.aggregateScore ?? 0) - (a.aggregateScore ?? 0))
       : []
+
+  // Rank within the region by aggregateScore desc. Ties share rank
+  // (competition ranking via computeTiedRanks).
+  const regionRanks = computeTiedRanks(
+    regionDistricts,
+    d => d.aggregateScore ?? 0
+  )
 
   if (isLoading) {
     return <LoadingSkeleton variant="card" />
@@ -65,11 +117,19 @@ const RegionPage: React.FC = () => {
   const totals = regionDistricts.reduce(
     (acc, d) => {
       acc.paidClubs += d.paidClubs ?? 0
+      acc.paidClubBase += d.paidClubBase ?? 0
       acc.totalPayments += d.totalPayments ?? 0
+      acc.paymentBase += d.paymentBase ?? 0
       acc.distinguishedClubs += d.distinguishedClubs ?? 0
       return acc
     },
-    { paidClubs: 0, totalPayments: 0, distinguishedClubs: 0 }
+    {
+      paidClubs: 0,
+      paidClubBase: 0,
+      totalPayments: 0,
+      paymentBase: 0,
+      distinguishedClubs: 0,
+    }
   )
 
   return (
@@ -93,30 +153,30 @@ const RegionPage: React.FC = () => {
         style={{ marginBottom: 24 }}
         aria-label="Region totals"
       >
-        <div className="districts-kpi-card">
+        <div className="districts-kpi-card" aria-label="Districts KPI">
           <p className="districts-kpi-card__label">Districts</p>
           <div className="districts-kpi-card__value">
             {regionDistricts.length}
           </div>
         </div>
-        <div className="districts-kpi-card">
-          <p className="districts-kpi-card__label">Paid Clubs</p>
-          <div className="districts-kpi-card__value">
-            {totals.paidClubs.toLocaleString()}
-          </div>
-        </div>
-        <div className="districts-kpi-card">
-          <p className="districts-kpi-card__label">Payments</p>
-          <div className="districts-kpi-card__value">
-            {totals.totalPayments.toLocaleString()}
-          </div>
-        </div>
-        <div className="districts-kpi-card">
-          <p className="districts-kpi-card__label">Distinguished Clubs</p>
-          <div className="districts-kpi-card__value">
-            {totals.distinguishedClubs.toLocaleString()}
-          </div>
-        </div>
+        <KpiCard
+          label="Paid Clubs"
+          base={totals.paidClubBase}
+          current={totals.paidClubs}
+        />
+        <KpiCard
+          label="Payments"
+          base={totals.paymentBase}
+          current={totals.totalPayments}
+        />
+        {/* Distinguished is year-cumulative — every July 1 the count
+            resets to zero. Treating base as 0 is semantically correct
+            and makes Δ equal to the current count. */}
+        <KpiCard
+          label="Distinguished Clubs"
+          base={0}
+          current={totals.distinguishedClubs}
+        />
       </div>
 
       <div className="districts-rankings-table-wrap">
@@ -124,6 +184,9 @@ const RegionPage: React.FC = () => {
           <table className="districts-rankings-table">
             <thead>
               <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Region Rank
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   District
                 </th>
@@ -142,37 +205,51 @@ const RegionPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {regionDistricts.map(d => (
-                <tr
-                  key={d.districtId}
-                  className="cursor-pointer"
-                  onClick={() => navigate(`/district/${d.districtId}`)}
-                >
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className="districts-rankings-table__district-chip"
-                      aria-hidden="true"
+              {regionDistricts.map((d, i) => {
+                const rank = regionRanks[i]!
+                return (
+                  <tr
+                    key={d.districtId}
+                    className="cursor-pointer"
+                    onClick={() => navigate(`/district/${d.districtId}`)}
+                  >
+                    <td
+                      data-testid="region-rank-cell"
+                      className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 tabular-nums"
                     >
-                      D{d.districtId}
-                    </span>
-                    <span className="ml-3 text-sm font-medium text-gray-900">
-                      {d.districtName}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    #{d.overallRank}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
-                    {d.paidClubs}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
-                    {d.distinguishedClubs}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 tabular-nums">
-                    {d.aggregateScore}
-                  </td>
-                </tr>
-              ))}
+                      #{rank.rank}
+                      {rank.isTied && (
+                        <span className="ml-1 text-xs text-gray-400 font-normal">
+                          (tied)
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className="districts-rankings-table__district-chip"
+                        aria-hidden="true"
+                      >
+                        D{d.districtId}
+                      </span>
+                      <span className="ml-3 text-sm font-medium text-gray-900">
+                        {d.districtName}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      #{d.overallRank}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
+                      {d.paidClubs}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
+                      {d.distinguishedClubs}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 tabular-nums">
+                      {d.aggregateScore}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>

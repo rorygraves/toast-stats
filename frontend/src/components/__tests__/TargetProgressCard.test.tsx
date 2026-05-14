@@ -12,11 +12,13 @@
 
 import { describe, it, expect, afterEach } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 
-// Provider-free unit-test render (#473): the component under test
-// uses no router / no React Query, so wrapping each render in a
-// fresh QueryClient + memory router was pure contention amplifier.
-const renderWithProviders = (ui: React.ReactElement) => render(ui)
+// Router-only wrapper (#518): the component now contains a <Link>
+// when region is numeric. Still no QueryClient — see #473 for why
+// provider bloat is contention amplifier.
+const renderWithProviders = (ui: React.ReactElement) =>
+  render(<MemoryRouter>{ui}</MemoryRouter>)
 const cleanupAllResources = () => cleanup()
 import {
   TargetProgressCard,
@@ -325,6 +327,52 @@ describe('TargetProgressCard', () => {
       // World rank should still be displayed
       expect(screen.getByTestId('world-rank')).toBeInTheDocument()
     })
+
+    // #518 — Region chip links to /region/:n. The href must use the
+    // bare numeric region (digits only) regardless of whether the
+    // display label is "1" or "Region 1".
+    it('renders the region rank chip as a link to /region/{digits}', () => {
+      renderWithProviders(
+        <TargetProgressCard
+          title="Test Metric"
+          icon={<TestIcon />}
+          current={60}
+          base={100}
+          targets={standardTargets}
+          achievedLevel="distinguished"
+          rankings={standardRankings}
+          colorScheme="blue"
+        />
+      )
+
+      const regionRank = screen.getByTestId('region-rank')
+      expect(regionRank.tagName).toBe('A')
+      expect(regionRank).toHaveAttribute('href', '/region/1')
+    })
+
+    it('does not wrap the chip in a link when region has no digits', () => {
+      const oddRegion: MetricRankings = {
+        ...standardRankings,
+        region: 'Unknown',
+      }
+      renderWithProviders(
+        <TargetProgressCard
+          title="Test Metric"
+          icon={<TestIcon />}
+          current={60}
+          base={100}
+          targets={standardTargets}
+          achievedLevel="distinguished"
+          rankings={oddRegion}
+          colorScheme="blue"
+        />
+      )
+
+      // With a non-numeric region, fall back to a plain span — there is
+      // no /region/Unknown route to send the user to.
+      const regionRank = screen.getByTestId('region-rank')
+      expect(regionRank.tagName).toBe('SPAN')
+    })
   })
 
   describe('Missing Data Handling', () => {
@@ -415,18 +463,21 @@ describe('TargetProgressCard', () => {
 
       expect(screen.getByTestId('target-progress-card')).toBeInTheDocument()
 
-      // Rerender with green color scheme
+      // Rerender with green color scheme. Wrap the rerender tree in
+      // MemoryRouter manually — rerender bypasses the wrapper helper.
       rerender(
-        <TargetProgressCard
-          title="Test Metric"
-          icon={<TestIcon />}
-          current={60}
-          base={100}
-          targets={standardTargets}
-          achievedLevel="distinguished"
-          rankings={standardRankings}
-          colorScheme="green"
-        />
+        <MemoryRouter>
+          <TargetProgressCard
+            title="Test Metric"
+            icon={<TestIcon />}
+            current={60}
+            base={100}
+            targets={standardTargets}
+            achievedLevel="distinguished"
+            rankings={standardRankings}
+            colorScheme="green"
+          />
+        </MemoryRouter>
       )
 
       expect(screen.getByTestId('target-progress-card')).toBeInTheDocument()
