@@ -63,6 +63,14 @@ A data visualization platform for **Toastmasters district leaders** to track clu
 | Club anniversary badge      | Club hero pill: quiet / milestone-gold / upcoming countdown for charter anniversaries (#445)  | ✅ Shipped |
 | Years Chartered column      | Sortable "Years" column in the Clubs table — years since charter, em-dash when unknown (#448) | ✅ Shipped |
 
+### Region Page (`/region/:n`)
+
+| Feature                | Description                                                                                | Status     |
+| ---------------------- | ------------------------------------------------------------------------------------------ | ---------- |
+| KPI strip              | Base → current → Δ → ±% for Paid Clubs, Payments; year-cumulative for Distinguished (#514) | ✅ Shipped |
+| Rank-within-region col | District table leads with region-internal rank by aggregateScore desc, ties marked (#515)  | ✅ Shipped |
+| Region-chip link       | District page region rank chip links to `/region/:n` when region is numeric (#518)         | ✅ Shipped |
+
 ### Observability
 
 | Feature              | Description                                                      | Status     |
