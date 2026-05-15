@@ -10,20 +10,18 @@ import { useCompetitiveAwards } from '../hooks/useCompetitiveAwards'
 import { AwardsRaceSection } from '../components/AwardsRaceSection'
 import { LazyHistoricalRankChart as HistoricalRankChart } from '../components/LazyCharts'
 import { useUrlProgramYear } from '../hooks/useUrlProgramYear'
-import { ProgramYearSelector } from '../components/ProgramYearSelector'
+import { DataControlsBar } from '../components/DataControlsBar'
 import { useRankHistory } from '../hooks/useRankHistory'
 import InfoTooltip from '../components/InfoTooltip'
 import { useMyDistrict } from '../hooks/useMyDistrict'
 import { usePersistedState } from '../hooks/usePersistedState'
 import { useLastVisit } from '../hooks/useLastVisit'
-import DataFreshnessBadge from '../components/DataFreshnessBadge'
 import { LazyComparisonPanel as ComparisonPanel } from '../components/LazyCharts'
 import {
   getAvailableProgramYears,
   filterDatesByProgramYear,
   getMostRecentDateInProgramYear,
 } from '../utils/programYear'
-import { formatDisplayDate } from '../utils/dateFormatting'
 import { DistrictRanking } from '../types/districts'
 import { arrayToCSV, downloadCSV } from '../utils/csvExport'
 
@@ -208,17 +206,6 @@ const DistrictsPage: React.FC = () => {
       tracked: rankings.length,
     }
   }, [rankings])
-  const currentDate: string = data?.date || ''
-  // For the date selector label, use the latest date from the selected program year,
-  // not the global CDN latest (#180)
-  const latestDateInProgramYear: string = React.useMemo(() => {
-    if (cachedDates.length > 0) {
-      return (
-        [...cachedDates].sort((a, b) => b.localeCompare(a))[0] || currentDate
-      )
-    }
-    return currentDate
-  }, [cachedDates, currentDate])
 
   // Get district IDs for selected regions
   const selectedDistricts = React.useMemo(() => {
@@ -596,7 +583,15 @@ const DistrictsPage: React.FC = () => {
             )}
           </div>
           <div className="districts-page-header__actions">
-            <DataFreshnessBadge />
+            <DataControlsBar
+              latestSnapshotDate={effectiveRankingsDate}
+              availableProgramYears={availableProgramYears}
+              selectedProgramYear={selectedProgramYear}
+              onProgramYearChange={setSelectedProgramYear}
+              availableDates={cachedDates}
+              selectedDate={selectedDate}
+              onDateChange={setSelectedDate}
+            />
             <button
               type="button"
               className="districts-action-btn"
@@ -716,61 +711,6 @@ const DistrictsPage: React.FC = () => {
             >
               {kpiTotals.tracked.toLocaleString()}
             </div>
-          </div>
-        </div>
-
-        {/* Filters: Program Year + Date Selectors (kept under the new
-            chrome rather than in the header — #356 defers the inline
-            action-cluster selectors per the simplified Districts scope) */}
-        <div className="districts-filters-card">
-          <div className="flex flex-col sm:flex-row gap-4">
-            {availableProgramYears.length > 0 && (
-              <div className="flex-shrink-0">
-                <ProgramYearSelector
-                  availableProgramYears={availableProgramYears}
-                  selectedProgramYear={selectedProgramYear}
-                  onProgramYearChange={setSelectedProgramYear}
-                  showProgress={false}
-                />
-              </div>
-            )}
-
-            {cachedDates.length > 0 && (
-              <div className="flex flex-col gap-1 flex-1">
-                <label
-                  htmlFor="date-select"
-                  className="text-xs font-medium text-gray-700"
-                >
-                  View Specific Date
-                </label>
-                <select
-                  id="date-select"
-                  value={selectedDate || ''}
-                  onChange={e => setSelectedDate(e.target.value || undefined)}
-                  className="px-3 py-1.5 border border-gray-300 rounded-lg font-medium text-sm text-gray-900 hover:border-tm-loyal-blue-50 focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue transition-colors bg-white font-tm-body"
-                  style={{ color: 'var(--tm-black)' }}
-                >
-                  <option value="" className="text-gray-900 bg-white">
-                    Latest in Program Year ({latestDateInProgramYear})
-                  </option>
-                  {cachedDates
-                    .sort((a, b) => b.localeCompare(a))
-                    .map(date => (
-                      <option
-                        key={date}
-                        value={date}
-                        className="text-gray-900 bg-white"
-                      >
-                        {formatDisplayDate(date)}
-                      </option>
-                    ))}
-                </select>
-                <div className="text-xs text-gray-500">
-                  {cachedDates.length} date{cachedDates.length !== 1 ? 's' : ''}{' '}
-                  available in this program year
-                </div>
-              </div>
-            )}
           </div>
         </div>
 

@@ -312,7 +312,7 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
       })
 
       // Find and interact with the date selector
-      const dateSelector = screen.getByLabelText(/view specific date/i)
+      const dateSelector = screen.getByTestId('date-chip-select')
       expect(dateSelector).toBeInTheDocument()
 
       // Change the date
@@ -433,7 +433,7 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
       })
 
       // Change the date to January 10
-      const dateSelector = screen.getByLabelText(/view specific date/i)
+      const dateSelector = screen.getByTestId('date-chip-select')
       await user.selectOptions(dateSelector, '2026-01-10')
 
       // Verify the timestamp updates to reflect the new date
@@ -487,7 +487,7 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
       })
 
       // Change the date to trigger a re-fetch
-      const dateSelector = screen.getByLabelText(/view specific date/i)
+      const dateSelector = screen.getByTestId('date-chip-select')
       await user.selectOptions(dateSelector, '2026-01-10')
 
       // The component should show loading state
@@ -646,9 +646,9 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
         ).toBeInTheDocument()
       })
 
-      // Verify the date selector defaults to "Latest in Program Year"
-      const dateSelector = screen.getByLabelText(
-        /view specific date/i
+      // Verify the date selector defaults to "Latest in PY" (empty value).
+      const dateSelector = screen.getByTestId(
+        'date-chip-select'
       ) as HTMLSelectElement
       // The default option should be selected (either "latest" or the most recent date)
       expect(dateSelector.value).toBeDefined()
@@ -720,7 +720,7 @@ describe('DistrictDetailPage - Date Consistency Integration Tests', () => {
       })
 
       // Change the date
-      const dateSelector = screen.getByLabelText(/view specific date/i)
+      const dateSelector = screen.getByTestId('date-chip-select')
       await user.selectOptions(dateSelector, '2026-01-10')
 
       // Wait for the hook to be called with the new date

@@ -37,7 +37,6 @@ import { extractDivisionPerformance } from '../utils/extractDivisionPerformance'
 import { DistrictOverview } from '../components/DistrictOverview'
 import { UpcomingAnniversariesPanel } from '../components/UpcomingAnniversariesPanel'
 import { MilestonesCallout } from '../components/MilestonesCallout'
-import DataAsOfBanner from '../components/DataAsOfBanner'
 import { DistinguishedDistrictTrophyCase } from '../components/DistinguishedDistrictTrophyCase'
 import { useCompetitiveAwards } from '../hooks/useCompetitiveAwards'
 
@@ -457,12 +456,6 @@ const DistrictDetailPage: React.FC = () => {
     navigate(`/district/${districtId}/club/${club.clubId}`)
   }
 
-  // Handle date selection
-  const handleDateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value
-    setSelectedDate(value === 'latest' ? undefined : value)
-  }
-
   // If districts data has loaded but this district isn't in the tracked list,
   // show a limited page with Global Rankings (available for all districts)
   // instead of blank data. Only 6 districts have detailed per-district analytics.
@@ -550,8 +543,11 @@ const DistrictDetailPage: React.FC = () => {
               setSelectedProgramYear={setSelectedProgramYear}
               availableProgramYears={availableProgramYears}
               selectedDate={selectedDate}
-              onDateChange={handleDateChange}
+              onDateChange={setSelectedDate}
               availableDates={availableDates}
+              latestSnapshotDate={
+                cachedDatesData?.dateRange?.endDate ?? availableDates[0]
+              }
             />
           )}
 
@@ -560,14 +556,6 @@ const DistrictDetailPage: React.FC = () => {
             onTabChange={setActiveTab}
             clubsCount={clubsCount}
             divisionsCount={divisionsCount}
-          />
-
-          {/* Data freshness banner (#214) */}
-          <DataAsOfBanner
-            key={selectedDate ?? 'none'}
-            selectedDate={selectedDate}
-            latestAvailableDate={cachedDatesData?.dateRange?.endDate}
-            className="mb-4"
           />
 
           {/* Global Error State */}

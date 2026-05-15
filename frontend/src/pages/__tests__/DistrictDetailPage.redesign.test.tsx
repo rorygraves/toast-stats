@@ -34,6 +34,7 @@ const renderHeader = (
     selectedDate: undefined,
     onDateChange: () => {},
     availableDates: ['2025-11-22', '2025-10-15'],
+    latestSnapshotDate: '2025-11-22',
     ...overrides,
   }
   return render(
@@ -73,9 +74,11 @@ describe('DistrictDetailHeader (#358)', () => {
   })
 
   describe('action cluster', () => {
-    it('keeps the existing program-year + date selectors visible', () => {
+    it('renders the unified DataControlsBar (PY + date chips) (#531)', () => {
       renderHeader()
-      expect(screen.getByLabelText(/view specific date/i)).toBeInTheDocument()
+      expect(
+        screen.getByRole('toolbar', { name: /data controls/i })
+      ).toBeInTheDocument()
     })
 
     it('renders an Export button', () => {

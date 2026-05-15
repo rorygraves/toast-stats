@@ -1,8 +1,7 @@
 import React, { useState, useCallback } from 'react'
-import { ProgramYearSelector } from './ProgramYearSelector'
+import { DataControlsBar } from './DataControlsBar'
 import { DistrictExportButton } from './DistrictExportButton'
 import type { ProgramYear } from '../utils/programYear'
-import { formatDisplayDate } from '../utils/dateFormatting'
 
 /* District detail page header (#358). Extracted from DistrictDetailPage so
    redesign tests can mount this small component (~50 DOM nodes) instead
@@ -20,8 +19,9 @@ interface DistrictDetailHeaderProps {
   setSelectedProgramYear: (py: ProgramYear) => void
   availableProgramYears: ProgramYear[]
   selectedDate: string | undefined
-  onDateChange: (e: React.ChangeEvent<HTMLSelectElement>) => void
+  onDateChange: (date: string | undefined) => void
   availableDates: string[]
+  latestSnapshotDate: string | undefined
 }
 
 export const DistrictDetailHeader: React.FC<DistrictDetailHeaderProps> = ({
@@ -33,6 +33,7 @@ export const DistrictDetailHeader: React.FC<DistrictDetailHeaderProps> = ({
   selectedDate,
   onDateChange,
   availableDates,
+  latestSnapshotDate,
 }) => {
   return (
     <>
@@ -57,39 +58,15 @@ export const DistrictDetailHeader: React.FC<DistrictDetailHeaderProps> = ({
         </div>
 
         <div className="district-detail-page-header__actions">
-          {availableProgramYears.length > 0 && (
-            <ProgramYearSelector
-              availableProgramYears={availableProgramYears}
-              selectedProgramYear={selectedProgramYear}
-              onProgramYearChange={setSelectedProgramYear}
-              showProgress={false}
-            />
-          )}
-          {availableDates.length > 0 && (
-            <div className="flex flex-col gap-1">
-              <label htmlFor="global-date-selector" className="sr-only">
-                View Specific Date
-              </label>
-              <select
-                id="global-date-selector"
-                value={selectedDate || 'latest'}
-                onChange={onDateChange}
-                className="px-3 py-2 rounded-md text-sm font-tm-body"
-                style={{
-                  backgroundColor: 'var(--surface)',
-                  color: 'var(--ink)',
-                  border: '1px solid var(--line)',
-                }}
-              >
-                <option value="latest">Latest in Program Year</option>
-                {availableDates.map(date => (
-                  <option key={date} value={date}>
-                    {formatDisplayDate(date)}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+          <DataControlsBar
+            latestSnapshotDate={latestSnapshotDate}
+            availableProgramYears={availableProgramYears}
+            selectedProgramYear={selectedProgramYear}
+            onProgramYearChange={setSelectedProgramYear}
+            availableDates={availableDates}
+            selectedDate={selectedDate}
+            onDateChange={onDateChange}
+          />
           <DistrictExportButton districtId={districtId} />
           <DistrictShareButton />
         </div>

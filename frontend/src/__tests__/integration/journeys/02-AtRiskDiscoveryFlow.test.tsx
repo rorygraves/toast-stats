@@ -13,6 +13,7 @@ import userEvent from '@testing-library/user-event'
 
 import '@testing-library/jest-dom'
 import App from '../../../App'
+import { clickSearchSuggestion } from './_helpers'
 
 import { setupCdnFetchMock } from '../utils/mockCdnData'
 
@@ -64,12 +65,12 @@ describe('Journey 02: The "At-Risk" Discovery Flow', () => {
 
     // Step 0: Search and Navigate
     const searchInput = await screen.findByRole(
-      'combobox',
-      {},
+      'textbox',
+      { name: /Search districts by number or name/i },
       { timeout: 5000 }
     )
     await user.type(searchInput, '61')
-    await user.click(await screen.findByText(/District 61/i))
+    await clickSearchSuggestion(user, /D61.*District 61/i)
 
     // Step 1: Wait for District 61 header to appear
     const districtHeading = await screen.findByRole(
