@@ -65,13 +65,13 @@ A data visualization platform for **Toastmasters district leaders** to track clu
 
 ### Region Page (`/region/:n`)
 
-| Feature                 | Description                                                                                                                                | Status     |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ---------- |
-| KPI strip               | Base → current → Δ → ±% for Paid Clubs, Payments; year-cumulative for Distinguished (#514)                                                 | ✅ Shipped |
-| Rank-within-region col  | District table leads with region-internal rank by aggregateScore desc, ties marked (#515)                                                  | ✅ Shipped |
-| Region-chip link        | District page region rank chip links to `/region/:n` when region is numeric (#518)                                                         | ✅ Shipped |
-| Distinguished countdown | Per-district 5-column countdown to next DD tier (Net Club Growth, Payment Growth, Distinguished %, Education/Training, Club Growth) (#516) | ✅ Shipped |
-| Tier column             | Per-district trailing tier chip — brand-colored when achieved, em-dash for NotDistinguished (#517)                                         | ✅ Shipped |
+| Feature                 | Description                                                                                                                                                           | Status     |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| KPI strip               | Base → current → Δ → ±% for Paid Clubs, Payments; year-cumulative for Distinguished (#514)                                                                            | ✅ Shipped |
+| Rank-within-region col  | District table leads with region-internal rank by aggregateScore desc, ties marked (#515)                                                                             | ✅ Shipped |
+| Region-chip link        | District page region rank chip links to `/region/:n` when region is numeric (#518)                                                                                    | ✅ Shipped |
+| Distinguished countdown | Per-district 6-column countdown to next DD tier (Net Club Growth, Payment Growth, Distinguished %, Club Growth %, Education/Training, CGD officer award) (#516, #534) | ✅ Shipped |
+| Tier column             | Per-district trailing tier chip — brand-colored when achieved, em-dash for NotDistinguished (#517)                                                                    | ✅ Shipped |
 
 ### Cross-page chrome
 
