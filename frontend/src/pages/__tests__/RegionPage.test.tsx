@@ -239,12 +239,58 @@ describe('RegionPage Distinguished countdown columns (#516 #513)', () => {
     expect(
       screen.getByRole('columnheader', { name: /distinguished %/i })
     ).toBeInTheDocument()
+    // #534 — % Club Growth prerequisite, distinct from the CGD officer
+    // award below. Renamed the officer-award column to "CGD" to avoid
+    // ambiguity.
+    expect(
+      screen.getByRole('columnheader', { name: /club growth %/i })
+    ).toBeInTheDocument()
     expect(
       screen.getByRole('columnheader', { name: /education ?\/ ?training/i })
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('columnheader', { name: /^club growth$/i })
+      screen.getByRole('columnheader', { name: /^cgd$/i })
     ).toBeInTheDocument()
+  })
+
+  it('renders the Club Growth % gap value (#534)', async () => {
+    mockedFetchCdnRankings.mockResolvedValueOnce({
+      rankings: [mkRanking({ districtId: '61', region: '2' })],
+      date: '2026-05-12',
+    })
+    mockedFetchCdnAwards.mockResolvedValue(
+      awardsFixture({
+        distinguishedDistrict: {
+          '61': {
+            districtId: '61',
+            currentTier: 'NotDistinguished',
+            allPrerequisitesMet: false,
+            prerequisites: {
+              dspSubmitted: false,
+              trainingMet: false,
+              marketAnalysisSubmitted: false,
+              communicationPlanSubmitted: false,
+              regionAdvisorVisitMet: false,
+            },
+            nextTierGap: {
+              tier: 'Distinguished',
+              netClubGrowthGap: 0,
+              paymentGrowthGap: 0,
+              distinguishedPercentGap: 0,
+              clubGrowthGap: 4,
+            },
+          },
+        },
+      })
+    )
+    renderRegion('2')
+
+    const row = (await screen.findByTestId('district-number-chip-D61')).closest(
+      'tr'
+    )!
+    expect(
+      within(row).getByTestId('countdown-clubGrowthPercent')
+    ).toHaveTextContent(/\+4/)
   })
 
   it('renders gap values as +N for numeric countdowns', async () => {

@@ -165,6 +165,10 @@ const DistinguishedCells: React.FC<{
         cell={c?.distinguishedPercent ?? null}
       />
       <CountdownTd
+        metric="clubGrowthPercent"
+        cell={c?.clubGrowthPercent ?? null}
+      />
+      <CountdownTd
         metric="educationTraining"
         cell={c?.educationTraining ?? null}
       />
@@ -340,10 +344,20 @@ const RegionPage: React.FC = () => {
                   Distinguished %
                 </th>
                 <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Education / Training
+                  Club Growth %
                 </th>
                 <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Club Growth
+                  Education / Training
+                </th>
+                {/* CGD = Club Growth Director — TI officer award. Renamed
+                    from "Club Growth" to disambiguate from the % Club
+                    Growth prerequisite immediately to its left. Title
+                    attribute spells out the acronym for non-TM viewers. */}
+                <th
+                  className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  title="Club Growth Director — officer award"
+                >
+                  CGD
                 </th>
                 {/* Current Distinguished tier when achieved; em-dash
                     for districts still below. */}

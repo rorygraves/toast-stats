@@ -69,16 +69,34 @@ const ddStatus = (
   ...overrides,
 })
 
-describe('getDistinguishedCountdown (#516)', () => {
-  it('returns the three numeric gaps + two officer-award booleans', () => {
+describe('getDistinguishedCountdown (#516 #534)', () => {
+  it('returns the four numeric gaps + two officer-award booleans', () => {
     const awards = mkAwards(ddStatus(), false, true)
     const c = getDistinguishedCountdown('61', awards)
     expect(c).not.toBeNull()
     expect(c!.netClubGrowth).toEqual({ kind: 'gap', value: 3 })
     expect(c!.paymentGrowth).toEqual({ kind: 'gap', value: 12 })
     expect(c!.distinguishedPercent).toEqual({ kind: 'gap', value: 8 })
+    // #534 — the fourth numeric DD prerequisite, distinct from the
+    // officer-award clubGrowth boolean below.
+    expect(c!.clubGrowthPercent).toEqual({ kind: 'met' })
     expect(c!.educationTraining).toEqual({ kind: 'boolean', met: false })
     expect(c!.clubGrowth).toEqual({ kind: 'boolean', met: true })
+  })
+
+  it('surfaces clubGrowthGap as a gap when the % Club Growth prerequisite is unmet', () => {
+    const status = ddStatus({
+      nextTierGap: {
+        tier: 'Distinguished',
+        netClubGrowthGap: 0,
+        paymentGrowthGap: 0,
+        distinguishedPercentGap: 0,
+        clubGrowthGap: 4,
+      },
+    })
+    const awards = mkAwards(status, true, true)
+    const c = getDistinguishedCountdown('61', awards)
+    expect(c!.clubGrowthPercent).toEqual({ kind: 'gap', value: 4 })
   })
 
   it('flips a numeric gap to "met" when the value is 0 or negative', () => {
