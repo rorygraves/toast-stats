@@ -11,6 +11,12 @@ import { LoadingSkeleton } from '../components/LoadingSkeleton'
 import { EmptyState } from '../components/ErrorDisplay'
 import type { DistrictRanking } from '../types/districts'
 import { computeTiedRanks } from '../utils/tieRankingUtils'
+import { useCompetitiveAwards } from '../hooks/useCompetitiveAwards'
+import type { DistinguishedDistrictTier } from '../services/cdn'
+import {
+  getDistinguishedCountdown,
+  type CountdownCell,
+} from '../utils/distinguishedCountdown'
 
 interface KpiCardProps {
   label: string
@@ -56,6 +62,118 @@ const KpiCard: React.FC<KpiCardProps> = ({ label, base, current }) => {
   )
 }
 
+/* Cell renderer for the Distinguished countdown columns. Numeric gaps
+   render as +N (maroon); metric-met as ✓ (green); boolean (officer
+   awards) as ✓ or em-dash. Em-dash when the cell prop is null
+   (district missing from awards or legacy snapshot). */
+const renderCountdownInner = (cell: CountdownCell | null): React.ReactNode => {
+  if (!cell) return <span className="text-gray-400">—</span>
+  if (cell.kind === 'met')
+    return <span className="text-green-700 font-semibold">✓</span>
+  if (cell.kind === 'boolean')
+    return cell.met ? (
+      <span className="text-green-700 font-semibold">✓</span>
+    ) : (
+      <span className="text-gray-400">—</span>
+    )
+  return (
+    <span className="text-tm-true-maroon font-semibold tabular-nums">
+      +{cell.value}
+    </span>
+  )
+}
+
+const CountdownTd: React.FC<{
+  metric: keyof import('../utils/distinguishedCountdown').DistinguishedCountdown
+  cell: CountdownCell | null
+}> = ({ metric, cell }) => (
+  <td
+    data-testid={`countdown-${metric}`}
+    className="px-3 py-4 whitespace-nowrap text-sm text-right"
+  >
+    {renderCountdownInner(cell)}
+  </td>
+)
+
+/* Per-tier display label + chip style. Pre-Distinguished districts get
+   an em-dash; achieved tiers get a colored chip matching the tier. */
+type AchievedTier = Exclude<DistinguishedDistrictTier, 'NotDistinguished'>
+
+const TIER_DISPLAY: Record<AchievedTier, { label: string; className: string }> =
+  {
+    Distinguished: {
+      label: 'Distinguished',
+      className: 'bg-tm-true-maroon text-white',
+    },
+    Select: {
+      label: 'Select',
+      className: 'bg-tm-cool-gray text-gray-900',
+    },
+    Presidents: {
+      label: "President's",
+      className: 'bg-tm-happy-yellow text-gray-900',
+    },
+    Smedley: {
+      label: 'Smedley',
+      className: 'bg-purple-200 text-purple-900',
+    },
+  }
+
+const TierTd: React.FC<{ tier: DistinguishedDistrictTier | null }> = ({
+  tier,
+}) => {
+  if (!tier || tier === 'NotDistinguished') {
+    return (
+      <td
+        data-testid="tier-cell"
+        className="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-400"
+      >
+        —
+      </td>
+    )
+  }
+  const config = TIER_DISPLAY[tier]
+  return (
+    <td
+      data-testid="tier-cell"
+      className="px-3 py-4 whitespace-nowrap text-right"
+    >
+      <span
+        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${config.className}`}
+      >
+        {config.label}
+      </span>
+    </td>
+  )
+}
+
+/* Trailing six cells (5 countdown + 1 tier) for one district row.
+   Folds the awards lookup so the row map stays a clean list of
+   sub-components. */
+const DistinguishedCells: React.FC<{
+  districtId: string
+  awards: import('../services/cdn').CompetitiveAwardStandings | null
+}> = ({ districtId, awards }) => {
+  const c = getDistinguishedCountdown(districtId, awards)
+  const tier = awards?.distinguishedDistrict?.[districtId]?.currentTier ?? null
+  return (
+    <>
+      <CountdownTd metric="netClubGrowth" cell={c?.netClubGrowth ?? null} />
+      <CountdownTd metric="paymentGrowth" cell={c?.paymentGrowth ?? null} />
+      <CountdownTd
+        metric="distinguishedPercent"
+        cell={c?.distinguishedPercent ?? null}
+      />
+      <CountdownTd
+        metric="educationTraining"
+        cell={c?.educationTraining ?? null}
+      />
+      <CountdownTd metric="clubGrowth" cell={c?.clubGrowth ?? null} />
+      <TierTd tier={tier} />
+    </>
+  )
+}
+
 const RegionPage: React.FC = () => {
   const { n } = useParams<{ n: string }>()
   const navigate = useNavigate()
@@ -69,6 +187,12 @@ const RegionPage: React.FC = () => {
     },
     staleTime: 15 * 60 * 1000,
   })
+
+  // Distinguished District prerequisite gaps. Pin to the rankings
+  // snapshot date so the countdown/tier columns can never drift to a
+  // newer snapshot than the row they describe — two independent "latest"
+  // calls would race during a publish.
+  const { data: awards } = useCompetitiveAwards(data?.date)
 
   // No useMemo — list is small (≤ ~10 districts) and the page is
   // route-level. The React Compiler manages memoization automatically.
@@ -202,6 +326,30 @@ const RegionPage: React.FC = () => {
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Score
                 </th>
+                {/* Show the gap to the next Distinguished tier per
+                    district: numeric for the three DD prerequisites that
+                    the pipeline calculates a delta for, ✓ / em-dash for
+                    the two officer-award booleans. */}
+                <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Net Club Growth
+                </th>
+                <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Payment Growth
+                </th>
+                <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Distinguished %
+                </th>
+                <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Education / Training
+                </th>
+                <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Club Growth
+                </th>
+                {/* Current Distinguished tier when achieved; em-dash
+                    for districts still below. */}
+                <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Tier
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -226,6 +374,7 @@ const RegionPage: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
+                        data-testid={`district-number-chip-D${d.districtId}`}
                         className="districts-rankings-table__district-chip"
                         aria-hidden="true"
                       >
@@ -247,6 +396,10 @@ const RegionPage: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 tabular-nums">
                       {d.aggregateScore}
                     </td>
+                    <DistinguishedCells
+                      districtId={d.districtId}
+                      awards={awards ?? null}
+                    />
                   </tr>
                 )
               })}

@@ -3,13 +3,22 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import RegionPage from '../RegionPage'
-import { fetchCdnRankings } from '../../services/cdn'
+import {
+  fetchCdnRankings,
+  fetchCdnCompetitiveAwards,
+  type CompetitiveAwardStandings,
+} from '../../services/cdn'
 
 vi.mock('../../services/cdn', () => ({
   fetchCdnRankings: vi.fn(),
+  fetchCdnCompetitiveAwards: vi.fn().mockResolvedValue(null),
+  fetchCdnManifest: vi
+    .fn()
+    .mockResolvedValue({ latestSnapshotDate: '2026-05-12', generatedAt: 'x' }),
 }))
 
 const mockedFetchCdnRankings = vi.mocked(fetchCdnRankings)
+const mockedFetchCdnAwards = vi.mocked(fetchCdnCompetitiveAwards)
 
 const mkRanking = (overrides: Record<string, unknown>) => ({
   districtId: '1',
@@ -52,6 +61,290 @@ const renderRegion = (region: string) => {
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
+})
+
+describe('RegionPage tier column (#517 #513)', () => {
+  const awardsWithTier = (tier: string) =>
+    ({
+      metadata: {
+        snapshotId: 'x',
+        calculatedAt: 'x',
+        totalDistricts: 1,
+      },
+      extensionAward: [],
+      twentyPlusAward: [],
+      retentionAward: [],
+      byDistrict: {},
+      distinguishedDistrict: {
+        '61': {
+          districtId: '61',
+          currentTier: tier,
+          allPrerequisitesMet: tier !== 'NotDistinguished',
+          prerequisites: {
+            dspSubmitted: true,
+            trainingMet: true,
+            marketAnalysisSubmitted: true,
+            communicationPlanSubmitted: true,
+            regionAdvisorVisitMet: true,
+          },
+          nextTierGap:
+            tier === 'Smedley'
+              ? null
+              : {
+                  tier: 'Distinguished',
+                  netClubGrowthGap: 0,
+                  paymentGrowthGap: 0,
+                  distinguishedPercentGap: 0,
+                  clubGrowthGap: 0,
+                },
+        },
+      },
+      officerAwards: {
+        educationTraining: [],
+        clubGrowth: [],
+      },
+    }) as CompetitiveAwardStandings
+
+  it('renders an em-dash for districts that have not yet reached Distinguished', async () => {
+    mockedFetchCdnRankings.mockResolvedValueOnce({
+      rankings: [mkRanking({ districtId: '61', region: '2' })],
+      date: '2026-05-12',
+    })
+    mockedFetchCdnAwards.mockResolvedValue(awardsWithTier('NotDistinguished'))
+    renderRegion('2')
+
+    const row = (await screen.findByTestId('district-number-chip-D61')).closest(
+      'tr'
+    )!
+    expect(within(row).getByTestId('tier-cell')).toHaveTextContent(/—/)
+  })
+
+  it('renders the tier name for Distinguished and above', async () => {
+    for (const [tier, label] of [
+      ['Distinguished', /distinguished/i],
+      ['Select', /select/i],
+      ['Presidents', /president/i],
+      ['Smedley', /smedley/i],
+    ] as const) {
+      cleanup()
+      mockedFetchCdnRankings.mockResolvedValueOnce({
+        rankings: [mkRanking({ districtId: '61', region: '2' })],
+        date: '2026-05-12',
+      })
+      mockedFetchCdnAwards.mockResolvedValue(awardsWithTier(tier))
+      renderRegion('2')
+
+      const row = (
+        await screen.findByTestId('district-number-chip-D61')
+      ).closest('tr')!
+      expect(within(row).getByTestId('tier-cell')).toHaveTextContent(label)
+    }
+  })
+
+  it('renders an em-dash when the awards JSON is null (legacy snapshot)', async () => {
+    mockedFetchCdnRankings.mockResolvedValueOnce({
+      rankings: [mkRanking({ districtId: '61', region: '2' })],
+      date: '2026-05-12',
+    })
+    mockedFetchCdnAwards.mockResolvedValue(null)
+    renderRegion('2')
+
+    const row = (await screen.findByTestId('district-number-chip-D61')).closest(
+      'tr'
+    )!
+    expect(within(row).getByTestId('tier-cell')).toHaveTextContent(/—/)
+  })
+
+  it('renders a "Tier" column header', async () => {
+    mockedFetchCdnRankings.mockResolvedValueOnce({
+      rankings: [mkRanking({ districtId: '61', region: '2' })],
+      date: '2026-05-12',
+    })
+    mockedFetchCdnAwards.mockResolvedValue(awardsWithTier('Distinguished'))
+    renderRegion('2')
+    expect(
+      await screen.findByRole('columnheader', { name: /^tier$/i })
+    ).toBeInTheDocument()
+  })
+})
+
+describe('RegionPage Distinguished countdown columns (#516 #513)', () => {
+  const awardsFixture = (overrides: Partial<Record<string, unknown>> = {}) =>
+    ({
+      metadata: {
+        snapshotId: 'x',
+        calculatedAt: 'x',
+        totalDistricts: 1,
+      },
+      extensionAward: [],
+      twentyPlusAward: [],
+      retentionAward: [],
+      byDistrict: {},
+      distinguishedDistrict: {
+        '61': {
+          districtId: '61',
+          currentTier: 'NotDistinguished',
+          allPrerequisitesMet: false,
+          prerequisites: {
+            dspSubmitted: false,
+            trainingMet: false,
+            marketAnalysisSubmitted: false,
+            communicationPlanSubmitted: false,
+            regionAdvisorVisitMet: false,
+          },
+          nextTierGap: {
+            tier: 'Distinguished',
+            netClubGrowthGap: 3,
+            paymentGrowthGap: 12,
+            distinguishedPercentGap: 8,
+            clubGrowthGap: 0,
+          },
+        },
+      },
+      officerAwards: {
+        educationTraining: [
+          {
+            districtId: '61',
+            districtName: 'District 61',
+            region: '2',
+            qualifies: false,
+          },
+        ],
+        clubGrowth: [
+          {
+            districtId: '61',
+            districtName: 'District 61',
+            region: '2',
+            qualifies: true,
+          },
+        ],
+      },
+      ...overrides,
+    }) as CompetitiveAwardStandings
+
+  it('renders five countdown column headers', async () => {
+    mockedFetchCdnRankings.mockResolvedValueOnce({
+      rankings: [mkRanking({ districtId: '61', region: '2' })],
+      date: '2026-05-12',
+    })
+    mockedFetchCdnAwards.mockResolvedValue(awardsFixture())
+    renderRegion('2')
+
+    expect(
+      await screen.findByRole('columnheader', { name: /net club growth/i })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('columnheader', { name: /payment growth/i })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('columnheader', { name: /distinguished %/i })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('columnheader', { name: /education ?\/ ?training/i })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('columnheader', { name: /^club growth$/i })
+    ).toBeInTheDocument()
+  })
+
+  it('renders gap values as +N for numeric countdowns', async () => {
+    mockedFetchCdnRankings.mockResolvedValueOnce({
+      rankings: [mkRanking({ districtId: '61', region: '2' })],
+      date: '2026-05-12',
+    })
+    mockedFetchCdnAwards.mockResolvedValue(awardsFixture())
+    renderRegion('2')
+
+    const row = (await screen.findByTestId('district-number-chip-D61')).closest(
+      'tr'
+    )!
+    expect(
+      within(row).getByTestId('countdown-netClubGrowth')
+    ).toHaveTextContent(/\+3/)
+    expect(
+      within(row).getByTestId('countdown-paymentGrowth')
+    ).toHaveTextContent(/\+12/)
+    expect(
+      within(row).getByTestId('countdown-distinguishedPercent')
+    ).toHaveTextContent(/\+8/)
+  })
+
+  it('renders ✓ for officer-award booleans when met, em-dash when not', async () => {
+    mockedFetchCdnRankings.mockResolvedValueOnce({
+      rankings: [mkRanking({ districtId: '61', region: '2' })],
+      date: '2026-05-12',
+    })
+    mockedFetchCdnAwards.mockResolvedValue(awardsFixture())
+    renderRegion('2')
+
+    const row = (await screen.findByTestId('district-number-chip-D61')).closest(
+      'tr'
+    )!
+    expect(
+      within(row).getByTestId('countdown-educationTraining')
+    ).toHaveTextContent(/—/)
+    expect(within(row).getByTestId('countdown-clubGrowth')).toHaveTextContent(
+      /✓/
+    )
+  })
+
+  it('renders ✓ for numeric metrics that are already met', async () => {
+    const fixture = awardsFixture({
+      distinguishedDistrict: {
+        '61': {
+          districtId: '61',
+          currentTier: 'Distinguished',
+          allPrerequisitesMet: true,
+          prerequisites: {
+            dspSubmitted: true,
+            trainingMet: true,
+            marketAnalysisSubmitted: true,
+            communicationPlanSubmitted: true,
+            regionAdvisorVisitMet: true,
+          },
+          nextTierGap: {
+            tier: 'Select',
+            netClubGrowthGap: 0,
+            paymentGrowthGap: -2,
+            distinguishedPercentGap: 5,
+            clubGrowthGap: 0,
+          },
+        },
+      },
+    })
+    mockedFetchCdnRankings.mockResolvedValueOnce({
+      rankings: [mkRanking({ districtId: '61', region: '2' })],
+      date: '2026-05-12',
+    })
+    mockedFetchCdnAwards.mockResolvedValue(fixture)
+    renderRegion('2')
+
+    const row = (await screen.findByTestId('district-number-chip-D61')).closest(
+      'tr'
+    )!
+    expect(
+      within(row).getByTestId('countdown-netClubGrowth')
+    ).toHaveTextContent(/✓/)
+    expect(
+      within(row).getByTestId('countdown-paymentGrowth')
+    ).toHaveTextContent(/✓/)
+  })
+
+  it('renders em-dashes when the awards JSON is null (legacy snapshot)', async () => {
+    mockedFetchCdnRankings.mockResolvedValueOnce({
+      rankings: [mkRanking({ districtId: '61', region: '2' })],
+      date: '2026-05-12',
+    })
+    mockedFetchCdnAwards.mockResolvedValue(null)
+    renderRegion('2')
+
+    const row = (await screen.findByTestId('district-number-chip-D61')).closest(
+      'tr'
+    )!
+    expect(
+      within(row).getByTestId('countdown-netClubGrowth')
+    ).toHaveTextContent(/—/)
+  })
 })
 
 describe('RegionPage KPI strip — base / current / Δ / ±% (#514 #513)', () => {
