@@ -1,0 +1,694 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "metadata": {
+    "name": "toast-stats",
+    "display_name": "Toastmasters District Statistics Visualizer",
+    "version": "2.12.0",
+    "license": "MIT",
+    "repository": "https://github.com/rservant/toast-stats",
+    "generated_at": "2026-05-15",
+    "generator": "claude-opus-4-7 architecture-map sprint",
+    "live_url": "https://ts.taverns.red",
+    "purpose": "Data visualization platform for Toastmasters district leaders to track club performance, identify at-risk clubs, and make data-driven decisions on the road to Distinguished District recognition.",
+    "audience": [
+      "District Director",
+      "Division Director",
+      "Area Director",
+      "Club President",
+      "Region Advisor"
+    ]
+  },
+
+  "summary": {
+    "topology": "Monorepo with npm workspaces. Data pipeline (scheduled GitHub Action) scrapes Toastmasters dashboards via Playwright, transforms + computes analytics in TypeScript packages, uploads JSON snapshots to GCS. React SPA reads pre-computed snapshots from GCS via Cloud CDN. No live API on the request path.",
+    "data_freshness_model": "Daily snapshot. Pipeline runs at 08:00 UTC; each snapshot is immutable, addressed by date. Frontend cache-stale 5 min, GC 10 min via TanStack Query.",
+    "deployment_separation": "Frontend → Firebase Hosting (production + staging). Data → GCS buckets (staging + production-CA region). Promotion is a deliberate gsutil copy.",
+    "architecture_style": "Compute-once, serve-static. No per-request server logic. Read-mostly, calendar-driven cadence."
+  },
+
+  "tech_stack": {
+    "languages": [
+      "TypeScript (strict)",
+      "JavaScript (browser runtime)",
+      "HTML",
+      "CSS"
+    ],
+    "frameworks": {
+      "frontend": [
+        "React 19",
+        "React Router 6",
+        "TanStack Query v5",
+        "Recharts"
+      ],
+      "build": ["Vite 7", "TailwindCSS 4 (CSS layers + @theme)"],
+      "validation": ["Zod 3 (cross-workspace schemas)"]
+    },
+    "test_tools": {
+      "runner": "Vitest 4",
+      "dom": "@testing-library/react + jsdom",
+      "a11y": "jest-axe",
+      "lighthouse": "Lighthouse CI (GitHub Action on PRs)"
+    },
+    "lint_format": [
+      "ESLint (max-warnings 500)",
+      "Prettier (80 chars, single quotes, no semis, trailing commas)",
+      "yamllint"
+    ],
+    "infra": {
+      "hosting_frontend": "Firebase Hosting",
+      "data_storage": "Google Cloud Storage (bucket per environment)",
+      "cdn": "Cloud CDN (cdn.taverns.red)",
+      "ci_cd": "GitHub Actions",
+      "auth_to_gcp": "Workload Identity Federation (no long-lived keys)"
+    },
+    "scraping": {
+      "engine": "Playwright (Chromium)",
+      "source": "https://dashboards.toastmasters.org/{program_year}/export.aspx"
+    },
+    "node_version": ">= 20 (per workspaces)"
+  },
+
+  "workspaces": [
+    {
+      "name": "@toastmasters/shared-contracts",
+      "path": "packages/shared-contracts",
+      "role": "Cross-workspace Zod schemas + derived TypeScript types. Single source of truth for CDN payload shapes (CdnManifest, CdnRankingsData, CompetitiveAwardStandings, DistinguishedDistrictStatus, etc.).",
+      "build_output": "Dual ESM + CJS (consumed by Node CLI + Vite frontend).",
+      "depends_on_internal": [],
+      "depends_on_external": ["zod"],
+      "consumers_internal": [
+        "@toastmasters/analytics-core",
+        "@toastmasters/collector-cli",
+        "frontend"
+      ]
+    },
+    {
+      "name": "@toastmasters/analytics-core",
+      "path": "packages/analytics-core",
+      "role": "Pure-TypeScript computation engine (~58K LOC). Transforms raw CSV → DistrictStatistics → AnalyticsComputationResult. No I/O; takes data in, returns analytics out.",
+      "modules": [
+        "AnalyticsComputer — orchestrator",
+        "DataTransformer — raw CSV → typed",
+        "MembershipAnalyticsModule — trends, YoY",
+        "ClubHealthAnalyticsModule — risk factors, DCP, Distinguished levels",
+        "DistinguishedClubAnalyticsModule — DDP prerequisites + tier logic",
+        "DivisionAreaAnalyticsModule — division/area rankings",
+        "LeadershipAnalyticsModule — AD effectiveness, change tracking",
+        "AreaDivisionRecognitionModule — DAP/DDP eligibility",
+        "BordaCountRankingCalculator — 3-metric Borda formula",
+        "MetricRankingsCalculator — per-metric world/region rankings",
+        "DistinguishedDistrictCalculator — tier qualification per TI Item 1490",
+        "CompetitiveAwardsCalculator — Extension/20-Plus/Retention top-10s",
+        "ClubStrengthAwardCalculator — DCSA (10% avg club-size growth YoY)",
+        "LeadershipExcellenceCalculator — DLEA (3+ consecutive Distinguished years)",
+        "OfficerAwardsCalculator — PQD + CGD"
+      ],
+      "depends_on_internal": ["@toastmasters/shared-contracts"],
+      "depends_on_external": ["zod"],
+      "consumers_internal": ["@toastmasters/collector-cli"],
+      "test_coverage_threshold": "85% lines/statements, 70% branches, 90% functions"
+    },
+    {
+      "name": "@toastmasters/collector-cli",
+      "path": "packages/collector-cli",
+      "role": "Node CLI orchestrating the daily data pipeline. Commands map to pipeline stages.",
+      "commands": [
+        {
+          "name": "scrape",
+          "args": "--date YYYY-MM-DD --districts LIST [--force] [--transform]",
+          "stage": "1 — Scrape Toastmasters dashboards via Playwright → write raw CSV to GCS raw-csv/"
+        },
+        {
+          "name": "transform",
+          "args": "--date YYYY-MM-DD [--districts LIST]",
+          "stage": "2 — Parse raw CSVs → typed DistrictStatistics"
+        },
+        {
+          "name": "compute",
+          "args": "--date YYYY-MM-DD [--districts LIST]",
+          "stage": "3 — Run AnalyticsComputer on transformed data → emit per-district JSON snapshots"
+        },
+        {
+          "name": "upload",
+          "args": "--date YYYY-MM-DD --bucket BUCKET [--districts LIST]",
+          "stage": "4 — Upload snapshots + indices to GCS bucket served by CDN"
+        }
+      ],
+      "depends_on_internal": [
+        "@toastmasters/shared-contracts",
+        "@toastmasters/analytics-core"
+      ],
+      "depends_on_external": [
+        "@google-cloud/storage",
+        "commander",
+        "csv-parse",
+        "dotenv",
+        "zod",
+        "playwright"
+      ],
+      "logging_convention": "stderr only (per Rule R4). stdout reserved for structured JSON output."
+    },
+    {
+      "name": "frontend",
+      "path": "frontend",
+      "role": "React 19 SPA. Reads pre-computed JSON snapshots from CDN; no live server calls on request path.",
+      "depends_on_internal": ["@toastmasters/shared-contracts"],
+      "depends_on_external": [
+        "react",
+        "react-dom",
+        "react-router-dom",
+        "@tanstack/react-query",
+        "recharts",
+        "zod"
+      ],
+      "test_coverage_threshold": "55% across lines/branches/functions/statements",
+      "dev_server": "vite dev on port 3000"
+    }
+  ],
+
+  "entry_points": {
+    "frontend_browser": "frontend/src/main.tsx → frontend/src/App.tsx",
+    "frontend_routes": [
+      {
+        "path": "/",
+        "component": "DistrictsPage",
+        "lazy": false,
+        "description": "Global rankings leaderboard + awards race + DataControlsBar"
+      },
+      {
+        "path": "/district/:districtId",
+        "component": "DistrictDetailPage",
+        "lazy": true,
+        "description": "Per-district overview, clubs table, divisions/areas, trends, analytics, global-rankings tabs"
+      },
+      {
+        "path": "/district/:districtId/club/:clubId",
+        "component": "ClubDetailPage",
+        "lazy": true,
+        "description": "Per-club detail"
+      },
+      {
+        "path": "/club/:clubId",
+        "component": "ClubRedirectPage",
+        "lazy": true,
+        "description": "Resolves bare /club/:id to its district via club-index lookup"
+      },
+      {
+        "path": "/history",
+        "component": "HistoryPage",
+        "lazy": true,
+        "description": "Archive of past program years + TI archive callout"
+      },
+      {
+        "path": "/methodology",
+        "component": "MethodologyPage",
+        "lazy": true,
+        "description": "Borda formula, DCP thresholds, refresh cadence, glossary"
+      },
+      {
+        "path": "/awards",
+        "component": "AwardsPage",
+        "lazy": true,
+        "description": "Full top-10 leaderboards per competitive award"
+      },
+      {
+        "path": "/regions",
+        "component": "RegionsPage",
+        "lazy": true,
+        "description": "All 14 numbered regions overview"
+      },
+      {
+        "path": "/region/:n",
+        "component": "RegionPage",
+        "lazy": true,
+        "description": "Per-region KPI strip + district table with Distinguished countdown columns"
+      },
+      {
+        "path": "/district/:districtId/division/:divId",
+        "component": "DivisionPage",
+        "lazy": true,
+        "description": "Division detail"
+      },
+      {
+        "path": "/district/:districtId/division/:divId/area/:areaId",
+        "component": "AreaPage",
+        "lazy": true,
+        "description": "Area detail (narrowest hierarchy)"
+      }
+    ],
+    "cli": "packages/collector-cli/src/index.ts (commander, 4 commands)",
+    "ci_workflows": [
+      {
+        "file": ".github/workflows/ci.yml",
+        "triggers": "push:develop, pull_request:[main,develop], workflow_call",
+        "role": "Quality gates → security scan → test suite → build"
+      },
+      {
+        "file": ".github/workflows/data-pipeline.yml",
+        "triggers": "schedule: 0 8 * * *, workflow_dispatch (5 modes)",
+        "role": "Daily data refresh: scrape → transform → compute → upload to GCS"
+      },
+      {
+        "file": ".github/workflows/deploy.yml",
+        "triggers": "push:main, workflow_dispatch",
+        "role": "CI gate → build → deploy Firebase Hosting → CDN health check"
+      },
+      {
+        "file": ".github/workflows/lighthouse-ci.yml",
+        "triggers": "pull_request:main (frontend paths)",
+        "role": "Perf budget audit, report to PR"
+      },
+      {
+        "file": ".github/workflows/release-please.yml",
+        "triggers": "push:main",
+        "role": "Automated semver bumps + CHANGELOG via release-please"
+      }
+    ]
+  },
+
+  "data_flow": {
+    "primary_path": [
+      {
+        "step": 1,
+        "actor": "GitHub Actions (data-pipeline.yml cron 08:00 UTC)",
+        "action": "Trigger collector-cli scrape for yesterday's date",
+        "output": "Browser session via Playwright"
+      },
+      {
+        "step": 2,
+        "actor": "collector-cli scrape",
+        "action": "Fetch CSV exports from dashboards.toastmasters.org for each district",
+        "output": "Raw CSV files written to gs://toast-stats-data-staging/raw-csv/{date}/"
+      },
+      {
+        "step": 3,
+        "actor": "collector-cli transform",
+        "action": "Parse raw CSVs (csv-parse) → validate with Zod schemas from shared-contracts → typed DistrictStatistics",
+        "output": "In-memory typed data"
+      },
+      {
+        "step": 4,
+        "actor": "collector-cli compute (delegates to analytics-core)",
+        "action": "AnalyticsComputer runs all modules: BordaCount, DistinguishedDistrict, ClubHealth, etc. Per-district analytics JSON generated.",
+        "output": "Per-district AnalyticsComputationResult objects"
+      },
+      {
+        "step": 5,
+        "actor": "collector-cli upload",
+        "action": "gsutil cp snapshots + indices (latest.json, dates.json, club-index.json) to staging GCS bucket",
+        "output": "gs://toast-stats-data-staging/v1/*.json + snapshots/{date}/analytics/district_*.json"
+      },
+      {
+        "step": 6,
+        "actor": "GitHub Action [promotion] step (conditional)",
+        "action": "gsutil cp staging → production bucket. Verified manually or after smoke checks.",
+        "output": "gs://toast-stats-data-ca/ holds production data"
+      },
+      {
+        "step": 7,
+        "actor": "Cloud CDN",
+        "action": "Serves /v1/*.json + snapshots from production bucket",
+        "output": "https://cdn.taverns.red/v1/latest.json (immutable per snapshot)"
+      },
+      {
+        "step": 8,
+        "actor": "Frontend (TanStack Query)",
+        "action": "fetchCdnManifest → fetchCdnRankings → fetchDistrictAnalytics, cached 5 min stale / 10 min GC.",
+        "output": "User sees districts, clubs, rankings, distinguished tier countdowns."
+      }
+    ],
+    "key_invariants": [
+      "Snapshots are immutable per date. Re-running 'daily' for the same date is idempotent and overwrites cleanly.",
+      "Pipeline-side and frontend-side share Zod schemas via @toastmasters/shared-contracts — contract drift is caught at build time.",
+      "The 5-min TanStack stale window MUST coexist with the CDN's 1-hour cache; user-perceived freshness is bounded by both.",
+      "All paths in collector-cli MUST run validateDistrictId() before path.join() — see lesson 01 (path traversal CodeQL #57)."
+    ]
+  },
+
+  "external_services": {
+    "data_source": {
+      "name": "Toastmasters Dashboards (TI)",
+      "url": "https://dashboards.toastmasters.org/",
+      "auth": "None (public CSV exports)",
+      "consumed_via": "Playwright headless browser",
+      "rate_limit_handling": "Sequential per-district scrape with backoff"
+    },
+    "storage": [
+      {
+        "name": "GCS staging bucket",
+        "uri": "gs://toast-stats-data-staging",
+        "region": "us-central1 (per .yaml)",
+        "purpose": "Pipeline write target; staged data before promotion"
+      },
+      {
+        "name": "GCS production bucket",
+        "uri": "gs://toast-stats-data-ca",
+        "region": "us-east1",
+        "purpose": "Production data; CDN origin"
+      }
+    ],
+    "cdn": {
+      "name": "Cloud CDN",
+      "url": "https://cdn.taverns.red",
+      "cache_policy": "Immutable per snapshot path; latest.json revalidated on each pipeline upload"
+    },
+    "hosting": {
+      "name": "Firebase Hosting",
+      "production_target": "toast-stats-prod-6d64a",
+      "staging_target": "staging-toast-stats",
+      "asset_cache": "31536000s (immutable for hashed assets); index.html revalidated"
+    },
+    "auth": {
+      "name": "Workload Identity Federation",
+      "purpose": "GitHub Actions → GCP without long-lived service-account keys"
+    }
+  },
+
+  "ci_cd": {
+    "philosophy": "TDD-enforced sprints. Every PR runs: typecheck + lint + yaml-lint + format-check + test (all workspaces). Coverage thresholds gate merge.",
+    "release_strategy": "release-please bumps semver and generates CHANGELOG on push:main. Deploy is push:main → Firebase Hosting (no manual approval).",
+    "deploy_topology": {
+      "frontend": "GitHub Action → Vite build → firebase deploy --target production",
+      "data": "GitHub Action cron → collector-cli → GCS staging → (manual or conditional) → GCS production"
+    },
+    "test_gates": {
+      "frontend": "55% line/branch/function/statement coverage",
+      "analytics_core": "85% lines/statements, 70% branches, 90% functions",
+      "collector_cli": "same as analytics-core",
+      "shared_contracts": "same as analytics-core"
+    },
+    "known_flakes": {
+      "issue": "#525",
+      "description": "5 integration journey tests (01-NavigationFlow + family) fail ~20% under CI parallel load with v8 coverage. Pass in serial. Root cause likely: renderWithProviders bloat as contention amplifier (Lesson 53)."
+    }
+  },
+
+  "architecture_decisions": [
+    {
+      "id": "ADR-001",
+      "title": "Compute once, serve static",
+      "decision": "Daily pipeline pre-computes ALL analytics into immutable JSON snapshots; frontend reads from CDN.",
+      "rationale": "Data refreshes once per day from TI's dashboard cadence. Per-request server compute would add latency, cost, and a failure mode for zero user benefit. Cloud CDN scales to global users for pennies.",
+      "trade_offs": [
+        "PRO: No backend on request path; React app is purely static.",
+        "PRO: Cache hit rate near 100% (snapshots are immutable by date).",
+        "CON: Schema changes require a pipeline backfill — not a hot-deploy fix.",
+        "CON: 'Latest' resolution needs a manifest indirection (latest.json)."
+      ]
+    },
+    {
+      "id": "ADR-002",
+      "title": "Monorepo with npm workspaces + shared Zod schemas",
+      "decision": "shared-contracts owns Zod schemas; analytics-core, collector-cli, and frontend import from it.",
+      "rationale": "Pipeline and frontend MUST agree on payload shape. Sharing the schema (vs duplicating types) makes drift impossible at build time.",
+      "trade_offs": [
+        "PRO: Single source of truth for CDN payload contracts.",
+        "PRO: Type-safe transformations end-to-end.",
+        "CON: shared-contracts requires dual ESM + CJS build to satisfy Node CLI and Vite browser bundler."
+      ]
+    },
+    {
+      "id": "ADR-003",
+      "title": "Strict separation: scraping, computation, serving",
+      "decision": "Three packages with clear boundaries: collector-cli (I/O), analytics-core (pure compute), shared-contracts (schemas).",
+      "rationale": "Analytics-core has no I/O — tested as a pure function. collector-cli orchestrates I/O around it.",
+      "trade_offs": [
+        "PRO: Analytics tested at 85%+ coverage without touching network/disk.",
+        "PRO: Compute logic could be reused in a future Lambda / Cloud Function with zero refactor.",
+        "CON: Some duplication between scraper's data shape and analytics' input shape (mediated by shared-contracts)."
+      ]
+    },
+    {
+      "id": "ADR-004",
+      "title": "Year-cumulative metrics have base = 0 each PY",
+      "decision": "Distinguished Clubs, Officer Awards, etc. reset to 0 each July 1. PY-start base is always 0; Δ equals current count.",
+      "rationale": "Captured in Lesson 57 after a false-start that almost added a redundant pipeline field. Year-cumulative semantics are core to TI's Recognition program.",
+      "see_lesson": "057-year-cumulative-metrics-have-base-zero.md"
+    },
+    {
+      "id": "ADR-005",
+      "title": "% Distinguished uses Paid Club Base, not Active Clubs",
+      "decision": "Per TI Distinguished District Program (Item 1490), the qualifying percentage divides distinguishedClubs by paidClubBase (PY-start count), NOT by current activeClubs.",
+      "rationale": "Captured in Lesson 60 after the D93 production bug (#537) where the trophy case showed 'Select' while count thresholds correctly showed President's. The two surfaces disagreed because they used different denominators.",
+      "see_lesson": "060-trust-the-program-rules-on-percentage-denominators.md"
+    },
+    {
+      "id": "ADR-006",
+      "title": "Pin related queries to the same snapshot date",
+      "decision": "When a page composes multiple date-versioned CDN JSONs, thread the resolved date through every related query. Never let two queries independently resolve 'latest'.",
+      "rationale": "Captured in Lesson 59 after fresh-context review caught snapshot drift on RegionPage (rankings + competitive awards could resolve to different snapshots during a publish).",
+      "see_lesson": "059-pin-related-queries-to-same-snapshot-date.md"
+    },
+    {
+      "id": "ADR-007",
+      "title": "TDD with separate RED and GREEN commits",
+      "decision": "Every feature/bug: RED commit with failing test → GREEN commit with implementation → optional /simplify commit. RED and GREEN never combined.",
+      "rationale": "Lesson 54 — after the pre-push hook was disabled (Lesson 53 contention amplifier), TDD slipped to tests-after. Strict separation makes the slip visible in commit history.",
+      "see_lesson": "054-tdd-slipped-when-pre-push-disabled.md"
+    },
+    {
+      "id": "ADR-008",
+      "title": "WCAG 2.4.7 focus-within rings for invisible-element overlays",
+      "decision": "When stacking an opacity-0 native control over visible chrome, add `focus-within:ring-*` on the visible parent so keyboard users see focus.",
+      "rationale": "Lesson 58 — caught during DataControlsBar review. The pattern applies generally to hidden file inputs, hidden checkboxes, styled selects.",
+      "see_lesson": "058-invisible-select-overlay-needs-focus-within-ring.md"
+    }
+  ],
+
+  "constraints": [
+    {
+      "id": "R1",
+      "rule": "Never bypass failing tests. No --no-verify, --skip-tests, assertion pinning, or commenting out tests.",
+      "consequence": "Bypassed tests hide failures until CI; CI failures during production deploy are far costlier."
+    },
+    {
+      "id": "R2",
+      "rule": "GitHub Actions runners start empty. All data must be explicitly synced from GCS.",
+      "consequence": "Assuming local state on a clean runner produces silent zero-data analytics."
+    },
+    {
+      "id": "R3",
+      "rule": "Pass program year/date/filters as props from parent. Never re-derive from API response data.",
+      "consequence": "Re-derivation drifts when the user changes a date — components see stale context."
+    },
+    {
+      "id": "R4",
+      "rule": "CLI logging: console.error() only (stderr). Stdout is for structured JSON output.",
+      "consequence": "Mixing logs and data into stdout breaks shell pipelines and CI parsers."
+    },
+    {
+      "id": "R5",
+      "rule": "Read the last 5 entries in tasks/lessons/ (or tasks/lessons.md) before starting any task.",
+      "consequence": "Re-deriving lessons already learned wastes sprint capacity."
+    },
+    {
+      "id": "R6",
+      "rule": "Trace call graphs before refactoring. Don't assume similar names share semantics.",
+      "consequence": "Lookalike functions often diverge in edge cases (Lesson 06)."
+    },
+    {
+      "id": "R7",
+      "rule": "Inventory existing fields before designing new backend work.",
+      "consequence": "Lesson 57 — almost added a redundant base field; the data was already there."
+    },
+    {
+      "id": "R8",
+      "rule": "When deleting a service, audit entire read+write paths including CI workflows.",
+      "consequence": "Workflows reading from a deleted bucket fail silently for days."
+    },
+    {
+      "id": "R9",
+      "rule": "Multi-run aggregation needs a GCS-backed persistent store, not re-loaded history.",
+      "consequence": "Pipeline reruns lose accumulator state if not persisted."
+    },
+    {
+      "id": "R10",
+      "rule": "CSS overrides at the layer level beat per-component changes for cross-cutting concerns (dark mode, brand tokens).",
+      "consequence": "Tailwind opacity variants (text-tm-*-80) bake in hardcoded rgba and won't inherit CSS-variable overrides — Lesson 21."
+    },
+    {
+      "id": "R11",
+      "rule": "Filter pipelines: insert new steps; don't replace existing ones.",
+      "consequence": "Replacing breaks features that depend on a prior pipeline stage."
+    }
+  ],
+
+  "active_tripwires": [
+    {
+      "location": "packages/analytics-core/src/snapshots/SnapshotBuilder.ts (build())",
+      "issue": "Two district-tracking code paths (success + validation-failure). Must update both when changing tracking logic."
+    },
+    {
+      "location": "frontend/src/components/DCPGoalsTable.tsx and consumers",
+      "issue": "DCP goals are independent, NOT sequential. Use clubPerformance raw fields, never infer count as Goals 1-N."
+    },
+    {
+      "location": "frontend/src/components/charts/*.tsx",
+      "issue": "`|| 1` range fallback causes y-axis inversion. Pad symmetrically when range === 0."
+    },
+    {
+      "location": "packages/collector-cli/src/storage/SnapshotStore.ts (and any file using path.join with input)",
+      "issue": "Path traversal risk. Always call validateDistrictId() and resolvePathUnderBase() before path.join."
+    }
+  ],
+
+  "lessons_learned": {
+    "summary": "60+ insights captured. Older entries (1–51) archived in tasks/lessons.md (append-only). Newer entries (52–60) split into per-file under tasks/lessons/ to avoid merge conflicts on parallel sprint branches.",
+    "recent_per_file": [
+      {
+        "id": 52,
+        "file": "052-close-to-distinguished-dual-metric.md",
+        "title": "Close-to-Distinguished is a dual-metric signal",
+        "type": "feedback"
+      },
+      {
+        "id": 53,
+        "file": "053-renderwithproviders-bloat-as-contention-amplifier.md",
+        "title": "renderWithProviders bloat is a CI-contention amplifier",
+        "type": "feedback"
+      },
+      {
+        "id": 54,
+        "file": "054-tdd-slipped-when-pre-push-disabled.md",
+        "title": "TDD slipped to tests-after once pre-push gate was disabled",
+        "type": "feedback"
+      },
+      {
+        "id": 55,
+        "file": "055-anniversary-isMilestone-vs-upcomingYears.md",
+        "title": "isMilestone fires on current years, not upcoming — derive locally for upcoming UIs",
+        "type": "feedback"
+      },
+      {
+        "id": 56,
+        "file": "056-cache-primer-pattern-rarely-justified.md",
+        "title": "Cache-primer hook calls rarely earn their keep",
+        "type": "feedback"
+      },
+      {
+        "id": 57,
+        "file": "057-year-cumulative-metrics-have-base-zero.md",
+        "title": "Year-cumulative metrics have base = 0 each program year",
+        "type": "project"
+      },
+      {
+        "id": 58,
+        "file": "058-invisible-select-overlay-needs-focus-within-ring.md",
+        "title": "Invisible <select> overlay needs explicit focus-within ring (WCAG 2.4.7)",
+        "type": "feedback"
+      },
+      {
+        "id": 59,
+        "file": "059-pin-related-queries-to-same-snapshot-date.md",
+        "title": "Pin related queries to the same snapshot date to avoid drift",
+        "type": "feedback"
+      },
+      {
+        "id": 60,
+        "file": "060-trust-the-program-rules-on-percentage-denominators.md",
+        "title": "Trust the program rules on percentage denominators (TI DDP Item 1490)",
+        "type": "feedback"
+      }
+    ]
+  },
+
+  "cdn_payload_contracts": {
+    "manifest": {
+      "url_pattern": "https://cdn.taverns.red/v1/latest.json",
+      "shape": { "latestSnapshotDate": "YYYY-MM-DD", "generatedAt": "ISO8601" }
+    },
+    "dates_index": {
+      "url_pattern": "https://cdn.taverns.red/v1/dates.json",
+      "shape": {
+        "dates": ["YYYY-MM-DD"],
+        "count": "number",
+        "generatedAt": "ISO8601"
+      }
+    },
+    "rankings": {
+      "url_pattern": "https://cdn.taverns.red/v1/rankings.json (and historical: v1/snapshots/{date}/rankings.json)",
+      "shape_summary": "Array of per-district records: id, name, region, paidClubs, paidClubBase, clubGrowthPercent, paymentBase, totalPayments, paymentGrowthPercent, distinguishedClubs, distinguishedPercent (PER ITEM 1490: divide by paidClubBase), aggregateScore, ranks (clubs/payments/distinguished/overall), prerequisites for DD."
+    },
+    "competitive_awards": {
+      "url_pattern": "v1/snapshots/{date}/competitive-awards.json",
+      "shape_summary": "Top-10 leaderboards for Extension/20-Plus/Retention/DCSA/DLEA + per-district byDistrict map + distinguishedDistrict status (currentTier + nextTierGap) + officerAwards (PQD + CGD qualifications)."
+    },
+    "per_district_analytics": {
+      "url_pattern": "v1/snapshots/{date}/analytics/district_{id}.json",
+      "shape_summary": "Full AnalyticsComputationResult for one district: clubs, divisions, areas, trends, distinguished status, time-series, vulnerable clubs, education levels."
+    }
+  },
+
+  "agent_guidance": {
+    "before_any_task": [
+      "Read tasks/rules.md completely.",
+      "Read the last 5 files in tasks/lessons/ (sort by filename desc).",
+      "Identify or create a GitHub issue. All commits reference issue # (e.g. 'feat: thing (#42)').",
+      "Use EnterPlanMode for any task with >3 steps."
+    ],
+    "tdd_loop": [
+      "RED: write failing test → commit with `test(scope): RED — ...`",
+      "GREEN: minimal code to pass → commit with `feat/fix(scope): GREEN — ...`",
+      "/simplify: run reuse + quality + efficiency review agents → apply findings → commit with `refactor(scope): /simplify pass — ...`",
+      "Critical review: fresh-context reviewer agent on the full diff → apply High/Medium → push.",
+      "Open PR; auto-merge --squash when CI green."
+    ],
+    "writing_code": [
+      "Default: no comments. Add only when WHY is non-obvious.",
+      "Never reference the current task / fix / caller in comments (rots in code; belongs in PR description).",
+      "Don't add error handling for impossible scenarios. Validate at system boundaries only.",
+      "Don't add features, refactors, or abstractions beyond what the task requires."
+    ],
+    "memory_locations": {
+      "engineering_rules": "tasks/rules.md (12 rules + tripwires)",
+      "lessons_legacy_archive": "tasks/lessons.md (entries 1–51, append-only)",
+      "lessons_per_file": "tasks/lessons/ (entries 52+, one file each to avoid merge conflicts)",
+      "product_spec": "docs/product-spec.md (shipped features, business rules, decisions)",
+      "claude_md_global": "/Users/rservant/.claude/CLAUDE.md (engineering manifesto, sprint workflow)",
+      "claude_md_project": "CLAUDE.md (project-specific rules + tripwires)"
+    },
+    "do_not": [
+      "Lower coverage thresholds — write the missing tests instead.",
+      "Apply frontend band-aids for pipeline bugs — fix at the source.",
+      "Skip TDD 'because it's simple'.",
+      "Combine RED and GREEN into one commit.",
+      "Bypass git hooks (no --no-verify) unless explicitly authorized.",
+      "Guess API parameters — verify against official docs (Deepgram, DeepL, TI dashboards).",
+      "Auto-merge without checking for conflicts.",
+      "Re-run vitest from the repo root (no jsdom env). Always run from inside the workspace (cd frontend && npx vitest --run)."
+    ]
+  },
+
+  "architectural_issues_flagged": [
+    {
+      "severity": "low",
+      "issue": "Same `D## chip + bare numeric districtName` rendering pattern duplicated across DistrictsPage, RegionPage, search suggestions, CommandPalette. Hidden source of bug #520; partial fix on DistrictsPage only.",
+      "follow_up_issue": "#522"
+    },
+    {
+      "severity": "medium",
+      "issue": "Integration journey tests (5 files) fail ~20% under parallel CI load with v8 coverage. Pass in serial. Test contention amplifier per Lesson 53.",
+      "follow_up_issue": "#525"
+    },
+    {
+      "severity": "medium",
+      "issue": "Lighthouse CLS = 0.217 on / fails threshold consistently; re-runs mask it (intermittent). Indicates a real layout-shift problem in initial paint.",
+      "follow_up_issue": "#488"
+    },
+    {
+      "severity": "low",
+      "issue": "Pre-push hook removed (Lesson 53/54) — local TDD discipline depends on agent enforcement now. A sustainable local gate (typecheck-only, or carved-out test subset) is still needed.",
+      "follow_up_issue": "#482"
+    },
+    {
+      "severity": "low",
+      "issue": "Number-typed base fields (paidClubBase, paymentBase) defended with `?? 0` in some reducers despite Zod-validated `number` type. Either tighten to `number | undefined` or drop the guards — pick one.",
+      "noted_in": "PR #526 review (Sprint A region rollup)"
+    },
+    {
+      "severity": "low",
+      "issue": "Duplicate role=option on RegionPage search-suggestion <li> + inner <Link>. a11y nit; works around-able in tests via filter-by-tagName.",
+      "noted_in": "Journey test refactor in PR #532"
+    }
+  ]
+}

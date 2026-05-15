@@ -1,0 +1,1320 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Toast Stats — Architecture Map</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              loyal: '#004165',
+              maroon: '#772432',
+              gold: '#F2DF74',
+              ink: '#0f172a',
+            },
+          },
+        },
+      }
+    </script>
+    <style>
+      body {
+        font-family:
+          'Inter',
+          system-ui,
+          -apple-system,
+          sans-serif;
+      }
+      .node {
+        transition:
+          transform 0.18s ease,
+          box-shadow 0.18s ease,
+          border-color 0.18s ease;
+      }
+      .node:hover {
+        transform: translateY(-2px);
+        box-shadow:
+          0 12px 24px -8px rgba(0, 65, 101, 0.18),
+          0 4px 8px -4px rgba(0, 0, 0, 0.06);
+      }
+      .pulse-dot {
+        position: relative;
+      }
+      .pulse-dot::after {
+        content: '';
+        position: absolute;
+        inset: -2px;
+        border-radius: 9999px;
+        border: 2px solid currentColor;
+        opacity: 0.5;
+        animation: pulse 2.4s ease-out infinite;
+      }
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+          opacity: 0.6;
+        }
+        100% {
+          transform: scale(2.6);
+          opacity: 0;
+        }
+      }
+      .arrow-down {
+        display: flex;
+        justify-content: center;
+        margin: 0.5rem 0;
+      }
+      .arrow-down::before {
+        content: '↓';
+        font-size: 1.5rem;
+        color: #94a3b8;
+      }
+      .zoom-area {
+        transform-origin: top center;
+        transition: transform 0.2s ease;
+      }
+      .scroll-spy a {
+        transition: color 0.15s;
+      }
+      details[open] summary .chev {
+        transform: rotate(90deg);
+      }
+      .chev {
+        display: inline-block;
+        transition: transform 0.18s;
+      }
+      .layer-frontend {
+        background: linear-gradient(180deg, #ebf2f8 0%, #ffffff 100%);
+        border-color: #b7cfe0;
+      }
+      .layer-package {
+        background: linear-gradient(180deg, #ecfdf5 0%, #ffffff 100%);
+        border-color: #a7e9c8;
+      }
+      .layer-data {
+        background: linear-gradient(180deg, #fff7ed 0%, #ffffff 100%);
+        border-color: #fdba74;
+      }
+      .layer-infra {
+        background: linear-gradient(180deg, #f5f3ff 0%, #ffffff 100%);
+        border-color: #c4b5fd;
+      }
+      .layer-external {
+        background: linear-gradient(180deg, #fef2f2 0%, #ffffff 100%);
+        border-color: #fca5a5;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 9999px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      kbd {
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        padding: 1px 5px;
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: 11px;
+      }
+      .sticky-toc {
+        position: sticky;
+        top: 16px;
+      }
+    </style>
+  </head>
+  <body class="bg-slate-50 text-ink antialiased">
+    <!-- ==================== HEADER ==================== -->
+    <header
+      class="bg-gradient-to-r from-loyal to-loyal/80 text-white sticky top-0 z-50 shadow-lg"
+    >
+      <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 rounded-lg bg-white/15 grid place-items-center font-bold text-lg"
+          >
+            TS
+          </div>
+          <div>
+            <h1 class="text-xl font-bold leading-tight">
+              Toast Stats — Architecture Map
+            </h1>
+            <p class="text-xs text-white/70">
+              v2.12.0 · generated 2026-05-15 ·
+              <a
+                href="https://ts.taverns.red"
+                class="underline hover:no-underline"
+                >ts.taverns.red</a
+              >
+            </p>
+          </div>
+        </div>
+        <div class="hidden md:flex items-center gap-2 text-sm">
+          <button
+            id="zoom-out"
+            class="px-3 py-1 rounded bg-white/15 hover:bg-white/25"
+          >
+            −
+          </button>
+          <span id="zoom-label" class="text-xs w-12 text-center">100%</span>
+          <button
+            id="zoom-in"
+            class="px-3 py-1 rounded bg-white/15 hover:bg-white/25"
+          >
+            +
+          </button>
+          <a
+            href="./architecture.json"
+            class="ml-4 px-3 py-1 rounded bg-gold text-ink font-semibold hover:bg-gold/80"
+            >architecture.json</a
+          >
+        </div>
+      </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-6 py-8 grid grid-cols-12 gap-6">
+      <!-- TOC -->
+      <nav class="hidden lg:block col-span-2">
+        <div
+          class="sticky-toc text-xs uppercase tracking-wider text-slate-500 space-y-1 scroll-spy"
+        >
+          <div class="font-bold text-slate-700 mb-2">Sections</div>
+          <a href="#summary" class="block hover:text-loyal">Summary</a>
+          <a href="#topology" class="block hover:text-loyal">Topology</a>
+          <a href="#workspaces" class="block hover:text-loyal">Workspaces</a>
+          <a href="#dataflow" class="block hover:text-loyal">Data Flow</a>
+          <a href="#routes" class="block hover:text-loyal">Frontend Routes</a>
+          <a href="#services" class="block hover:text-loyal">External</a>
+          <a href="#cicd" class="block hover:text-loyal">CI/CD</a>
+          <a href="#adrs" class="block hover:text-loyal">Decisions</a>
+          <a href="#issues" class="block hover:text-loyal text-amber-700"
+            >Issues ⚠</a
+          >
+          <a href="#lessons" class="block hover:text-loyal">Lessons</a>
+        </div>
+      </nav>
+
+      <!-- MAIN -->
+      <main class="col-span-12 lg:col-span-10 zoom-area" id="zoom-area">
+        <!-- ==================== SUMMARY ==================== -->
+        <section id="summary" class="mb-12">
+          <h2 class="text-2xl font-bold mb-2">At a glance</h2>
+          <p class="text-slate-600 mb-4 max-w-3xl">
+            Monorepo of 4 npm workspaces. <strong>Compute-once</strong>: a daily
+            cron scrapes Toastmasters dashboards, computes analytics in pure
+            TypeScript, uploads immutable JSON snapshots to GCS. The React 19
+            SPA reads pre-computed snapshots via Cloud CDN.
+            <strong>No backend on the request path.</strong>
+          </p>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div
+              class="node bg-white rounded-xl border-2 border-slate-200 p-4"
+            >
+              <div class="text-3xl font-bold text-loyal">4</div>
+              <div class="text-xs text-slate-500 uppercase tracking-wider mt-1">
+                workspaces
+              </div>
+            </div>
+            <div
+              class="node bg-white rounded-xl border-2 border-slate-200 p-4"
+            >
+              <div class="text-3xl font-bold text-loyal">11</div>
+              <div class="text-xs text-slate-500 uppercase tracking-wider mt-1">
+                frontend routes
+              </div>
+            </div>
+            <div
+              class="node bg-white rounded-xl border-2 border-slate-200 p-4"
+            >
+              <div class="text-3xl font-bold text-loyal">5</div>
+              <div class="text-xs text-slate-500 uppercase tracking-wider mt-1">
+                CI workflows
+              </div>
+            </div>
+            <div
+              class="node bg-white rounded-xl border-2 border-slate-200 p-4"
+            >
+              <div class="text-3xl font-bold text-loyal">60+</div>
+              <div class="text-xs text-slate-500 uppercase tracking-wider mt-1">
+                lessons captured
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== TOPOLOGY DIAGRAM ==================== -->
+        <section id="topology" class="mb-12">
+          <h2 class="text-2xl font-bold mb-1">System topology</h2>
+          <p class="text-slate-600 mb-6 text-sm">
+            Read-mostly, calendar-driven. Flow goes left→right then top→bottom.
+            Hover any node for detail.
+          </p>
+
+          <!-- External data source -->
+          <div class="node layer-external rounded-xl border-2 p-5 mb-2">
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="text-xs uppercase tracking-wider text-red-700">
+                  External source
+                </div>
+                <div class="font-bold text-lg">Toastmasters Dashboards</div>
+                <div class="text-xs text-slate-600 font-mono">
+                  dashboards.toastmasters.org
+                </div>
+              </div>
+              <span class="chip bg-red-100 text-red-800">public CSV</span>
+            </div>
+          </div>
+          <div class="arrow-down"></div>
+
+          <!-- Pipeline -->
+          <div class="node layer-infra rounded-xl border-2 p-5 mb-2">
+            <div class="flex items-start justify-between mb-3">
+              <div>
+                <div
+                  class="text-xs uppercase tracking-wider text-violet-700 flex items-center gap-2"
+                >
+                  <span class="pulse-dot text-green-500">●</span> Scheduled
+                  pipeline
+                </div>
+                <div class="font-bold text-lg">
+                  GitHub Actions · data-pipeline.yml
+                </div>
+                <div class="text-xs text-slate-600 font-mono">
+                  cron: 0 8 * * * (daily 08:00 UTC)
+                </div>
+              </div>
+              <span class="chip bg-violet-100 text-violet-800"
+                >5 modes · workflow_dispatch</span
+              >
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div class="bg-white rounded-lg border border-violet-200 p-2">
+                <div class="text-[10px] uppercase text-violet-700 font-bold">
+                  Stage 1
+                </div>
+                <div class="text-sm font-semibold">scrape</div>
+                <div class="text-[11px] text-slate-500">Playwright →</div>
+              </div>
+              <div class="bg-white rounded-lg border border-violet-200 p-2">
+                <div class="text-[10px] uppercase text-violet-700 font-bold">
+                  Stage 2
+                </div>
+                <div class="text-sm font-semibold">transform</div>
+                <div class="text-[11px] text-slate-500">CSV → typed</div>
+              </div>
+              <div class="bg-white rounded-lg border border-violet-200 p-2">
+                <div class="text-[10px] uppercase text-violet-700 font-bold">
+                  Stage 3
+                </div>
+                <div class="text-sm font-semibold">compute</div>
+                <div class="text-[11px] text-slate-500">analytics-core</div>
+              </div>
+              <div class="bg-white rounded-lg border border-violet-200 p-2">
+                <div class="text-[10px] uppercase text-violet-700 font-bold">
+                  Stage 4
+                </div>
+                <div class="text-sm font-semibold">upload</div>
+                <div class="text-[11px] text-slate-500">gsutil cp →</div>
+              </div>
+            </div>
+          </div>
+          <div class="arrow-down"></div>
+
+          <!-- Storage -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+            <div class="node layer-data rounded-xl border-2 p-5">
+              <div class="text-xs uppercase tracking-wider text-orange-700">
+                Staging GCS
+              </div>
+              <div class="font-bold text-lg">toast-stats-data-staging</div>
+              <div class="text-xs text-slate-600 font-mono mb-2">
+                us-central1
+              </div>
+              <div class="text-xs text-slate-700">
+                Pipeline write target. Promoted to production after smoke
+                checks.
+              </div>
+            </div>
+            <div class="node layer-data rounded-xl border-2 p-5">
+              <div class="text-xs uppercase tracking-wider text-orange-700">
+                Production GCS
+              </div>
+              <div class="font-bold text-lg">toast-stats-data-ca</div>
+              <div class="text-xs text-slate-600 font-mono mb-2">us-east1</div>
+              <div class="text-xs text-slate-700">
+                CDN origin. Immutable snapshots addressed by date.
+              </div>
+            </div>
+          </div>
+          <div class="arrow-down"></div>
+
+          <!-- CDN -->
+          <div class="node layer-data rounded-xl border-2 p-5 mb-2">
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="text-xs uppercase tracking-wider text-orange-700">
+                  CDN
+                </div>
+                <div class="font-bold text-lg">Cloud CDN</div>
+                <div class="text-xs text-slate-600 font-mono">
+                  cdn.taverns.red/v1/*.json
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="chip bg-orange-100 text-orange-800"
+                  >latest.json · revalidated per publish</span
+                >
+                <div class="text-[11px] text-slate-500 mt-1">
+                  snapshots: immutable
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="arrow-down"></div>
+
+          <!-- Frontend -->
+          <div class="node layer-frontend rounded-xl border-2 p-5 mb-2">
+            <div class="flex items-start justify-between mb-3">
+              <div>
+                <div class="text-xs uppercase tracking-wider text-loyal">
+                  Frontend SPA
+                </div>
+                <div class="font-bold text-lg">React 19 · Vite 7</div>
+                <div class="text-xs text-slate-600 font-mono">
+                  ts.taverns.red (Firebase Hosting)
+                </div>
+              </div>
+              <div class="flex flex-col items-end gap-1">
+                <span class="chip bg-loyal text-white"
+                  >TanStack Query · 5min stale</span
+                >
+                <span class="chip bg-slate-200 text-slate-700"
+                  >Tailwind 4 · CSS layers</span
+                >
+              </div>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div class="bg-white rounded-lg border border-slate-200 p-2">
+                <div class="text-[10px] uppercase text-loyal font-bold">
+                  Pages
+                </div>
+                <div class="text-xs">11 routes, 10 lazy-loaded</div>
+              </div>
+              <div class="bg-white rounded-lg border border-slate-200 p-2">
+                <div class="text-[10px] uppercase text-loyal font-bold">
+                  Services
+                </div>
+                <div class="text-xs">cdn.ts (8 fetchers)</div>
+              </div>
+              <div class="bg-white rounded-lg border border-slate-200 p-2">
+                <div class="text-[10px] uppercase text-loyal font-bold">
+                  Hooks
+                </div>
+                <div class="text-xs">useColumnFilters, etc.</div>
+              </div>
+              <div class="bg-white rounded-lg border border-slate-200 p-2">
+                <div class="text-[10px] uppercase text-loyal font-bold">
+                  Routes
+                </div>
+                <div class="text-xs">react-router-dom</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== WORKSPACES ==================== -->
+        <section id="workspaces" class="mb-12">
+          <h2 class="text-2xl font-bold mb-1">Workspaces</h2>
+          <p class="text-slate-600 mb-6 text-sm">
+            Four npm workspaces. Dependencies flow upward: shared-contracts is
+            the base, analytics-core is the engine, collector-cli is the
+            orchestrator, frontend is the consumer.
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- shared-contracts -->
+            <details
+              class="node layer-package rounded-xl border-2 p-5 group"
+              open
+            >
+              <summary class="cursor-pointer list-none">
+                <div class="flex items-start justify-between">
+                  <div>
+                    <span class="chev text-green-700">▸</span>
+                    <span class="font-bold text-lg ml-2"
+                      >@toastmasters/shared-contracts</span
+                    >
+                    <div class="text-xs text-slate-600 font-mono">
+                      packages/shared-contracts
+                    </div>
+                  </div>
+                  <span class="chip bg-green-200 text-green-900">base</span>
+                </div>
+              </summary>
+              <div class="mt-3 text-sm space-y-1">
+                <p>
+                  Cross-workspace Zod schemas + derived TypeScript types. Dual
+                  ESM/CJS build.
+                </p>
+                <p class="text-slate-600">
+                  <strong>Consumers:</strong> analytics-core, collector-cli,
+                  frontend
+                </p>
+                <p class="text-slate-600">
+                  <strong>Deps:</strong> zod
+                </p>
+              </div>
+            </details>
+
+            <!-- analytics-core -->
+            <details
+              class="node layer-package rounded-xl border-2 p-5 group"
+              open
+            >
+              <summary class="cursor-pointer list-none">
+                <div class="flex items-start justify-between">
+                  <div>
+                    <span class="chev text-green-700">▸</span>
+                    <span class="font-bold text-lg ml-2"
+                      >@toastmasters/analytics-core</span
+                    >
+                    <div class="text-xs text-slate-600 font-mono">
+                      packages/analytics-core (~58K LOC)
+                    </div>
+                  </div>
+                  <span class="chip bg-green-200 text-green-900"
+                    >pure compute</span
+                  >
+                </div>
+              </summary>
+              <div class="mt-3 text-sm space-y-1">
+                <p>
+                  Pure TypeScript computation engine. No I/O. Tested at 85%+
+                  coverage.
+                </p>
+                <p class="text-slate-600">
+                  <strong>Key modules:</strong> AnalyticsComputer,
+                  BordaCountRankingCalculator,
+                  <strong>DistinguishedDistrictCalculator</strong> (TI Item
+                  1490), CompetitiveAwardsCalculator,
+                  ClubHealthAnalyticsModule, MembershipAnalyticsModule, +9 more
+                </p>
+              </div>
+            </details>
+
+            <!-- collector-cli -->
+            <details
+              class="node layer-package rounded-xl border-2 p-5 group"
+              open
+            >
+              <summary class="cursor-pointer list-none">
+                <div class="flex items-start justify-between">
+                  <div>
+                    <span class="chev text-green-700">▸</span>
+                    <span class="font-bold text-lg ml-2"
+                      >@toastmasters/collector-cli</span
+                    >
+                    <div class="text-xs text-slate-600 font-mono">
+                      packages/collector-cli
+                    </div>
+                  </div>
+                  <span class="chip bg-green-200 text-green-900"
+                    >CLI / pipeline</span
+                  >
+                </div>
+              </summary>
+              <div class="mt-3 text-sm space-y-1">
+                <p>4-stage pipeline CLI (commander).</p>
+                <ul class="text-xs space-y-0.5 text-slate-700">
+                  <li>
+                    <kbd>scrape</kbd> — Playwright → GCS raw-csv/{date}/
+                  </li>
+                  <li><kbd>transform</kbd> — CSV → typed DistrictStatistics</li>
+                  <li><kbd>compute</kbd> — analytics-core → JSON</li>
+                  <li><kbd>upload</kbd> — gsutil cp → GCS bucket</li>
+                </ul>
+                <p class="text-slate-600 mt-2">
+                  <strong>Logging:</strong> stderr only (R4); stdout reserved
+                  for structured JSON
+                </p>
+              </div>
+            </details>
+
+            <!-- frontend -->
+            <details
+              class="node layer-frontend rounded-xl border-2 p-5 group"
+              open
+            >
+              <summary class="cursor-pointer list-none">
+                <div class="flex items-start justify-between">
+                  <div>
+                    <span class="chev text-loyal">▸</span>
+                    <span class="font-bold text-lg ml-2">frontend</span>
+                    <div class="text-xs text-slate-600 font-mono">
+                      frontend/
+                    </div>
+                  </div>
+                  <span class="chip bg-loyal text-white">React 19</span>
+                </div>
+              </summary>
+              <div class="mt-3 text-sm space-y-1">
+                <p>React 19 SPA. Reads pre-computed JSON via TanStack Query.</p>
+                <p class="text-slate-600">
+                  <strong>Stack:</strong> Vite 7, React Router 6, Recharts,
+                  Tailwind 4
+                </p>
+                <p class="text-slate-600">
+                  <strong>Coverage gate:</strong> 55% lines / branches /
+                  functions / statements
+                </p>
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <!-- ==================== DATA FLOW ==================== -->
+        <section id="dataflow" class="mb-12">
+          <h2 class="text-2xl font-bold mb-1">Data flow (primary path)</h2>
+          <p class="text-slate-600 mb-6 text-sm">
+            Daily, idempotent. Snapshots are immutable; re-running for the same
+            date overwrites cleanly.
+          </p>
+          <div
+            class="bg-white rounded-xl border-2 border-slate-200 overflow-hidden"
+          >
+            <table class="w-full text-sm">
+              <thead class="bg-slate-50 text-xs uppercase tracking-wider">
+                <tr>
+                  <th class="px-4 py-3 text-left w-12">#</th>
+                  <th class="px-4 py-3 text-left">Actor</th>
+                  <th class="px-4 py-3 text-left">Action</th>
+                  <th class="px-4 py-3 text-left">Output</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr class="hover:bg-violet-50">
+                  <td class="px-4 py-3 font-bold text-violet-700">1</td>
+                  <td class="px-4 py-3 font-mono text-xs">
+                    GitHub Actions (cron)
+                  </td>
+                  <td class="px-4 py-3">Trigger collector-cli for yesterday</td>
+                  <td class="px-4 py-3 text-slate-600">Playwright session</td>
+                </tr>
+                <tr class="hover:bg-violet-50">
+                  <td class="px-4 py-3 font-bold text-violet-700">2</td>
+                  <td class="px-4 py-3 font-mono text-xs">
+                    collector-cli scrape
+                  </td>
+                  <td class="px-4 py-3">
+                    Fetch CSV exports from
+                    <span class="font-mono text-xs">dashboards.toastmasters.org</span>
+                  </td>
+                  <td class="px-4 py-3 text-slate-600 font-mono text-xs">
+                    gs://…-staging/raw-csv/{date}/
+                  </td>
+                </tr>
+                <tr class="hover:bg-green-50">
+                  <td class="px-4 py-3 font-bold text-green-700">3</td>
+                  <td class="px-4 py-3 font-mono text-xs">
+                    collector-cli transform
+                  </td>
+                  <td class="px-4 py-3">
+                    csv-parse → validate with Zod from shared-contracts
+                  </td>
+                  <td class="px-4 py-3 text-slate-600">
+                    typed DistrictStatistics
+                  </td>
+                </tr>
+                <tr class="hover:bg-green-50">
+                  <td class="px-4 py-3 font-bold text-green-700">4</td>
+                  <td class="px-4 py-3 font-mono text-xs">
+                    collector-cli compute
+                  </td>
+                  <td class="px-4 py-3">
+                    AnalyticsComputer runs ~14 modules (Borda, DD, ClubHealth,
+                    …)
+                  </td>
+                  <td class="px-4 py-3 text-slate-600">
+                    AnalyticsComputationResult per district
+                  </td>
+                </tr>
+                <tr class="hover:bg-orange-50">
+                  <td class="px-4 py-3 font-bold text-orange-700">5</td>
+                  <td class="px-4 py-3 font-mono text-xs">
+                    collector-cli upload
+                  </td>
+                  <td class="px-4 py-3">
+                    gsutil cp snapshots + indices → staging
+                  </td>
+                  <td class="px-4 py-3 text-slate-600 font-mono text-xs">
+                    v1/latest.json, v1/dates.json, snapshots/{date}/*.json
+                  </td>
+                </tr>
+                <tr class="hover:bg-orange-50">
+                  <td class="px-4 py-3 font-bold text-orange-700">6</td>
+                  <td class="px-4 py-3 font-mono text-xs">
+                    GitHub Actions (promotion)
+                  </td>
+                  <td class="px-4 py-3">
+                    gsutil cp staging → production bucket
+                  </td>
+                  <td class="px-4 py-3 text-slate-600 font-mono text-xs">
+                    gs://toast-stats-data-ca/
+                  </td>
+                </tr>
+                <tr class="hover:bg-orange-50">
+                  <td class="px-4 py-3 font-bold text-orange-700">7</td>
+                  <td class="px-4 py-3 font-mono text-xs">Cloud CDN</td>
+                  <td class="px-4 py-3">Serve from production bucket</td>
+                  <td class="px-4 py-3 text-slate-600 font-mono text-xs">
+                    cdn.taverns.red/v1/*.json
+                  </td>
+                </tr>
+                <tr class="hover:bg-blue-50">
+                  <td class="px-4 py-3 font-bold text-loyal">8</td>
+                  <td class="px-4 py-3 font-mono text-xs">
+                    Frontend (TanStack Query)
+                  </td>
+                  <td class="px-4 py-3">
+                    fetchCdnManifest → fetchCdnRankings →
+                    fetchDistrictAnalytics
+                  </td>
+                  <td class="px-4 py-3 text-slate-600">
+                    User sees fresh data
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div
+            class="mt-4 rounded-lg bg-amber-50 border border-amber-200 p-4 text-sm"
+          >
+            <div
+              class="font-semibold text-amber-900 mb-1 flex items-center gap-2"
+            >
+              <span>⚠</span> Key invariants
+            </div>
+            <ul class="text-xs space-y-1 text-amber-900 list-disc list-inside">
+              <li>
+                Snapshots are immutable per date. Re-running 'daily' for the
+                same date is idempotent.
+              </li>
+              <li>
+                Pipeline + frontend share Zod schemas via shared-contracts —
+                contract drift is caught at build time.
+              </li>
+              <li>
+                TanStack 5-min stale window coexists with CDN 1-hour cache;
+                effective freshness is bounded by both.
+              </li>
+              <li>
+                All paths in collector-cli MUST call
+                <span class="font-mono">validateDistrictId()</span> before
+                <span class="font-mono">path.join()</span> (Lesson 01 / CodeQL
+                #57).
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- ==================== FRONTEND ROUTES ==================== -->
+        <section id="routes" class="mb-12">
+          <h2 class="text-2xl font-bold mb-1">Frontend routes</h2>
+          <p class="text-slate-600 mb-6 text-sm">
+            11 routes, 10 lazy-loaded. Hover to see the page's role.
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <a
+              href="#"
+              class="node bg-white rounded-lg border-2 border-slate-200 p-3 block"
+              title="Global rankings leaderboard"
+            >
+              <div class="flex justify-between items-baseline">
+                <span class="font-mono text-sm">/</span
+                ><span class="text-xs text-slate-500">DistrictsPage</span>
+              </div>
+              <div class="text-xs text-slate-600 mt-1">
+                Global rankings + awards race + DataControlsBar
+              </div>
+            </a>
+            <a
+              href="#"
+              class="node bg-white rounded-lg border-2 border-slate-200 p-3 block"
+              title="Per-district detail"
+            >
+              <div class="flex justify-between items-baseline">
+                <span class="font-mono text-sm">/district/:id</span
+                ><span class="text-xs text-slate-500">DistrictDetailPage</span>
+              </div>
+              <div class="text-xs text-slate-600 mt-1">
+                Overview · Clubs · Divisions · Trends · Analytics · Global
+                Rankings (6 tabs)
+              </div>
+            </a>
+            <a
+              href="#"
+              class="node bg-white rounded-lg border-2 border-slate-200 p-3 block"
+            >
+              <div class="flex justify-between items-baseline">
+                <span class="font-mono text-sm">/district/:id/club/:cid</span
+                ><span class="text-xs text-slate-500">ClubDetailPage</span>
+              </div>
+              <div class="text-xs text-slate-600 mt-1">
+                Per-club metrics, member trends, DCP goals
+              </div>
+            </a>
+            <a
+              href="#"
+              class="node bg-white rounded-lg border-2 border-slate-200 p-3 block"
+            >
+              <div class="flex justify-between items-baseline">
+                <span class="font-mono text-sm">/club/:id</span
+                ><span class="text-xs text-slate-500">ClubRedirectPage</span>
+              </div>
+              <div class="text-xs text-slate-600 mt-1">
+                Resolves bare club id → district via club-index lookup
+              </div>
+            </a>
+            <a
+              href="#"
+              class="node bg-white rounded-lg border-2 border-slate-200 p-3 block"
+            >
+              <div class="flex justify-between items-baseline">
+                <span class="font-mono text-sm">/regions</span
+                ><span class="text-xs text-slate-500">RegionsPage</span>
+              </div>
+              <div class="text-xs text-slate-600 mt-1">
+                Overview of all 14 numbered regions
+              </div>
+            </a>
+            <a
+              href="#"
+              class="node bg-white rounded-lg border-2 border-slate-200 p-3 block"
+            >
+              <div class="flex justify-between items-baseline">
+                <span class="font-mono text-sm">/region/:n</span
+                ><span class="text-xs text-slate-500">RegionPage</span>
+              </div>
+              <div class="text-xs text-slate-600 mt-1">
+                Per-region KPI strip + district table with 6-col Distinguished
+                countdown + tier
+              </div>
+            </a>
+            <a
+              href="#"
+              class="node bg-white rounded-lg border-2 border-slate-200 p-3 block"
+            >
+              <div class="flex justify-between items-baseline">
+                <span class="font-mono text-sm">/history</span
+                ><span class="text-xs text-slate-500">HistoryPage</span>
+              </div>
+              <div class="text-xs text-slate-600 mt-1">
+                Archive of past program years
+              </div>
+            </a>
+            <a
+              href="#"
+              class="node bg-white rounded-lg border-2 border-slate-200 p-3 block"
+            >
+              <div class="flex justify-between items-baseline">
+                <span class="font-mono text-sm">/methodology</span
+                ><span class="text-xs text-slate-500">MethodologyPage</span>
+              </div>
+              <div class="text-xs text-slate-600 mt-1">
+                Borda formula, DCP thresholds, refresh cadence, glossary
+              </div>
+            </a>
+            <a
+              href="#"
+              class="node bg-white rounded-lg border-2 border-slate-200 p-3 block"
+            >
+              <div class="flex justify-between items-baseline">
+                <span class="font-mono text-sm">/awards</span
+                ><span class="text-xs text-slate-500">AwardsPage</span>
+              </div>
+              <div class="text-xs text-slate-600 mt-1">
+                Full top-10 leaderboards per competitive award
+              </div>
+            </a>
+            <a
+              href="#"
+              class="node bg-white rounded-lg border-2 border-slate-200 p-3 block"
+            >
+              <div class="flex justify-between items-baseline">
+                <span class="font-mono text-sm">…/division/:id</span
+                ><span class="text-xs text-slate-500">DivisionPage</span>
+              </div>
+              <div class="text-xs text-slate-600 mt-1">
+                Per-division detail
+              </div>
+            </a>
+            <a
+              href="#"
+              class="node bg-white rounded-lg border-2 border-slate-200 p-3 block"
+            >
+              <div class="flex justify-between items-baseline">
+                <span class="font-mono text-sm">…/area/:id</span
+                ><span class="text-xs text-slate-500">AreaPage</span>
+              </div>
+              <div class="text-xs text-slate-600 mt-1">
+                Per-area detail (narrowest hierarchy)
+              </div>
+            </a>
+          </div>
+        </section>
+
+        <!-- ==================== EXTERNAL SERVICES ==================== -->
+        <section id="services" class="mb-12">
+          <h2 class="text-2xl font-bold mb-1">External services</h2>
+          <p class="text-slate-600 mb-6 text-sm">
+            Infrastructure boundaries and auth.
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="node layer-data rounded-xl border-2 p-4">
+              <div class="font-bold">Google Cloud Storage</div>
+              <div class="text-xs text-slate-600 font-mono mt-1">
+                gs://toast-stats-data-staging<br />gs://toast-stats-data-ca
+              </div>
+              <div class="text-xs mt-2 text-slate-700">
+                Snapshot store. Buckets per environment.
+              </div>
+            </div>
+            <div class="node layer-data rounded-xl border-2 p-4">
+              <div class="font-bold">Cloud CDN</div>
+              <div class="text-xs text-slate-600 font-mono mt-1">
+                cdn.taverns.red
+              </div>
+              <div class="text-xs mt-2 text-slate-700">
+                Immutable snapshot serving + latest.json revalidation.
+              </div>
+            </div>
+            <div class="node layer-infra rounded-xl border-2 p-4">
+              <div class="font-bold">Firebase Hosting</div>
+              <div class="text-xs text-slate-600 font-mono mt-1">
+                ts.taverns.red
+              </div>
+              <div class="text-xs mt-2 text-slate-700">
+                Frontend asset hosting. Production + staging targets.
+              </div>
+            </div>
+            <div class="node layer-external rounded-xl border-2 p-4">
+              <div class="font-bold">Toastmasters Dashboards</div>
+              <div class="text-xs text-slate-600 font-mono mt-1">
+                dashboards.toastmasters.org
+              </div>
+              <div class="text-xs mt-2 text-slate-700">
+                Data source. Public CSV exports scraped via Playwright.
+              </div>
+            </div>
+            <div class="node layer-infra rounded-xl border-2 p-4">
+              <div class="font-bold">Workload Identity Federation</div>
+              <div class="text-xs text-slate-600 mt-1">
+                GitHub Actions ↔ GCP
+              </div>
+              <div class="text-xs mt-2 text-slate-700">
+                Keyless auth. No long-lived service-account credentials.
+              </div>
+            </div>
+            <div class="node layer-infra rounded-xl border-2 p-4">
+              <div class="font-bold">GitHub Actions</div>
+              <div class="text-xs text-slate-600 mt-1">5 workflows</div>
+              <div class="text-xs mt-2 text-slate-700">
+                CI · Data Pipeline · Deploy · Lighthouse · Release-Please
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== CI/CD ==================== -->
+        <section id="cicd" class="mb-12">
+          <h2 class="text-2xl font-bold mb-1">CI/CD pipelines</h2>
+          <p class="text-slate-600 mb-6 text-sm">
+            All workflows in <span class="font-mono">.github/workflows/</span>.
+          </p>
+          <div class="space-y-2">
+            <div class="node bg-white rounded-xl border-2 border-slate-200 p-4">
+              <div class="flex items-start justify-between">
+                <div>
+                  <div class="font-bold font-mono text-sm">ci.yml</div>
+                  <div class="text-xs text-slate-600">
+                    Quality gates → security scan → tests → build all
+                  </div>
+                </div>
+                <span class="chip bg-slate-100 text-slate-700"
+                  >PR · push:develop</span
+                >
+              </div>
+            </div>
+            <div class="node bg-white rounded-xl border-2 border-slate-200 p-4">
+              <div class="flex items-start justify-between">
+                <div>
+                  <div class="font-bold font-mono text-sm">
+                    data-pipeline.yml
+                  </div>
+                  <div class="text-xs text-slate-600">
+                    Daily scrape → transform → compute → upload to GCS
+                  </div>
+                </div>
+                <span class="chip bg-violet-100 text-violet-800"
+                  >cron: 0 8 * * * · 5 modes</span
+                >
+              </div>
+            </div>
+            <div class="node bg-white rounded-xl border-2 border-slate-200 p-4">
+              <div class="flex items-start justify-between">
+                <div>
+                  <div class="font-bold font-mono text-sm">deploy.yml</div>
+                  <div class="text-xs text-slate-600">
+                    Build frontend → deploy to Firebase Hosting → CDN health
+                    check
+                  </div>
+                </div>
+                <span class="chip bg-loyal text-white">push:main</span>
+              </div>
+            </div>
+            <div class="node bg-white rounded-xl border-2 border-slate-200 p-4">
+              <div class="flex items-start justify-between">
+                <div>
+                  <div class="font-bold font-mono text-sm">
+                    lighthouse-ci.yml
+                  </div>
+                  <div class="text-xs text-slate-600">
+                    Performance audit on PRs (frontend paths only)
+                  </div>
+                </div>
+                <span class="chip bg-amber-100 text-amber-800"
+                  >PR (frontend)</span
+                >
+              </div>
+            </div>
+            <div class="node bg-white rounded-xl border-2 border-slate-200 p-4">
+              <div class="flex items-start justify-between">
+                <div>
+                  <div class="font-bold font-mono text-sm">
+                    release-please.yml
+                  </div>
+                  <div class="text-xs text-slate-600">
+                    Automated semver bumps + CHANGELOG
+                  </div>
+                </div>
+                <span class="chip bg-green-100 text-green-800">push:main</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== ADRS ==================== -->
+        <section id="adrs" class="mb-12">
+          <h2 class="text-2xl font-bold mb-1">Architecture decisions</h2>
+          <p class="text-slate-600 mb-6 text-sm">
+            Distilled from CLAUDE.md, sprint history, and the 60+ lessons. See
+            <a
+              href="./architecture.json"
+              class="text-loyal underline hover:no-underline"
+              >architecture.json</a
+            >
+            for the full set.
+          </p>
+          <div class="space-y-3">
+            <details class="node bg-white rounded-xl border-2 border-slate-200 p-4">
+              <summary class="cursor-pointer list-none flex items-center gap-2">
+                <span class="chev text-slate-400">▸</span>
+                <span class="font-bold">ADR-001 · Compute once, serve static</span>
+              </summary>
+              <p class="mt-2 text-sm text-slate-700">
+                Daily pipeline pre-computes ALL analytics into immutable JSON;
+                frontend reads from CDN. Trade-off: schema changes need a
+                pipeline backfill — not a hot deploy.
+              </p>
+            </details>
+            <details class="node bg-white rounded-xl border-2 border-slate-200 p-4">
+              <summary class="cursor-pointer list-none flex items-center gap-2">
+                <span class="chev text-slate-400">▸</span>
+                <span class="font-bold"
+                  >ADR-002 · Shared Zod schemas, dual ESM+CJS</span
+                >
+              </summary>
+              <p class="mt-2 text-sm text-slate-700">
+                shared-contracts owns the wire format. Pipeline + frontend
+                cannot drift; types verified at build time.
+              </p>
+            </details>
+            <details class="node bg-white rounded-xl border-2 border-slate-200 p-4">
+              <summary class="cursor-pointer list-none flex items-center gap-2">
+                <span class="chev text-slate-400">▸</span>
+                <span class="font-bold"
+                  >ADR-004 · Year-cumulative metrics have base = 0 each PY</span
+                >
+              </summary>
+              <p class="mt-2 text-sm text-slate-700">
+                Distinguished Clubs, Officer Awards, etc. reset July 1. No new
+                base field needed — Δ equals current. (Lesson 57)
+              </p>
+            </details>
+            <details class="node bg-white rounded-xl border-2 border-slate-200 p-4">
+              <summary class="cursor-pointer list-none flex items-center gap-2">
+                <span class="chev text-slate-400">▸</span>
+                <span class="font-bold"
+                  >ADR-005 · % Distinguished uses Paid Club Base, not Active
+                  Clubs</span
+                >
+              </summary>
+              <p class="mt-2 text-sm text-slate-700">
+                Per TI Item 1490. The District 93 production bug (#537) caught
+                this — count thresholds correctly used base while the trophy
+                case used current. (Lesson 60)
+              </p>
+            </details>
+            <details class="node bg-white rounded-xl border-2 border-slate-200 p-4">
+              <summary class="cursor-pointer list-none flex items-center gap-2">
+                <span class="chev text-slate-400">▸</span>
+                <span class="font-bold"
+                  >ADR-006 · Pin related queries to the same snapshot date</span
+                >
+              </summary>
+              <p class="mt-2 text-sm text-slate-700">
+                Two independent "latest" resolutions can drift across a CDN
+                publish. Thread the resolved date through every related query.
+                (Lesson 59)
+              </p>
+            </details>
+            <details class="node bg-white rounded-xl border-2 border-slate-200 p-4">
+              <summary class="cursor-pointer list-none flex items-center gap-2">
+                <span class="chev text-slate-400">▸</span>
+                <span class="font-bold"
+                  >ADR-007 · TDD with separate RED and GREEN commits</span
+                >
+              </summary>
+              <p class="mt-2 text-sm text-slate-700">
+                RED → GREEN never combined. After pre-push hook was removed,
+                separation makes test-after slips visible in commit history.
+                (Lesson 54)
+              </p>
+            </details>
+            <details class="node bg-white rounded-xl border-2 border-slate-200 p-4">
+              <summary class="cursor-pointer list-none flex items-center gap-2">
+                <span class="chev text-slate-400">▸</span>
+                <span class="font-bold"
+                  >ADR-008 · WCAG 2.4.7 focus-within rings for invisible
+                  overlays</span
+                >
+              </summary>
+              <p class="mt-2 text-sm text-slate-700">
+                When stacking opacity-0 native controls over visible chrome, add
+                <code>focus-within:ring-*</code> on the parent so keyboard users
+                see focus. (Lesson 58)
+              </p>
+            </details>
+          </div>
+        </section>
+
+        <!-- ==================== ISSUES ==================== -->
+        <section id="issues" class="mb-12">
+          <h2 class="text-2xl font-bold mb-1 text-amber-800">
+            ⚠ Active tripwires + known issues
+          </h2>
+          <p class="text-slate-600 mb-6 text-sm">
+            From CLAUDE.md tripwires + open GitHub issues. Read these BEFORE
+            touching the relevant subsystem.
+          </p>
+          <div class="space-y-2">
+            <div class="rounded-lg border-l-4 border-amber-500 bg-amber-50 p-4">
+              <div class="text-xs uppercase tracking-wider text-amber-700">
+                Tripwire
+              </div>
+              <div class="font-semibold">
+                SnapshotBuilder.build() has TWO district-tracking code paths
+              </div>
+              <p class="text-sm text-amber-900 mt-1">
+                Success path + validation-failure path. Both must be updated
+                when changing tracking logic.
+              </p>
+            </div>
+            <div class="rounded-lg border-l-4 border-amber-500 bg-amber-50 p-4">
+              <div class="text-xs uppercase tracking-wider text-amber-700">
+                Tripwire
+              </div>
+              <div class="font-semibold">DCP goals are INDEPENDENT, not sequential</div>
+              <p class="text-sm text-amber-900 mt-1">
+                Use <code>clubPerformance</code> raw fields. Never infer count
+                as Goals 1 → N.
+              </p>
+            </div>
+            <div class="rounded-lg border-l-4 border-amber-500 bg-amber-50 p-4">
+              <div class="text-xs uppercase tracking-wider text-amber-700">
+                Tripwire
+              </div>
+              <div class="font-semibold">
+                Chart <code>|| 1</code> range fallback causes y-axis inversion
+              </div>
+              <p class="text-sm text-amber-900 mt-1">
+                Pad symmetrically when <code>range === 0</code> instead.
+              </p>
+            </div>
+            <div class="rounded-lg border-l-4 border-red-500 bg-red-50 p-4">
+              <div class="text-xs uppercase tracking-wider text-red-700">
+                Security tripwire
+              </div>
+              <div class="font-semibold">
+                <code>path.join()</code> with raw user input = path traversal
+              </div>
+              <p class="text-sm text-red-900 mt-1">
+                ALWAYS call <code>validateDistrictId()</code> /
+                <code>resolvePathUnderBase()</code> first. Lesson 01 / CodeQL
+                #57.
+              </p>
+            </div>
+            <div class="rounded-lg border-l-4 border-loyal bg-blue-50 p-4">
+              <div class="text-xs uppercase tracking-wider text-loyal">
+                Open issue #525
+              </div>
+              <div class="font-semibold">
+                Integration journey tests fail ~20% under CI parallel load
+              </div>
+              <p class="text-sm text-slate-800 mt-1">
+                Pass in serial; v8 coverage instrumentation contention.
+                Root-cause likely <code>renderWithProviders</code> bloat
+                (Lesson 53).
+              </p>
+            </div>
+            <div class="rounded-lg border-l-4 border-loyal bg-blue-50 p-4">
+              <div class="text-xs uppercase tracking-wider text-loyal">
+                Open issue #488
+              </div>
+              <div class="font-semibold">
+                Lighthouse CLS = 0.217 on / fails threshold
+              </div>
+              <p class="text-sm text-slate-800 mt-1">
+                Re-runs mask it intermittently. Real layout-shift bug in
+                initial paint.
+              </p>
+            </div>
+            <div class="rounded-lg border-l-4 border-slate-400 bg-slate-50 p-4">
+              <div class="text-xs uppercase tracking-wider text-slate-600">
+                Open issue #482
+              </div>
+              <div class="font-semibold">Pre-push hook was removed</div>
+              <p class="text-sm text-slate-700 mt-1">
+                Local TDD discipline now depends on agent enforcement. A
+                sustainable carved-out gate is still needed.
+              </p>
+            </div>
+            <div class="rounded-lg border-l-4 border-slate-400 bg-slate-50 p-4">
+              <div class="text-xs uppercase tracking-wider text-slate-600">
+                Open issue #522
+              </div>
+              <div class="font-semibold">
+                D## chip + bare numeric districtName pattern duplicated 4
+                places
+              </div>
+              <p class="text-sm text-slate-700 mt-1">
+                Same #520 bug shape exists on RegionPage, search-suggestions,
+                CommandPalette. Extract
+                <code>&lt;DistrictChipAndName&gt;</code>.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== LESSONS ==================== -->
+        <section id="lessons" class="mb-12">
+          <h2 class="text-2xl font-bold mb-1">Lessons captured</h2>
+          <p class="text-slate-600 mb-6 text-sm">
+            60+ total. Legacy 1–51 in
+            <span class="font-mono">tasks/lessons.md</span> (append-only). Newer
+            52–60 split per-file in
+            <span class="font-mono">tasks/lessons/</span> to avoid merge
+            conflicts on parallel sprint branches.
+          </p>
+          <div class="space-y-2">
+            <div class="rounded-lg bg-white border-2 border-slate-200 p-3">
+              <span class="chip bg-slate-200 text-slate-800 mr-2">#60</span>
+              Trust the program rules on percentage denominators (TI Item 1490)
+            </div>
+            <div class="rounded-lg bg-white border-2 border-slate-200 p-3">
+              <span class="chip bg-slate-200 text-slate-800 mr-2">#59</span>
+              Pin related queries to the same snapshot date
+            </div>
+            <div class="rounded-lg bg-white border-2 border-slate-200 p-3">
+              <span class="chip bg-slate-200 text-slate-800 mr-2">#58</span>
+              Invisible <code>&lt;select&gt;</code> overlay needs focus-within
+              ring (WCAG 2.4.7)
+            </div>
+            <div class="rounded-lg bg-white border-2 border-slate-200 p-3">
+              <span class="chip bg-slate-200 text-slate-800 mr-2">#57</span>
+              Year-cumulative metrics have base = 0 each program year
+            </div>
+            <div class="rounded-lg bg-white border-2 border-slate-200 p-3">
+              <span class="chip bg-slate-200 text-slate-800 mr-2">#56</span>
+              Cache-primer hook calls rarely earn their keep
+            </div>
+            <div class="rounded-lg bg-white border-2 border-slate-200 p-3">
+              <span class="chip bg-slate-200 text-slate-800 mr-2">#55</span>
+              <code>isMilestone</code> fires on current years, not upcoming
+            </div>
+            <div class="rounded-lg bg-white border-2 border-slate-200 p-3">
+              <span class="chip bg-slate-200 text-slate-800 mr-2">#54</span>
+              TDD slipped to tests-after once pre-push gate was disabled
+            </div>
+            <div class="rounded-lg bg-white border-2 border-slate-200 p-3">
+              <span class="chip bg-slate-200 text-slate-800 mr-2">#53</span>
+              <code>renderWithProviders</code> bloat is a CI-contention
+              amplifier
+            </div>
+            <div class="rounded-lg bg-white border-2 border-slate-200 p-3">
+              <span class="chip bg-slate-200 text-slate-800 mr-2">#52</span>
+              Close-to-Distinguished is a dual-metric signal
+            </div>
+          </div>
+          <p class="text-xs text-slate-500 mt-4">
+            Full older archive in
+            <a
+              href="../../tasks/lessons.md"
+              class="font-mono text-loyal underline hover:no-underline"
+              >tasks/lessons.md</a
+            >.
+          </p>
+        </section>
+
+        <footer class="text-xs text-slate-500 border-t pt-4">
+          Generated from a fresh-context survey of the toast-stats monorepo.
+          Companion document:
+          <a
+            href="./architecture.json"
+            class="text-loyal underline hover:no-underline"
+            >architecture.json</a
+          >
+          (designed for AI-agent consumption).
+        </footer>
+      </main>
+    </div>
+
+    <!-- ==================== ZOOM ==================== -->
+    <script>
+      ;(function () {
+        const area = document.getElementById('zoom-area')
+        const label = document.getElementById('zoom-label')
+        let scale = 1
+        const apply = () => {
+          area.style.transform = `scale(${scale})`
+          label.textContent = Math.round(scale * 100) + '%'
+        }
+        document.getElementById('zoom-in').onclick = () => {
+          scale = Math.min(scale + 0.1, 1.6)
+          apply()
+        }
+        document.getElementById('zoom-out').onclick = () => {
+          scale = Math.max(scale - 0.1, 0.6)
+          apply()
+        }
+      })()
+    </script>
+  </body>
+</html>
