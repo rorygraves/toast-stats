@@ -71,6 +71,12 @@ A data visualization platform for **Toastmasters district leaders** to track clu
 | Rank-within-region col | District table leads with region-internal rank by aggregateScore desc, ties marked (#515)  | ✅ Shipped |
 | Region-chip link       | District page region rank chip links to `/region/:n` when region is numeric (#518)         | ✅ Shipped |
 
+### Cross-page chrome
+
+| Feature         | Description                                                                                       | Status     |
+| --------------- | ------------------------------------------------------------------------------------------------- | ---------- |
+| DataControlsBar | Tight 3-chip cluster (data-fresh pill, PY chip, date chip) on /districts and /district/:id (#528) | ✅ Shipped |
+
 ### Observability
 
 | Feature              | Description                                                      | Status     |
