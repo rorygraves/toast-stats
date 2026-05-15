@@ -560,4 +560,63 @@ describe('BordaCountRankingCalculator', () => {
       expect(ranked.ranking!.distinguishedClubs).toBe(2)
     })
   })
+
+  describe('% Distinguished denominator — TI DDP rule (#537)', () => {
+    /* The Distinguished District Program (Item 1490) computes
+       "% Distinguished" as distinguishedClubs / paidClubBase × 100,
+       where paidClubBase is the PY-start club count. The historical
+       implementation used activeClubs (current count) which produced
+       a lower number whenever districts gained clubs during the PY —
+       see /district/93 where 38/74 = 51.35% disagreed with the count
+       targets that correctly used base (38/69 = 55.07%). */
+    function mkD93LikeDistrict(): RankingDistrictStatistics {
+      // D93's actual numbers as of the reported snapshot.
+      return {
+        districtId: '93',
+        asOfDate: '2026-05-14',
+        membership: { total: 1198, change: 0, changePercent: 0, byClub: [] },
+        clubs: {
+          total: 74,
+          active: 74,
+          suspended: 0,
+          ineligible: 0,
+          low: 0,
+          distinguished: 38,
+        },
+        education: { totalAwards: 0, byType: [], topClubs: [] },
+        districtPerformance: [
+          {
+            DISTRICT: '93',
+            REGION: '14',
+            'Paid Clubs': '74',
+            'Paid Club Base': '69',
+            '% Club Growth': '7.25%',
+            'Total YTD Payments': '2818',
+            'Payment Base': '2500',
+            '% Payment Growth': '12.72%',
+            'Active Clubs': '74',
+            'Total Distinguished Clubs': '38',
+            'Select Distinguished Clubs': '6',
+            'Presidents Distinguished Clubs': '4',
+          },
+        ],
+      }
+    }
+
+    it('computes distinguishedPercent against Paid Club Base, not Active Clubs', async () => {
+      const district = mkD93LikeDistrict()
+      const result = await calculator.calculateRankings([district])
+      const ranking = result[0]!.ranking!
+      // 38 / 69 = 55.0724...% — the TI-correct figure.
+      // Old buggy formula 38 / 74 = 51.35% would fail this assertion.
+      expect(ranking.distinguishedPercent).toBeCloseTo(55.07, 1)
+    })
+
+    it('returns 0 when Paid Club Base is missing or zero', async () => {
+      const district = mkD93LikeDistrict()
+      district.districtPerformance![0]!['Paid Club Base'] = '0'
+      const result = await calculator.calculateRankings([district])
+      expect(result[0]!.ranking!.distinguishedPercent).toBe(0)
+    })
+  })
 })
