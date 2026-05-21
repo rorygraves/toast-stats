@@ -282,6 +282,115 @@ U,Undistricted,50,45,11.11%,500,450,11.11%,50,5,2,1`
     })
   })
 
+  describe('Distinguished Percent uses Paid Club Base, not Active Clubs (#545)', () => {
+    // Per TI Distinguished District Program (Item 1490, Rev. 04/2025),
+    // % Distinguished is computed against the program-year-start club
+    // count (Paid Club Base), NOT the current Active Clubs count.
+    //
+    // PR #538 fixed this in analytics-core's BordaCountRankingCalculator
+    // but missed the parallel implementation in collector-cli's
+    // TransformService.calculateDistinguishedPercent — which is the
+    // method that actually writes distinguishedPercent into
+    // all-districts-rankings.json (the snapshot the frontend reads).
+    //
+    // Live D93 + D110 evidence on 2026-05-18 confirms the snapshot
+    // still has activeClubs-based percentages despite PR #538.
+
+    it('should compute D93-shape distinguishedPercent against Paid Club Base', async () => {
+      const date = '2024-01-15'
+      const rawCsvDir = path.join(tempDir, 'raw-csv', date)
+      await fs.mkdir(rawCsvDir, { recursive: true })
+
+      // D93 shape from 2026-05-18 snapshot: paidClubBase=69, activeClubs=75,
+      // distinguishedClubs=39. Correct percent = 39/69 ≈ 56.52%.
+      // Buggy (activeClubs-based) = 39/75 = 52.0%.
+      const csvContent = `DISTRICT,REGION,Paid Clubs,Paid Club Base,% Club Growth,Total YTD Payments,Payment Base,% Payment Growth,Active Clubs,Total Distinguished Clubs,Select Distinguished Clubs,Presidents Distinguished Clubs
+93,Region 8,75,69,8.70%,2839,2566,10.63%,75,39,20,12`
+
+      await fs.writeFile(path.join(rawCsvDir, 'all-districts.csv'), csvContent)
+      await createDistrictDir(rawCsvDir, '93')
+
+      await transformService.transform({ date, force: true })
+
+      const rankingsPath = path.join(
+        tempDir,
+        'snapshots',
+        date,
+        'all-districts-rankings.json'
+      )
+      const rankings = JSON.parse(await fs.readFile(rankingsPath, 'utf-8'))
+      const d93 = rankings.rankings.find(
+        (r: { districtId: string }) => r.districtId === '93'
+      )
+
+      // 39 / 69 = 56.5217... — meets President's Distinguished 55% threshold.
+      // Buggy value 39/75 = 52.0% would fail the 55% threshold by 3.0%,
+      // which is the gap the founder reported on /district/93.
+      expect(d93.distinguishedPercent).toBeCloseTo(56.5217, 3)
+    })
+
+    it('should compute D110-shape distinguishedPercent against Paid Club Base', async () => {
+      const date = '2024-01-15'
+      const rawCsvDir = path.join(tempDir, 'raw-csv', date)
+      await fs.mkdir(rawCsvDir, { recursive: true })
+
+      // D110 shape from 2026-05-18 snapshot: paidClubBase=72, activeClubs=77,
+      // distinguishedClubs=33. Correct = 33/72 ≈ 45.83% (meets Distinguished
+      // 45% threshold). Buggy = 33/77 ≈ 42.86% (fails by 2.14%, which is
+      // exactly the gap the live page shows).
+      const csvContent = `DISTRICT,REGION,Paid Clubs,Paid Club Base,% Club Growth,Total YTD Payments,Payment Base,% Payment Growth,Active Clubs,Total Distinguished Clubs,Select Distinguished Clubs,Presidents Distinguished Clubs
+110,Region 11,75,72,4.17%,3181,3106,2.41%,77,33,15,8`
+
+      await fs.writeFile(path.join(rawCsvDir, 'all-districts.csv'), csvContent)
+      await createDistrictDir(rawCsvDir, '110')
+
+      await transformService.transform({ date, force: true })
+
+      const rankingsPath = path.join(
+        tempDir,
+        'snapshots',
+        date,
+        'all-districts-rankings.json'
+      )
+      const rankings = JSON.parse(await fs.readFile(rankingsPath, 'utf-8'))
+      const d110 = rankings.rankings.find(
+        (r: { districtId: string }) => r.districtId === '110'
+      )
+
+      expect(d110.distinguishedPercent).toBeCloseTo(45.8333, 3)
+    })
+
+    it('should fall back to 0 when Paid Club Base is missing or 0', async () => {
+      // Brand-new district edge case — paidClubBase=0 → 0% (not NaN, not
+      // a silent fall-through to activeClubs). Mirrors analytics-core
+      // hardening from PR #538.
+      const date = '2024-01-15'
+      const rawCsvDir = path.join(tempDir, 'raw-csv', date)
+      await fs.mkdir(rawCsvDir, { recursive: true })
+
+      const csvContent = `DISTRICT,REGION,Paid Clubs,Paid Club Base,% Club Growth,Total YTD Payments,Payment Base,% Payment Growth,Active Clubs,Total Distinguished Clubs,Select Distinguished Clubs,Presidents Distinguished Clubs
+99,Region 1,30,0,0%,500,0,0%,30,5,2,1`
+
+      await fs.writeFile(path.join(rawCsvDir, 'all-districts.csv'), csvContent)
+      await createDistrictDir(rawCsvDir, '99')
+
+      await transformService.transform({ date, force: true })
+
+      const rankingsPath = path.join(
+        tempDir,
+        'snapshots',
+        date,
+        'all-districts-rankings.json'
+      )
+      const rankings = JSON.parse(await fs.readFile(rankingsPath, 'utf-8'))
+      const d99 = rankings.rankings.find(
+        (r: { districtId: string }) => r.districtId === '99'
+      )
+
+      expect(d99.distinguishedPercent).toBe(0)
+    })
+  })
+
   describe('Rankings File Output', () => {
     it('should write rankings file with correct metadata', async () => {
       const date = '2024-01-15'
