@@ -276,9 +276,11 @@ describe('DistrictsPage - Table Cell Rendering', () => {
 
     renderWithProviders(<DistrictsPage />)
 
-    // Wait for data to load and check for rank numbers
-    const clubsRank = await screen.findByText('Rank #5')
-    const paymentsRank = await screen.findByText('Rank #3')
+    // Wait for data to load and check for rank numbers.
+    // Per #546 the "Rank " word prefix is dropped — the per-metric
+    // cells now show just "#N · +X.X%".
+    const clubsRank = await screen.findByText('#5')
+    const paymentsRank = await screen.findByText('#3')
     expect(clubsRank).toBeInTheDocument()
     expect(clubsRank).toHaveClass('text-tm-loyal-blue')
     expect(paymentsRank).toBeInTheDocument()
@@ -398,19 +400,19 @@ describe('DistrictsPage - Table Cell Rendering', () => {
     // these same numbers as global totals.
     const table = within(container.querySelector('table')!)
 
-    // Check paid clubs column
+    // Check paid clubs column. Per #546 the "Rank " word prefix is
+    // dropped — per-metric cells show just "#N · +X.X%".
     expect(table.getByText('100')).toBeInTheDocument()
-    expect(table.getByText('Rank #5')).toBeInTheDocument()
+    expect(table.getByText('#5')).toBeInTheDocument()
     expect(table.getByText('+12.5%')).toBeInTheDocument()
 
     // Check total payments column
     expect(table.getByText('5,000')).toBeInTheDocument()
-    expect(table.getByText('Rank #3')).toBeInTheDocument()
+    expect(table.getByText('#3')).toBeInTheDocument()
     expect(table.getByText('+11.1%')).toBeInTheDocument()
 
-    // Verify the rank and percentage are in the same container (text-xs class)
-    const rankElements = screen.getAllByText(/Rank #\d+/)
-    // Check that rank elements exist and are styled correctly
+    // Verify the rank elements exist and are styled correctly.
+    const rankElements = screen.getAllByText(/^#\d+$/)
     expect(rankElements.length).toBeGreaterThan(0)
     rankElements.forEach(rankElement => {
       expect(rankElement).toHaveClass('text-tm-loyal-blue')

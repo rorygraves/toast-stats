@@ -13,6 +13,7 @@ import { useUrlProgramYear } from '../hooks/useUrlProgramYear'
 import { DataControlsBar } from '../components/DataControlsBar'
 import { useRankHistory } from '../hooks/useRankHistory'
 import InfoTooltip from '../components/InfoTooltip'
+import DistrictTierChip from '../components/DistrictTierChip'
 import { useMyDistrict } from '../hooks/useMyDistrict'
 import { usePersistedState } from '../hooks/usePersistedState'
 import { useLastVisit } from '../hooks/useLastVisit'
@@ -929,36 +930,51 @@ const DistrictsPage: React.FC = () => {
 
         {/* Rankings Table */}
         <div className="districts-rankings-table-wrap">
+          {/* Methodology affordance — single visible "i" beside a quiet
+              "About these metrics" label, replacing the four per-column
+              tooltips that used to wrap the header row (#546). Kept
+              outside the table so its focus ring is visible to keyboard
+              users (Lesson 58 / WCAG 2.4.7). */}
+          <div className="flex items-center justify-end mb-2 px-2">
+            <span
+              data-testid="rankings-table-methodology-affordance"
+              className="text-xs text-gray-500 inline-flex items-center"
+            >
+              About these metrics
+              <InfoTooltip text="Paid Clubs = clubs that have met renewal obligations for the program year. Total Payments = year-to-date membership payment count. Distinguished = clubs achieving Distinguished status or higher. Score = Borda-count composite of the three rankings. Higher is better on all four." />
+            </span>
+          </div>
           <div className="overflow-x-auto">
-            <table className="districts-rankings-table">
+            <table
+              className="districts-rankings-table"
+              aria-label="District rankings"
+            >
+              <caption className="sr-only">
+                District rankings by Paid Clubs, Total Payments, Distinguished
+                club count, and Borda-count Score.
+              </caption>
               <thead>
                 <tr>
-                  {/* District first (#436) — primary entity reads left-to-right.
-                      Rank moves to second column. */}
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 z-10">
                     District
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-[200px] z-10 sticky-column-shadow">
                     Rank
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Region
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Tier
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Paid Clubs
-                    <InfoTooltip text="Number of clubs with paid memberships. Rank and year-over-year growth shown below." />
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Total Payments
-                    <InfoTooltip text="Year-to-date membership payment count. Higher payments indicate active member engagement." />
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Distinguished
-                    <InfoTooltip text="Clubs achieving Distinguished status or higher. Reflects club-level goal completion." />
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Score
-                    <InfoTooltip text="Borda-count composite of Paid Clubs, Payments, and Distinguished rankings. Higher is better." />
                   </th>
                 </tr>
               </thead>
@@ -969,9 +985,21 @@ const DistrictsPage: React.FC = () => {
                   const pinDisabled =
                     !isPinned && pinnedDistrictIds.size >= MAX_PINNED
                   const isMine = isMyDistrict(district.districtId)
+                  const rawTier =
+                    competitiveAwards?.distinguishedDistrict?.[
+                      district.districtId
+                    ]?.currentTier ?? null
+                  // The row-level data-tier hook is only meaningful for
+                  // ACHIEVED tiers; CSS rules like [data-tier="Smedley"]
+                  // never want to match NotDistinguished. So absence is
+                  // the signal there too — same convention as the chip.
+                  const ddpTier =
+                    rawTier && rawTier !== 'NotDistinguished' ? rawTier : null
                   return (
                     <tr
                       key={district.districtId}
+                      data-testid={`district-row-${district.districtId}`}
+                      data-tier={ddpTier ?? undefined}
                       onClick={() => handleDistrictClick(district.districtId)}
                       className={`cursor-pointer ${
                         isMine
@@ -984,8 +1012,18 @@ const DistrictsPage: React.FC = () => {
                       {/* District cell first (#436) — primary entity. The
                           number is rendered as a standalone chip so the
                           click affordance reads as obviously interactive.
-                          (#417) Star button toggles 'my district'. */}
-                      <td className="px-6 py-4 whitespace-nowrap sticky left-0 z-10 bg-white">
+                          (#417) Star button toggles 'my district'.
+                          Sticky cell background must honour the row's
+                          isMine/isPinned tint, not stay white (#546 review). */}
+                      <td
+                        className={`px-6 py-4 whitespace-nowrap sticky left-0 z-10 ${
+                          isMine
+                            ? 'bg-yellow-50'
+                            : isPinned
+                              ? 'bg-blue-50'
+                              : 'bg-white'
+                        }`}
+                      >
                         <div className="flex items-center gap-3 flex-wrap">
                           <button
                             type="button"
@@ -1073,15 +1111,32 @@ const DistrictsPage: React.FC = () => {
                               <span className="ml-1">Retention</span>
                             </span>
                           )}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {district.activeClubs} active clubs
+                          {/* Region collapses into the District cell as
+                              a quiet "· R<n>" suffix (#546) — saves the
+                              standalone Region column's width. */}
+                          {district.region && (
+                            <span
+                              data-testid={`district-region-suffix-${district.districtId}`}
+                              className="text-xs text-gray-500"
+                            >
+                              · R{district.region}
+                            </span>
+                          )}
                         </div>
                       </td>
                       {/* Rank cell — now second column (#436). Pin button
                           stays adjacent to rank badge for symmetry with
-                          the existing comparison-pin UX. */}
-                      <td className="px-6 py-4 whitespace-nowrap sticky left-[200px] z-10 bg-white sticky-column-shadow">
+                          the existing comparison-pin UX. Sticky background
+                          must honour the row tint (#546 review). */}
+                      <td
+                        className={`px-6 py-4 whitespace-nowrap sticky left-[200px] z-10 sticky-column-shadow ${
+                          isMine
+                            ? 'bg-yellow-50'
+                            : isPinned
+                              ? 'bg-blue-50'
+                              : 'bg-white'
+                        }`}
+                      >
                         <div className="flex items-center gap-2">
                           <button
                             onClick={e => {
@@ -1123,8 +1178,24 @@ const DistrictsPage: React.FC = () => {
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {district.region}
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        {ddpTier ? (
+                          <DistrictTierChip
+                            districtId={district.districtId}
+                            tier={ddpTier}
+                          />
+                        ) : (
+                          // Empty Tier cell: the column header "Tier"
+                          // already provides context; an aria-label here
+                          // would chatter on every NotDistinguished row
+                          // (which is the majority).
+                          <span
+                            className="text-gray-400 text-sm"
+                            aria-hidden="true"
+                          >
+                            —
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="text-sm font-medium text-gray-900">
@@ -1132,7 +1203,7 @@ const DistrictsPage: React.FC = () => {
                         </div>
                         <div className="text-xs flex items-center justify-end gap-1">
                           <span className="text-tm-loyal-blue font-tm-body">
-                            Rank #{district.clubsRank}
+                            #{district.clubsRank}
                           </span>
                           <span className="text-gray-400">•</span>
                           <span
@@ -1150,7 +1221,7 @@ const DistrictsPage: React.FC = () => {
                         </div>
                         <div className="text-xs flex items-center justify-end gap-1">
                           <span className="text-tm-loyal-blue font-tm-body">
-                            Rank #{district.paymentsRank}
+                            #{district.paymentsRank}
                           </span>
                           <span className="text-gray-400">•</span>
                           <span
@@ -1172,7 +1243,7 @@ const DistrictsPage: React.FC = () => {
                         </div>
                         <div className="text-xs flex items-center justify-end gap-1">
                           <span className="text-tm-loyal-blue font-tm-body">
-                            Rank #{district.distinguishedRank}
+                            #{district.distinguishedRank}
                           </span>
                           <span className="text-gray-400">•</span>
                           <span
