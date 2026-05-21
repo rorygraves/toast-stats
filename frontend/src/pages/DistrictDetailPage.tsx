@@ -610,10 +610,6 @@ const DistrictDetailPage: React.FC = () => {
                       })}
                       programYearStartDate={effectiveProgramYear.startDate}
                       performanceTargets={performanceTargets ?? undefined}
-                      netMemberChange={
-                        // #170: prefer time-series member change (base membership based)
-                        timeSeries?.memberChange
-                      }
                     />
                   )}
 

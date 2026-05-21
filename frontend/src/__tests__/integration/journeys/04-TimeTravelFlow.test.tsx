@@ -80,9 +80,11 @@ describe('Journey 04: The Time Travel Flow', () => {
     )
     expect(districtHeading).toBeInTheDocument()
 
-    // Step 2: Verify Initial state (December 31) has exactly 5 Smedley
+    // Step 2: Verify Initial state (December 31) has exactly 5 Smedley.
+    // After the #550 Overview redesign the per-tier badges live in the
+    // Distinguished Composition legend (format: "Smedley · 5").
     const smedleyBadge = await screen.findByText(
-      /5 Smedley/i,
+      /Smedley\s*·\s*5/i,
       {},
       { timeout: 5000 }
     )
@@ -103,8 +105,8 @@ describe('Journey 04: The Time Travel Flow', () => {
     // Step 5: Verify Final State (November 30) data drops Smedley count to 0!
     await waitFor(
       async () => {
-        const novSmedley = await screen.queryByText(/5 Smedley/i)
-        expect(novSmedley).not.toBeInTheDocument() // The 5 smedley should disappear because the new mock sends 0!
+        const novSmedley = await screen.queryByText(/Smedley\s*·\s*5/i)
+        expect(novSmedley).not.toBeInTheDocument() // The 5 Smedley should disappear because the new mock sends 0!
       },
       { timeout: 5000 }
     )

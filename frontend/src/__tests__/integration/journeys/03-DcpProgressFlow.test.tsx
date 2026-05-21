@@ -79,7 +79,7 @@ describe('Journey 03: The DCP Progress Flow', () => {
     )
     expect(districtHeading).toBeInTheDocument()
 
-    // Step 2: Verify the three TargetProgressCards render
+    // Step 2: Verify the three KPI bullet cards render (#550 redesign)
     const paidClubsCard = await screen.findByText(
       /Paid Clubs/i,
       {},
@@ -94,9 +94,8 @@ describe('Journey 03: The DCP Progress Flow', () => {
     )
     expect(memPaymentsCard).toBeInTheDocument()
 
-    // The Overview redesign (#360 slice 2) adds a 'Distinguished Clubs ·
-    // Composition' panel, so 'Distinguished Clubs' now appears multiple
-    // times on the page. The KPI card is the FIRST occurrence.
+    // 'Distinguished Clubs' appears both as a KPI card title and as a
+    // legend item in the Composition panel below — assert it exists.
     const distClubsCards = await screen.findAllByText(
       /Distinguished Clubs/i,
       {},
@@ -104,23 +103,25 @@ describe('Journey 03: The DCP Progress Flow', () => {
     )
     expect(distClubsCards.length).toBeGreaterThan(0)
 
-    // Step 3: Verify DCP badge details (Smedley, Presidents, Select) within the Distinguished Clubs card region
+    // Step 3: Verify DCP tier breakdown appears in the Composition legend
+    // (#550 moved the per-tier badges out of the KPI card and into the
+    // Distinguished Composition legend, format: "Smedley · 5").
     const smedleyBadge = await screen.findByText(
-      /5 Smedley/i,
+      /Smedley\s*·\s*5/i,
       {},
       { timeout: 5000 }
     )
     expect(smedleyBadge).toBeInTheDocument()
 
     const presidentsBadge = await screen.findByText(
-      /10 President's/i,
+      /President's\s*·\s*10/i,
       {},
       { timeout: 5000 }
     )
     expect(presidentsBadge).toBeInTheDocument()
 
     const selectBadge = await screen.findByText(
-      /15 Select/i,
+      /Select\s*·\s*15/i,
       {},
       { timeout: 5000 }
     )

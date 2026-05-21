@@ -4,8 +4,8 @@
  * Fetches per-district performance targets and rankings from CDN.
  * CDN path: snapshots/{date}/analytics/district_{id}_performance-targets.json
  *
- * This data powers the TargetProgressCard rankings (world rank, percentile,
- * region rank) and target progress bars (distinguished/select/presidents/smedley).
+ * This data powers the KpiBulletCard rankings (world rank, percentile,
+ * region rank) and bullet-bar tier ticks (distinguished/select/presidents/smedley).
  *
  * Fixes #183 — world rank/percentile show "— —" and targets show "N/A"
  */
