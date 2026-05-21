@@ -122,6 +122,15 @@ export function formatProgramYear(programYear: ProgramYear): string {
 }
 
 /**
+ * Compact 2-digit-year program-year label ("2025-26").
+ * Used by per-PY callouts (milestones, anniversaries) where the full
+ * `formatProgramYear` 4-digit label ("2025-2026") is too wide.
+ */
+export function formatProgramYearShort(start: number): string {
+  return `${start}-${(start + 1).toString().slice(-2)}`
+}
+
+/**
  * Get program year progress (0-100%)
  */
 export function getProgramYearProgress(programYear: ProgramYear): number {

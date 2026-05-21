@@ -1,8 +1,5 @@
-import React from 'react'
+import React, { useState } from 'react'
 
-/**
- * Distinguished District tier (#332)
- */
 export type DistinguishedDistrictTier =
   | 'NotDistinguished'
   | 'Distinguished'
@@ -36,13 +33,10 @@ export interface DistinguishedDistrictStatus {
 
 interface DistinguishedDistrictTrophyCaseProps {
   status: DistinguishedDistrictStatus | null
-  /** Club Strength Award qualification (#333) */
   clubStrengthQualifies?: boolean | undefined
   clubStrengthGrowth?: number | null | undefined
-  /** Leadership Excellence Award (#333) */
   leadershipExcellenceQualifies?: boolean | undefined
   leadershipExcellenceYears?: number | undefined
-  /** Officer Awards (#333) */
   educationTrainingQualifies?: boolean | undefined
   clubGrowthQualifies?: boolean | undefined
 }
@@ -83,14 +77,38 @@ const PREREQUISITE_LABELS: Record<
   regionAdvisorVisitMet: '2+ Region Advisor meetings',
 }
 
-/**
- * DistinguishedDistrictTrophyCase (#332)
- *
- * Displays the district's current Distinguished tier with:
- * - Tier badge (D / Select / Presidents / Smedley)
- * - 5-prerequisite checklist (gates eligibility)
- * - Gap analysis to the next tier ("you need +X% for Select")
- */
+const PREREQUISITE_KEYS = Object.keys(PREREQUISITE_LABELS) as Array<
+  keyof DistinguishedDistrictPrerequisites
+>
+
+interface GapTileSpec {
+  label: string
+  gap: number
+  suffix: string
+}
+
+const GapTile: React.FC<GapTileSpec> = ({ label, gap, suffix }) => {
+  const closed = gap === 0
+  return (
+    <div className="rounded-md border border-gray-200 dark:border-gray-700 px-3 py-2">
+      <div
+        data-testid="gap-tile-label"
+        className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 font-tm-body"
+      >
+        {label}
+      </div>
+      <div
+        data-testid="gap-tile-value"
+        className={`mt-0.5 text-base font-semibold tabular-nums ${
+          closed ? 'text-tm-loyal-blue' : 'text-gray-900 dark:text-gray-100'
+        }`}
+      >
+        {closed ? '✓' : `+${gap.toFixed(1)}${suffix}`}
+      </div>
+    </div>
+  )
+}
+
 export const DistinguishedDistrictTrophyCase: React.FC<
   DistinguishedDistrictTrophyCaseProps
 > = ({
@@ -102,24 +120,39 @@ export const DistinguishedDistrictTrophyCase: React.FC<
   educationTrainingQualifies,
   clubGrowthQualifies,
 }) => {
+  const [userExpanded, setUserExpanded] = useState(false)
+
   if (!status) return null
 
   const { currentTier, allPrerequisitesMet, prerequisites, nextTierGap } =
     status
+  const metCount = PREREQUISITE_KEYS.filter(k => prerequisites[k]).length
+  const totalCount = PREREQUISITE_KEYS.length
+  // Unmet prereqs are the whole point of the panel — never let the user
+  // collapse the list when something needs attention.
+  const expanded = !allPrerequisitesMet || userExpanded
+  const summaryText = `${metCount} of ${totalCount} prerequisites met`
+
+  const additionalAwardsVisible =
+    clubStrengthQualifies ||
+    leadershipExcellenceQualifies ||
+    educationTrainingQualifies ||
+    clubGrowthQualifies
 
   return (
     <div className="redesign-panel">
-      <div className="flex items-start justify-between gap-4 mb-4">
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
         <div>
-          <h2 className="text-lg font-bold text-gray-900 font-tm-headline mb-1">
+          <h2 className="text-lg font-bold text-gray-900 font-tm-headline">
             Distinguished District Status
           </h2>
-          <p className="text-sm text-gray-500 font-tm-body">
-            Distinguished District Program (Item 1490)
+          <p className="mt-0.5 text-xs uppercase tracking-wide text-gray-500 font-tm-body">
+            Program Item 1490
           </p>
         </div>
         <span
-          className={`inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-full border ${TIER_BADGE_STYLES[currentTier]}`}
+          data-testid="distinguished-status-pill"
+          className={`inline-flex items-center gap-2 px-4 py-2 text-base font-semibold rounded-full border-2 ${TIER_BADGE_STYLES[currentTier]}`}
           aria-label={`Current tier: ${TIER_LABELS[currentTier]}`}
         >
           <span aria-hidden="true">{TIER_ICONS[currentTier]}</span>
@@ -127,51 +160,67 @@ export const DistinguishedDistrictTrophyCase: React.FC<
         </span>
       </div>
 
-      {/* Prerequisites Checklist */}
       <div className="mb-4">
-        <h3 className="text-sm font-semibold text-gray-700 mb-2 font-tm-body">
-          Prerequisites{' '}
-          <span
-            className={
-              allPrerequisitesMet ? 'text-tm-loyal-blue' : 'text-tm-true-maroon'
-            }
+        {allPrerequisitesMet ? (
+          <button
+            type="button"
+            aria-expanded={expanded}
+            aria-controls="prerequisite-list"
+            onClick={() => setUserExpanded(prev => !prev)}
+            // min-h-11 = 44px touch target on mobile per WCAG 2.5.5.
+            className="flex items-center gap-2 min-h-11 px-1 -mx-1 text-sm font-semibold font-tm-body text-tm-loyal-blue hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-tm-loyal-blue rounded"
           >
-            {allPrerequisitesMet ? '(all met)' : '(some missing)'}
-          </span>
-        </h3>
-        <ul className="space-y-1">
-          {(
-            Object.keys(PREREQUISITE_LABELS) as Array<
-              keyof DistinguishedDistrictPrerequisites
-            >
-          ).map(key => {
-            const met = prerequisites[key]
-            return (
-              <li key={key} className="flex items-center gap-2 text-sm">
-                <span
-                  className={
-                    met
-                      ? 'text-tm-loyal-blue font-bold'
-                      : 'text-tm-true-maroon font-bold'
-                  }
-                  aria-hidden="true"
+            <span aria-hidden="true">✓</span>
+            {summaryText}
+            <span aria-hidden="true" className="text-xs">
+              {expanded ? '▴' : '▾'}
+            </span>
+          </button>
+        ) : (
+          <div
+            role="status"
+            className="flex items-center gap-2 text-sm font-semibold font-tm-body text-tm-true-maroon"
+          >
+            <span aria-hidden="true">⚠</span>
+            {summaryText}
+          </div>
+        )}
+        {expanded && (
+          <ul
+            id="prerequisite-list"
+            className="mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-1"
+          >
+            {PREREQUISITE_KEYS.map(key => {
+              const met = prerequisites[key]
+              return (
+                <li
+                  key={key}
+                  className="flex items-center gap-2 text-sm font-tm-body"
                 >
-                  {met ? '✓' : '✗'}
-                </span>
-                <span
-                  className={
-                    met ? 'text-gray-900' : 'text-gray-700 font-medium'
-                  }
-                >
-                  {PREREQUISITE_LABELS[key]}
-                </span>
-              </li>
-            )
-          })}
-        </ul>
+                  <span
+                    className={
+                      met
+                        ? 'text-tm-loyal-blue font-bold'
+                        : 'text-tm-true-maroon font-bold'
+                    }
+                    aria-hidden="true"
+                  >
+                    {met ? '✓' : '✗'}
+                  </span>
+                  <span
+                    className={
+                      met ? 'text-gray-900' : 'text-gray-700 font-medium'
+                    }
+                  >
+                    {PREREQUISITE_LABELS[key]}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        )}
       </div>
 
-      {/* Gap to Next Tier */}
       {nextTierGap && (
         <div className="border-t border-gray-200 pt-4">
           <h3 className="text-sm font-semibold text-gray-700 mb-2 font-tm-body">
@@ -182,36 +231,35 @@ export const DistinguishedDistrictTrophyCase: React.FC<
               ⚠ Prerequisites must be met before any tier can be earned
             </p>
           )}
-          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-sm">
-            <GapRow
+          <div
+            data-testid="distinguished-gap-tiles"
+            className="grid grid-cols-2 md:grid-cols-4 gap-2"
+          >
+            <GapTile
               label="Payment growth"
               gap={nextTierGap.paymentGrowthGap}
               suffix="%"
             />
-            <GapRow
+            <GapTile
               label="Club growth"
               gap={nextTierGap.clubGrowthGap}
               suffix="%"
             />
-            <GapRow
+            <GapTile
               label="% Distinguished"
               gap={nextTierGap.distinguishedPercentGap}
               suffix="%"
             />
-            <GapRow
+            <GapTile
               label="Net club growth"
               gap={nextTierGap.netClubGrowthGap}
               suffix=" clubs"
             />
-          </ul>
+          </div>
         </div>
       )}
 
-      {/* Additional Awards (#333) */}
-      {(clubStrengthQualifies ||
-        leadershipExcellenceQualifies ||
-        educationTrainingQualifies ||
-        clubGrowthQualifies) && (
+      {additionalAwardsVisible && (
         <div className="border-t border-gray-200 pt-4">
           <h3 className="text-sm font-semibold text-gray-700 mb-2 font-tm-body">
             Additional Awards Earned
@@ -261,22 +309,3 @@ export const DistinguishedDistrictTrophyCase: React.FC<
     </div>
   )
 }
-
-const GapRow: React.FC<{ label: string; gap: number; suffix: string }> = ({
-  label,
-  gap,
-  suffix,
-}) => (
-  <li className="flex items-center justify-between gap-2 text-gray-700 font-tm-body">
-    <span>{label}</span>
-    <span
-      className={
-        gap === 0
-          ? 'text-tm-loyal-blue font-semibold tabular-nums'
-          : 'text-gray-900 font-semibold tabular-nums'
-      }
-    >
-      {gap === 0 ? '✓' : `+${gap.toFixed(1)}${suffix}`}
-    </span>
-  </li>
-)

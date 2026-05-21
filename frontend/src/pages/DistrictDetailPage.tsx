@@ -35,8 +35,7 @@ import {
 } from '../utils/filterUrlCodec'
 import { extractDivisionPerformance } from '../utils/extractDivisionPerformance'
 import { DistrictOverview } from '../components/DistrictOverview'
-import { UpcomingAnniversariesPanel } from '../components/UpcomingAnniversariesPanel'
-import { MilestonesCallout } from '../components/MilestonesCallout'
+import { NotableDatesSection } from '../components/NotableDatesSection'
 import { DistinguishedDistrictTrophyCase } from '../components/DistinguishedDistrictTrophyCase'
 import { useCompetitiveAwards } from '../hooks/useCompetitiveAwards'
 
@@ -632,19 +631,17 @@ const DistrictDetailPage: React.FC = () => {
                     }
                   />
 
-                  {/* Club Anniversaries (#443 epic, layout #511). Side-by-side
-                    on md+ so they share a row in the Overview tab; stack on
-                    mobile. */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                    <UpcomingAnniversariesPanel
-                      clubs={allClubs}
-                      districtId={districtId}
-                    />
-                    <MilestonesCallout
-                      clubs={allClubs}
-                      districtId={districtId}
-                    />
-                  </div>
+                  {/* Notable dates (#551). Collapses to a single compact
+                    band when both upcoming anniversaries and program-year
+                    milestones are empty; otherwise renders the populated
+                    panel(s). */}
+                  <NotableDatesSection
+                    clubs={allClubs}
+                    {...(districtId !== undefined && { districtId })}
+                    {...(effectiveProgramYear?.year !== undefined && {
+                      programYearStart: effectiveProgramYear.year,
+                    })}
+                  />
 
                   {/* Payment Composition + Distinguished Progress legacy
                     sections retired in #472 — the new redesign panels in

@@ -42,6 +42,24 @@ const buildRows = (
     }))
     .filter((r): r is Row => r.anniversary !== null)
 
+/**
+ * Whether any club has an anniversary inside the upcoming-window
+ * (default UPCOMING_WINDOW_DAYS). Used by NotableDatesSection to
+ * decide layout before rendering the panel.
+ */
+export function hasUpcomingAnniversaries(
+  clubs: ClubTrend[],
+  referenceDate?: Date,
+  windowDays: number = UPCOMING_WINDOW_DAYS
+): boolean {
+  for (const club of clubs) {
+    if (!club.charterDate) continue
+    const anniversary = getClubAnniversary(club.charterDate, referenceDate)
+    if (anniversary && anniversary.daysUntilNext <= windowDays) return true
+  }
+  return false
+}
+
 export const UpcomingAnniversariesPanel: React.FC<
   UpcomingAnniversariesPanelProps
 > = ({
