@@ -610,6 +610,117 @@
     color: #FDBA74 !important;
 }
 
+/* ═══════════════════════════════════════════
+   District Detail surface — #564 Phase 1
+   ═══════════════════════════════════════════
+
+   Covers tier-badge backgrounds (TIER_BADGE_STYLES) and the
+   Additional Awards chips in DistinguishedDistrictTrophyCase, plus
+   adjacent brand-utility gaps. Phase 2 will sweep opacity-variant
+   utilities (bg-tm-*-N) and Phase 3 will tighten light-mode small-text
+   contrast; both tracked under #564. */
+
+/* ─── Tier badge backgrounds ─── */
+
+/* Distinguished tier — base uses `bg-tm-true-maroon text-white`.
+   In dark mode the white text stays; tone the maroon down slightly so
+   the pill doesn't burn against the dark surface. */
+[data-theme='dark'] .bg-tm-true-maroon {
+    background-color: #8B2D3C !important;
+}
+
+[data-theme='dark'] .border-tm-true-maroon {
+    border-color: #8B2D3C !important;
+}
+
+/* Select tier — base uses `bg-tm-cool-gray text-gray-900`. In dark
+   mode swap to a translucent gray with light text. */
+[data-theme='dark'] .bg-tm-cool-gray {
+    background-color: rgba(192, 200, 199, 0.18) !important;
+}
+
+/* Presidents tier — base uses `bg-tm-happy-yellow text-gray-900`.
+   Dark-mode: muted golden bg + dark text stays readable. */
+[data-theme='dark'] .bg-tm-happy-yellow {
+    background-color: rgba(247, 209, 100, 0.85) !important;
+}
+
+[data-theme='dark'] .border-tm-happy-yellow {
+    border-color: rgba(247, 209, 100, 0.85) !important;
+}
+
+[data-theme='dark'] .border-yellow-500 {
+    border-color: rgba(247, 209, 100, 0.65) !important;
+}
+
+/* Smedley tier — base uses `bg-purple-100 text-purple-900
+   border-purple-400`. Dark-mode: translucent purple + light text. */
+[data-theme='dark'] .bg-purple-100 {
+    background-color: rgba(168, 85, 247, 0.20) !important;
+}
+
+[data-theme='dark'] .text-purple-900 {
+    color: #E9D5FF !important;
+}
+
+[data-theme='dark'] .border-purple-400 {
+    border-color: rgba(168, 85, 247, 0.55) !important;
+}
+
+/* ─── Additional Awards chips ─── */
+
+/* Club Strength Award — `bg-green-50 text-green-800 border-green-200` */
+[data-theme='dark'] .bg-green-50 {
+    background-color: rgba(34, 197, 94, 0.10) !important;
+}
+
+[data-theme='dark'] .text-green-800 {
+    color: #86EFAC !important;
+}
+
+[data-theme='dark'] .border-green-200 {
+    border-color: rgba(34, 197, 94, 0.30) !important;
+}
+
+/* Leadership Excellence — `bg-purple-50 text-purple-800 border-purple-200` */
+[data-theme='dark'] .bg-purple-50 {
+    background-color: rgba(168, 85, 247, 0.10) !important;
+}
+
+[data-theme='dark'] .text-purple-800 {
+    color: #DDD6FE !important;
+}
+
+[data-theme='dark'] .border-purple-200 {
+    border-color: rgba(168, 85, 247, 0.30) !important;
+}
+
+/* Education & Training — `bg-blue-50 text-blue-800 border-blue-200` */
+[data-theme='dark'] .bg-blue-50 {
+    background-color: rgba(59, 130, 246, 0.10) !important;
+}
+
+[data-theme='dark'] .text-blue-800 {
+    color: #BFDBFE !important;
+}
+
+[data-theme='dark'] .border-blue-200 {
+    border-color: rgba(59, 130, 246, 0.30) !important;
+}
+
+/* Club Growth (CGD) — `bg-teal-50 text-teal-800 border-teal-200` */
+[data-theme='dark'] .bg-teal-50 {
+    background-color: rgba(20, 184, 166, 0.10) !important;
+}
+
+[data-theme='dark'] .text-teal-800 {
+    color: #99F6E4 !important;
+}
+
+[data-theme='dark'] .border-teal-200 {
+    border-color: rgba(20, 184, 166, 0.30) !important;
+}
+
 /* ─── Transition for Theme Switch ─── */
 
 html[data-theme] body {
