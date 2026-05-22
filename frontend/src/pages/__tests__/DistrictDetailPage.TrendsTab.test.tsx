@@ -594,10 +594,12 @@ describe('DistrictDetailPage - Trends Tab Data Source Wiring', () => {
 
       renderDistrictDetailPage()
 
-      // #569 — Trends content scroll-stacks on the default page; no tab
-      // click needed. Wait a microtask to let the page mount.
+      // #571 — Tab strip retired; trends scroll-stacks on the default
+      // page. Wait for the CTA nav to appear so we know the page mounted.
       await waitFor(() => {
-        expect(screen.getByRole('tablist')).toBeInTheDocument()
+        expect(
+          screen.getByRole('link', { name: /view all clubs/i })
+        ).toBeInTheDocument()
       })
 
       // Neither component should be rendered
@@ -633,10 +635,12 @@ describe('DistrictDetailPage - Trends Tab Data Source Wiring', () => {
 
       renderDistrictDetailPage()
 
-      // #569 — Trends content scroll-stacks on the default page; no tab
-      // click needed. Wait a microtask to let the page mount.
+      // #571 — Tab strip retired; trends scroll-stacks on the default
+      // page. Wait for the CTA nav to appear so we know the page mounted.
       await waitFor(() => {
-        expect(screen.getByRole('tablist')).toBeInTheDocument()
+        expect(
+          screen.getByRole('link', { name: /view all clubs/i })
+        ).toBeInTheDocument()
       })
 
       // Neither component should be rendered despite analytics being available

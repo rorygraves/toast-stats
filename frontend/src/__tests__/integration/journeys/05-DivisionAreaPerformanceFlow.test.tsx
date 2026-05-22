@@ -79,13 +79,13 @@ describe('Journey 05: The Division/Area Performance Flow', () => {
     )
     expect(districtHeading).toBeInTheDocument()
 
-    // Step 2: Navigate to the `Divisions & Areas` Tab
-    const divisionsTab = await screen.findByRole(
-      'tab',
-      { name: /divisions & areas/i },
+    // Step 2: Navigate to the dedicated Divisions route (#571).
+    const divisionsLink = await screen.findByRole(
+      'link',
+      { name: /divisions.*areas/i },
       { timeout: 5000 }
     )
-    await user.click(divisionsTab)
+    await user.click(divisionsLink)
 
     // Step 3: Verify that `Division A` renders on the UI!
     // This is sourced via districtSnapshot mock injected natively into extractDivisionPerformance

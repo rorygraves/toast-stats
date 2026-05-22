@@ -80,13 +80,13 @@ describe('Journey 02: The "At-Risk" Discovery Flow', () => {
     )
     expect(districtHeading).toBeInTheDocument()
 
-    // Step 2: Navigate to the Clubs Tab
-    const clubsTab = await screen.findByRole(
-      'tab',
-      { name: /^Clubs$/i },
+    // Step 2: Navigate to the Clubs route via the narrative CTA (#571).
+    const clubsLink = await screen.findByRole(
+      'link',
+      { name: /view all clubs/i },
       { timeout: 5000 }
     )
-    await user.click(clubsTab)
+    await user.click(clubsLink)
 
     // Step 3: Wait for the Data Table to load clubs
     const ottawaRow = await screen.findByText(

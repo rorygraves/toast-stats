@@ -11,10 +11,6 @@ import {
   isDateInProgramYear,
 } from '../utils/programYear'
 import { DistrictDetailHeader } from '../components/DistrictDetailHeader'
-import {
-  DistrictDetailTabs,
-  type DistrictTabId,
-} from '../components/DistrictDetailTabs'
 import { ClubsTable } from '../components/ClubsTable'
 import ErrorBoundary from '../components/ErrorBoundary'
 import { LoadingSkeleton } from '../components/LoadingSkeleton'
@@ -266,7 +262,6 @@ const DistrictClubsPage: React.FC = () => {
   )
 
   const allClubs = analytics?.allClubs || []
-  const clubsCount = allClubs.length
 
   const rawName = selectedDistrict?.name || districtId || ''
   const districtName = /^\d+$/.test(rawName) ? `District ${rawName}` : rawName
@@ -278,18 +273,6 @@ const DistrictClubsPage: React.FC = () => {
   const handleClubClick = useCallback(
     (club: ClubTrend) => {
       navigate(`/district/${districtId}/club/${club.clubId}`)
-    },
-    [navigate, districtId]
-  )
-
-  // Tab strip on this route: clicking a non-Clubs tab navigates back to
-  // the narrative page with the matching ?tab=... value. Clicking Clubs
-  // is a no-op (we're already here).
-  const handleTabChange = useCallback(
-    (tab: DistrictTabId) => {
-      if (tab === 'clubs') return
-      const qs = tab === 'overview' ? '' : `?tab=${encodeURIComponent(tab)}`
-      navigate(`/district/${districtId}${qs}`)
     },
     [navigate, districtId]
   )
@@ -316,11 +299,15 @@ const DistrictClubsPage: React.FC = () => {
             }
           />
 
-          <DistrictDetailTabs
-            activeTab="clubs"
-            onTabChange={handleTabChange}
-            clubsCount={clubsCount}
-          />
+          <nav aria-label="District subview" className="mb-4">
+            <button
+              type="button"
+              onClick={() => navigate(`/district/${districtId}`)}
+              className="text-tm-loyal-blue hover:underline font-tm-headline font-medium"
+            >
+              ← Back to {districtName}
+            </button>
+          </nav>
 
           <div className="space-y-4 sm:space-y-6">
             {isLoading && allClubs.length === 0 ? (

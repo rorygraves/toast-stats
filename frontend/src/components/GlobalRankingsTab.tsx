@@ -2,6 +2,22 @@ import React, { useMemo } from 'react'
 import { useUrlState } from '../hooks/useUrlState'
 import EndOfYearRankingsPanel from './EndOfYearRankingsPanel'
 import FullYearRankingChart, { type RankMetric } from './FullYearRankingChart'
+
+/* #571 — URL contract for the metric toggle. Product-facing token is
+   `paid`; the internal RankMetric union still uses `clubs` so the
+   chart code (and its tests) keep working. Other values pass through. */
+const URL_TO_METRIC: Record<string, RankMetric> = {
+  paid: 'clubs',
+  payments: 'payments',
+  distinguished: 'distinguished',
+  aggregate: 'aggregate',
+}
+const METRIC_TO_URL: Record<RankMetric, string> = {
+  clubs: 'paid',
+  payments: 'payments',
+  distinguished: 'distinguished',
+  aggregate: 'aggregate',
+}
 import MultiYearComparisonTable from './MultiYearComparisonTable'
 import { useGlobalRankings } from '../hooks/useGlobalRankings'
 import type { ProgramYear } from '../utils/programYear'
@@ -214,10 +230,16 @@ const GlobalRankingsTab: React.FC<GlobalRankingsTabProps> = ({
   districtName,
   selectedProgramYear,
 }) => {
-  // Local state for selected metric (chart toggle) synced to URL (#272)
+  // Local state for selected metric (chart toggle) synced to URL.
+  // #571 renamed the key from `rank_metric` to `metric` and mapped the
+  // internal `clubs` token to the product-facing `paid` for the URL.
   const [selectedMetric, setSelectedMetric] = useUrlState<RankMetric>(
-    'rank_metric',
-    'aggregate'
+    'metric',
+    'aggregate',
+    {
+      parse: (raw: string) => URL_TO_METRIC[raw],
+      serialize: (m: RankMetric) => METRIC_TO_URL[m],
+    }
   )
 
   // Build hook params - only include selectedProgramYear when it has a value

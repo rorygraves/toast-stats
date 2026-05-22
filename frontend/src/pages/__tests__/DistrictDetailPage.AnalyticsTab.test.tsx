@@ -162,38 +162,36 @@ describe('DistrictDetailPage — Analytics section (post-#569 narrative merge)',
     cleanup()
   })
 
-  describe('Tab strip', () => {
-    it('does not render an Analytics tab — content scroll-stacks above the strip (#569)', () => {
+  describe('Subview CTAs (post-#571 IA Phase 3)', () => {
+    it('does not render a tab strip — narrative scrolls top-to-bottom', () => {
       renderWithProviders()
-      const tabNav = screen.getByRole('tablist')
-      const tabButtons = tabNav.querySelectorAll('button')
-      const labels = Array.from(tabButtons).map(b => b.textContent?.trim())
-      expect(labels).not.toContain('Analytics')
-      expect(labels).not.toContain('Trends')
-      expect(labels).not.toContain('Overview')
+      expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
     })
 
-    it('shows the 3 remaining tabs: Clubs / Divisions & Areas / Global Rankings', () => {
+    it('exposes CTA links to the Clubs / Divisions / Rankings routes', () => {
       renderWithProviders()
-      const tabNav = screen.getByRole('tablist')
-      const tabButtons = tabNav.querySelectorAll('button')
-      expect(tabButtons).toHaveLength(3)
-      expect(tabButtons[0]).toHaveTextContent(/^clubs/i)
-      expect(tabButtons[1]).toHaveTextContent(/divisions/i)
-      expect(tabButtons[2]).toHaveTextContent(/global rankings/i)
+      expect(
+        screen.getByRole('link', { name: /view all clubs/i })
+      ).toHaveAttribute('href', '/district/57/clubs')
+      expect(
+        screen.getByRole('link', { name: /divisions.*areas/i })
+      ).toHaveAttribute('href', '/district/57/divisions')
+      expect(
+        screen.getByRole('link', { name: /global rankings/i })
+      ).toHaveAttribute('href', '/district/57/rankings')
     })
   })
 
   describe('Narrative rendering', () => {
     it('does not crash with all analytics data null — narrative renders gracefully', async () => {
       // All hook mocks at the top of this file return null/empty; the page
-      // should still mount without throwing. Pre-#569 this test clicked an
-      // Analytics tab; post-#569 there is no tab to click — the content
-      // either renders (with empty states) or is skipped, but the page
-      // must not crash.
+      // should still mount without throwing. Post-#571 there are no tabs;
+      // the narrative renders its empty states / CTAs.
       renderWithProviders()
       await waitFor(() => {
-        expect(screen.getByRole('tablist')).toBeInTheDocument()
+        expect(
+          screen.getByRole('link', { name: /view all clubs/i })
+        ).toBeInTheDocument()
       })
     })
   })

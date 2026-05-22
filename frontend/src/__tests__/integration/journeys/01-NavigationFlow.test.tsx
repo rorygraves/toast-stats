@@ -70,26 +70,16 @@ describe('Journey 01: The Navigation Flow', () => {
     )
     expect(districtHeading).toBeInTheDocument()
 
-    // Make sure we are on the District detail page viewing some summary
-    // content. #569 dropped the Trends/Overview/Analytics tabs in favor
-    // of a single scrollable narrative — assert against the Clubs tab
-    // instead, which still exists and is the destination of the next
-    // step anyway.
-    // Step 6: Go to the Clubs tab to view clubs.
-    // After #569 the tab carries a count badge ("Clubs 305"), so the
-    // accessible name starts with "Clubs" but isn't a strict equal.
-    const clubsTab = await screen.findByRole(
-      'tab',
-      { name: /^Clubs/i },
+    // #571 (Phase 3) retired the tab strip entirely — the District page
+    // is a scrollable narrative and the Clubs subview lives at
+    // /district/:id/clubs. Click the "View all clubs →" CTA instead of
+    // the (no-longer-rendered) Clubs tab.
+    const clubsLink = await screen.findByRole(
+      'link',
+      { name: /view all clubs/i },
       { timeout: 5000 }
     )
-    await user.click(clubsTab)
-
-    // #570 (Phase 2): the Clubs tab is now a route, not an in-tab
-    // switch. Wait for the new page (DistrictClubsPage) to mount
-    // before searching for a club row — otherwise findByText can
-    // match the lingering TopGrowthClubs row on the narrative view
-    // that just unmounted.
+    await user.click(clubsLink)
     await screen.findByRole(
       'heading',
       { name: /^All Clubs$/i },

@@ -42,17 +42,46 @@ trap 'rm -rf "$LOCK_DIR"' EXIT
 
 cd "$REPO_DIR"
 
-# --- Skip if any sprint-runner screen session is already alive ---
-# macOS `screen -ls` writes to stderr, so we redirect 2>&1 before piping.
+# --- Read epic body ---
+BODY=$(gh issue view "$EPIC" --json body --jq .body 2>/dev/null) || die "gh issue view #$EPIC failed"
+
+# --- Detect existing sprint-runner screen session; reap if stale ---
+# A session is "stale" when its target sprint's sub-issue is already CLOSED
+# (the operator has verified the prior sprint live, so the residual claude
+# process is post-work). macOS `screen -ls` writes to stderr → 2>&1.
 SCREEN_LIST=$(screen -ls 2>&1 || true)
 if printf '%s\n' "$SCREEN_LIST" | grep -qE '\.sprint-runner-[0-9]+[[:space:]]'; then
   ACTIVE=$(printf '%s\n' "$SCREEN_LIST" | grep -oE 'sprint-runner-[0-9]+' | head -1)
-  log "Existing screen session active: $ACTIVE — skipping launch."
-  exit 0
+  ACTIVE_N=${ACTIVE##sprint-runner-}
+  ACTIVE_ISSUE=$(printf '%s\n' "$BODY" \
+    | grep -oE "Sprint ${ACTIVE_N}[^[:cntrl:]]{0,80}#[0-9]+" \
+    | head -1 \
+    | grep -oE '#[0-9]+' | head -1 | tr -d '#' || true)
+  if [[ -n "$ACTIVE_ISSUE" ]]; then
+    ACTIVE_STATE=$(gh issue view "$ACTIVE_ISSUE" --json state --jq .state 2>/dev/null || echo UNKNOWN)
+    if [[ "$ACTIVE_STATE" == "CLOSED" ]]; then
+      log "Stale session $ACTIVE: target Sprint $ACTIVE_N (#$ACTIVE_ISSUE) is CLOSED — reaping."
+      # Quit the screen, then SIGTERM the inner claude if it survives.
+      screen -X -S "$ACTIVE" quit 2>/dev/null || true
+      sleep 1
+      CLAUDE_PIDS=$(pgrep -f "claude --remote-control sprint-$ACTIVE_N" || true)
+      if [[ -n "$CLAUDE_PIDS" ]]; then
+        log "Reaping orphaned claude pids: $CLAUDE_PIDS"
+        kill $CLAUDE_PIDS 2>/dev/null || true
+        sleep 2
+        # Force if still alive.
+        STILL=$(pgrep -f "claude --remote-control sprint-$ACTIVE_N" || true)
+        [[ -n "$STILL" ]] && kill -9 $STILL 2>/dev/null || true
+      fi
+    else
+      log "Existing screen session active: $ACTIVE (Sprint $ACTIVE_N / #$ACTIVE_ISSUE is $ACTIVE_STATE) — skipping launch."
+      exit 0
+    fi
+  else
+    log "Existing screen session $ACTIVE has no matching sprint in epic body — leaving alone, skipping."
+    exit 0
+  fi
 fi
-
-# --- Read epic body ---
-BODY=$(gh issue view "$EPIC" --json body --jq .body 2>/dev/null) || die "gh issue view #$EPIC failed"
 
 # --- Find first unchecked sprint: `- [ ] **Sprint N** — #XXX` ---
 TARGET_LINE=$(printf '%s\n' "$BODY" | grep -m1 -E '^- \[ \] \*\*Sprint [0-9]+\*\* — #[0-9]+' || true)

@@ -1,19 +1,15 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import {
+  Link,
   Navigate,
   useParams,
   useNavigate,
   useSearchParams,
 } from 'react-router-dom'
-import { redirectLegacyClubsTab } from '../utils/legacyClubsRedirect'
+import { redirectLegacyDistrictTab } from '../utils/legacyTabRedirect'
 import { useDistricts } from '../hooks/useDistricts'
 import { DistrictDetailHeader } from '../components/DistrictDetailHeader'
-import {
-  DistrictDetailTabs,
-  panelIdFor,
-  tabIdFor,
-} from '../components/DistrictDetailTabs'
-import { useDistrictAnalytics, ClubTrend } from '../hooks/useDistrictAnalytics'
+import { useDistrictAnalytics } from '../hooks/useDistrictAnalytics'
 import { useAggregatedAnalytics } from '../hooks/useAggregatedAnalytics'
 import { useDistrictStatistics } from '../hooks/useMembershipData'
 import { usePerformanceTargets } from '../hooks/usePerformanceTargets'
@@ -34,18 +30,12 @@ import {
   calculateProgramYearDay,
 } from '../utils/programYear'
 import type { MultiYearPaymentData } from '../hooks/usePaymentsTrend'
-import {
-  parseFilterState,
-  serializeFilterState,
-  FILTER_URL_PREFIX,
-} from '../utils/filterUrlCodec'
 import { extractDivisionPerformance } from '../utils/extractDivisionPerformance'
 import { DistrictOverview } from '../components/DistrictOverview'
 import { NotableDatesSection } from '../components/NotableDatesSection'
 import { DistinguishedDistrictTrophyCase } from '../components/DistinguishedDistrictTrophyCase'
 import { useCompetitiveAwards } from '../hooks/useCompetitiveAwards'
 
-import { ClubsTable } from '../components/ClubsTable'
 import {
   LazyMembershipTrendChart as MembershipTrendChart,
   LazyMembershipPaymentsChart as MembershipPaymentsChart,
@@ -54,9 +44,8 @@ import {
 import { TopGrowthClubs } from '../components/TopGrowthClubs'
 import { EducationLevelsCard } from '../components/EducationLevelsCard'
 import { extractEducationLevels } from '../utils/extractEducationLevels'
-import { DivisionPerformanceCards } from '../components/DivisionPerformanceCards'
-import DistinguishedProgramCriteriaExplainer from '../components/DistinguishedProgramCriteriaExplainer'
-import { DivisionAreaRecognitionPanel } from '../components/DivisionAreaRecognitionPanel'
+import DivisionsSummaryNarrative from '../components/DivisionsSummaryNarrative'
+import VsWorldNarrative from '../components/VsWorldNarrative'
 
 import ErrorBoundary from '../components/ErrorBoundary'
 import { ErrorDisplay, EmptyState } from '../components/ErrorDisplay'
@@ -65,147 +54,14 @@ import { LoadingSkeleton } from '../components/LoadingSkeleton'
 import { LazyChart } from '../components/LazyChart'
 import GlobalRankingsTab from '../components/GlobalRankingsTab'
 
-type TabType =
-  | 'overview'
-  | 'clubs'
-  | 'divisions'
-  | 'trends'
-  | 'analytics'
-  | 'globalRankings'
-
 const DistrictDetailPageInner: React.FC = () => {
   const { districtId } = useParams<{ districtId: string }>()
   const navigate = useNavigate()
-  const [searchParams, setSearchParams] = useSearchParams()
 
-  // Read active tab from URL params (defaults to 'overview') (#230)
-  // #569 — 'overview' / 'trends' / 'analytics' are still recognized as
-  // valid `?tab=` values but they all resolve to the same merged
-  // narrative view. They no longer have separate tabpanels.
-  const VALID_TABS: TabType[] = [
-    'overview',
-    'clubs',
-    'divisions',
-    'trends',
-    'analytics',
-    'globalRankings',
-  ]
-  const NARRATIVE_TABS: TabType[] = ['overview', 'trends', 'analytics']
-  const tabParam = searchParams.get('tab') as TabType | null
-  const rawActiveTab: TabType =
-    tabParam && VALID_TABS.includes(tabParam) ? tabParam : 'overview'
-  // Collapse the three narrative IDs into 'overview' for rendering /
-  // tab-strip purposes. The URL is left alone so deep links to old
-  // trends/analytics URLs keep working.
-  const activeTab: TabType = NARRATIVE_TABS.includes(rawActiveTab)
-    ? 'overview'
-    : rawActiveTab
-  const isNarrativeView = activeTab === 'overview'
-
-  const setActiveTab = useCallback(
-    (tab: TabType) => {
-      if (tab === 'clubs') {
-        // Phase 2 (#570): Clubs has its own route. Clicking the chip in
-        // the tab strip navigates instead of updating ?tab=.
-        navigate(`/district/${districtId}/clubs`)
-        return
-      }
-      setSearchParams(
-        prev => {
-          const next = new URLSearchParams(prev)
-          if (tab === 'overview') {
-            next.delete('tab')
-          } else {
-            next.set('tab', tab)
-          }
-          return next
-        },
-        { replace: true }
-      )
-    },
-    [setSearchParams, navigate, districtId]
-  )
-
-  // Read sort state from URL params (#230)
-  const initialSortField = (searchParams.get('sort') ?? undefined) as
-    | import('../components/filters/types').SortField
-    | undefined
-  const initialSortDir =
-    (searchParams.get('dir') as 'asc' | 'desc') || undefined
-
-  const handleSortChange = useCallback(
-    (field: string, direction: string) => {
-      setSearchParams(
-        prev => {
-          const next = new URLSearchParams(prev)
-          if (field === 'name' && direction === 'asc') {
-            // Default sort — remove params to keep URL clean
-            next.delete('sort')
-            next.delete('dir')
-          } else {
-            next.set('sort', field)
-            next.set('dir', direction)
-          }
-          return next
-        },
-        { replace: true }
-      )
-    },
-    [setSearchParams]
-  )
-
-  // Read pagination state from URL params (#272)
-  const initialPageRaw = searchParams.get('page')
-  const initialPage = initialPageRaw ? parseInt(initialPageRaw, 10) : undefined
-
-  const handlePageChange = useCallback(
-    (page: number) => {
-      setSearchParams(
-        prev => {
-          const next = new URLSearchParams(prev)
-          if (page === 1) {
-            // Default page — remove param to keep URL clean
-            next.delete('page')
-          } else {
-            next.set('page', page.toString())
-          }
-          return next
-        },
-        { replace: true }
-      )
-    },
-    [setSearchParams]
-  )
-
-  // Read initial filter state from URL params (#272)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const initialFilterState = useMemo(() => parseFilterState(searchParams), [])
-
-  const handleFilterChange = useCallback(
-    (state: import('../components/filters/types').FilterState) => {
-      setSearchParams(
-        prev => {
-          const next = new URLSearchParams(prev)
-          // Remove all existing filter params
-          const keysToDelete: string[] = []
-          next.forEach((_, key) => {
-            if (key.startsWith(FILTER_URL_PREFIX)) keysToDelete.push(key)
-          })
-          keysToDelete.forEach(key => next.delete(key))
-          // Add new filter params
-          const serialized = serializeFilterState(state)
-          for (const [key, value] of Object.entries(serialized)) {
-            next.set(key, value)
-          }
-          // Reset pagination when filters change
-          next.delete('page')
-          return next
-        },
-        { replace: true }
-      )
-    },
-    [setSearchParams]
-  )
+  // #571 (IA Phase 3) retired the tab strip. The page is now a single
+  // scrollable narrative; the Clubs / Divisions / Rankings subviews
+  // each live at their own route and the legacy `?tab=` URLs redirect
+  // there via the outer DistrictDetailPage wrapper.
 
   // Use URL-synced program year and date (#272)
   const {
@@ -356,12 +212,11 @@ const DistrictDetailPageInner: React.FC = () => {
   )
 
   // Fetch district statistics for division/area performance cards
-  const { data: districtStatistics, isLoading: isLoadingStatistics } =
-    useDistrictStatistics(
-      hasValidDates ? districtId || null : null,
-      effectiveEndDate ?? undefined,
-      'divisions'
-    )
+  const { data: districtStatistics } = useDistrictStatistics(
+    hasValidDates ? districtId || null : null,
+    effectiveEndDate ?? undefined,
+    'divisions'
+  )
 
   // Fetch performance targets and rankings for overview cards (#183)
   const { data: performanceTargets } = usePerformanceTargets(
@@ -467,16 +322,13 @@ const DistrictDetailPageInner: React.FC = () => {
     b.localeCompare(a)
   )
 
-  // Tab badge counts (passed to DistrictDetailTabs)
-  const clubsCount = analytics?.allClubs?.length ?? 0
-  const divisionsCount = districtStatistics
-    ? extractDivisionPerformance(districtStatistics).length
-    : 0
-
-  // Handle club click — navigate to subpage (#208)
-  const handleClubClick = (club: ClubTrend) => {
-    navigate(`/district/${districtId}/club/${club.clubId}`)
-  }
+  // Pre-computed per-division performance, used by the inline summary
+  // block (#571). null when statistics haven't loaded yet.
+  const divisionPerformance = useMemo(() => {
+    return districtStatistics
+      ? extractDivisionPerformance(districtStatistics)
+      : null
+  }, [districtStatistics])
 
   // If districts data has loaded but this district isn't in the tracked list,
   // show a limited page with Global Rankings (available for all districts)
@@ -573,15 +425,8 @@ const DistrictDetailPageInner: React.FC = () => {
             />
           )}
 
-          <DistrictDetailTabs
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            clubsCount={clubsCount}
-            divisionsCount={divisionsCount}
-          />
-
           {/* Global Error State */}
-          {overviewError && isNarrativeView && (
+          {overviewError && (
             <ErrorDisplay
               error={overviewError}
               title="Failed to Load District Data"
@@ -611,369 +456,290 @@ const DistrictDetailPageInner: React.FC = () => {
               />
             )}
 
-          {/* Tab Content — each panel has a stable id + aria-labelledby
-              even when its body is conditionally rendered, so the
-              tablist's aria-controls always resolves (#384). */}
+          {/* Narrative content. #571 (IA Phase 3) retired the tab strip
+              and the routed Clubs / Divisions / Rankings tabpanels —
+              everything else now scrolls as one story, with CTAs at
+              the bottom that link to the dedicated routes. */}
           <div className="space-y-4 sm:space-y-6">
-            <div
-              role="tabpanel"
-              id={panelIdFor('overview')}
-              aria-labelledby={tabIdFor('overview')}
-              hidden={!isNarrativeView}
-            >
-              {isNarrativeView && districtId && hasOverviewData && (
-                <>
-                  {/* District Overview - Now uses global date selector */}
-                  {hasValidDates && effectiveProgramYear && (
-                    <DistrictOverview
-                      districtId={districtId}
-                      {...(effectiveEndDate && {
-                        selectedDate: effectiveEndDate,
-                      })}
-                      programYearStartDate={effectiveProgramYear.startDate}
-                      performanceTargets={performanceTargets ?? undefined}
-                    />
-                  )}
-
-                  {/* Distinguished District Trophy Case (#332) */}
-                  <DistinguishedDistrictTrophyCase
-                    status={distinguishedDistrictStatus}
-                    clubStrengthQualifies={clubStrengthResult?.qualifies}
-                    clubStrengthGrowth={clubStrengthResult?.growthPercent}
-                    leadershipExcellenceQualifies={
-                      leadershipExcellenceResult?.qualifies
-                    }
-                    leadershipExcellenceYears={
-                      leadershipExcellenceResult?.consecutiveYears
-                    }
-                    educationTrainingQualifies={
-                      officerAwardsResult?.educationTraining?.qualifies
-                    }
-                    clubGrowthQualifies={
-                      officerAwardsResult?.clubGrowth?.qualifies
-                    }
-                  />
-
-                  {/* Notable dates (#551). Collapses to a single compact
-                    band when both upcoming anniversaries and program-year
-                    milestones are empty; otherwise renders the populated
-                    panel(s). */}
-                  <NotableDatesSection
-                    clubs={allClubs}
-                    {...(districtId !== undefined && { districtId })}
-                    {...(effectiveProgramYear?.year !== undefined && {
-                      programYearStart: effectiveProgramYear.year,
+            {districtId && hasOverviewData && (
+              <>
+                {/* District Overview - Now uses global date selector */}
+                {hasValidDates && effectiveProgramYear && (
+                  <DistrictOverview
+                    districtId={districtId}
+                    {...(effectiveEndDate && {
+                      selectedDate: effectiveEndDate,
                     })}
+                    programYearStartDate={effectiveProgramYear.startDate}
+                    performanceTargets={performanceTargets ?? undefined}
                   />
+                )}
 
-                  {/* Payment Composition + Distinguished Progress legacy
-                    sections retired in #472 — the new redesign panels in
-                    DistrictOverview (DistinguishedCompositionBar +
-                    PaymentCompositionDonut) cover the same data. */}
-                </>
-              )}
-            </div>
+                {/* Distinguished District Trophy Case (#332) */}
+                <DistinguishedDistrictTrophyCase
+                  status={distinguishedDistrictStatus}
+                  clubStrengthQualifies={clubStrengthResult?.qualifies}
+                  clubStrengthGrowth={clubStrengthResult?.growthPercent}
+                  leadershipExcellenceQualifies={
+                    leadershipExcellenceResult?.qualifies
+                  }
+                  leadershipExcellenceYears={
+                    leadershipExcellenceResult?.consecutiveYears
+                  }
+                  educationTrainingQualifies={
+                    officerAwardsResult?.educationTraining?.qualifies
+                  }
+                  clubGrowthQualifies={
+                    officerAwardsResult?.clubGrowth?.qualifies
+                  }
+                />
 
-            <div
-              role="tabpanel"
-              id={panelIdFor('clubs')}
-              aria-labelledby={tabIdFor('clubs')}
-              hidden={activeTab !== 'clubs'}
-            >
-              {activeTab === 'clubs' && districtId && (
-                <ClubsTable
+                {/* Notable dates (#551) */}
+                <NotableDatesSection
                   clubs={allClubs}
-                  districtId={districtId}
-                  isLoading={isLoadingAnalytics}
-                  onClubClick={handleClubClick}
-                  initialSortField={initialSortField}
-                  initialSortDirection={initialSortDir}
-                  onSortChange={handleSortChange}
-                  initialPage={initialPage}
-                  onPageChange={handlePageChange}
-                  initialFilterState={initialFilterState}
-                  onFilterChange={handleFilterChange}
+                  {...(districtId !== undefined && { districtId })}
+                  {...(effectiveProgramYear?.year !== undefined && {
+                    programYearStart: effectiveProgramYear.year,
+                  })}
                 />
+              </>
+            )}
+
+            {/* Trends */}
+            <>
+              {/* Membership Trend Chart */}
+              {aggregatedAnalytics ? (
+                <LazyChart height="400px">
+                  <MembershipTrendChart
+                    membershipTrend={
+                      // #170: prefer time-series monthly data over inline 1-point trend
+                      timeSeries?.years[
+                        timeSeries.currentProgramYear
+                      ]?.dataPoints.map(dp => ({
+                        date: dp.date,
+                        count: dp.membership,
+                      })) ?? aggregatedAnalytics.trends.membership
+                    }
+                    isLoading={isLoadingAggregated}
+                    priorYearTrends={
+                      // #238: overlay prior years for YoY comparison
+                      timeSeries
+                        ? timeSeries.availableYears
+                            .filter(y => y !== timeSeries.currentProgramYear)
+                            .map(y => ({
+                              label: y,
+                              data:
+                                timeSeries.years[y]?.dataPoints.map(dp => ({
+                                  date: dp.date,
+                                  count: dp.membership,
+                                })) ?? [],
+                            }))
+                            .filter(yt => yt.data.length > 0)
+                        : undefined
+                    }
+                  />
+                </LazyChart>
+              ) : (
+                isLoadingAggregated && (
+                  <LoadingSkeleton variant="chart" height="400px" />
+                )
               )}
-            </div>
 
-            <div
-              role="tabpanel"
-              id={panelIdFor('divisions')}
-              aria-labelledby={tabIdFor('divisions')}
-              hidden={activeTab !== 'divisions'}
-            >
-              {activeTab === 'divisions' && (
-                <>
-                  {/* Division Performance Cards */}
-                  {districtStatistics ? (
-                    <DivisionPerformanceCards
-                      districtSnapshot={districtStatistics}
-                      isLoading={isLoadingStatistics}
-                      snapshotTimestamp={districtStatistics.asOfDate}
-                    />
-                  ) : (
-                    isLoadingStatistics && <LoadingSkeleton variant="card" />
-                  )}
-
-                  {/* Distinguished Program criteria explainer (#362). Sits
-                    between the per-division cards and the
-                    DivisionAreaRecognitionPanel so users see the rules
-                    before reading any specific division's status. */}
-                  <DistinguishedProgramCriteriaExplainer />
-
-                  {/* Division and Area Recognition Panel */}
-                  {districtStatistics ? (
-                    <DivisionAreaRecognitionPanel
-                      divisions={extractDivisionPerformance(districtStatistics)}
-                      isLoading={isLoadingStatistics}
-                    />
-                  ) : (
-                    isLoadingStatistics && (
-                      <LoadingSkeleton variant="table" count={3} />
-                    )
-                  )}
-                </>
-              )}
-            </div>
-
-            <div
-              role="tabpanel"
-              id={panelIdFor('trends')}
-              aria-labelledby={tabIdFor('trends')}
-              hidden={!isNarrativeView}
-            >
-              {isNarrativeView && (
-                <>
-                  {/* Membership Trend Chart */}
-                  {aggregatedAnalytics ? (
-                    <LazyChart height="400px">
-                      <MembershipTrendChart
-                        membershipTrend={
-                          // #170: prefer time-series monthly data over inline 1-point trend
-                          timeSeries?.years[
-                            timeSeries.currentProgramYear
-                          ]?.dataPoints.map(dp => ({
-                            date: dp.date,
-                            count: dp.membership,
-                          })) ?? aggregatedAnalytics.trends.membership
-                        }
-                        isLoading={isLoadingAggregated}
-                        priorYearTrends={
-                          // #238: overlay prior years for YoY comparison
-                          timeSeries
-                            ? timeSeries.availableYears
-                                .filter(
-                                  y => y !== timeSeries.currentProgramYear
-                                )
-                                .map(y => ({
-                                  label: y,
-                                  data:
-                                    timeSeries.years[y]?.dataPoints.map(dp => ({
-                                      date: dp.date,
-                                      count: dp.membership,
-                                    })) ?? [],
-                                }))
-                                .filter(yt => yt.data.length > 0)
-                            : undefined
-                        }
-                      />
-                    </LazyChart>
-                  ) : (
-                    isLoadingAggregated && (
-                      <LoadingSkeleton variant="chart" height="400px" />
-                    )
-                  )}
-
-                  {/* Membership Payments Chart (#243) */}
-                  {paymentsTrendData ? (
-                    <LazyChart height="450px">
-                      <MembershipPaymentsChart
-                        paymentsTrend={paymentsTrendData.currentYearTrend}
-                        multiYearData={
-                          // #243: Build multi-year payment data from time-series CDN
-                          // (analytics CDN only has current year payments)
-                          timeSeries
-                            ? ((): MultiYearPaymentData => {
-                                const currentPY = timeSeries.currentProgramYear
-                                const currentData =
-                                  timeSeries.years[currentPY]?.dataPoints.map(
-                                    dp => ({
-                                      date: dp.date,
-                                      payments: dp.payments,
-                                      programYearDay: calculateProgramYearDay(
-                                        dp.date
-                                      ),
-                                    })
-                                  ) ?? []
-                                const previousYears = timeSeries.availableYears
-                                  .filter(y => y !== currentPY)
-                                  .map(y => ({
-                                    label: y,
-                                    data:
-                                      timeSeries.years[y]?.dataPoints.map(
-                                        dp => ({
-                                          date: dp.date,
-                                          payments: dp.payments,
-                                          programYearDay:
-                                            calculateProgramYearDay(dp.date),
-                                        })
-                                      ) ?? [],
-                                  }))
-                                  .filter(yt => yt.data.length > 0)
-                                return {
-                                  currentYear: {
-                                    label: currentPY,
-                                    data: currentData,
-                                  },
-                                  previousYears,
-                                }
-                              })()
-                            : paymentsTrendData.multiYearData
-                        }
-                        statistics={
-                          // #269: Override YoY when time-series data provides
-                          // multi-year payment history (analytics CDN is current-year-only)
-                          (() => {
-                            const tsYoY = computePaymentYoYFromTimeSeries(
-                              timeSeries ?? null
-                            )
-                            if (tsYoY) {
-                              // Use time-series payments for consistency (#319)
-                              const tsPayments = getLatestPayments(
-                                timeSeries ?? null
-                              )
-                              return {
-                                ...paymentsTrendData.statistics,
-                                ...(tsPayments !== null && {
-                                  currentPayments: tsPayments,
-                                }),
-                                yearOverYearChange: tsYoY.yearOverYearChange,
-                                trendDirection: tsYoY.trendDirection,
-                              }
+              {/* Membership Payments Chart (#243) */}
+              {paymentsTrendData ? (
+                <LazyChart height="450px">
+                  <MembershipPaymentsChart
+                    paymentsTrend={paymentsTrendData.currentYearTrend}
+                    multiYearData={
+                      // #243: Build multi-year payment data from time-series CDN
+                      // (analytics CDN only has current year payments)
+                      timeSeries
+                        ? ((): MultiYearPaymentData => {
+                            const currentPY = timeSeries.currentProgramYear
+                            const currentData =
+                              timeSeries.years[currentPY]?.dataPoints.map(
+                                dp => ({
+                                  date: dp.date,
+                                  payments: dp.payments,
+                                  programYearDay: calculateProgramYearDay(
+                                    dp.date
+                                  ),
+                                })
+                              ) ?? []
+                            const previousYears = timeSeries.availableYears
+                              .filter(y => y !== currentPY)
+                              .map(y => ({
+                                label: y,
+                                data:
+                                  timeSeries.years[y]?.dataPoints.map(dp => ({
+                                    date: dp.date,
+                                    payments: dp.payments,
+                                    programYearDay: calculateProgramYearDay(
+                                      dp.date
+                                    ),
+                                  })) ?? [],
+                              }))
+                              .filter(yt => yt.data.length > 0)
+                            return {
+                              currentYear: {
+                                label: currentPY,
+                                data: currentData,
+                              },
+                              previousYears,
                             }
-                            return paymentsTrendData.statistics
                           })()
-                        }
-                        isLoading={isLoadingPaymentsTrend}
-                      />
-                    </LazyChart>
-                  ) : (
-                    isLoadingPaymentsTrend && (
-                      <LoadingSkeleton variant="chart" height="450px" />
-                    )
-                  )}
-
-                  {/* Year-Over-Year Comparison */}
-                  {aggregatedAnalytics ? (
-                    <LazyChart height="300px">
-                      <YearOverYearComparison
-                        {...(computeYearOverYear(timeSeries ?? null) && {
-                          yearOverYear: computeYearOverYear(
+                        : paymentsTrendData.multiYearData
+                    }
+                    statistics={
+                      // #269: Override YoY when time-series data provides
+                      // multi-year payment history (analytics CDN is current-year-only)
+                      (() => {
+                        const tsYoY = computePaymentYoYFromTimeSeries(
+                          timeSeries ?? null
+                        )
+                        if (tsYoY) {
+                          // Use time-series payments for consistency (#319)
+                          const tsPayments = getLatestPayments(
                             timeSeries ?? null
-                          )!,
-                        })}
-                        currentYear={{
-                          // Use time-series membership when available (#319)
-                          // to match the membership chart above
-                          totalMembership:
-                            timeSeries?.currentMembership ??
-                            aggregatedAnalytics.summary.totalMembership,
-                          distinguishedClubs:
-                            aggregatedAnalytics.summary.distinguishedClubs
-                              .total,
-                          thrivingClubs:
-                            aggregatedAnalytics.summary.clubCounts.thriving,
-                          totalClubs:
-                            aggregatedAnalytics.summary.clubCounts.total,
-                        }}
-                        isLoading={isLoadingAggregated}
-                      />
-                    </LazyChart>
-                  ) : (
-                    isLoadingAggregated && (
-                      <LoadingSkeleton variant="chart" height="300px" />
-                    )
-                  )}
-                </>
-              )}
-            </div>
-
-            <div
-              role="tabpanel"
-              id={panelIdFor('analytics')}
-              aria-labelledby={tabIdFor('analytics')}
-              hidden={!isNarrativeView}
-            >
-              {isNarrativeView && (
-                <>
-                  {/* Top Growth Clubs */}
-                  {analytics ? (
-                    <TopGrowthClubs
-                      topGrowthClubs={analytics.topGrowthClubs}
-                      topDCPClubs={analytics.allClubs
-                        .filter(club => club.dcpGoalsTrend.length > 0)
-                        .map(club => ({
-                          clubId: club.clubId,
-                          clubName: club.clubName,
-                          goalsAchieved:
-                            club.dcpGoalsTrend[club.dcpGoalsTrend.length - 1]
-                              ?.goalsAchieved || 0,
-                          ...(club.distinguishedLevel &&
-                            [
-                              'Smedley',
-                              'President',
-                              'Select',
-                              'Distinguished',
-                            ].includes(club.distinguishedLevel) && {
-                              distinguishedLevel: club.distinguishedLevel as
-                                | 'Smedley'
-                                | 'President'
-                                | 'Select'
-                                | 'Distinguished',
+                          )
+                          return {
+                            ...paymentsTrendData.statistics,
+                            ...(tsPayments !== null && {
+                              currentPayments: tsPayments,
                             }),
-                        }))
-                        .sort((a, b) => b.goalsAchieved - a.goalsAchieved)
-                        .slice(0, 10)}
-                      isLoading={isLoadingAnalytics}
-                    />
-                  ) : (
-                    isLoadingAnalytics && <LoadingSkeleton variant="card" />
-                  )}
-
-                  {/* Education Levels rollup (#426) — sums Level 1/2/3
-                      and the bundled Level 4 / Path / DTM column across
-                      all clubs in the district. */}
-                  {districtStatistics ? (
-                    <EducationLevelsCard
-                      totals={extractEducationLevels(districtStatistics)}
-                    />
-                  ) : (
-                    isLoadingStatistics && (
-                      <EducationLevelsCard
-                        totals={extractEducationLevels(null)}
-                        isLoading
-                      />
-                    )
-                  )}
-                </>
+                            yearOverYearChange: tsYoY.yearOverYearChange,
+                            trendDirection: tsYoY.trendDirection,
+                          }
+                        }
+                        return paymentsTrendData.statistics
+                      })()
+                    }
+                    isLoading={isLoadingPaymentsTrend}
+                  />
+                </LazyChart>
+              ) : (
+                isLoadingPaymentsTrend && (
+                  <LoadingSkeleton variant="chart" height="450px" />
+                )
               )}
-            </div>
 
-            <div
-              role="tabpanel"
-              id={panelIdFor('globalRankings')}
-              aria-labelledby={tabIdFor('globalRankings')}
-              hidden={activeTab !== 'globalRankings'}
-            >
-              {activeTab === 'globalRankings' && districtId && (
-                <GlobalRankingsTab
-                  districtId={districtId}
-                  districtName={districtName}
-                  selectedProgramYear={selectedProgramYear}
+              {/* Year-Over-Year Comparison */}
+              {aggregatedAnalytics ? (
+                <LazyChart height="300px">
+                  <YearOverYearComparison
+                    {...(computeYearOverYear(timeSeries ?? null) && {
+                      yearOverYear: computeYearOverYear(timeSeries ?? null)!,
+                    })}
+                    currentYear={{
+                      // Use time-series membership when available (#319)
+                      // to match the membership chart above
+                      totalMembership:
+                        timeSeries?.currentMembership ??
+                        aggregatedAnalytics.summary.totalMembership,
+                      distinguishedClubs:
+                        aggregatedAnalytics.summary.distinguishedClubs.total,
+                      thrivingClubs:
+                        aggregatedAnalytics.summary.clubCounts.thriving,
+                      totalClubs: aggregatedAnalytics.summary.clubCounts.total,
+                    }}
+                    isLoading={isLoadingAggregated}
+                  />
+                </LazyChart>
+              ) : (
+                isLoadingAggregated && (
+                  <LoadingSkeleton variant="chart" height="300px" />
+                )
+              )}
+            </>
+
+            {/* Analytics */}
+            <>
+              {/* Top Growth Clubs */}
+              {analytics && (
+                <TopGrowthClubs
+                  topGrowthClubs={analytics.topGrowthClubs}
+                  topDCPClubs={analytics.allClubs
+                    .filter(club => club.dcpGoalsTrend.length > 0)
+                    .map(club => ({
+                      clubId: club.clubId,
+                      clubName: club.clubName,
+                      goalsAchieved:
+                        club.dcpGoalsTrend[club.dcpGoalsTrend.length - 1]
+                          ?.goalsAchieved || 0,
+                      ...(club.distinguishedLevel &&
+                        [
+                          'Smedley',
+                          'President',
+                          'Select',
+                          'Distinguished',
+                        ].includes(club.distinguishedLevel) && {
+                          distinguishedLevel: club.distinguishedLevel as
+                            | 'Smedley'
+                            | 'President'
+                            | 'Select'
+                            | 'Distinguished',
+                        }),
+                    }))
+                    .sort((a, b) => b.goalsAchieved - a.goalsAchieved)
+                    .slice(0, 10)}
+                  isLoading={isLoadingAnalytics}
                 />
               )}
-            </div>
+
+              {/* Education Levels rollup (#426) */}
+              {districtStatistics && (
+                <EducationLevelsCard
+                  totals={extractEducationLevels(districtStatistics)}
+                />
+              )}
+            </>
+
+            {/* Division summary block (#571) — inline preview of all
+                divisions with a Letter ⇄ Performance sort toggle and a
+                CTA to the dedicated /district/:id/divisions route. */}
+            {districtId && divisionPerformance && (
+              <DivisionsSummaryNarrative
+                districtId={districtId}
+                divisions={divisionPerformance}
+              />
+            )}
+
+            {/* Vs world callout (#571) — four mini rank tiles + CTA to
+                the dedicated /district/:id/rankings route. */}
+            {districtId && (
+              <VsWorldNarrative
+                districtId={districtId}
+                districtName={districtName}
+                {...(selectedProgramYear && { selectedProgramYear })}
+              />
+            )}
+
+            {/* Subview CTAs — replace the retired tab strip. */}
+            {districtId && (
+              <nav
+                aria-label="District subviews"
+                className="flex flex-wrap gap-2 pt-2"
+              >
+                <Link
+                  to={`/district/${districtId}/clubs`}
+                  className="inline-flex items-center px-4 py-2 min-h-[44px] rounded-md bg-tm-loyal-blue text-white font-tm-headline font-medium hover:bg-tm-loyal-blue-80"
+                >
+                  View all clubs →
+                </Link>
+                <Link
+                  to={`/district/${districtId}/divisions`}
+                  className="inline-flex items-center px-4 py-2 min-h-[44px] rounded-md border border-tm-loyal-blue text-tm-loyal-blue font-tm-headline font-medium hover:bg-tm-loyal-blue-10"
+                >
+                  Divisions &amp; areas →
+                </Link>
+                <Link
+                  to={`/district/${districtId}/rankings`}
+                  className="inline-flex items-center px-4 py-2 min-h-[44px] rounded-md border border-tm-loyal-blue text-tm-loyal-blue font-tm-headline font-medium hover:bg-tm-loyal-blue-10"
+                >
+                  Global rankings →
+                </Link>
+              </nav>
+            )}
           </div>
         </div>
       </div>
@@ -982,24 +748,22 @@ const DistrictDetailPageInner: React.FC = () => {
 }
 
 /**
- * Default export: thin wrapper that intercepts the legacy `?tab=clubs`
- * URL and redirects to `/district/:id/clubs` BEFORE the heavy
- * DistrictDetailPageInner hooks run. Without this guard, inner effects
- * (date selection, etc.) would race against `<Navigate>` and clobber
- * the new URL's search params after the route transition.
+ * Default export: thin wrapper that intercepts the legacy `?tab=…` URLs
+ * (clubs / divisions / globalRankings) and redirects to their new routes
+ * BEFORE the heavy DistrictDetailPageInner hooks run. Without this
+ * guard, inner effects (date selection, etc.) would race against
+ * `<Navigate>` and clobber the new URL's search params after the route
+ * transition.
  */
 const DistrictDetailPage: React.FC = () => {
   const { districtId } = useParams<{ districtId: string }>()
   const [searchParams] = useSearchParams()
-  const legacyClubsTarget = redirectLegacyClubsTab(
+  const legacyTarget = redirectLegacyDistrictTab(
     `http://localhost/district/${districtId ?? ''}?${searchParams.toString()}`,
     districtId
   )
-  if (legacyClubsTarget) {
-    const [pathname, search = ''] = legacyClubsTarget.split('?') as [
-      string,
-      string?,
-    ]
+  if (legacyTarget) {
+    const [pathname, search = ''] = legacyTarget.split('?') as [string, string?]
     return (
       <Navigate to={{ pathname, search: search ? `?${search}` : '' }} replace />
     )
