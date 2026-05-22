@@ -213,19 +213,16 @@ describe('DistrictDetailPage - Global Rankings Tab Navigation Integration', () =
       expect(globalRankingsTab).toBeInTheDocument()
     })
 
-    it('should display Global Rankings tab alongside existing tabs', () => {
+    it('should display Global Rankings tab alongside the remaining tabs (#569)', () => {
       renderWithProviders()
 
       // Get the tab navigation container
       const tabNav = screen.getByRole('tablist')
 
-      // Verify all tabs are present within the navigation
-      // Note: Analytics tab is now re-enabled (#78)
-      expect(tabNav).toHaveTextContent(/overview/i)
+      // After #569 only Clubs / Divisions / Global Rankings remain in
+      // the strip. Overview / Trends / Analytics scroll-stack above.
       expect(tabNav).toHaveTextContent(/clubs/i)
       expect(tabNav).toHaveTextContent(/divisions & areas/i)
-      expect(tabNav).toHaveTextContent(/trends/i)
-      expect(tabNav).toHaveTextContent(/analytics/i)
       expect(tabNav).toHaveTextContent(/global rankings/i)
     })
 
@@ -236,14 +233,11 @@ describe('DistrictDetailPage - Global Rankings Tab Navigation Integration', () =
       const tabNav = screen.getByRole('tablist')
       const tabButtons = tabNav.querySelectorAll('button')
 
-      // Verify the order (Analytics tab is now re-enabled #78)
-      expect(tabButtons).toHaveLength(6)
-      expect(tabButtons[0]).toHaveTextContent(/overview/i)
-      expect(tabButtons[1]).toHaveTextContent(/clubs/i)
-      expect(tabButtons[2]).toHaveTextContent(/divisions & areas/i)
-      expect(tabButtons[3]).toHaveTextContent(/trends/i)
-      expect(tabButtons[4]).toHaveTextContent(/analytics/i)
-      expect(tabButtons[5]).toHaveTextContent(/global rankings/i)
+      // 3-tab strip after #569.
+      expect(tabButtons).toHaveLength(3)
+      expect(tabButtons[0]).toHaveTextContent(/^clubs/i)
+      expect(tabButtons[1]).toHaveTextContent(/divisions & areas/i)
+      expect(tabButtons[2]).toHaveTextContent(/global rankings/i)
     })
   })
 
@@ -334,7 +328,7 @@ describe('DistrictDetailPage - Global Rankings Tab Navigation Integration', () =
       })
     })
 
-    it('should switch back to other tabs from Global Rankings', async () => {
+    it('should switch back to other tabs from Global Rankings (#569: switches to Clubs since Overview is no longer a tab)', async () => {
       renderWithProviders()
 
       // Click on Global Rankings tab
@@ -350,9 +344,9 @@ describe('DistrictDetailPage - Global Rankings Tab Navigation Integration', () =
         ).toBeInTheDocument()
       })
 
-      // Click on Overview tab
-      const overviewTab = screen.getByRole('tab', { name: /overview/i })
-      fireEvent.click(overviewTab)
+      // Click on Clubs tab (was previously Overview, but #569 dropped that)
+      const clubsTab = screen.getByRole('tab', { name: /^clubs/i })
+      fireEvent.click(clubsTab)
 
       // Verify Global Rankings content is hidden
       await waitFor(() => {
@@ -371,16 +365,18 @@ describe('DistrictDetailPage - Global Rankings Tab Navigation Integration', () =
         name: /global rankings/i,
       })
 
-      // Get the tab navigation and find the Trends tab within it (Analytics is now re-enabled)
-      const tabNav = screen.getByRole('tablist')
-      const tabButtons = tabNav.querySelectorAll('button')
-      const trendsTab = Array.from(tabButtons).find(btn =>
-        btn.textContent?.toLowerCase().includes('trends')
-      )
+      // Compare against another non-active tab in the 3-tab strip. Clubs
+      // is the default mount state per VALID_TABS resolution, so it
+      // should be active and divisions inactive.
+      const divisionsTab = screen.getByRole('tab', {
+        name: /divisions & areas/i,
+      })
 
-      // Both should be inactive on initial render (Overview is the default)
+      // Both should be inactive on initial mount — the narrative
+      // (collapsed Overview) is the default landing view, no tab is
+      // active in the 3-tab strip until the user clicks one.
       expect(globalRankingsTab).toHaveAttribute('aria-selected', 'false')
-      expect(trendsTab).toHaveAttribute('aria-selected', 'false')
+      expect(divisionsTab).toHaveAttribute('aria-selected', 'false')
     })
 
     it('should expose the active state via aria-selected when selected', async () => {

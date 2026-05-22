@@ -24,34 +24,29 @@ const renderTabs = (
 
 describe('DistrictDetailTabs (#359)', () => {
   describe('structure', () => {
-    it('renders all 6 tabs in order', () => {
+    it('renders the 3 remaining tabs in order (#569 dropped narrative tabs)', () => {
       renderTabs()
       const tablist = screen.getByRole('tablist', {
         name: /district analysis tabs/i,
       })
       const tabs = within(tablist).getAllByRole('tab')
-      // Tabs render label + (optional) count badge as siblings; textContent
-      // concatenates them without whitespace.
+      // After #569, the strip is just Clubs / Divisions / Global Rankings.
+      // Overview / Trends / Analytics scroll-stack above the strip.
       expect(tabs.map(t => t.textContent?.trim())).toEqual([
-        'Overview',
         'Clubs305',
         'Divisions & Areas7',
-        'Trends',
-        'Analytics',
         'Global Rankings',
       ])
     })
 
     it('marks the active tab with aria-selected="true" and others false', () => {
-      renderTabs({ activeTab: 'trends' })
+      renderTabs({ activeTab: 'clubs' })
       const tablist = screen.getByRole('tablist')
-      const trends = within(tablist).getByRole('tab', { name: /trends/i })
-      expect(trends).toHaveAttribute('aria-selected', 'true')
+      const clubs = within(tablist).getByRole('tab', { name: /^clubs/i })
+      expect(clubs).toHaveAttribute('aria-selected', 'true')
 
-      const overview = within(tablist).getByRole('tab', {
-        name: /overview/i,
-      })
-      expect(overview).toHaveAttribute('aria-selected', 'false')
+      const divs = within(tablist).getByRole('tab', { name: /divisions/i })
+      expect(divs).toHaveAttribute('aria-selected', 'false')
     })
   })
 
@@ -92,9 +87,9 @@ describe('DistrictDetailTabs (#359)', () => {
 
     it('does not fire onTabChange when the already-active tab is clicked', () => {
       const onTabChange = vi.fn()
-      renderTabs({ activeTab: 'overview', onTabChange })
+      renderTabs({ activeTab: 'clubs', onTabChange })
       const tablist = screen.getByRole('tablist')
-      fireEvent.click(within(tablist).getByRole('tab', { name: /overview/i }))
+      fireEvent.click(within(tablist).getByRole('tab', { name: /^clubs/i }))
       expect(onTabChange).not.toHaveBeenCalled()
     })
   })
@@ -114,39 +109,42 @@ describe('DistrictDetailTabs (#359)', () => {
     })
 
     it('ArrowRight moves focus to the next tab (with wrap)', () => {
-      renderTabs({ activeTab: 'overview' })
+      renderTabs({ activeTab: 'clubs' })
       const tablist = screen.getByRole('tablist')
       const tabs = within(tablist).getAllByRole('tab')
       tabs[0].focus()
       fireEvent.keyDown(tabs[0], { key: 'ArrowRight' })
       expect(tabs[1]).toHaveFocus()
-      // wrap at end
-      tabs[5].focus()
-      fireEvent.keyDown(tabs[5], { key: 'ArrowRight' })
+      // wrap at end (3 tabs after #569)
+      const last = tabs.length - 1
+      tabs[last].focus()
+      fireEvent.keyDown(tabs[last], { key: 'ArrowRight' })
       expect(tabs[0]).toHaveFocus()
     })
 
     it('ArrowLeft moves focus to the previous tab (with wrap)', () => {
-      renderTabs({ activeTab: 'overview' })
+      renderTabs({ activeTab: 'clubs' })
       const tablist = screen.getByRole('tablist')
       const tabs = within(tablist).getAllByRole('tab')
       tabs[2].focus()
       fireEvent.keyDown(tabs[2], { key: 'ArrowLeft' })
       expect(tabs[1]).toHaveFocus()
       // wrap at start
+      const last = tabs.length - 1
       tabs[0].focus()
       fireEvent.keyDown(tabs[0], { key: 'ArrowLeft' })
-      expect(tabs[5]).toHaveFocus()
+      expect(tabs[last]).toHaveFocus()
     })
 
     it('Home jumps focus to the first tab; End jumps to the last', () => {
-      renderTabs({ activeTab: 'overview' })
+      renderTabs({ activeTab: 'clubs' })
       const tablist = screen.getByRole('tablist')
       const tabs = within(tablist).getAllByRole('tab')
-      tabs[3].focus()
-      fireEvent.keyDown(tabs[3], { key: 'End' })
-      expect(tabs[5]).toHaveFocus()
-      fireEvent.keyDown(tabs[5], { key: 'Home' })
+      const last = tabs.length - 1
+      tabs[1].focus()
+      fireEvent.keyDown(tabs[1], { key: 'End' })
+      expect(tabs[last]).toHaveFocus()
+      fireEvent.keyDown(tabs[last], { key: 'Home' })
       expect(tabs[0]).toHaveFocus()
     })
 

@@ -15,6 +15,17 @@ import React, { useRef } from 'react'
      `tabIdFor` / `panelIdFor` exports.
    Reference: https://www.w3.org/WAI/ARIA/apg/patterns/tabs/ */
 
+/**
+ * District tab IDs.
+ *
+ * #569 (IA Phase 1) collapsed 'overview' / 'trends' / 'analytics' into
+ * a single scrollable narrative — none of them appear in the tab strip
+ * anymore, but the IDs survive in this union so existing `?tab=...`
+ * URLs still parse cleanly and the merged-panel id (`panelIdFor`) is
+ * stable for a11y labelling. The remaining strip is Clubs / Divisions /
+ * Global Rankings; Phases 2 + 3 will route them and the strip goes
+ * away entirely.
+ */
 export type DistrictTabId =
   | 'overview'
   | 'clubs'
@@ -22,6 +33,9 @@ export type DistrictTabId =
   | 'trends'
   | 'analytics'
   | 'globalRankings'
+
+/** Subset of DistrictTabId that actually appears in the tab strip after #569. */
+export type DistrictStripTabId = 'clubs' | 'divisions' | 'globalRankings'
 
 export const tabIdFor = (id: DistrictTabId) => `district-tab-${id}`
 export const panelIdFor = (id: DistrictTabId) => `district-tabpanel-${id}`
@@ -41,12 +55,14 @@ interface TabSpec {
   countKey?: 'clubsCount' | 'divisionsCount'
 }
 
+/**
+ * Visible tab strip. #569 dropped Overview / Trends / Analytics —
+ * their content scroll-stacks above the strip as one narrative now.
+ * Phases 2 + 3 will route the three remaining destinations.
+ */
 const TABS: ReadonlyArray<TabSpec> = [
-  { id: 'overview', label: 'Overview' },
   { id: 'clubs', label: 'Clubs', countKey: 'clubsCount' },
   { id: 'divisions', label: 'Divisions & Areas', countKey: 'divisionsCount' },
-  { id: 'trends', label: 'Trends' },
-  { id: 'analytics', label: 'Analytics' },
   { id: 'globalRankings', label: 'Global Rankings' },
 ]
 

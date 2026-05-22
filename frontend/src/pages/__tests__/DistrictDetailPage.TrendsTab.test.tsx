@@ -21,7 +21,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { screen, render, waitFor, cleanup } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import React from 'react'
@@ -457,12 +456,10 @@ describe('DistrictDetailPage - Trends Tab Data Source Wiring', () => {
         usedFallback: false,
       })
 
-      const user = userEvent.setup()
       renderDistrictDetailPage()
 
-      // Navigate to Trends tab
-      const trendsTab = screen.getByRole('tab', { name: /Trends/i })
-      await user.click(trendsTab)
+      // #569 — Trends content now scroll-stacks on the default district
+      // page. No tab click required; the charts render on mount.
 
       // Wait for LazyChart IntersectionObserver to fire
       await waitFor(() => {
@@ -503,12 +500,10 @@ describe('DistrictDetailPage - Trends Tab Data Source Wiring', () => {
         usedFallback: false,
       })
 
-      const user = userEvent.setup()
       renderDistrictDetailPage()
 
-      // Navigate to Trends tab
-      const trendsTab = screen.getByRole('tab', { name: /Trends/i })
-      await user.click(trendsTab)
+      // #569 — Trends content now scroll-stacks on the default district
+      // page. No tab click required; the charts render on mount.
 
       // Wait for YearOverYearComparison to render
       await waitFor(() => {
@@ -564,12 +559,9 @@ describe('DistrictDetailPage - Trends Tab Data Source Wiring', () => {
         usedFallback: false,
       })
 
-      const user = userEvent.setup()
       renderDistrictDetailPage()
 
-      const trendsTab = screen.getByRole('tab', { name: /Trends/i })
-      await user.click(trendsTab)
-
+      // #569 — Trends content scroll-stacks on the default page.
       await waitFor(() => {
         expect(screen.getByTestId('membership-trend-chart')).toBeInTheDocument()
         expect(
@@ -600,16 +592,12 @@ describe('DistrictDetailPage - Trends Tab Data Source Wiring', () => {
         usedFallback: false,
       })
 
-      const user = userEvent.setup()
       renderDistrictDetailPage()
 
-      const trendsTab = screen.getByRole('tab', { name: /Trends/i })
-      await user.click(trendsTab)
-
-      // Verify the Trends tab is active
+      // #569 — Trends content scroll-stacks on the default page; no tab
+      // click needed. Wait a microtask to let the page mount.
       await waitFor(() => {
-        const trendsButton = screen.getByRole('tab', { name: /Trends/i })
-        expect(trendsButton).toHaveAttribute('aria-selected', 'true')
+        expect(screen.getByRole('tablist')).toBeInTheDocument()
       })
 
       // Neither component should be rendered
@@ -643,16 +631,12 @@ describe('DistrictDetailPage - Trends Tab Data Source Wiring', () => {
       // single-snapshot analytics IS available (via the default mock above)
       // This verifies the guard is on aggregatedAnalytics, not analytics
 
-      const user = userEvent.setup()
       renderDistrictDetailPage()
 
-      const trendsTab = screen.getByRole('tab', { name: /Trends/i })
-      await user.click(trendsTab)
-
-      // Verify the Trends tab is active
+      // #569 — Trends content scroll-stacks on the default page; no tab
+      // click needed. Wait a microtask to let the page mount.
       await waitFor(() => {
-        const trendsButton = screen.getByRole('tab', { name: /Trends/i })
-        expect(trendsButton).toHaveAttribute('aria-selected', 'true')
+        expect(screen.getByRole('tablist')).toBeInTheDocument()
       })
 
       // Neither component should be rendered despite analytics being available

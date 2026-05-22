@@ -70,21 +70,17 @@ describe('Journey 01: The Navigation Flow', () => {
     )
     expect(districtHeading).toBeInTheDocument()
 
-    // Make sure we are on the District detail page viewing some summary content
-    // We use findAllByText with a longer timeout because the data might be loading via React Query
-    const trendsTabs = await screen.findAllByText(
-      /Trends/i,
-      {},
-      { timeout: 3000 }
-    )
-    expect(trendsTabs.length).toBeGreaterThan(0)
-
-    // Step 6: Go to the Analytics tab to view clubs
-    // Step 6: Go to the Clubs tab to view clubs
-    // Step 6: Go to the Clubs tab to view clubs
+    // Make sure we are on the District detail page viewing some summary
+    // content. #569 dropped the Trends/Overview/Analytics tabs in favor
+    // of a single scrollable narrative — assert against the Clubs tab
+    // instead, which still exists and is the destination of the next
+    // step anyway.
+    // Step 6: Go to the Clubs tab to view clubs.
+    // After #569 the tab carries a count badge ("Clubs 305"), so the
+    // accessible name starts with "Clubs" but isn't a strict equal.
     const clubsTab = await screen.findByRole(
       'tab',
-      { name: /^Clubs$/i },
+      { name: /^Clubs/i },
       { timeout: 5000 }
     )
     await user.click(clubsTab)

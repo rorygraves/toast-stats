@@ -8,13 +8,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import {
-  screen,
-  render,
-  fireEvent,
-  waitFor,
-  cleanup,
-} from '@testing-library/react'
+import { screen, render, waitFor, cleanup } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -159,7 +153,7 @@ const renderWithProviders = (initialRoute = '/district/57') => {
   )
 }
 
-describe('DistrictDetailPage - Analytics Tab (#78)', () => {
+describe('DistrictDetailPage — Analytics section (post-#569 narrative merge)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -168,63 +162,38 @@ describe('DistrictDetailPage - Analytics Tab (#78)', () => {
     cleanup()
   })
 
-  // Helper: get the Analytics tab button from the navigation
-  const getAnalyticsTab = () => {
-    const tabNav = screen.getByRole('tablist')
-    const tabButtons = tabNav.querySelectorAll('button')
-    const analyticsTab = Array.from(tabButtons).find(
-      btn => btn.textContent?.trim() === 'Analytics'
-    )
-    return analyticsTab as HTMLButtonElement
-  }
-
-  describe('Tab Navigation', () => {
-    it('should display Analytics tab in the tab navigation', () => {
+  describe('Tab strip', () => {
+    it('does not render an Analytics tab — content scroll-stacks above the strip (#569)', () => {
       renderWithProviders()
-
-      const analyticsTab = getAnalyticsTab()
-      expect(analyticsTab).toBeDefined()
-      expect(analyticsTab).toBeInTheDocument()
-    })
-
-    it('should include Analytics tab between Trends and Global Rankings', () => {
-      renderWithProviders()
-
       const tabNav = screen.getByRole('tablist')
       const tabButtons = tabNav.querySelectorAll('button')
+      const labels = Array.from(tabButtons).map(b => b.textContent?.trim())
+      expect(labels).not.toContain('Analytics')
+      expect(labels).not.toContain('Trends')
+      expect(labels).not.toContain('Overview')
+    })
 
-      // Should now have 6 tabs: Overview, Clubs, Divisions, Trends, Analytics, Global Rankings
-      expect(tabButtons).toHaveLength(6)
-      expect(tabButtons[3]).toHaveTextContent(/trends/i)
-      expect(tabButtons[4]).toHaveTextContent(/analytics/i)
-      expect(tabButtons[5]).toHaveTextContent(/global rankings/i)
+    it('shows the 3 remaining tabs: Clubs / Divisions & Areas / Global Rankings', () => {
+      renderWithProviders()
+      const tabNav = screen.getByRole('tablist')
+      const tabButtons = tabNav.querySelectorAll('button')
+      expect(tabButtons).toHaveLength(3)
+      expect(tabButtons[0]).toHaveTextContent(/^clubs/i)
+      expect(tabButtons[1]).toHaveTextContent(/divisions/i)
+      expect(tabButtons[2]).toHaveTextContent(/global rankings/i)
     })
   })
 
-  describe('Tab Content', () => {
-    it('should render analytics content when tab is clicked', async () => {
+  describe('Narrative rendering', () => {
+    it('does not crash with all analytics data null — narrative renders gracefully', async () => {
+      // All hook mocks at the top of this file return null/empty; the page
+      // should still mount without throwing. Pre-#569 this test clicked an
+      // Analytics tab; post-#569 there is no tab to click — the content
+      // either renders (with empty states) or is skipped, but the page
+      // must not crash.
       renderWithProviders()
-
-      const analyticsTab = getAnalyticsTab()
-      fireEvent.click(analyticsTab)
-
-      // After removing LeadershipInsights (#183), the first visible content
-      // on the analytics tab is TopGrowthClubs (which shows empty state)
       await waitFor(() => {
-        expect(analyticsTab).toHaveAttribute('aria-selected', 'true')
-      })
-    })
-
-    it('should not crash when all analytics data is null', async () => {
-      // All analytics mocks return null — component should render gracefully
-      renderWithProviders()
-
-      const analyticsTab = getAnalyticsTab()
-      fireEvent.click(analyticsTab)
-
-      // Should render without crashing — Analytics tab should become active
-      await waitFor(() => {
-        expect(analyticsTab).toHaveAttribute('aria-selected', 'true')
+        expect(screen.getByRole('tablist')).toBeInTheDocument()
       })
     })
   })

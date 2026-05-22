@@ -73,6 +73,9 @@ const DistrictDetailPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams()
 
   // Read active tab from URL params (defaults to 'overview') (#230)
+  // #569 — 'overview' / 'trends' / 'analytics' are still recognized as
+  // valid `?tab=` values but they all resolve to the same merged
+  // narrative view. They no longer have separate tabpanels.
   const VALID_TABS: TabType[] = [
     'overview',
     'clubs',
@@ -81,9 +84,17 @@ const DistrictDetailPage: React.FC = () => {
     'analytics',
     'globalRankings',
   ]
+  const NARRATIVE_TABS: TabType[] = ['overview', 'trends', 'analytics']
   const tabParam = searchParams.get('tab') as TabType | null
-  const activeTab: TabType =
+  const rawActiveTab: TabType =
     tabParam && VALID_TABS.includes(tabParam) ? tabParam : 'overview'
+  // Collapse the three narrative IDs into 'overview' for rendering /
+  // tab-strip purposes. The URL is left alone so deep links to old
+  // trends/analytics URLs keep working.
+  const activeTab: TabType = NARRATIVE_TABS.includes(rawActiveTab)
+    ? 'overview'
+    : rawActiveTab
+  const isNarrativeView = activeTab === 'overview'
 
   const setActiveTab = useCallback(
     (tab: TabType) => {
@@ -558,7 +569,7 @@ const DistrictDetailPage: React.FC = () => {
           />
 
           {/* Global Error State */}
-          {overviewError && activeTab === 'overview' && (
+          {overviewError && isNarrativeView && (
             <ErrorDisplay
               error={overviewError}
               title="Failed to Load District Data"
@@ -596,9 +607,9 @@ const DistrictDetailPage: React.FC = () => {
               role="tabpanel"
               id={panelIdFor('overview')}
               aria-labelledby={tabIdFor('overview')}
-              hidden={activeTab !== 'overview'}
+              hidden={!isNarrativeView}
             >
-              {activeTab === 'overview' && districtId && hasOverviewData && (
+              {isNarrativeView && districtId && hasOverviewData && (
                 <>
                   {/* District Overview - Now uses global date selector */}
                   {hasValidDates && effectiveProgramYear && (
@@ -718,9 +729,9 @@ const DistrictDetailPage: React.FC = () => {
               role="tabpanel"
               id={panelIdFor('trends')}
               aria-labelledby={tabIdFor('trends')}
-              hidden={activeTab !== 'trends'}
+              hidden={!isNarrativeView}
             >
-              {activeTab === 'trends' && (
+              {isNarrativeView && (
                 <>
                   {/* Membership Trend Chart */}
                   {aggregatedAnalytics ? (
@@ -880,9 +891,9 @@ const DistrictDetailPage: React.FC = () => {
               role="tabpanel"
               id={panelIdFor('analytics')}
               aria-labelledby={tabIdFor('analytics')}
-              hidden={activeTab !== 'analytics'}
+              hidden={!isNarrativeView}
             >
-              {activeTab === 'analytics' && (
+              {isNarrativeView && (
                 <>
                   {/* Top Growth Clubs */}
                   {analytics ? (
