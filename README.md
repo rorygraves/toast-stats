@@ -240,6 +240,7 @@ The project uses GitHub Actions for continuous integration and deployment:
 
 - **CI** (`ci.yml`): Runs on every push — typecheck, lint, and test across all workspaces
 - **Deploy** (`deploy.yml`): Builds Docker image, deploys backend to Cloud Run, deploys frontend to Firebase Hosting
+- **PR Preview** (`pr-preview.yml`): On every PR that touches frontend code, deploys a temporary Firebase Hosting preview channel (7-day TTL) and posts the live URL as a PR comment
 - **Data Pipeline** (`data-pipeline.yml`): Scheduled scraping and analytics computation
 
 See [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md) for pre-deployment verification steps.
