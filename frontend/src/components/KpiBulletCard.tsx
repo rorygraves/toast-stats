@@ -61,12 +61,25 @@ const BulletBar: React.FC<BulletBarProps> = ({
   title,
   ariaLabel,
 }) => {
-  const max = targets.smedley
   // Real data always has Smedley > Distinguished > 0. Guard for synthetic
   // zero-target rows so tick positions never become NaN%.
-  if (max <= 0) return null
-  const markerPct = Math.min(100, (current / max) * 100)
-  const allAchieved = current >= max
+  if (targets.smedley <= 0) return null
+
+  // Zoom scale into the tier band so the four ticks have room to spread.
+  // A [0, Smedley] scale crushed D/S/P/Sm into 93%–100% on real data —
+  // labels collided and the bar was unreadable (#558). The scale below
+  // auto-expands to include `current` whenever it lies outside the tier
+  // band, so no clamping is needed and no "below-scale" affordance is
+  // required — the marker is always on the bar. When the district has
+  // hit Smedley, maxScale collapses to `current` so the marker pins to
+  // 100% (a "you've made it" signal); the 5% headroom only applies when
+  // there's still tier to chase.
+  const allAchieved = current >= targets.smedley
+  const minScale = Math.max(0, Math.min(current, 0.9 * targets.distinguished))
+  const maxScale = allAchieved ? current : 1.05 * targets.smedley
+  const range = maxScale - minScale
+  const positionAt = (v: number): number => ((v - minScale) / range) * 100
+  const markerPct = positionAt(current)
 
   const tiers: TierTick[] = TIERS.map(t => ({ ...t, value: targets[t.key] }))
 
@@ -76,10 +89,10 @@ const BulletBar: React.FC<BulletBarProps> = ({
       role="progressbar"
       aria-valuenow={current}
       aria-valuemin={0}
-      aria-valuemax={max}
+      aria-valuemax={targets.smedley}
       aria-label={
         ariaLabel ??
-        `${title} — current ${current.toLocaleString()} of ${max.toLocaleString()} (Smedley tier)`
+        `${title} — current ${current.toLocaleString()} of ${targets.smedley.toLocaleString()} (Smedley tier)`
       }
     >
       <div
@@ -107,7 +120,7 @@ const BulletBar: React.FC<BulletBarProps> = ({
       </div>
 
       {tiers.map(t => {
-        const pos = (t.value / max) * 100
+        const pos = positionAt(t.value)
         const achieved = current >= t.value
         return (
           <Tooltip

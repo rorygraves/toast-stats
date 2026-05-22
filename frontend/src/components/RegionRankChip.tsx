@@ -8,10 +8,12 @@ interface RegionRankChipProps {
 }
 
 /**
- * Compact chip rendering a district's region rank ("05: #3"). Links
- * to `/region/<digits>` when the region label contains digits; falls
- * back to a plain span when it doesn't (no route exists for "Unknown"
- * or other non-numeric regions).
+ * Inline region rank ("05: #3"). Links to `/region/<digits>` when the
+ * region label contains digits; falls back to a plain span when it
+ * doesn't (no route exists for "Unknown" / other non-numeric regions).
+ * Renders as inline text — no chip background — so it sits alongside
+ * the other rank-line elements (world rank, percentile) at equal
+ * visual weight.
  */
 export const RegionRankChip: React.FC<RegionRankChipProps> = ({
   region,
@@ -27,22 +29,19 @@ export const RegionRankChip: React.FC<RegionRankChipProps> = ({
       {region}: {regionRank !== null ? `#${regionRank}` : '—'}
     </>
   )
-  const sharedClasses = 'px-2 py-1 rounded-sm bg-gray-100 text-gray-700'
   return (
     <Tooltip content={tooltipContent}>
       {digits ? (
         <Link
           to={`/region/${digits}`}
-          className={`${sharedClasses} hover:bg-gray-200`}
+          className="text-tm-loyal-blue hover:underline"
           data-testid="region-rank"
           aria-label={`View Region ${digits} overview`}
         >
           {label}
         </Link>
       ) : (
-        <span className={sharedClasses} data-testid="region-rank">
-          {label}
-        </span>
+        <span data-testid="region-rank">{label}</span>
       )}
     </Tooltip>
   )

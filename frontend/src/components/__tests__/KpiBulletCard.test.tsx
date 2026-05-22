@@ -176,7 +176,12 @@ describe('KpiBulletCard', () => {
       )
     })
 
-    it('positions the current-value marker proportionally between 0 and Smedley', () => {
+    it('positions the marker on a zoom-scale focused on the tier band', () => {
+      // Scale = [max(0, min(current, 0.9 × Distinguished)), max(current, 1.05 × Smedley)]
+      // For current=149, targets D=158/Sm=169:
+      //   minScale = min(149, 142.2) = 142.2
+      //   maxScale = max(149, 177.45) = 177.45
+      //   position(149) = (149 - 142.2) / 35.25 * 100 ≈ 19.29%
       renderWithRouter(
         <KpiBulletCard
           title="Paid Clubs"
@@ -186,11 +191,83 @@ describe('KpiBulletCard', () => {
         />
       )
       const marker = screen.getByTestId('current-marker')
-      // 149 / 169 = 88.16%
-      expect(marker).toHaveStyle({ left: '88.17%' })
+      expect(marker).toHaveStyle({ left: '19.29%' })
     })
 
-    it('caps marker position at 100% when current exceeds Smedley', () => {
+    it('spreads tier ticks across the bar so labels do not collide', () => {
+      // Same scale calc; tier ticks land at:
+      //   D=158 → (158-142.2)/35.25*100 ≈ 44.82%
+      //   S=161 → ≈ 53.33%
+      //   P=164 → ≈ 61.84%
+      //   Sm=169 → (169-142.2)/35.25*100 ≈ 76.03%
+      renderWithRouter(
+        <KpiBulletCard
+          title="Paid Clubs"
+          current={149}
+          targets={standardTargets}
+          rankings={standardRankings}
+        />
+      )
+      const bar = screen.getByRole('progressbar')
+      expect(within(bar).getByTestId('tier-tick-distinguished')).toHaveStyle({
+        left: '44.82%',
+      })
+      expect(within(bar).getByTestId('tier-tick-select')).toHaveStyle({
+        left: '53.33%',
+      })
+      expect(within(bar).getByTestId('tier-tick-presidents')).toHaveStyle({
+        left: '61.84%',
+      })
+      expect(within(bar).getByTestId('tier-tick-smedley')).toHaveStyle({
+        left: '76.03%',
+      })
+    })
+
+    it('pins marker at 0% when current is far below the tier band', () => {
+      // For Distinguished Clubs on D61 (D=71, Sm=94, current=49):
+      //   minScale = min(49, 63.9) = 49 (current < 0.9 × D)
+      //   maxScale = max(49, 98.7) = 98.7
+      //   position(49) = 0%
+      renderWithRouter(
+        <KpiBulletCard
+          title="Distinguished Clubs"
+          current={49}
+          targets={{
+            distinguished: 71,
+            select: 78,
+            presidents: 86,
+            smedley: 94,
+          }}
+          rankings={standardRankings}
+        />
+      )
+      const marker = screen.getByTestId('current-marker')
+      expect(marker).toHaveStyle({ left: '0%' })
+    })
+
+    it('pins marker at 100% when current is exactly at Smedley (you-made-it signal)', () => {
+      // For current=169 (= Smedley):
+      //   allAchieved = true → maxScale = current = 169
+      //   minScale = min(169, 142.2) = 142.2
+      //   position(169) = (169-142.2)/(169-142.2) * 100 = 100%
+      renderWithRouter(
+        <KpiBulletCard
+          title="Paid Clubs"
+          current={169}
+          targets={standardTargets}
+          rankings={standardRankings}
+        />
+      )
+      const marker = screen.getByTestId('current-marker')
+      expect(marker).toHaveStyle({ left: '100%' })
+      expect(marker).toHaveAttribute('data-all-achieved', 'true')
+    })
+
+    it('expands maxScale to include current when current exceeds Smedley', () => {
+      // For current=200, targets D=158/Sm=169:
+      //   minScale = min(200, 142.2) = 142.2
+      //   maxScale = max(200, 177.45) = 200
+      //   position(200) = (200-142.2)/57.8*100 ≈ 100%
       renderWithRouter(
         <KpiBulletCard
           title="Paid Clubs"
