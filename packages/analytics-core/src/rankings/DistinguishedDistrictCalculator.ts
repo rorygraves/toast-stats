@@ -57,6 +57,17 @@ export interface DistinguishedDistrictGap {
   distinguishedPercentGap: number
   /** Additional net club growth needed (0 if already met) */
   netClubGrowthGap: number
+  /**
+   * Program-year baseline values, propagated from the source ranking so
+   * downstream UIs can derive concrete-unit gaps from the percentages
+   * (#555). The TI DDP rule (Item 1490) measures growth as
+   * `(current - base) / base × 100`, so the base is the multiplier the
+   * UI needs to translate "+1.9%" into "+108 payments". Optional during
+   * rollout — older snapshots may omit these and consumers gracefully
+   * degrade to displaying only the percentage.
+   */
+  paidClubBase?: number
+  paymentBase?: number
 }
 
 /**
@@ -242,6 +253,8 @@ export class DistinguishedDistrictCalculator {
         threshold.distinguishedPercentMin - ranking.distinguishedPercent
       ),
       netClubGrowthGap: Math.max(0, requiredNetChange - netChange),
+      paidClubBase: ranking.paidClubBase,
+      paymentBase: ranking.paymentBase,
     }
   }
 

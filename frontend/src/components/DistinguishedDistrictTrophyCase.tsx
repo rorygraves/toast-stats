@@ -21,6 +21,14 @@ export interface DistinguishedDistrictGap {
   clubGrowthGap: number
   distinguishedPercentGap: number
   netClubGrowthGap: number
+  /**
+   * Program-year baseline values used to derive concrete unit counts
+   * from the gap percentages (#555). Optional during the rollout —
+   * downstream callers that don't populate them simply omit the
+   * secondary "~N units" line.
+   */
+  paidClubBase?: number
+  paymentBase?: number
 }
 
 export interface DistinguishedDistrictStatus {
@@ -83,12 +91,27 @@ const PREREQUISITE_KEYS = Object.keys(PREREQUISITE_LABELS) as Array<
 
 interface GapTileSpec {
   label: string
+  /** Headline gap value, in percent. */
   gap: number
-  suffix: string
+  /**
+   * Concrete unit count derived from `gap × base`. `null` skips the
+   * secondary line (older snapshots without base values).
+   */
+  concreteCount: number | null
+  /** Unit noun used singular when concreteCount === 1. */
+  unitSingular: string
+  unitPlural: string
 }
 
-const GapTile: React.FC<GapTileSpec> = ({ label, gap, suffix }) => {
+const GapTile: React.FC<GapTileSpec> = ({
+  label,
+  gap,
+  concreteCount,
+  unitSingular,
+  unitPlural,
+}) => {
   const closed = gap === 0
+  const showConcrete = !closed && concreteCount != null && concreteCount > 0
   return (
     <div className="rounded-md border border-gray-200 dark:border-gray-700 px-3 py-2">
       <div
@@ -103,10 +126,31 @@ const GapTile: React.FC<GapTileSpec> = ({ label, gap, suffix }) => {
           closed ? 'text-tm-loyal-blue' : 'text-gray-900 dark:text-gray-100'
         }`}
       >
-        {closed ? '✓' : `+${gap.toFixed(1)}${suffix}`}
+        {closed ? '✓' : `+${gap.toFixed(1)}%`}
       </div>
+      {showConcrete && (
+        <div
+          data-testid="gap-tile-units"
+          className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400 font-tm-body tabular-nums"
+        >
+          ~{concreteCount} {concreteCount === 1 ? unitSingular : unitPlural}
+        </div>
+      )}
     </div>
   )
+}
+
+/**
+ * Convert a growth-percentage gap to a concrete unit count using the
+ * program-year baseline. Returns `null` when base is unavailable so
+ * the tile can omit the secondary line gracefully.
+ */
+function concreteUnitsFromGap(
+  gapPercent: number,
+  base: number | undefined
+): number | null {
+  if (gapPercent <= 0 || base == null || base <= 0) return null
+  return Math.max(1, Math.round((base * gapPercent) / 100))
 }
 
 export const DistinguishedDistrictTrophyCase: React.FC<
@@ -233,27 +277,40 @@ export const DistinguishedDistrictTrophyCase: React.FC<
           )}
           <div
             data-testid="distinguished-gap-tiles"
-            className="grid grid-cols-2 md:grid-cols-4 gap-2"
+            className="grid grid-cols-1 md:grid-cols-3 gap-2"
           >
-            <GapTile
-              label="Payment growth"
-              gap={nextTierGap.paymentGrowthGap}
-              suffix="%"
-            />
+            {/* Order: Club growth → Payment growth → % Distinguished (#556).
+                Net Club Growth tile dropped — Club Growth % conveys the same
+                fact as the absolute count for any positive growth. */}
             <GapTile
               label="Club growth"
               gap={nextTierGap.clubGrowthGap}
-              suffix="%"
+              concreteCount={concreteUnitsFromGap(
+                nextTierGap.clubGrowthGap,
+                nextTierGap.paidClubBase
+              )}
+              unitSingular="club"
+              unitPlural="clubs"
+            />
+            <GapTile
+              label="Payment growth"
+              gap={nextTierGap.paymentGrowthGap}
+              concreteCount={concreteUnitsFromGap(
+                nextTierGap.paymentGrowthGap,
+                nextTierGap.paymentBase
+              )}
+              unitSingular="payment"
+              unitPlural="payments"
             />
             <GapTile
               label="% Distinguished"
               gap={nextTierGap.distinguishedPercentGap}
-              suffix="%"
-            />
-            <GapTile
-              label="Net club growth"
-              gap={nextTierGap.netClubGrowthGap}
-              suffix=" clubs"
+              concreteCount={concreteUnitsFromGap(
+                nextTierGap.distinguishedPercentGap,
+                nextTierGap.paidClubBase
+              )}
+              unitSingular="club"
+              unitPlural="clubs"
             />
           </div>
         </div>

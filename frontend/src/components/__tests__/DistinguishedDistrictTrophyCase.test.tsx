@@ -26,6 +26,9 @@ const baseStatus: DistinguishedDistrictStatus = {
     clubGrowthGap: 5.5,
     distinguishedPercentGap: 13.6,
     netClubGrowthGap: 7,
+    // #555 — base values used to derive concrete-unit secondary lines.
+    paidClubBase: 161,
+    paymentBase: 5605,
   },
 }
 
@@ -101,25 +104,61 @@ describe('DistinguishedDistrictTrophyCase', () => {
     })
   })
 
-  describe('gap to next tier — inline tile row', () => {
-    it('renders four labeled tiles for the four delta metrics', () => {
+  describe('gap to next tier — inline tile row (#555, #556)', () => {
+    it('renders three tiles in Club Growth → Payment Growth → % Distinguished order', () => {
       render(<DistinguishedDistrictTrophyCase status={baseStatus} />)
       const tiles = screen.getByTestId('distinguished-gap-tiles')
       const labels = within(tiles).getAllByTestId('gap-tile-label')
-      const values = within(tiles).getAllByTestId('gap-tile-value')
       expect(labels.map(l => l.textContent)).toEqual([
-        'Payment growth',
         'Club growth',
+        'Payment growth',
         '% Distinguished',
-        'Net club growth',
       ])
-      expect(values[0]).toHaveTextContent('+2.0%')
-      expect(values[1]).toHaveTextContent('+5.5%')
-      expect(values[2]).toHaveTextContent('+13.6%')
-      expect(values[3]).toHaveTextContent('+7.0 clubs')
+      // Net Club Growth tile is gone (#556)
+      expect(screen.queryByText(/Net club growth/i)).not.toBeInTheDocument()
     })
 
-    it('renders a ✓ when a gap is zero', () => {
+    it('renders both the percentage and the concrete unit count per tile (#555)', () => {
+      render(<DistinguishedDistrictTrophyCase status={baseStatus} />)
+      const tiles = screen.getByTestId('distinguished-gap-tiles')
+      const values = within(tiles).getAllByTestId('gap-tile-value')
+      const units = within(tiles).getAllByTestId('gap-tile-units')
+
+      // Order: Club growth, Payment growth, % Distinguished
+      expect(values[0]).toHaveTextContent('+5.5%')
+      // 161 × 5.5% = 8.855 → ~9 clubs
+      expect(units[0]).toHaveTextContent('~9 clubs')
+
+      expect(values[1]).toHaveTextContent('+2.0%')
+      // 5605 × 2% = 112.1 → ~112 payments
+      expect(units[1]).toHaveTextContent('~112 payments')
+
+      expect(values[2]).toHaveTextContent('+13.6%')
+      // 161 × 13.6 / 100 = 21.896 → ~22 clubs (Distinguished clubs)
+      expect(units[2]).toHaveTextContent('~22 clubs')
+    })
+
+    it('singularises units when count is exactly 1', () => {
+      const tinyGap: DistinguishedDistrictStatus = {
+        ...baseStatus,
+        nextTierGap: {
+          tier: 'Distinguished',
+          paymentGrowthGap: 0.018, // 5605 × 0.00018 = 1.01 → 1 payment
+          clubGrowthGap: 0.62, // 161 × 0.0062 = 1.0 → 1 club
+          distinguishedPercentGap: 0.62, // 161 × 0.62/100 = 1.0 → 1 club
+          netClubGrowthGap: 1,
+          paidClubBase: 161,
+          paymentBase: 5605,
+        },
+      }
+      render(<DistinguishedDistrictTrophyCase status={tinyGap} />)
+      const units = screen.getAllByTestId('gap-tile-units')
+      expect(units[0]).toHaveTextContent('~1 club')
+      expect(units[1]).toHaveTextContent('~1 payment')
+      expect(units[2]).toHaveTextContent('~1 club')
+    })
+
+    it('renders a ✓ with no concrete-unit line when a gap is zero', () => {
       const closed: DistinguishedDistrictStatus = {
         ...baseStatus,
         nextTierGap: {
@@ -128,11 +167,15 @@ describe('DistinguishedDistrictTrophyCase', () => {
           clubGrowthGap: 0,
           distinguishedPercentGap: 0,
           netClubGrowthGap: 0,
+          paidClubBase: 161,
+          paymentBase: 5605,
         },
       }
       render(<DistinguishedDistrictTrophyCase status={closed} />)
       const values = screen.getAllByTestId('gap-tile-value')
       values.forEach(v => expect(v).toHaveTextContent('✓'))
+      // No "gap-tile-units" rendered when the gap is closed
+      expect(screen.queryByTestId('gap-tile-units')).not.toBeInTheDocument()
     })
   })
 
