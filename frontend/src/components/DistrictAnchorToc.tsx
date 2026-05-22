@@ -63,11 +63,7 @@ export const DistrictAnchorToc: React.FC<DistrictAnchorTocProps> = ({
   if (sections.length === 0) return null
 
   return (
-    <aside
-      className="district-anchor-toc"
-      role="navigation"
-      aria-label="On this page"
-    >
+    <nav className="district-anchor-toc" aria-label="On this page">
       <div className="district-anchor-toc__heading">On this page</div>
       <ul className="district-anchor-toc__list">
         {sections.map(s => {
@@ -85,6 +81,6 @@ export const DistrictAnchorToc: React.FC<DistrictAnchorTocProps> = ({
           )
         })}
       </ul>
-    </aside>
+    </nav>
   )
 }

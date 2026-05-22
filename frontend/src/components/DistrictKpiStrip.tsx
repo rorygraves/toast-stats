@@ -71,11 +71,14 @@ export const DistrictKpiStrip: React.FC<DistrictKpiStripProps> = ({ kpis }) => {
 
   return (
     <section
-      aria-label="District KPI strip"
+      aria-labelledby="district-kpi-strip-heading"
       className={`district-kpi-strip${
         collapsed ? ' district-kpi-strip--collapsed' : ''
       }`}
     >
+      <h2 id="district-kpi-strip-heading" className="sr-only">
+        Key district metrics
+      </h2>
       <button
         type="button"
         onClick={toggle}

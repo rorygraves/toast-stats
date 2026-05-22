@@ -49,7 +49,7 @@ afterEach(() => cleanup())
 describe('DistrictKpiStrip (#572)', () => {
   it('renders the three KPI cards inside a labelled landmark', () => {
     renderStrip(<DistrictKpiStrip kpis={sampleKpis} />)
-    const strip = screen.getByRole('region', { name: /district kpi strip/i })
+    const strip = screen.getByRole('region', { name: /key district metrics/i })
     expect(within(strip).getByText('Paid Clubs')).toBeInTheDocument()
     expect(within(strip).getByText('Membership Payments')).toBeInTheDocument()
     expect(within(strip).getByText('Distinguished Clubs')).toBeInTheDocument()
