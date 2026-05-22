@@ -1,0 +1,28 @@
+You were launched by `scripts/sprint-runner.sh` (a local cron job) to execute one sprint from epic #574. Remote Control is enabled on this session as `sprint-{{SPRINT_N}}` so the operator can monitor / intervene from claude.ai.
+
+Target this run:
+- Sprint {{SPRINT_N}}, sub-issue **#{{TARGET_ISSUE}}**
+- Previous sprint sub-issue: **#{{PREV_ISSUE}}** (the runner already confirmed it is CLOSED; you must re-verify before proceeding)
+
+Do these steps in order, and stop if any check fails:
+
+1. **Re-read the rules.** `tasks/rules.md` in full, then the 5 newest files in `tasks/lessons/` (sorted by filename desc). These are required reading per CLAUDE.md Phase 1.
+
+2. **Re-confirm the predecessor is shipped.**
+   - `gh issue view {{PREV_ISSUE}} --json state,closedAt,title` — confirm state is CLOSED.
+   - `curl -sfI https://ts.taverns.red >/dev/null && echo prod-up` — confirm production is reachable.
+   - If either check fails, STOP. Do not proceed; report to the operator via Remote Control and exit.
+
+3. **Re-read the epic** with `gh issue view 574 --json body` and confirm Sprint {{SPRINT_N}} (#{{TARGET_ISSUE}}) is still the first unchecked sprint. If the epic has been edited (e.g. the operator manually advanced something), trust the epic over this prompt and re-pick the correct target.
+
+4. **Run the sprint skill** for the target: invoke `/sprint` with issue `#{{TARGET_ISSUE}}` as the input. Follow the sprint skill's full workflow (Red / Green / Refactor / Verify per CLAUDE.md), including filing the PR and watching CI.
+
+5. **Stop short of closing the sub-issue.** The runner gates on sub-issue closure as the live-verification signal. Closing the sub-issue is the operator's call after they verify the change on ts.taverns.red. Leave a comment on the sub-issue summarising what shipped and what to verify, then stop.
+
+Operating constraints:
+- This session has full local tool access (`gh`, `gcloud`, `supabase`, project skills). Don't try to delegate to a cloud agent — it would lack these.
+- Commit discipline applies (R-rules + CLAUDE.md). Every commit references #{{TARGET_ISSUE}}.
+- If you hit the "Hard Stop" clause (3 failed iterations to green), stop and report. The runner will not auto-relaunch you — the operator decides.
+- Output discipline: chat under 200 words per response; substantive analysis goes to files.
+
+Begin now with step 1.
