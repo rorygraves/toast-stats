@@ -217,4 +217,5 @@ export {
   OfficerAwardsCalculator,
   type OfficerAwardResult,
   type OfficerAwardStandings,
+  calculateDistinguishedPercent,
 } from './rankings/index.js'

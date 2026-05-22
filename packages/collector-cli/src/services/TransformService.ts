@@ -26,6 +26,7 @@ import {
   ClubStrengthAwardCalculator,
   LeadershipExcellenceCalculator,
   OfficerAwardsCalculator,
+  calculateDistinguishedPercent,
   type Logger,
   type RawCSVData,
 } from '@toastmasters/analytics-core'
@@ -659,7 +660,10 @@ export class TransformService {
           paymentGrowthPercent: this.parsePercentage(
             record['% Payment Growth']
           ),
-          distinguishedPercent: this.calculateDistinguishedPercent(record),
+          distinguishedPercent: calculateDistinguishedPercent(
+            this.parseNumber(record['Total Distinguished Clubs']),
+            this.parseNumber(record['Paid Club Base'])
+          ),
           paidClubs: this.parseNumber(record['Paid Clubs']),
           paidClubBase: this.parseNumber(record['Paid Club Base']),
           totalPayments: this.parseNumber(record['Total YTD Payments']),
@@ -777,37 +781,6 @@ export class TransformService {
     }
 
     return 'Unknown validation error'
-  }
-
-  /**
-   * Calculate distinguished club percentage from raw data
-   */
-  private calculateDistinguishedPercent(record: AllDistrictsCSVRecord): number {
-    // Per the Distinguished District Program (Item 1490), % Distinguished
-    // is computed against Paid Club Base (PY-start club count), NOT
-    // current Active Clubs. Using activeClubs as the denominator
-    // under-reports the percentage whenever a district has gained clubs
-    // since PY start — which is exactly when recognition matters most.
-    //
-    // When paidClubBase is 0 or missing, return 0 rather than falling
-    // back to activeClubs. A missing base is either a brand-new district
-    // (no clubs at PY start → 0% Distinguished is correct) or a pipeline
-    // schema regression (which we want LOUD, not silently masked by the
-    // old buggy denominator).
-    //
-    // Mirrors BordaCountRankingCalculator.calculateDistinguishedPercent
-    // in analytics-core (PR #538). Both copies must stay in lockstep
-    // until #547 dedupes them.
-    const distinguishedClubs = this.parseNumber(
-      record['Total Distinguished Clubs']
-    )
-    const paidClubBase = this.parseNumber(record['Paid Club Base'])
-
-    if (paidClubBase === 0) {
-      return 0
-    }
-
-    return (distinguishedClubs / paidClubBase) * 100
   }
 
   /**

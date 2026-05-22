@@ -56,3 +56,5 @@ export {
   type OfficerAwardResult,
   type OfficerAwardStandings,
 } from './OfficerAwardsCalculator.js'
+
+export { calculateDistinguishedPercent } from './distinguishedPercent.js'
