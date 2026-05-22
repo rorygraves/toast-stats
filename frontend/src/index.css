@@ -37,6 +37,7 @@
 @import './styles/components/status-indicators.css';
 @import './styles/components/alerts.css';
 @import './styles/components/app-shell.css';
+@import './styles/components/district-narrative.css';
 @import './styles/responsive.css';
 @import './styles/dark-mode.css';
 @import './styles/print.css';

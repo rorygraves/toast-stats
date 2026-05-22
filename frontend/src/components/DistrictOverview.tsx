@@ -4,7 +4,6 @@ import { useDistrictRanking } from '../hooks/useDistrictRanking'
 import type { DistrictPerformanceTargets } from '../hooks/useDistrictAnalytics'
 import { LoadingSkeleton } from './LoadingSkeleton'
 import { ErrorDisplay, EmptyState } from './ErrorDisplay'
-import { KpiBulletCard } from './KpiBulletCard'
 import DistinguishedCompositionBar from './DistinguishedCompositionBar'
 import PaymentCompositionDonut from './PaymentCompositionDonut'
 
@@ -14,25 +13,17 @@ interface DistrictOverviewProps {
   programYearStartDate?: string
   /**
    * Pre-fetched performance targets from the usePerformanceTargets hook.
-   * Contains world rank, percentile, region rank, and target thresholds.
+   * Currently consumed only for the future-proofed prop signature
+   * (#572 moved the KPI cards out into DistrictKpiStrip, but the
+   * targets are still authoritative for downstream consumers).
    */
   performanceTargets?: DistrictPerformanceTargets | undefined
-}
-
-const NULL_RANKINGS = {
-  worldRank: null,
-  worldPercentile: null,
-  regionRank: null,
-  totalDistricts: 0,
-  totalInRegion: 0,
-  region: null,
 }
 
 export const DistrictOverview: React.FC<DistrictOverviewProps> = ({
   districtId,
   selectedDate,
   programYearStartDate,
-  performanceTargets,
 }) => {
   const {
     data: analytics,
@@ -42,9 +33,6 @@ export const DistrictOverview: React.FC<DistrictOverviewProps> = ({
 
   // District-level fields not carried in per-club analytics (payment breakdowns).
   const { ranking: districtRanking } = useDistrictRanking(districtId)
-
-  // Prefer prop (from usePerformanceTargets CDN hook), fall back to inline analytics.
-  const pt = performanceTargets ?? analytics?.performanceTargets
 
   const clubCount = analytics?.allClubs.length ?? 0
   const avgMembersPerClub =
@@ -102,38 +90,10 @@ export const DistrictOverview: React.FC<DistrictOverviewProps> = ({
         />
       )}
 
-      {!isLoading && !error && analytics && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          <KpiBulletCard
-            title="Paid Clubs"
-            current={pt?.paidClubs.current ?? analytics.allClubs.length}
-            targets={pt?.paidClubs.targets ?? null}
-            rankings={pt?.paidClubs.rankings ?? NULL_RANKINGS}
-            tooltipContent="Paid clubs count with thresholds for each Distinguished District recognition level."
-          />
-
-          <KpiBulletCard
-            title="Membership Payments"
-            current={
-              pt?.membershipPayments.current ?? analytics.totalMembership
-            }
-            targets={pt?.membershipPayments.targets ?? null}
-            rankings={pt?.membershipPayments.rankings ?? NULL_RANKINGS}
-            tooltipContent="Total membership payments (New + April + October + Late + Charter) with thresholds for each recognition level."
-          />
-
-          <KpiBulletCard
-            title="Distinguished Clubs"
-            current={
-              pt?.distinguishedClubs.current ??
-              analytics.distinguishedClubs.total
-            }
-            targets={pt?.distinguishedClubs.targets ?? null}
-            rankings={pt?.distinguishedClubs.rankings ?? NULL_RANKINGS}
-            tooltipContent="Clubs achieving DCP goals + membership requirements with thresholds for each recognition level. Distinguished (5 goals + 20 members), Select (7 goals + 20 members), President's (9 goals + 20 members), Smedley (10 goals + 25 members)."
-          />
-        </div>
-      )}
+      {/* KPI cards moved to <DistrictKpiStrip> (#572). The sticky strip
+          sits above the narrative so the four numbers stay visible as
+          the user scrolls. The composition bar + payment donut below
+          remain the Overview section's "long-form" content. */}
 
       {/* Distinguished Composition stack-bar + Payment Composition donut */}
       {!isLoading && !error && analytics && analytics.allClubs.length > 0 && (
