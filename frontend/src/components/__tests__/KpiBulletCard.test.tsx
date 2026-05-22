@@ -130,6 +130,31 @@ describe('KpiBulletCard', () => {
       expect(bar).toHaveAttribute('aria-valuemax', '169') // Smedley
     })
 
+    it('places each tier-tick as a direct child of the progressbar (no positioned Tooltip wrapper between)', () => {
+      // Regression — the Tooltip component wraps children in
+      // `<div className="relative inline-block">`. If the tier tick is
+      // INSIDE the Tooltip wrapper instead of OUTSIDE it, its
+      // `position: absolute` resolves against the zero-width Tooltip
+      // wrapper rather than the progressbar — all four ticks collapse
+      // to ~left:0 visually even though the inline `style.left` is
+      // correct. (Shipped briefly with PR #559; caught by audit of
+      // the live site, hotfixed.)
+      renderWithRouter(
+        <KpiBulletCard
+          title="Paid Clubs"
+          current={149}
+          targets={standardTargets}
+          rankings={standardRankings}
+        />
+      )
+      const bar = screen.getByRole('progressbar')
+      const distinguishedTick = screen.getByTestId('tier-tick-distinguished')
+      // The positioned element (the one carrying style.left) must be a
+      // direct child of the bar so its % offset resolves in the bar's
+      // coordinate space.
+      expect(distinguishedTick.parentElement).toBe(bar)
+    })
+
     it('renders four tier ticks with short labels D, S, P, Sm', () => {
       renderWithRouter(
         <KpiBulletCard

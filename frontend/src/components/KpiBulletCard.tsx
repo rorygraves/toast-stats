@@ -122,28 +122,34 @@ const BulletBar: React.FC<BulletBarProps> = ({
       {tiers.map(t => {
         const pos = positionAt(t.value)
         const achieved = current >= t.value
+        // Position the outer wrapper, NOT the Tooltip's child. Tooltip
+        // wraps its child in `relative inline-block`, which would
+        // otherwise become the absolute-positioning context and
+        // collapse all four ticks to ~left:0 of zero-width boxes.
         return (
-          <Tooltip
+          <div
             key={t.key}
-            content={`${t.fullLabel} — ${t.value.toLocaleString()} (${title.toLowerCase()})`}
+            data-testid={`tier-tick-${t.key}`}
+            className="absolute top-3"
+            style={{ left: formatPct(pos), transform: 'translateX(-50%)' }}
           >
-            <div
-              data-testid={`tier-tick-${t.key}`}
-              className="absolute top-3 flex flex-col items-center text-xs"
-              style={{ left: formatPct(pos), transform: 'translateX(-50%)' }}
+            <Tooltip
+              content={`${t.fullLabel} — ${t.value.toLocaleString()} (${title.toLowerCase()})`}
             >
-              <div
-                aria-hidden="true"
-                className={`h-2 w-px ${
-                  achieved ? 'bg-tm-loyal-blue' : 'bg-gray-400'
-                }`}
-              />
-              <div className="mt-1 font-medium text-gray-700">
-                {t.shortLabel}
+              <div className="flex flex-col items-center text-xs">
+                <div
+                  aria-hidden="true"
+                  className={`h-2 w-px ${
+                    achieved ? 'bg-tm-loyal-blue' : 'bg-gray-400'
+                  }`}
+                />
+                <div className="mt-1 font-medium text-gray-700">
+                  {t.shortLabel}
+                </div>
+                <div className="text-gray-500">{t.value.toLocaleString()}</div>
               </div>
-              <div className="text-gray-500">{t.value.toLocaleString()}</div>
-            </div>
-          </Tooltip>
+            </Tooltip>
+          </div>
         )
       })}
     </div>
