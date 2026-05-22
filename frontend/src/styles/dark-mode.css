@@ -596,8 +596,14 @@
     color: #FDE68A !important;
 }
 
-/* bg-amber-50/50 is generated as a Tailwind arbitrary modifier */
-[data-theme='dark'] [class*="bg-amber-50\\/"] {
+/* bg-amber-50/N is Tailwind's opacity-modifier syntax. The compiled
+   selector escapes the slash (`.bg-amber-50\/50`) but the DOM class
+   attribute carries the plain string `bg-amber-50/50` — no backslash.
+   The prior wildcard `[class*="bg-amber-50\\/"]` looked for a literal
+   backslash + slash and never matched. The literal escaped selector
+   below targets the exact compiled form Tailwind emits and so reaches
+   any element actually wearing the class. */
+[data-theme='dark'] .bg-amber-50\/50 {
     background-color: rgba(161, 98, 7, 0.12) !important;
 }
 
@@ -719,6 +725,100 @@
 
 [data-theme='dark'] .border-teal-200 {
     border-color: rgba(20, 184, 166, 0.30) !important;
+}
+
+/* ═══════════════════════════════════════════
+   Opacity-Variant Sweep — #564 Phase 2
+   ═══════════════════════════════════════════
+
+   R10 in tasks/rules.md: Tailwind opacity-variant utilities
+   (`bg-tm-*-N`, `text-tm-*-N`, `border-tm-*-N`) bake their rgba at
+   compile time from the light-mode token. They do NOT inherit the
+   dark-mode CSS-variable overrides defined under [data-theme='dark']
+   in the :root block — those variables are computed at light time and
+   never re-evaluated when Tailwind expands the utility.
+
+   Every `tm-*-N` utility actually used in the component tree
+   (audited 2026-05-22, asserted in
+   `__tests__/css-migration/opacity-variants-dark.test.ts`) therefore
+   needs an explicit override here. The dark-mode rgba uses the same
+   hue as the existing dark base color (loyal-blue #5DADE2, true-maroon
+   #E8879A, cool-gray #C0C8C7, happy-yellow #F7D164) and is tuned for
+   readability on the #0a0f15 / #111922 surface family — not a
+   mechanical mapping of the light-mode rgba (rgba(R,G,B,N/100) on a
+   dark surface looks muddier than on white).
+
+   Loyal-blue 10/20/30, text-tm-loyal-blue-70/80, border-tm-loyal-
+   blue-20, border-tm-cool-gray-20/30, and bg-amber-50/* live higher
+   in this file (legacy positions kept for stable diffs); the rules
+   below close the remaining 15 gaps. */
+
+/* ─── loyal-blue (high opacity — emphasis fills) ─── */
+
+[data-theme='dark'] .bg-tm-loyal-blue-80 {
+    background-color: rgba(93, 173, 226, 0.55) !important;
+}
+
+[data-theme='dark'] .bg-tm-loyal-blue-90 {
+    background-color: rgba(93, 173, 226, 0.7) !important;
+}
+
+[data-theme='dark'] .border-tm-loyal-blue-30 {
+    border-color: rgba(93, 173, 226, 0.35) !important;
+}
+
+/* ─── cool-gray (subtle surface tints + dividers) ─── */
+
+[data-theme='dark'] .bg-tm-cool-gray-10 {
+    background-color: rgba(192, 200, 199, 0.06) !important;
+}
+
+[data-theme='dark'] .bg-tm-cool-gray-20 {
+    background-color: rgba(192, 200, 199, 0.12) !important;
+}
+
+[data-theme='dark'] .bg-tm-cool-gray-30 {
+    background-color: rgba(192, 200, 199, 0.2) !important;
+}
+
+[data-theme='dark'] .bg-tm-cool-gray-80 {
+    background-color: rgba(192, 200, 199, 0.4) !important;
+}
+
+/* ─── happy-yellow (callouts, accents) ─── */
+
+[data-theme='dark'] .bg-tm-happy-yellow-20 {
+    background-color: rgba(247, 209, 100, 0.15) !important;
+}
+
+[data-theme='dark'] .bg-tm-happy-yellow-30 {
+    background-color: rgba(247, 209, 100, 0.22) !important;
+}
+
+[data-theme='dark'] .bg-tm-happy-yellow-80 {
+    background-color: rgba(247, 209, 100, 0.55) !important;
+}
+
+[data-theme='dark'] .text-tm-happy-yellow-80 {
+    color: rgba(247, 209, 100, 0.9) !important;
+}
+
+/* ─── true-maroon (status pills, emphasis chips) ─── */
+
+[data-theme='dark'] .bg-tm-true-maroon-10 {
+    background-color: rgba(232, 135, 154, 0.1) !important;
+}
+
+[data-theme='dark'] .bg-tm-true-maroon-20 {
+    background-color: rgba(232, 135, 154, 0.16) !important;
+}
+
+[data-theme='dark'] .bg-tm-true-maroon-80 {
+    background-color: rgba(232, 135, 154, 0.55) !important;
+}
+
+[data-theme='dark'] .border-tm-true-maroon-30 {
+    border-color: rgba(232, 135, 154, 0.35) !important;
 }
 
 /* ─── Transition for Theme Switch ─── */
