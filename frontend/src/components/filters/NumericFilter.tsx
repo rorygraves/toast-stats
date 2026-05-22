@@ -170,7 +170,7 @@ export const NumericFilter: React.FC<NumericFilterProps> = ({
 
         {/* Bounds Info */}
         {(min !== undefined || max !== undefined) && (
-          <div className="text-xs text-gray-400 pt-2 border-t border-gray-100">
+          <div className="text-xs text-gray-600 pt-2 border-t border-gray-100">
             {min !== undefined && max !== undefined
               ? `Valid range: ${min} - ${max}`
               : min !== undefined

@@ -222,7 +222,7 @@ export const MilestonesCallout: React.FC<MilestonesCalloutProps> = ({
         <h3 id="milestones-heading" className="redesign-panel__header !mb-0">
           Milestones · PY {pyLabel}
         </h3>
-        <span className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-tm-body">
+        <span className="text-[11px] uppercase tracking-wider text-gray-600 dark:text-gray-400 font-tm-body">
           {totalCount} club{totalCount === 1 ? '' : 's'}
         </span>
       </div>
@@ -249,7 +249,7 @@ export const MilestonesCallout: React.FC<MilestonesCalloutProps> = ({
                   >
                     {entry.club.clubName}
                   </Link>
-                  <span className="text-[11px] text-gray-500 dark:text-gray-400 tabular-nums">
+                  <span className="text-[11px] text-gray-600 dark:text-gray-400 tabular-nums">
                     {formatShortDate(entry.anniversaryDate)}
                   </span>
                   {i < group.entries.length - 1 && (

@@ -135,7 +135,7 @@ export const UpcomingAnniversariesPanel: React.FC<
         >
           Upcoming anniversaries
         </h3>
-        <span className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-tm-body">
+        <span className="text-[11px] uppercase tracking-wider text-gray-600 dark:text-gray-400 font-tm-body">
           Next {UPCOMING_WINDOW_DAYS}d · {upcoming.length}
         </span>
       </div>

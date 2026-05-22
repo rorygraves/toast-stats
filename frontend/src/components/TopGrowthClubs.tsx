@@ -179,7 +179,7 @@ export const TopGrowthClubs: React.FC<TopGrowthClubsProps> = ({
                           {club.clubName}
                         </h4>
                         {isTied && (
-                          <span className="text-xs text-gray-400 font-tm-body">
+                          <span className="text-xs text-gray-600 font-tm-body">
                             (tied)
                           </span>
                         )}
@@ -257,7 +257,7 @@ export const TopGrowthClubs: React.FC<TopGrowthClubsProps> = ({
                         </h4>
                         {getDistinguishedBadge(club.distinguishedLevel)}
                         {isTied && (
-                          <span className="text-xs text-gray-400 font-tm-body">
+                          <span className="text-xs text-gray-600 font-tm-body">
                             (tied)
                           </span>
                         )}

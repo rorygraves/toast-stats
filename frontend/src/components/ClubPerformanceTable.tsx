@@ -413,7 +413,7 @@ const ClubPerformanceTable: React.FC<ClubPerformanceTableProps> = ({
                                 )}
                             </div>
                           ) : (
-                            <div className="text-xs text-gray-400">
+                            <div className="text-xs text-gray-600">
                               Loading...
                             </div>
                           )}

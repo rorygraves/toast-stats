@@ -381,7 +381,7 @@ const RegionPage: React.FC = () => {
                     >
                       #{rank.rank}
                       {rank.isTied && (
-                        <span className="ml-1 text-xs text-gray-400 font-normal">
+                        <span className="ml-1 text-xs text-gray-600 font-normal">
                           (tied)
                         </span>
                       )}

@@ -88,7 +88,7 @@ const ClubCard: React.FC<ClubCardProps> = ({ club, onClick }) => {
         <div>
           <div className="text-lg font-bold text-gray-900">
             {club.latestDcpGoals}
-            <span className="text-xs text-gray-400 font-normal">/10</span>
+            <span className="text-xs text-gray-600 font-normal">/10</span>
           </div>
           <div className="text-xs text-gray-500">DCP Goals</div>
         </div>
