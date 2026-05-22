@@ -450,6 +450,10 @@ describe('DistrictDetailPage - Global Rankings Tab Navigation Integration', () =
 
   describe('Tab State Management', () => {
     it('should maintain tab state when switching between tabs', async () => {
+      // #570 (Phase 2): Clubs now routes to /district/:id/clubs instead
+      // of switching in-tab, so this test now toggles between Global
+      // Rankings and Divisions — the two tabs that still own panels on
+      // this page.
       renderWithProviders()
 
       // Click on Global Rankings tab
@@ -463,13 +467,15 @@ describe('DistrictDetailPage - Global Rankings Tab Navigation Integration', () =
         expect(globalRankingsTab).toHaveAttribute('aria-selected', 'true')
       })
 
-      // Click on Clubs tab
-      const clubsTab = screen.getByRole('tab', { name: /clubs/i })
-      fireEvent.click(clubsTab)
+      // Click on Divisions tab
+      const divisionsTab = screen.getByRole('tab', {
+        name: /divisions & areas/i,
+      })
+      fireEvent.click(divisionsTab)
 
-      // Verify Clubs is now active and Global Rankings is inactive
+      // Verify Divisions is now active and Global Rankings is inactive
       await waitFor(() => {
-        expect(clubsTab).toHaveAttribute('aria-selected', 'true')
+        expect(divisionsTab).toHaveAttribute('aria-selected', 'true')
         expect(globalRankingsTab).toHaveAttribute('aria-selected', 'false')
       })
 
@@ -479,7 +485,7 @@ describe('DistrictDetailPage - Global Rankings Tab Navigation Integration', () =
       // Verify Global Rankings is active again
       await waitFor(() => {
         expect(globalRankingsTab).toHaveAttribute('aria-selected', 'true')
-        expect(clubsTab).toHaveAttribute('aria-selected', 'false')
+        expect(divisionsTab).toHaveAttribute('aria-selected', 'false')
       })
     })
 

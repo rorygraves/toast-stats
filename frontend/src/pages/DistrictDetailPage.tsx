@@ -1,5 +1,11 @@
 import React, { useCallback, useMemo } from 'react'
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
+import {
+  Navigate,
+  useParams,
+  useNavigate,
+  useSearchParams,
+} from 'react-router-dom'
+import { redirectLegacyClubsTab } from '../utils/legacyClubsRedirect'
 import { useDistricts } from '../hooks/useDistricts'
 import { DistrictDetailHeader } from '../components/DistrictDetailHeader'
 import {
@@ -67,7 +73,7 @@ type TabType =
   | 'analytics'
   | 'globalRankings'
 
-const DistrictDetailPage: React.FC = () => {
+const DistrictDetailPageInner: React.FC = () => {
   const { districtId } = useParams<{ districtId: string }>()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -98,6 +104,12 @@ const DistrictDetailPage: React.FC = () => {
 
   const setActiveTab = useCallback(
     (tab: TabType) => {
+      if (tab === 'clubs') {
+        // Phase 2 (#570): Clubs has its own route. Clicking the chip in
+        // the tab strip navigates instead of updating ?tab=.
+        navigate(`/district/${districtId}/clubs`)
+        return
+      }
       setSearchParams(
         prev => {
           const next = new URLSearchParams(prev)
@@ -111,7 +123,7 @@ const DistrictDetailPage: React.FC = () => {
         { replace: true }
       )
     },
-    [setSearchParams]
+    [setSearchParams, navigate, districtId]
   )
 
   // Read sort state from URL params (#230)
@@ -967,6 +979,32 @@ const DistrictDetailPage: React.FC = () => {
       </div>
     </ErrorBoundary>
   )
+}
+
+/**
+ * Default export: thin wrapper that intercepts the legacy `?tab=clubs`
+ * URL and redirects to `/district/:id/clubs` BEFORE the heavy
+ * DistrictDetailPageInner hooks run. Without this guard, inner effects
+ * (date selection, etc.) would race against `<Navigate>` and clobber
+ * the new URL's search params after the route transition.
+ */
+const DistrictDetailPage: React.FC = () => {
+  const { districtId } = useParams<{ districtId: string }>()
+  const [searchParams] = useSearchParams()
+  const legacyClubsTarget = redirectLegacyClubsTab(
+    `http://localhost/district/${districtId ?? ''}?${searchParams.toString()}`,
+    districtId
+  )
+  if (legacyClubsTarget) {
+    const [pathname, search = ''] = legacyClubsTarget.split('?') as [
+      string,
+      string?,
+    ]
+    return (
+      <Navigate to={{ pathname, search: search ? `?${search}` : '' }} replace />
+    )
+  }
+  return <DistrictDetailPageInner />
 }
 
 export default DistrictDetailPage

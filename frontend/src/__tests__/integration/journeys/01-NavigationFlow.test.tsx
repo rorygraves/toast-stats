@@ -85,6 +85,17 @@ describe('Journey 01: The Navigation Flow', () => {
     )
     await user.click(clubsTab)
 
+    // #570 (Phase 2): the Clubs tab is now a route, not an in-tab
+    // switch. Wait for the new page (DistrictClubsPage) to mount
+    // before searching for a club row — otherwise findByText can
+    // match the lingering TopGrowthClubs row on the narrative view
+    // that just unmounted.
+    await screen.findByRole(
+      'heading',
+      { name: /^All Clubs$/i },
+      { timeout: 5000 }
+    )
+
     // Step 7: Find Ottawa Club in the data table and click it
     const ottawaClubRow = await screen.findByText(
       /Ottawa Club/i,
@@ -93,11 +104,11 @@ describe('Journey 01: The Navigation Flow', () => {
     )
     await user.click(ottawaClubRow)
 
-    // Step 8: Verify Successful Navigation to Club Detail Page
+    // Step 8: Verify Successful Navigation to Club Detail Page.
     const clubHeading = await screen.findByRole(
       'heading',
       { name: /Ottawa Club/i },
-      { timeout: 3000 }
+      { timeout: 5000 }
     )
     expect(clubHeading).toBeInTheDocument()
   }, 15000)
