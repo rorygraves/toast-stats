@@ -1,11 +1,10 @@
 import React from 'react'
-import ThemeToggle from '../ThemeToggle'
 
 declare const __APP_VERSION__: string
 
-/* The handoff design has no theme toggle (it relies on prefers-color-scheme),
-   but Epic #352 keeps the manual [data-theme='dark'] toggle, so the toggle
-   lives here in the footer to preserve a11y access. */
+/* Footer carries the meta strip (license, version, data source) only.
+   The ThemeToggle moved to AppShellTopBar in #565 — chrome-level
+   controls all live in the header now. */
 
 const AppShellFooter: React.FC = () => {
   const version =
@@ -38,7 +37,6 @@ const AppShellFooter: React.FC = () => {
             {' · '}
             {version}
           </span>
-          <ThemeToggle />
         </div>
       </div>
     </footer>

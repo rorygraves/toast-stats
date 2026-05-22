@@ -6,8 +6,8 @@ import CommandPalette from './CommandPalette'
 import { useGoogleAnalytics } from '../../hooks/useGoogleAnalytics'
 
 /* Per Epic #352: no notifications/help/avatar (no auth today),
-   no Regions/Awards "soon" stubs. ThemeToggle stays in the footer
-   so manual dark-mode access survives the chrome swap.
+   no Regions/Awards "soon" stubs. ThemeToggle now lives in the top
+   bar (#565) — chrome-level controls all sit in the header.
 
    #422 Universal search: Cmd-K / Ctrl-K opens the CommandPalette modal
    from anywhere. The palette shares the React-Query cache with

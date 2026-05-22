@@ -1,5 +1,6 @@
 import React from 'react'
 import { NavLink, Link } from 'react-router-dom'
+import ThemeToggle from '../ThemeToggle'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Districts', end: true },
@@ -60,6 +61,7 @@ const AppShellTopBar: React.FC = () => {
             <circle cx="8" cy="12" r=".4" fill="currentColor" />
           </svg>
         </Link>
+        <ThemeToggle />
         <span
           className="app-shell-avatar"
           aria-label="Account (placeholder)"

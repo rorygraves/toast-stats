@@ -173,16 +173,16 @@ describe('AppShell (#354)', () => {
       expect(text).toMatch(/MIT License\s*·\s*(?:v\d|dev)/i)
     })
 
-    it('preserves the theme toggle for manual dark-mode access', () => {
+    it('does not render the theme toggle in the footer (#565 moved it to the header)', () => {
       renderShell()
       const footer = screen.getByRole('contentinfo')
-      // ThemeToggle's aria-label flips with state ("Switch to dark mode" /
-      // "Switch to light mode") — match either.
+      // ThemeToggle moved to AppShellTopBar in #565. The header-placement
+      // contract is covered by AppShell.layout.test.tsx.
       expect(
-        within(footer).getByRole('button', {
+        within(footer).queryByRole('button', {
           name: /switch to (light|dark) mode/i,
         })
-      ).toBeInTheDocument()
+      ).not.toBeInTheDocument()
     })
   })
 
