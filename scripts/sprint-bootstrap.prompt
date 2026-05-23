@@ -1,4 +1,4 @@
-You were launched by `scripts/sprint-runner.sh` (a local launchd job) to execute one sprint from epic #{{EPIC}}. Remote Control is enabled on this session as `sprint-{{SPRINT_N}}` so the operator can monitor / intervene from claude.ai.
+You were launched by `scripts/sprint-runner.sh` (a local launchd job) to execute Sprint {{SPRINT_N}} of epic #{{EPIC}} — work item #{{TARGET_ISSUE}}. Remote Control is enabled on this session as `sprint-{{TARGET_ISSUE}}` so the operator can monitor / intervene from claude.ai (the screen session is correspondingly named `sprint-runner-{{TARGET_ISSUE}}`).
 
 Target this run:
 - Sprint {{SPRINT_N}}, sub-issue **#{{TARGET_ISSUE}}**

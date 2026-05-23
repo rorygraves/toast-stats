@@ -157,6 +157,14 @@ find_first_unchecked_sprint() {
   printf '%s %s\n' "$n" "$issue"
 }
 
+# Find a sprint line in the epic body by its issue number (#630).
+# Echoes the full line (incl. checkbox state) or empty if no match.
+# Boundary (`#N([^0-9]|$)`) so #1 doesn't match #10/#100.
+find_sprint_line_by_issue() {
+  local issue="$1" body="$2"
+  printf '%s\n' "$body" | grep -E "^- \[.\] \*\*Sprint [0-9]+\*\* — #${issue}([^0-9]|\$)" | head -1
+}
+
 # === META_EPIC helpers ===
 # Format: `- [ ] **Epic <anything>** — #N`
 find_first_unchecked_epic() {
@@ -304,7 +312,11 @@ create_sprint_worktree() {
   # --detach: start at main's HEAD without claiming the main branch (which is
   # checked out in the operator's primary checkout). Spawned claude will
   # `git checkout -b feat/...` for its actual work.
-  if ! git -C "$REPO_DIR" worktree add --detach "$wt" main 2>/dev/null; then
+  # Suppress BOTH stdout and stderr (#631): git writes status to stdout
+  # ("Preparing worktree...", "HEAD is now at..."); without redirecting it,
+  # the caller's `$(create_sprint_worktree ...)` capture conflates the chatter
+  # with the path and the resulting multi-line value poisons downstream `cd`.
+  if ! git -C "$REPO_DIR" worktree add --detach "$wt" main >/dev/null 2>&1; then
     log "ERROR: failed to create worktree at $wt"
     return 1
   fi
@@ -560,34 +572,32 @@ mode_run() {
   body=$(read_epic_body) || die "gh issue view #$EPIC failed"
 
   # --- Detect existing sprint-runner screen session; reap if stale ---
+  # Screen names are sprint-runner-<target_issue> (#630), so the suffix is
+  # the work item's issue number directly — no sprint-N parsing needed here.
   local active
   active=$(list_sprint_screens | head -1 || true)
   if [[ -n "$active" ]]; then
-    local active_n="${active##sprint-runner-}"
-    local active_issue
-    active_issue=$(find_sprint_issue "$active_n" "$body")
-    if [[ -n "$active_issue" ]]; then
+    local active_issue="${active##sprint-runner-}"
+    local active_line
+    active_line=$(find_sprint_line_by_issue "$active_issue" "$body")
+    if [[ -n "$active_line" ]]; then
       local active_state
       active_state=$(gh issue view "$active_issue" --json state --jq .state 2>/dev/null || echo UNKNOWN)
       if [[ "$active_state" == "CLOSED" ]]; then
-        # Stale only if the epic checkbox is ALSO ticked. Bootstrap prompt
-        # (post #626 fix) ticks the box before closing the issue, but a
-        # session that crashed mid-cleanup may have closed the issue and
-        # then died before ticking. Treat closed-but-unticked as
-        # "in cleanup" — let it finish, don't pre-empt it. See #626.
-        if printf '%s\n' "$body" | grep -qE "^- \[x\] \*\*Sprint $active_n\*\* — #$active_issue"; then
-          log "Stale session $active: Sprint $active_n (#$active_issue) is CLOSED + ticked — reaping."
+        # Stale only if the epic checkbox is ALSO ticked (#626).
+        if [[ "$active_line" =~ ^-\ \[x\] ]]; then
+          log "Stale session $active: #$active_issue is CLOSED + ticked — reaping."
           reap_screen_session "$active"
         else
-          log "Session $active: Sprint $active_n (#$active_issue) is CLOSED but epic checkbox not yet ticked — letting session finish cleanup. Operator can --reap if genuinely stuck."
+          log "Session $active: #$active_issue is CLOSED but epic checkbox not yet ticked — letting session finish cleanup. Operator can --reap if genuinely stuck."
           exit 0
         fi
       else
-        log "Existing session $active active (Sprint $active_n / #$active_issue is $active_state) — skipping launch."
+        log "Existing session $active active (#$active_issue is $active_state) — skipping launch."
         exit 0
       fi
     else
-      log "Session $active has no matching sprint in epic body — leaving alone, skipping."
+      log "Session $active: #$active_issue not found in epic #$EPIC body — leaving alone, skipping."
       exit 0
     fi
   fi
@@ -624,7 +634,7 @@ mode_run() {
   log "Gate ok: $verdict. Target: Sprint $target_n (#$target_issue)."
 
   if [[ "$MODE" == "dry-run" ]]; then
-    log "DRY RUN — would launch screen session 'sprint-runner-$target_n' for #$target_issue"
+    log "DRY RUN — would launch screen session 'sprint-runner-$target_issue' (Sprint $target_n of epic #$EPIC, work #$target_issue)"
     exit 0
   fi
 
@@ -645,18 +655,19 @@ mode_run() {
 
   # Create a dedicated worktree for this sprint (#625) so the spawned
   # session's branches and edits stay isolated from the operator's primary
-  # checkout.
+  # checkout. Identifiers are keyed by target issue # (#630) for global
+  # uniqueness — sprint-N within an epic isn't unique across epics.
   local worktree
-  worktree=$(create_sprint_worktree "$target_n") || die "Failed to create worktree for sprint-$target_n"
+  worktree=$(create_sprint_worktree "$target_issue") || die "Failed to create worktree for sprint-$target_issue"
   log "Created worktree at $worktree"
 
-  local session_name="sprint-runner-$target_n"
-  log "Launching detached screen session $session_name"
+  local session_name="sprint-runner-$target_issue"
+  log "Launching detached screen session $session_name (Sprint $target_n of epic #$EPIC, work #$target_issue)"
 
   # `screen -dmS` allocates a PTY so claude's interactive UI works.
   screen -dmS "$session_name" bash -c "
     cd '$worktree' && \
-    claude --remote-control 'sprint-$target_n' \"\$(cat '$PROMPT_FILE')\";
+    claude --remote-control 'sprint-$target_issue' \"\$(cat '$PROMPT_FILE')\";
     EXIT_CODE=\$?;
     rm -f '$PROMPT_FILE';
     echo \"[sprint-runner] claude exited with code \$EXIT_CODE — session ending.\"
