@@ -160,9 +160,13 @@ find_first_unchecked_sprint() {
 # Find a sprint line in the epic body by its issue number (#630).
 # Echoes the full line (incl. checkbox state) or empty if no match.
 # Boundary (`#N([^0-9]|$)`) so #1 doesn't match #10/#100.
+# Trailing `|| true` is critical (#637): grep returns 1 on no-match, and
+# `local var=$(find_sprint_line_by_issue ...)` under set -e would silently
+# exit the script. This is the same hazard the other find_* helpers
+# already guard against.
 find_sprint_line_by_issue() {
   local issue="$1" body="$2"
-  printf '%s\n' "$body" | grep -E "^- \[.\] \*\*Sprint [0-9]+\*\* — #${issue}([^0-9]|\$)" | head -1
+  printf '%s\n' "$body" | grep -E "^- \[.\] \*\*Sprint [0-9]+\*\* — #${issue}([^0-9]|\$)" | head -1 || true
 }
 
 # === META_EPIC helpers ===
