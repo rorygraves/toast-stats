@@ -855,6 +855,13 @@
     align-items: center;
   }
 
+  /* #618 — the pill background is a FIXED white in BOTH themes, so every pill
+     text colour must be a literal value that passes WCAG AA on white. Theme
+     tokens are wrong here: --ink flips to near-white in dark mode (white-on-
+     white), and --green-600 / --yellow-600 either dark-remap or are inherently
+     low-contrast on white. So health/tier pills below use literals, not tokens.
+     The default/unmapped state inherits this dark ink (covers watch + at-risk,
+     whose variants only set the dot colour). */
   .club-hero__pill {
     display: inline-flex;
     align-items: center;
@@ -862,7 +869,7 @@
     padding: 6px 14px;
     border-radius: 999px;
     background-color: #ffffff;
-    color: var(--ink);
+    color: #0f1720;
     font-family: var(--sans);
     font-weight: 600;
     font-size: 13px;
@@ -876,11 +883,7 @@
     flex-shrink: 0;
   }
 
-  /* #618 — match the reference Thriving pill: green text on the white pill,
-     paired with the green dot (colour is never the only signal). The pill
-     background is a fixed white in BOTH themes, so the text uses the literal
-     reference green (#0d6b2f) rather than --green-600 — the dark-mode token
-     lifts to #22c55e, which drops below 4.5:1 on white. */
+  /* Thriving / healthy: reference green text (#0d6b2f, ~5.6:1 on white). */
   .club-hero__pill--thriving,
   .club-hero__pill--healthy {
     color: #0d6b2f;
@@ -902,25 +905,26 @@
     background-color: var(--red-500);
   }
 
-  /* DCP tier pill — outlined on white background by default */
+  /* DCP tier pill — outlined on the white pill. Literal AA-safe text per the
+     fixed-white-background note above. */
   .club-hero__pill--tier {
     background-color: #ffffff;
-    color: var(--maroon-500);
+    color: #7b1828; /* maroon, ~8.9:1 on white */
     border: 1px solid rgba(123, 24, 40, 0.2);
   }
 
   .club-hero__pill--tier-distinguished {
-    color: var(--green-600);
+    color: #0d6b2f; /* green, ~5.6:1 (was --green-600 → #22c55e/2.3:1 in dark) */
     border-color: rgba(21, 128, 61, 0.25);
   }
 
   .club-hero__pill--tier-select {
-    color: var(--loyal-500);
+    color: #004165; /* loyal blue, ~10:1 on white */
     border-color: rgba(0, 65, 101, 0.25);
   }
 
   .club-hero__pill--tier-presidents {
-    color: var(--yellow-600);
+    color: #5a4a14; /* dark olive, ~7:1 (was --yellow-600 → 1.85:1, fails both) */
     border-color: rgba(201, 183, 72, 0.4);
   }
 
