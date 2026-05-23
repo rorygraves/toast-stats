@@ -414,8 +414,18 @@ mode_run() {
       local active_state
       active_state=$(gh issue view "$active_issue" --json state --jq .state 2>/dev/null || echo UNKNOWN)
       if [[ "$active_state" == "CLOSED" ]]; then
-        log "Stale session $active: Sprint $active_n (#$active_issue) is CLOSED — reaping."
-        reap_screen_session "$active"
+        # Stale only if the epic checkbox is ALSO ticked. Bootstrap prompt
+        # (post #626 fix) ticks the box before closing the issue, but a
+        # session that crashed mid-cleanup may have closed the issue and
+        # then died before ticking. Treat closed-but-unticked as
+        # "in cleanup" — let it finish, don't pre-empt it. See #626.
+        if printf '%s\n' "$body" | grep -qE "^- \[x\] \*\*Sprint $active_n\*\* — #$active_issue"; then
+          log "Stale session $active: Sprint $active_n (#$active_issue) is CLOSED + ticked — reaping."
+          reap_screen_session "$active"
+        else
+          log "Session $active: Sprint $active_n (#$active_issue) is CLOSED but epic checkbox not yet ticked — letting session finish cleanup. Operator can --reap if genuinely stuck."
+          exit 0
+        fi
       else
         log "Existing session $active active (Sprint $active_n / #$active_issue is $active_state) — skipping launch."
         exit 0

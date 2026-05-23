@@ -23,7 +23,13 @@ Do these steps in order, and stop if any check fails:
    - Corroborate with a data-path check (fetch the prod CDN snapshot under `https://cdn.taverns.red/snapshots/<date>/`, decompress if gzipped, assert the new field/value lands).
    - Capture full-page screenshots into `/tmp/` and surface them via `SendUserFile` so the operator sees the evidence.
 
-   **If every acceptance criterion verifies:** post the evidence-table comment (selectors, counts, screenshot paths), then **apply the `sprint-verified` label** with `gh issue edit {{TARGET_ISSUE}} --add-label sprint-verified --repo taverns-red/toast-stats`. Verify the add succeeded (`gh issue view {{TARGET_ISSUE}} --json labels --jq '.labels[].name' | grep -qx sprint-verified`). Only after the label is confirmed present, close the sub-issue and tick the Sprint N checkbox in the epic body. The runner's gate (`STRICT_GATE=1` in cron) requires both CLOSED *and* the label, so labeling before closing is what unblocks the next tick. If the label add or its verification fails, **stop** — leave the issue open and unlabeled, post the failure as a comment, and let the operator intervene.
+   **If every acceptance criterion verifies, do these in this exact order** (the runner's stale-session reap heuristic looks for the ticked checkbox; see #626):
+
+   1. Post the evidence-table comment on #{{TARGET_ISSUE}} (selectors, counts, screenshot paths).
+   2. **Apply the `sprint-verified` label**: `gh issue edit {{TARGET_ISSUE}} --add-label sprint-verified --repo taverns-red/toast-stats`. Verify it landed: `gh issue view {{TARGET_ISSUE}} --json labels --jq '.labels[].name' | grep -qx sprint-verified`. If the add or verify fails, **stop** — leave the issue open and unlabeled, post the failure as a comment, and exit.
+   3. **Tick the Sprint N checkbox in the epic body** (`gh issue edit {{EPIC}}` with the body PATCH that flips `- [ ]` → `- [x]` for Sprint {{SPRINT_N}}). This MUST happen BEFORE closing the sub-issue — the runner checks the epic checkbox before reaping the screen session, and an unticked epic + closed sub-issue triggers a duplicate-launch race (see #626).
+   4. **Close the sub-issue**: `gh issue close {{TARGET_ISSUE}}`. By this point the epic is already advanced; the runner's next tick sees the sprint as done and proceeds cleanly.
+   5. Stop the session (just exit; the screen will terminate when claude exits).
 
    **If any criterion fails:** leave the sub-issue open and unlabeled, post the failure evidence as a comment, and stop. Do not retry — the operator decides whether to re-launch, revert, or hand-fix.
 
