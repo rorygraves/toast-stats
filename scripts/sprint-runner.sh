@@ -335,14 +335,20 @@ remove_sprint_worktree() {
 }
 
 # Returns a newline-separated list of orphan worktree paths
-# (worktrees under $WORKTREE_BASE with no matching screen session).
+# (worktrees under $WORKTREE_BASE with no matching screen daemon process).
+#
+# Detection uses `pgrep -f "SCREEN -dmS ..."` rather than `screen -ls | grep`
+# because (#634) macOS `screen -ls` exits 1 even when sessions exist; combined
+# with the script's `set -o pipefail`, the pipeline always returns 1 and
+# `! pipeline` is always true — producing false-orphans for every live
+# session. The process table doesn't have this exit-code interaction.
 find_orphan_worktrees() {
   [[ -d "$WORKTREE_BASE" ]] || return 0
   local wt n
   for wt in "$WORKTREE_BASE"/sprint-*; do
     [[ -d "$wt" ]] || continue
     n="${wt##*/sprint-}"
-    if ! screen -ls 2>&1 | grep -q "sprint-runner-$n"; then
+    if ! pgrep -f "SCREEN -dmS sprint-runner-$n" >/dev/null 2>&1; then
       printf '%s\n' "$wt"
     fi
   done
@@ -674,23 +680,28 @@ mode_run() {
   "
 
   # Verify the session actually came up. `screen -dmS` exits 0 even on PTY
-  # allocation failure on some macOS configurations. The screen daemon can
-  # take up to ~5s to register its socket in the .screen directory after
-  # forking, so retry rather than checking once. If still not visible,
-  # warn-and-exit-0 rather than die — the inner `claude` may have argv
-  # captured from `$(cat $PROMPT_FILE)` already; killing the parent script
-  # via `die` doesn't kill the screen, so reporting a hard error is misleading
-  # and clutters launchd's last-exit-code with false alarms.
+  # allocation failure on some macOS configurations.
+  #
+  # Use `pgrep` against the screen daemon's command line (#633) instead of
+  # `screen -ls`. Two reasons: (1) the screen socket file in
+  # /var/folders/.../.screen.<host>/ can take >5s to register under launchd's
+  # environment (filesystem-visibility lag), even though the daemon process
+  # itself exists immediately on fork; (2) pgrep against the process table
+  # has no filesystem-level lag.
+  #
+  # warn-and-exit-0 (not die) for the not-found case: the inner claude may
+  # have argv captured from `$(cat $PROMPT_FILE)` already, and `die` doesn't
+  # kill the screen — it just adds false-alarm noise to launchd's last-exit.
   local verified=0
-  for _ in 1 2 3 4 5; do
-    if screen -ls 2>&1 | grep -q "$session_name"; then
+  for _ in 1 2 3; do
+    if pgrep -f "SCREEN -dmS $session_name" >/dev/null 2>&1; then
       verified=1
       break
     fi
     sleep 1
   done
   if (( verified == 0 )); then
-    log "WARNING: $session_name not visible in screen -ls after 5s — leaving alone. Next tick will detect a live session or relaunch fresh."
+    log "WARNING: $session_name daemon process not visible after 3s — leaving alone. Next tick will detect a live session or relaunch fresh."
     notify "sprint-runner" "Sprint $target_n launch unverifiable — check screen -ls"
     exit 0
   fi
