@@ -161,13 +161,19 @@ describe('Redesign token system (#353)', () => {
       expect(allWeights).toContain('500')
     })
 
-    it('declares the --mono token but defers JetBrains Mono font preload to #354', () => {
+    it('declares the --mono token but defers JetBrains Mono font preload (cost + CLS)', () => {
       // The --mono token in redesign.css references JetBrains Mono so future
       // consumers can use it, but the actual font preload is held until
-      // AppShell (#354) ships a real consumer — saves ~25KB + one stylesheet
-      // RTT on every cold load until then. The CSS fallback chain
-      // ('JetBrains Mono', ui-monospace, monospace) means callers degrade
-      // gracefully to the system mono font in the meantime.
+      // Phase 2 of #339 (chrome migration to --rt-* tokens). Originally
+      // deferred under #354 for cost reasons (~25KB + one stylesheet RTT);
+      // #339 Phase 1 briefly enabled the preload to honor the brand-font
+      // set, but Lighthouse on PR #595 caught a CLS regression
+      // (0.012 → 0.199, threshold 0.1) — `var(--mono)` has 8 consumers
+      // in app-shell.css and they layout-shift when the font swaps in
+      // from ui-monospace. Re-enable in the Phase 2 PR with metric-
+      // matched fallbacks (size-adjust @font-face) or self-hosted. The
+      // CSS fallback chain ('JetBrains Mono', ui-monospace, monospace)
+      // means callers degrade gracefully to the system mono font.
       const css = readSrc('styles/tokens/redesign.css')
       expect(css).toMatch(/--mono:\s*['"]?JetBrains Mono['"]?/)
 

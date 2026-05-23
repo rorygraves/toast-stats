@@ -95,6 +95,14 @@ Read `tasks/rules.md` completely before every task. Key rules:
 - **CSS pattern for cross-cutting concerns:** Override at CSS level (`[data-theme]`), not component level (R10).
 - **GCS-backed store pattern:** Sync from GCS → upsert → save → push back. See `ClubTrendsStore` and `TimeSeriesIndexWriter` as reference implementations (R9).
 
+## Brand (Red Taverns v1.0)
+
+- **Source of truth:** [`taverns-red/ops:docs/brand/`](https://github.com/taverns-red/ops/blob/main/docs/brand/) ([ADR 0004, 2026-04-22](https://github.com/taverns-red/ops/blob/main/docs/strategy/decisions/0004-brand-v1-2026-04-22.md)). Public guide will live at `taverns.red/brand` once the portal migration ships.
+- **Tokens file:** `frontend/src/styles/tokens/rt-brand-v1.css` — local copy-on-release of upstream `tokens.css`. **Do not hand-edit** — change upstream and re-sync. Imported from `frontend/src/index.css`.
+- **Namespace:** `--rt-*` (e.g. `--rt-red`, `--rt-ink`, `--rt-paper`, `--rt-font-display`). Product accent for this app is `--rt-stats` (#D4873F, amber). Coexists with legacy `--color-tm-*` / `--loyal-*` / redesign.css tokens until Phase 2 chrome migration lands.
+- **Fonts:** Space Grotesk (display), Inter (body), JetBrains Mono. Space Grotesk + Inter are preloaded from `frontend/index.html` alongside the legacy Montserrat / Source Sans 3 pair. **JetBrains Mono preload is intentionally deferred to Phase 2** — `var(--mono)` (the redesign-tokens `--mono`, NOT `--rt-font-mono`) already has 8 live consumers in `app-shell.css`. Preloading swaps the text from ui-monospace mid-render and regresses CLS from ~0.012 to ~0.199 (Lighthouse threshold is 0.1; caught on PR #595). Re-enable in the Phase 2 PR with metric-matched `size-adjust` fallbacks or self-hosted woff2. See [Lesson 81](tasks/lessons/081-phase-gated-deferral-tests-move-with-the-spec.md).
+- **Phase 2 (chrome migration) is BLOCKED on the rename decision** ([`ops#37`](https://github.com/taverns-red/ops/issues/37) — Toast Stats → Tally). When that decides, the re-skin lands with the rename in one combined PR; the legacy font pair is dropped then. Until then, the brand tokens are available for new components but the existing chrome stays on legacy tokens.
+
 ## Workflow Protocol
 
 ### Before Starting Any Task

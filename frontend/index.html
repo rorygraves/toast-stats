@@ -19,10 +19,31 @@
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
 
+    <!-- Red Taverns Brand v1.0 fonts (#339 Phase 1). Loaded alongside the
+         existing Montserrat / Source Sans 3 because Phase 2 chrome
+         migration is blocked on ops#37 (the rename decision). Once the
+         rename ships, the legacy pair drops in the same PR that
+         re-skins components with --rt-* tokens.
+
+         JetBrains Mono preload intentionally OMITTED in Phase 1: the
+         redesign --mono token (`'JetBrains Mono', ui-monospace, ...`)
+         has 8 live consumers in app-shell.css. Preloading swaps the
+         text from ui-monospace to JetBrains Mono ~300ms in and pushes
+         CLS from 0.012 → 0.199 (Lighthouse failed PR #595 first push;
+         the lighthouserc threshold is 0.1). The brand spec requires
+         the font to be REACHABLE (it is, via the token file's
+         declaration), not necessarily PRELOADED. Re-enable in the
+         Phase 2 PR once consumers migrate to --rt-font-mono with
+         metric-matched fallbacks (or self-hosted with size-adjust). -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+
     <!-- Fallback for JavaScript Disabled -->
     <noscript>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap">
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
     </noscript>
     
     <!-- Font Loading Optimization Script -->
