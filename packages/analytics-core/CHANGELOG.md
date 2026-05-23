@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.6.0](https://github.com/taverns-red/toast-stats/compare/analytics-core-v1.5.1...analytics-core-v1.6.0) (2026-05-23)
+
+
+### Features
+
+* **district-clubs:** [#489](https://github.com/taverns-red/toast-stats/issues/489) surface FAC-only clubs (ATOs / prospective) ([#594](https://github.com/taverns-red/toast-stats/issues/594)) ([d076fba](https://github.com/taverns-red/toast-stats/commit/d076fba705466ce3dd4765eecd32c8e2cd209a51))
+* **district-status:** concrete units + reorder + drop net in gap tiles ([#555](https://github.com/taverns-red/toast-stats/issues/555), [#556](https://github.com/taverns-red/toast-stats/issues/556)) ([#560](https://github.com/taverns-red/toast-stats/issues/560)) ([921d427](https://github.com/taverns-red/toast-stats/commit/921d4274d457b3451888ae69c2421e9e67f12de1))
+
+
+### Bug Fixes
+
+* **analytics:** % Distinguished uses Paid Club Base per TI DDP rule ([#537](https://github.com/taverns-red/toast-stats/issues/537)) ([#538](https://github.com/taverns-red/toast-stats/issues/538)) ([b7fa477](https://github.com/taverns-red/toast-stats/commit/b7fa47773b8155965199350d787d56b21bd32e45))
+* **fac:** propagate FAC enrichment through ClubTrend so CHARTERED actually renders ([#503](https://github.com/taverns-red/toast-stats/issues/503)) ([#504](https://github.com/taverns-red/toast-stats/issues/504)) ([3c4a96c](https://github.com/taverns-red/toast-stats/commit/3c4a96c56795cdd97b5b293d559225669bd478cc))
+
+
+### Refactors
+
+* dedupe calculateDistinguishedPercent — shared helper in analytics-core ([#547](https://github.com/taverns-red/toast-stats/issues/547)) ([#585](https://github.com/taverns-red/toast-stats/issues/585)) ([2bf0415](https://github.com/taverns-red/toast-stats/commit/2bf0415ddd0fb08efcca21186e0236a9f28e54b6))
+
 ## [1.5.1](https://github.com/taverns-red/toast-stats/compare/analytics-core-v1.5.0...analytics-core-v1.5.1) (2026-05-10)
 
 

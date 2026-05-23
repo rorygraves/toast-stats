@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.4.0](https://github.com/taverns-red/toast-stats/compare/collector-cli-v1.3.1...collector-cli-v1.4.0) (2026-05-23)
+
+
+### Features
+
+* **collector:** fetch-find-a-club CLI command ([#430](https://github.com/taverns-red/toast-stats/issues/430)) ([#484](https://github.com/taverns-red/toast-stats/issues/484)) ([3d1e7bc](https://github.com/taverns-red/toast-stats/commit/3d1e7bcc0c9d3a7a34ca474055440ae1a32c7832))
+* **collector:** FindAClubMerger + pipeline wiring ([#429](https://github.com/taverns-red/toast-stats/issues/429)) ([#491](https://github.com/taverns-red/toast-stats/issues/491)) ([366dad3](https://github.com/taverns-red/toast-stats/commit/366dad31d9934af5bbdd84f6453bebef97b7563b))
+* **district-clubs:** [#489](https://github.com/taverns-red/toast-stats/issues/489) surface FAC-only clubs (ATOs / prospective) ([#594](https://github.com/taverns-red/toast-stats/issues/594)) ([d076fba](https://github.com/taverns-red/toast-stats/commit/d076fba705466ce3dd4765eecd32c8e2cd209a51))
+* **pipeline:** wire fetch-find-a-club into daily-pipeline.yml ([#429](https://github.com/taverns-red/toast-stats/issues/429)) ([#485](https://github.com/taverns-red/toast-stats/issues/485)) ([f6e32a5](https://github.com/taverns-red/toast-stats/commit/f6e32a52644f1cee13c28d528edd041941bb76c8))
+
+
+### Bug Fixes
+
+* **collector-cli:** %Distinguished uses Paid Club Base ([#545](https://github.com/taverns-red/toast-stats/issues/545)) ([#548](https://github.com/taverns-red/toast-stats/issues/548)) ([861d80b](https://github.com/taverns-red/toast-stats/commit/861d80b2712d953dfb35782b14dfb1b967517c61))
+* **fac:** propagate FAC enrichment through ClubTrend so CHARTERED actually renders ([#503](https://github.com/taverns-red/toast-stats/issues/503)) ([#504](https://github.com/taverns-red/toast-stats/issues/504)) ([3c4a96c](https://github.com/taverns-red/toast-stats/commit/3c4a96c56795cdd97b5b293d559225669bd478cc))
+
+
+### Refactors
+
+* dedupe calculateDistinguishedPercent — shared helper in analytics-core ([#547](https://github.com/taverns-red/toast-stats/issues/547)) ([#585](https://github.com/taverns-red/toast-stats/issues/585)) ([2bf0415](https://github.com/taverns-red/toast-stats/commit/2bf0415ddd0fb08efcca21186e0236a9f28e54b6))
+
 ## [1.3.1](https://github.com/taverns-red/toast-stats/compare/collector-cli-v1.3.0...collector-cli-v1.3.1) (2026-05-10)
 
 

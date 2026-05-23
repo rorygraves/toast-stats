@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.0](https://github.com/taverns-red/toast-stats/compare/shared-contracts-v1.3.0...shared-contracts-v1.4.0) (2026-05-23)
+
+
+### Features
+
+* **district-clubs:** [#489](https://github.com/taverns-red/toast-stats/issues/489) surface FAC-only clubs (ATOs / prospective) ([#594](https://github.com/taverns-red/toast-stats/issues/594)) ([d076fba](https://github.com/taverns-red/toast-stats/commit/d076fba705466ce3dd4765eecd32c8e2cd209a51))
+* **find-a-club:** schema bump + Club hero CHARTERED + disable pre-push ([#429](https://github.com/taverns-red/toast-stats/issues/429) [#431](https://github.com/taverns-red/toast-stats/issues/431) [#432](https://github.com/taverns-red/toast-stats/issues/432)) ([#483](https://github.com/taverns-red/toast-stats/issues/483)) ([ca573cd](https://github.com/taverns-red/toast-stats/commit/ca573cd9f457a9a6f3e4954c7f932bf1a3d26531))
+
 ## [1.3.0](https://github.com/taverns-red/toast-stats/compare/shared-contracts-v1.2.1...shared-contracts-v1.3.0) (2026-04-22)
 
 
