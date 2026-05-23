@@ -32,30 +32,23 @@ import ErrorBoundary from '../components/ErrorBoundary'
 import { useDistrictStatistics } from '../hooks/useMembershipData'
 import { ClubDCPGoalsCard } from '../components/ClubDCPGoalsCard'
 
-// ── Tier badge ─────────────────────────────────────────────────────────────
+// ── DCP Status Card ────────────────────────────────────────────────────────
+// Re-skinned to club-reference.html (#619): a `.club-panel` with a bordered
+// header, a 2-cell tier row (Current Level + Outlook), and a per-tier gap list.
+// Health-based outlook (#231) and provisional-distinguished handling (#239)
+// are preserved — the reference only depicts the on-track/confirmed case.
 
-const TIER_BADGE: Record<DistinguishedLevel, { bg: string; text: string }> = {
-  Smedley: { bg: 'bg-amber-100', text: 'text-amber-800' },
-  President: { bg: 'bg-blue-100', text: 'text-blue-800' },
-  Select: { bg: 'bg-indigo-100', text: 'text-indigo-800' },
-  Distinguished: { bg: 'bg-green-100', text: 'text-green-800' },
-  NotDistinguished: { bg: 'bg-gray-100', text: 'text-gray-500' },
+const OUTLOOK = {
+  thriving: { label: 'On Track', icon: '✓', cell: 'dcp-cell--pos' },
+  vulnerable: { label: 'At Risk', icon: '⚠', cell: 'dcp-cell--warn' },
+  default: { label: 'Unlikely', icon: '✗', cell: 'dcp-cell--bad' },
+} as const
+
+function levelLabel(level: DistinguishedLevel): string {
+  if (level === 'President') return "President's"
+  if (level === 'NotDistinguished') return 'Not Distinguished'
+  return level
 }
-
-function TierBadge({ level }: { level: DistinguishedLevel }) {
-  if (level === 'NotDistinguished')
-    return <span className="text-sm text-gray-400">Not Distinguished</span>
-  const s = TIER_BADGE[level]
-  return (
-    <span
-      className={`px-2 py-1 text-xs font-medium rounded-full ${s.bg} ${s.text}`}
-    >
-      {level === 'President' ? "President's" : level}
-    </span>
-  )
-}
-
-// ── DCP Projection Card ────────────────────────────────────────────────────
 
 function DCPProjectionCard({
   projection,
@@ -75,125 +68,102 @@ function DCPProjectionCard({
     { tier: 'Smedley', gap: projection.gapToSmedley },
   ]
 
-  // Health-based prediction (#231)
-  const prediction =
+  const outlook =
     healthStatus === 'thriving'
-      ? {
-          label: 'On Track',
-          color: 'text-green-700',
-          bg: 'bg-green-50 border-green-200',
-          icon: '✓',
-        }
+      ? OUTLOOK.thriving
       : healthStatus === 'vulnerable'
-        ? {
-            label: 'At Risk',
-            color: 'text-yellow-700',
-            bg: 'bg-yellow-50 border-yellow-200',
-            icon: '⚠',
-          }
-        : {
-            label: 'Unlikely',
-            color: 'text-red-700',
-            bg: 'bg-red-50 border-red-200',
-            icon: '✗',
-          }
+        ? OUTLOOK.vulnerable
+        : OUTLOOK.default
+
+  const isAchieved = projection.currentLevel !== 'NotDistinguished'
 
   return (
-    <div className="redesign-panel">
-      <h2 className="text-lg font-semibold text-gray-900 font-tm-headline mb-4 flex items-center gap-2">
-        <svg
-          className="w-5 h-5 text-tm-loyal-blue"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-          />
-        </svg>
-        DCP Status
-      </h2>
-
-      {/* Current Level + Prediction */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="bg-gray-50 rounded-lg p-4 text-center">
-          <div className="text-xs text-gray-500 mb-1 font-tm-body">
-            Current Level
-          </div>
-          <TierBadge level={projection.currentLevel} />
-          {isProvisional && (
-            <div className="text-xs text-amber-600 mt-1 font-medium">
-              Provisional
-              {confirmedLevel && confirmedLevel !== 'NotDistinguished' && (
-                <span className="text-gray-500 font-normal">
-                  {' '}
-                  — Confirmed:{' '}
-                  {confirmedLevel === 'President'
-                    ? "President's"
-                    : confirmedLevel}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-        <div className={`rounded-lg p-4 text-center border ${prediction.bg}`}>
-          <div className="text-xs text-gray-500 mb-1 font-tm-body">
-            Distinguished Outlook
-          </div>
-          <span className={`text-sm font-semibold ${prediction.color}`}>
-            {prediction.icon} {prediction.label}
-          </span>
-        </div>
+    <section className="club-panel">
+      <div className="club-panel__head">
+        <h2>
+          <svg
+            className="club-panel__ico"
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.6}
+            aria-hidden="true"
+          >
+            <path d="M3 13V8M8 13V3M13 13v-7" />
+          </svg>
+          DCP Status
+        </h2>
       </div>
-
-      {/* Gap Table */}
-      <div className="space-y-2">
-        <h3 className="text-sm font-medium text-gray-700 font-tm-body">
-          Gap to Each Tier
-        </h3>
-        {gaps.map(({ tier, gap }) => {
-          const met = gap.goals === 0 && gap.members === 0
-          // Check if this tier is the club's current level and is provisional
-          const tierLevel = tier === "President's" ? 'President' : tier
-          const isCurrentTier = tierLevel === projection.currentLevel
-          const tierProvisional = isProvisional && isCurrentTier && met
-          return (
+      <div className="club-panel__body">
+        {/* Tier row: Current Level + Outlook */}
+        <div className="dcp-tier-row">
+          <div className="dcp-cell">
+            <div className="dcp-cell__lab">Current Level</div>
             <div
-              key={tier}
-              className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm ${
-                met
-                  ? tierProvisional
-                    ? 'bg-amber-50'
-                    : 'bg-green-50'
-                  : 'bg-gray-50'
-              }`}
+              className={
+                'dcp-cell__val' +
+                (isAchieved ? ' dcp-cell__val--distinguished' : '')
+              }
             >
-              <span className="font-medium text-gray-900">{tier}</span>
-              {met ? (
-                tierProvisional ? (
-                  <span className="text-amber-600 font-medium">
-                    ⚠ Provisional
+              {levelLabel(projection.currentLevel)}
+            </div>
+            {isProvisional && (
+              <div className="dcp-cell__provisional">
+                Provisional
+                {confirmedLevel && confirmedLevel !== 'NotDistinguished' && (
+                  <span className="dcp-cell__provisional-confirmed">
+                    {' '}
+                    — Confirmed: {levelLabel(confirmedLevel)}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+          <div className={`dcp-cell ${outlook.cell}`}>
+            <div className="dcp-cell__lab">Outlook</div>
+            <div className="dcp-cell__val">
+              {outlook.icon} {outlook.label}
+            </div>
+          </div>
+        </div>
+
+        {/* Per-tier gap list */}
+        <div className="gap-section">
+          <h3>Gap to Each Tier</h3>
+          {gaps.map(({ tier, gap }) => {
+            const met = gap.goals === 0 && gap.members === 0
+            const tierLevel = tier === "President's" ? 'President' : tier
+            const isCurrentTier = tierLevel === projection.currentLevel
+            const tierProvisional = isProvisional && isCurrentTier && met
+            const rowClass = met
+              ? tierProvisional
+                ? 'gap-row gap-row--provisional'
+                : 'gap-row gap-row--met'
+              : 'gap-row'
+            return (
+              <div key={tier} className={rowClass}>
+                <span className="gap-row__tier">{tier}</span>
+                {met ? (
+                  <span className="gap-row__val">
+                    {tierProvisional ? '⚠ Provisional' : '✓ Met'}
                   </span>
                 ) : (
-                  <span className="text-green-600 font-medium">✓ Met</span>
-                )
-              ) : (
-                <span className="text-gray-600 font-tm-body tabular-nums">
-                  {gap.goals > 0 &&
-                    `${gap.goals} goal${gap.goals > 1 ? 's' : ''}`}
-                  {gap.goals > 0 && gap.members > 0 && ' + '}
-                  {gap.members > 0 &&
-                    `${gap.members} member${gap.members > 1 ? 's' : ''}`}
-                </span>
-              )}
-            </div>
-          )
-        })}
+                  <span className="gap-row__val tabular-nums">
+                    {gap.goals > 0 &&
+                      `${gap.goals} goal${gap.goals > 1 ? 's' : ''}`}
+                    {gap.goals > 0 && gap.members > 0 && ' + '}
+                    {gap.members > 0 &&
+                      `${gap.members} member${gap.members > 1 ? 's' : ''}`}
+                  </span>
+                )}
+              </div>
+            )
+          })}
+        </div>
       </div>
-    </div>
+    </section>
   )
 }
 
@@ -339,15 +309,27 @@ const ClubDetailPage: React.FC = () => {
           ?.goalsAchieved ?? 0)
       : 0
 
-  // Chart dimensions
+  const membershipChangePct =
+    baseMembership > 0 ? (membershipChange / baseMembership) * 100 : null
+
+  // Membership chart geometry — pixel-mapped to club-reference.html (#619).
+  // viewBox 800×260 with PL36/PR14/PT14/PB26 padding → 750×220 plot area.
+  const CHART = { W: 800, H: 260, PT: 14, PR: 14, PB: 26, PL: 36 }
+  const innerW = CHART.W - CHART.PL - CHART.PR
+  const innerH = CHART.H - CHART.PT - CHART.PB
   const membershipValues = filteredMembershipTrend.map(d => d.count)
-  const rawMin = membershipValues.length > 0 ? Math.min(...membershipValues) : 0
-  const rawMax = membershipValues.length > 0 ? Math.max(...membershipValues) : 0
-  const yPadding = rawMax === rawMin ? 2 : 0
-  const minMembership = Math.max(0, rawMin - yPadding)
-  const maxMembership = rawMax + yPadding
-  const membershipRange = maxMembership - minMembership || 1
-  const totalProgramDays = 365
+  // ±4 padding per reference. This is what kills the y-axis inversion
+  // tripwire: even a flat/single-point series spans ≥4 units (zero when v=0
+  // → window [0,4]), so yRange is provably never 0 and no `|| 1` fallback is
+  // needed. Empty series falls back to [0,8] but never reaches the SVG.
+  const yMin = membershipValues.length
+    ? Math.max(0, Math.min(...membershipValues) - 4)
+    : 0
+  const yMax = membershipValues.length ? Math.max(...membershipValues) + 4 : 8
+  const yRange = yMax - yMin
+  const xScale = (day: number) => CHART.PL + (day / 365) * innerW
+  const yScale = (count: number) =>
+    CHART.PT + (1 - (count - yMin) / yRange) * innerH
 
   const keyDates = [
     { day: 0, label: 'Jul 1', description: 'Program Year Start' },
@@ -356,8 +338,11 @@ const ClubDetailPage: React.FC = () => {
     { day: 365, label: 'Jun 30', description: 'Program Year End' },
   ]
 
-  const dayToX = (day: number) => (day / totalProgramDays) * 800
   const formatDate = (dateStr: string) => formatDisplayDate(dateStr)
+
+  // En-dashed year for display ("2025–2026"), per reference. Used in both the
+  // panel meta and the chart's aria-label so they stay in sync.
+  const programYearLabelDisplay = programYear.label.replace(/-/g, '–')
 
   // Set page title
   React.useEffect(() => {
@@ -642,173 +627,193 @@ const ClubDetailPage: React.FC = () => {
             ))}
           </div>
 
-          {/* Two-column layout for charts + projection */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            {/* Membership Trend Chart (2 cols) */}
-            <div className="lg:col-span-2 redesign-panel">
-              <h2 className="font-semibold text-gray-900 mb-1 flex items-center gap-2 font-tm-headline">
-                <svg
-                  className="w-5 h-5 text-tm-loyal-blue"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-                Membership Trend
-              </h2>
-              <p className="text-xs text-gray-500 mb-4 font-tm-body">
-                Program Year {programYear.label}
-              </p>
+          {/* 2/3 + 1/3 row — Membership Trend + DCP Status (#619), pixel-mapped
+              to club-reference.html. The chart is hand-rolled SVG (not Recharts):
+              it already nails the program-year-day x-axis, and CSS-classed
+              stroke/area/dot make the dark-mode swap a pure CSS override (R10). */}
+          <div className="club-trend-grid">
+            {/* Membership Trend (2/3) */}
+            <section className="club-panel">
+              <div className="club-panel__head">
+                <h2>
+                  <svg
+                    className="club-panel__ico"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.6}
+                    aria-hidden="true"
+                  >
+                    <path d="M2 13l3-4 3 2 6-7" />
+                    <path d="M10 4h3v3" />
+                  </svg>
+                  Membership Trend
+                </h2>
+                <span className="club-panel__meta">
+                  Program Year {programYearLabelDisplay} ·{' '}
+                  {filteredMembershipTrend.length} data point
+                  {filteredMembershipTrend.length === 1 ? '' : 's'}
+                </span>
+              </div>
+              <div className="club-panel__body">
+                {filteredMembershipTrend.length > 0 ? (
+                  <>
+                    <div className="chart-stats">
+                      <div className="chart-stats__row">
+                        <span className="chart-stats__label">Base</span>
+                        <span className="chart-stats__val">
+                          {baseMembership}
+                        </span>
+                      </div>
+                      <div className="chart-stats__row">
+                        <span className="chart-stats__label">Current</span>
+                        <span className="chart-stats__val">
+                          {latestMembership}
+                        </span>
+                      </div>
+                      <div className="chart-stats__row">
+                        <span className="chart-stats__label">Change</span>
+                        <span
+                          className={
+                            'chart-stats__val' +
+                            (membershipChange > 0
+                              ? ' chart-stats__val--pos'
+                              : membershipChange < 0
+                                ? ' chart-stats__val--neg'
+                                : '')
+                          }
+                        >
+                          {membershipChange >= 0 ? '+' : ''}
+                          {membershipChange}
+                          {membershipChangePct !== null &&
+                            ` (${membershipChangePct >= 0 ? '+' : ''}${membershipChangePct.toFixed(1)}%)`}
+                        </span>
+                      </div>
+                    </div>
 
-              {filteredMembershipTrend.length > 0 ? (
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  {/* Stats */}
-                  <div className="flex items-center justify-between mb-4 text-sm">
-                    <div>
-                      <span className="text-gray-600 font-tm-body">Base: </span>
-                      <span className="font-semibold text-gray-900 font-tm-body">
-                        {baseMembership}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600 font-tm-body">
-                        Current:{' '}
-                      </span>
-                      <span className="font-semibold text-gray-900 font-tm-body">
-                        {latestMembership}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600 font-tm-body">
-                        Change:{' '}
-                      </span>
-                      <span
-                        className={`font-semibold font-tm-body ${membershipChange >= 0 ? 'text-green-600' : 'text-red-600'}`}
-                      >
-                        {membershipChange >= 0 ? '+' : ''}
-                        {membershipChange}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* SVG Chart */}
-                  <div className="relative h-48 bg-white rounded border border-gray-200 p-4">
-                    <div className="absolute left-0 top-4 bottom-4 w-10 flex flex-col justify-between text-xs text-gray-500 font-tm-body">
-                      <span>{maxMembership}</span>
-                      <span>
-                        {Math.round(minMembership + membershipRange * 0.5)}
-                      </span>
-                      <span>{minMembership}</span>
-                    </div>
                     <svg
-                      className="w-full h-full ml-8"
-                      viewBox="0 0 800 180"
+                      className="mem-chart"
+                      viewBox={`0 0 ${CHART.W} ${CHART.H}`}
                       preserveAspectRatio="none"
-                      aria-label={`Membership trend for ${programYear.label}`}
+                      role="img"
+                      aria-label={`Membership trend for program year ${programYearLabelDisplay}`}
                     >
-                      {[0, 45, 90, 135, 160].map(y => (
-                        <line
-                          key={`grid-${y}`}
-                          x1="0"
-                          y1={y}
-                          x2="800"
-                          y2={y}
-                          stroke="var(--tm-cool-gray)"
-                          strokeWidth="0.5"
-                        />
-                      ))}
+                      {/* Y grid + labels (4 ticks) */}
+                      {[0, 1, 2, 3].map(i => {
+                        const v = yMin + yRange * (i / 3)
+                        const y = yScale(v)
+                        return (
+                          <g key={`grid-${i}`}>
+                            <line
+                              className="grid"
+                              x1={CHART.PL}
+                              y1={y}
+                              x2={CHART.W - CHART.PR}
+                              y2={y}
+                            />
+                            <text
+                              className="axis-text"
+                              x={CHART.PL - 6}
+                              y={y + 4}
+                              textAnchor="end"
+                            >
+                              {Math.round(v)}
+                            </text>
+                          </g>
+                        )
+                      })}
+
+                      {/* Key-date verticals (Jul 1 / Oct 1 / Apr 1 / Jun 30) */}
                       {keyDates.map(kd => {
-                        const x = dayToX(kd.day)
+                        const x = xScale(kd.day)
                         return (
                           <g key={kd.label}>
                             <line
+                              className="key-line"
                               x1={x}
-                              y1="0"
+                              y1={CHART.PT}
                               x2={x}
-                              y2="160"
-                              stroke="var(--tm-cool-gray)"
-                              strokeWidth="1"
-                              strokeDasharray="4 3"
-                            />
+                              y2={CHART.H - CHART.PB}
+                            >
+                              <title>{kd.description}</title>
+                            </line>
                             <text
+                              className="key-text"
                               x={x}
-                              y="175"
+                              y={CHART.H - 10}
                               textAnchor="middle"
-                              fontSize="10"
-                              fill="#6b7280"
                             >
                               {kd.label}
                             </text>
                           </g>
                         )
                       })}
-                      {filteredMembershipTrend.length > 1 && (
-                        <polyline
-                          fill="none"
-                          stroke="var(--tm-loyal-blue)"
-                          strokeWidth="2.5"
-                          strokeLinejoin="round"
-                          strokeLinecap="round"
-                          points={filteredMembershipTrend
-                            .map(point => {
-                              const day = calculateProgramYearDay(point.date)
-                              const x = dayToX(day)
-                              const y =
-                                160 -
-                                ((point.count - minMembership) /
-                                  membershipRange) *
-                                  160
-                              return `${x},${y}`
-                            })
-                            .join(' ')}
-                        />
-                      )}
-                      {filteredMembershipTrend.map((point, index) => {
-                        const day = calculateProgramYearDay(point.date)
-                        const x = dayToX(day)
-                        const y =
-                          160 -
-                          ((point.count - minMembership) / membershipRange) *
-                            160
+
+                      {/* Area fill + line */}
+                      {(() => {
+                        const pts = filteredMembershipTrend
+                          .map(
+                            p =>
+                              `${xScale(calculateProgramYearDay(p.date)).toFixed(1)},${yScale(p.count).toFixed(1)}`
+                          )
+                          .join(' ')
+                        const baseY = (CHART.PT + innerH).toFixed(1)
+                        const firstX = xScale(
+                          calculateProgramYearDay(
+                            filteredMembershipTrend[0]!.date
+                          )
+                        ).toFixed(1)
+                        const lastX = xScale(
+                          calculateProgramYearDay(
+                            filteredMembershipTrend[
+                              filteredMembershipTrend.length - 1
+                            ]!.date
+                          )
+                        ).toFixed(1)
                         return (
-                          <g key={index}>
-                            <circle
-                              cx={x}
-                              cy={y}
-                              r="3"
-                              fill="var(--tm-loyal-blue)"
-                            />
-                            <title>
-                              {formatDate(point.date)}: {point.count} members
-                            </title>
-                          </g>
+                          <>
+                            {filteredMembershipTrend.length > 1 && (
+                              <polygon
+                                className="area"
+                                points={`${pts} ${lastX},${baseY} ${firstX},${baseY}`}
+                              />
+                            )}
+                            {filteredMembershipTrend.length > 1 && (
+                              <polyline className="line" points={pts} />
+                            )}
+                          </>
                         )
-                      })}
+                      })()}
+
+                      {/* Dots + tooltips */}
+                      {filteredMembershipTrend.map((point, index) => (
+                        <circle
+                          key={index}
+                          className="dot"
+                          cx={xScale(calculateProgramYearDay(point.date))}
+                          cy={yScale(point.count)}
+                          r="3"
+                        >
+                          <title>
+                            {formatDate(point.date)}: {point.count} members
+                          </title>
+                        </circle>
+                      ))}
                     </svg>
-                  </div>
+                  </>
+                ) : (
+                  <EmptyState
+                    title="No Membership Data"
+                    message="No membership trend data available for this program year."
+                    icon="data"
+                  />
+                )}
+              </div>
+            </section>
 
-                  {/* Legend */}
-                  <div className="flex items-center justify-between mt-2 text-xs text-gray-500 font-tm-body">
-                    <span>{programYear.label} Program Year</span>
-                    <span>{filteredMembershipTrend.length} data points</span>
-                  </div>
-                </div>
-              ) : (
-                <EmptyState
-                  title="No Membership Data"
-                  message="No membership trend data available for this program year."
-                  icon="data"
-                />
-              )}
-            </div>
-
-            {/* DCP Projection (1 col) */}
+            {/* DCP Status (1/3) */}
             {projection && (
               <DCPProjectionCard
                 projection={projection}

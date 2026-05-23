@@ -1,8 +1,8 @@
 /**
  * Tests for ClubDetailPage (#208) — full subpage with routing.
  */
-import { describe, it, expect, vi, afterEach } from 'vitest'
-import { screen, render, cleanup } from '@testing-library/react'
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
+import { screen, render, cleanup, within } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query'
@@ -195,19 +195,21 @@ describe('ClubDetailPage (#208)', () => {
     renderWithRoute()
 
     // Stats labels — #618 renames "Net Change" → "Net Δ" to match the
-    // pixel-perfect club-reference.html stat strip.
-    expect(screen.getByText('Base')).toBeInTheDocument()
-    expect(screen.getByText('Current')).toBeInTheDocument()
-    expect(screen.getByText('Net Δ')).toBeInTheDocument()
-    expect(screen.getByText('DCP Goals')).toBeInTheDocument()
+    // pixel-perfect club-reference.html stat strip. #619 adds a chart-stats
+    // row that ALSO labels "Base"/"Current", so those are now non-unique;
+    // scope the assertion to the stats grid.
+    const grid = screen
+      .getAllByText('Base')
+      .map(el => el.closest('.club-stats-grid'))
+      .find(Boolean)
+    expect(grid).toBeTruthy()
+    const inGrid = within(grid as HTMLElement)
+    expect(inGrid.getByText('Current')).toBeInTheDocument()
+    expect(inGrid.getByText('Net Δ')).toBeInTheDocument()
+    expect(inGrid.getByText('DCP Goals')).toBeInTheDocument()
 
     // Net Δ = -5 (appears in stats grid + chart)
     expect(screen.getAllByText('-5').length).toBeGreaterThanOrEqual(1)
-
-    // The 8-stat strip uses the dedicated responsive grid class (#618):
-    // 8-col desktop → 4-col ≤640px → 2-col ≤420px (enforced in CSS).
-    const grid = screen.getByText('Base').closest('.club-stats-grid')
-    expect(grid).not.toBeNull()
   })
 
   it('renders not found state for invalid club ID', () => {
@@ -221,7 +223,9 @@ describe('ClubDetailPage (#208)', () => {
 
     expect(screen.getByText('DCP Status')).toBeInTheDocument()
     expect(screen.getByText('Current Level')).toBeInTheDocument()
-    expect(screen.getByText('Distinguished Outlook')).toBeInTheDocument()
+    // #619 — label matches club-reference.html ("Outlook", was
+    // "Distinguished Outlook"). The "DCP Status" panel header supplies context.
+    expect(screen.getByText('Outlook')).toBeInTheDocument()
   })
 
   // #432 — CHARTERED <Month YYYY> in club hero eyebrow. Only one
@@ -398,7 +402,10 @@ describe('Close-to-Distinguished call-out — ClubDetailPage', () => {
     const callout = screen.getByRole('region', {
       name: /close to distinguished/i,
     })
-    const baseLabel = screen.getByText('Base')
+    // #619 added a chart-stats "Base" too; scope to the stats grid.
+    const baseLabel = screen
+      .getAllByText('Base')
+      .find(el => el.closest('.club-stats-grid')) as HTMLElement
     // DOCUMENT_POSITION_FOLLOWING (4) means callout precedes baseLabel
     expect(callout.compareDocumentPosition(baseLabel)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
@@ -470,5 +477,70 @@ describe('Close-to-Distinguished call-out — ClubDetailPage', () => {
     expect(
       screen.queryByRole('region', { name: /close to distinguished/i })
     ).not.toBeInTheDocument()
+  })
+})
+
+// ── Sprint 2 (#619) — Membership Trend chart + DCP Status panel re-skin ──────
+describe('Membership Trend + DCP Status re-skin (#619)', () => {
+  // Earlier describes use persistent mockReturnValue; reset to the base club
+  // so these assertions see the 4-point PY 2025–2026 trend.
+  beforeEach(() => {
+    vi.mocked(useDistrictAnalytics).mockReturnValue({
+      data: { districtId: '61', allClubs: [baseMockClub] },
+      isLoading: false,
+      error: null,
+    } as ReturnType<typeof useDistrictAnalytics>)
+  })
+
+  afterEach(() => {
+    cleanup()
+  })
+
+  it('renders the 2/3 + 1/3 row inside .club-trend-grid', () => {
+    renderWithRoute()
+    const grid = screen
+      .getByText('Membership Trend')
+      .closest('.club-trend-grid')
+    expect(grid).not.toBeNull()
+    // both panels live in the same grid
+    expect(within(grid as HTMLElement).getByText('DCP Status')).toBeTruthy()
+  })
+
+  it('renders the panel meta with an en-dashed program year and data-point count', () => {
+    renderWithRoute()
+    // baseMockClub has 4 trend points in PY 2025–2026
+    expect(
+      screen.getByText('Program Year 2025–2026 · 4 data points')
+    ).toBeInTheDocument()
+  })
+
+  it('renders the chart-stats Change as a signed value + signed percent', () => {
+    renderWithRoute()
+    // base 46 → current 41 → change -5 → -5/46 = -10.9%
+    expect(screen.getByText('-5 (-10.9%)')).toBeInTheDocument()
+  })
+
+  it('renders all four key-date verticals labeled Jul 1 / Oct 1 / Apr 1 / Jun 30', () => {
+    renderWithRoute()
+    expect(screen.getByText('Jul 1')).toBeInTheDocument()
+    expect(screen.getByText('Oct 1')).toBeInTheDocument()
+    expect(screen.getByText('Apr 1')).toBeInTheDocument()
+    expect(screen.getByText('Jun 30')).toBeInTheDocument()
+  })
+
+  it('renders the membership chart svg with the .mem-chart class', () => {
+    const { container } = renderWithRoute()
+    expect(container.querySelector('svg.mem-chart')).not.toBeNull()
+  })
+
+  it('renders the Gap to Each Tier section with all four tiers', () => {
+    renderWithRoute()
+    const section = screen.getByText('Gap to Each Tier').closest('.gap-section')
+    expect(section).not.toBeNull()
+    const inSection = within(section as HTMLElement)
+    expect(inSection.getByText('Distinguished')).toBeInTheDocument()
+    expect(inSection.getByText('Select')).toBeInTheDocument()
+    expect(inSection.getByText("President's")).toBeInTheDocument()
+    expect(inSection.getByText('Smedley')).toBeInTheDocument()
   })
 })

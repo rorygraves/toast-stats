@@ -1077,6 +1077,351 @@
     flex-shrink: 0;
   }
 
+  /* ── #619 Membership Trend + DCP Status (2/3 + 1/3 row) ──────────────────
+     Pixel-perfect to club-reference.html. The reference's dark-mode rules
+     live under prefers-color-scheme; here they're remapped onto the existing
+     [data-theme='dark'] scope (R10 — cross-cutting theming at the CSS level,
+     not the component). Chart stroke/area/dot colours are carried by CSS
+     classes (not SVG props) so the dark-mode swap to #8ec5e8 is a CSS
+     override, never a React branch. */
+  .club-trend-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 980px) {
+    .club-trend-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Panel with a bordered header + padded body (reference .panel/.panel-h/
+     .panel-body). Club-prefixed to avoid colliding with any global panel. */
+  .club-panel {
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-md);
+    box-shadow: var(--rds-shadow-sm);
+    color: var(--ink);
+  }
+
+  .club-panel__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .club-panel__head h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: -0.005em;
+    color: var(--ink);
+  }
+
+  .club-panel__head .club-panel__ico {
+    color: var(--loyal-500);
+    flex-shrink: 0;
+  }
+
+  .club-panel__meta {
+    font-size: 12px;
+    color: var(--ink-3);
+  }
+
+  .club-panel__body {
+    padding: 18px;
+  }
+
+  /* Inline Base / Current / Change row above the chart. */
+  .chart-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin-bottom: 12px;
+    padding-bottom: 14px;
+    border-bottom: 1px dashed var(--line);
+    font-size: 13px;
+  }
+
+  /* Each Base/Current/Change pair is one flex item (label + value grouped),
+     so the 18px gap falls between groups, not between a label and its value. */
+  .chart-stats__row {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+
+  .chart-stats__label {
+    color: var(--ink-3);
+  }
+
+  .chart-stats__val {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--ink);
+  }
+
+  .chart-stats__val--pos {
+    color: var(--green-600);
+  }
+
+  .chart-stats__val--neg {
+    color: var(--red-600);
+  }
+
+  /* Membership line chart (hand-rolled SVG, program-year-day x-axis). */
+  .mem-chart {
+    width: 100%;
+    height: 260px;
+    display: block;
+  }
+
+  .mem-chart .grid {
+    stroke: var(--line-2);
+    stroke-width: 1;
+  }
+
+  .mem-chart .key-line {
+    stroke: var(--ink-4);
+    stroke-width: 1;
+    stroke-dasharray: 3 4;
+    opacity: 0.6;
+  }
+
+  .mem-chart .axis-text {
+    fill: var(--ink-4);
+    font-size: 10.5px;
+    font-family: var(--sans);
+  }
+
+  .mem-chart .key-text {
+    fill: var(--ink-3);
+    font-size: 10px;
+    font-weight: 600;
+    font-family: var(--sans);
+  }
+
+  .mem-chart .line {
+    fill: none;
+    stroke: var(--loyal-500);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .mem-chart .area {
+    fill: var(--loyal-500);
+    opacity: 0.08;
+  }
+
+  .mem-chart .dot {
+    fill: var(--loyal-500);
+  }
+
+  [data-theme='dark'] .mem-chart .line {
+    stroke: #8ec5e8;
+  }
+
+  [data-theme='dark'] .mem-chart .area {
+    fill: #8ec5e8;
+    opacity: 0.14;
+  }
+
+  [data-theme='dark'] .mem-chart .dot {
+    fill: #8ec5e8;
+  }
+
+  /* DCP Status — tier row (Current Level + Outlook) + per-tier gap rows. */
+  .dcp-tier-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .dcp-cell {
+    background-color: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-sm);
+    padding: 12px;
+    text-align: center;
+  }
+
+  .dcp-cell__lab {
+    font-size: 10.5px;
+    color: var(--ink-3);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+
+  .dcp-cell__val {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  /* Current Level value reads in the tier's accent. Distinguished = green
+     per reference; lower tiers fall back to ink so colour is never the only
+     cue (the text label itself names the tier). */
+  .dcp-cell__val--distinguished {
+    color: var(--green-600);
+  }
+
+  /* Provisional annotation under the Current Level value (#239). */
+  .dcp-cell__provisional {
+    margin-top: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #854d0e;
+  }
+
+  [data-theme='dark'] .dcp-cell__provisional {
+    color: #fcd34d;
+  }
+
+  .dcp-cell__provisional-confirmed {
+    font-weight: 400;
+    color: var(--ink-3);
+  }
+
+  /* Outlook tints — positive (On Track) is the reference green; warn / bad
+     reuse the codebase's yellow / red banner palette so the three health
+     states stay visually distinct. */
+  .dcp-cell--pos {
+    background-color: #ecfdf5;
+    border-color: #bbf7d0;
+  }
+
+  .dcp-cell--pos .dcp-cell__val {
+    color: #166534;
+  }
+
+  .dcp-cell--warn {
+    background-color: #fffbeb;
+    border-color: #fde68a;
+  }
+
+  .dcp-cell--warn .dcp-cell__val {
+    color: #854d0e;
+  }
+
+  .dcp-cell--bad {
+    background-color: #fef2f2;
+    border-color: #fecaca;
+  }
+
+  .dcp-cell--bad .dcp-cell__val {
+    color: #991b1b;
+  }
+
+  [data-theme='dark'] .dcp-cell--pos {
+    background-color: rgba(22, 163, 74, 0.1);
+    border-color: rgba(22, 163, 74, 0.3);
+  }
+
+  [data-theme='dark'] .dcp-cell--pos .dcp-cell__val {
+    color: #4ade80;
+  }
+
+  [data-theme='dark'] .dcp-cell--warn {
+    background-color: rgba(202, 138, 4, 0.12);
+    border-color: rgba(202, 138, 4, 0.3);
+  }
+
+  [data-theme='dark'] .dcp-cell--warn .dcp-cell__val {
+    color: #fcd34d;
+  }
+
+  [data-theme='dark'] .dcp-cell--bad {
+    background-color: rgba(220, 38, 38, 0.12);
+    border-color: rgba(220, 38, 38, 0.3);
+  }
+
+  [data-theme='dark'] .dcp-cell--bad .dcp-cell__val {
+    color: #fca5a5;
+  }
+
+  .gap-section h3 {
+    margin: 0 0 8px;
+    font-family: var(--sans);
+    font-size: 11px;
+    color: var(--ink-3);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .gap-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 12px;
+    margin-bottom: 4px;
+    border-radius: var(--rds-radius-sm);
+    background-color: var(--surface-2);
+    font-size: 13px;
+  }
+
+  .gap-row__tier {
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .gap-row__val {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-2);
+  }
+
+  .gap-row--met {
+    background-color: #ecfdf5;
+  }
+
+  .gap-row--met .gap-row__val {
+    color: #15803d;
+    font-weight: 600;
+  }
+
+  /* Provisional tier — existing logic (#239) kept; amber to distinguish a
+     provisional 'met' from a confirmed one. */
+  .gap-row--provisional {
+    background-color: #fffbeb;
+  }
+
+  .gap-row--provisional .gap-row__val {
+    color: #854d0e;
+    font-weight: 600;
+  }
+
+  [data-theme='dark'] .gap-row--met {
+    background-color: rgba(22, 163, 74, 0.1);
+  }
+
+  [data-theme='dark'] .gap-row--met .gap-row__val {
+    color: #4ade80;
+  }
+
+  [data-theme='dark'] .gap-row--provisional {
+    background-color: rgba(202, 138, 4, 0.12);
+  }
+
+  [data-theme='dark'] .gap-row--provisional .gap-row__val {
+    color: #fcd34d;
+  }
+
   /* Distinguished Program criteria explainer (#362). Collapsible
      <details> on the Divisions & Areas tab. */
   .ddp-criteria {
