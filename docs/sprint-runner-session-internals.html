@@ -1,0 +1,1294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Inside the Spawned Claude Session — Sprint Runner Deep Dive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f6f7f8;
+    --surface: #ffffff;
+    --surface-2: #f9fafb;
+    --surface-3: #f1f3f5;
+    --line: #e5e7eb;
+    --line-2: #eceef0;
+    --ink: #0f1720;
+    --ink-2: #344052;
+    --ink-3: #5b6675;
+    --ink-4: #8b94a3;
+    --accent: #004165;
+    --accent-2: #2c6e90;
+    --accent-soft: #e6eef3;
+    --maroon: #7B1828;
+    --maroon-soft: #fde2e7;
+    --success: #15803d;
+    --success-soft: #d1fae5;
+    --warning: #c9b748;
+    --warning-soft: #fef9c3;
+    --warning-strong: #92400e;
+    --danger: #dc2626;
+    --info: #2563eb;
+    --info-soft: #dbeafe;
+    --purple: #7c3aed;
+    --purple-soft: #ede9fe;
+    --link: var(--accent);
+    --shadow-sm: 0 1px 2px rgba(15,23,32,.04);
+    --shadow: 0 1px 2px rgba(15,23,32,.04), 0 1px 3px rgba(15,23,32,.06);
+    --shadow-lg: 0 1px 2px rgba(15,23,32,.04), 0 8px 24px rgba(15,23,32,.08);
+    --radius-sm: 6px;
+    --radius: 8px;
+    --radius-lg: 12px;
+    --serif: 'Montserrat', system-ui, sans-serif;
+    --sans: 'Source Sans 3', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  [data-theme='dark'] {
+    --bg: #0a0f15;
+    --surface: #111922;
+    --surface-2: #161f2a;
+    --surface-3: #1a2330;
+    --line: #1f2a38;
+    --line-2: #25313f;
+    --ink: #eef2f7;
+    --ink-2: #c8d1dd;
+    --ink-3: #8a96a6;
+    --ink-4: #5d6878;
+    --accent: #8ec5e8;
+    --accent-2: #60a5d8;
+    --accent-soft: #16344a;
+    --maroon: #ef4444;
+    --maroon-soft: rgba(239,68,68,.18);
+    --success: #4ade80;
+    --success-soft: rgba(74,222,128,.15);
+    --warning: #fcd34d;
+    --warning-soft: rgba(202,138,4,.15);
+    --warning-strong: #fcd34d;
+    --danger: #f87171;
+    --info: #60a5fa;
+    --info-soft: rgba(96,165,250,.15);
+    --purple: #a78bfa;
+    --purple-soft: rgba(167,139,250,.15);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.3);
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 1px 3px rgba(0,0,0,.4);
+    --shadow-lg: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.5);
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  button { font-family: inherit; cursor: pointer; }
+  code { font-family: var(--mono); font-size: 0.92em; background: var(--surface-3); padding: 1px 5px; border-radius: 3px; color: var(--ink-2); }
+
+  /* Topbar */
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+    padding: 0 24px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    backdrop-filter: saturate(140%) blur(8px);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--serif);
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: -0.01em;
+  }
+  .brand-mark {
+    width: 28px; height: 28px;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--serif);
+    font-weight: 800;
+    font-size: 13px;
+  }
+  .topbar nav { flex: 1; display: flex; gap: 4px; }
+  .topbar nav a {
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    color: var(--ink-2);
+    font-weight: 500;
+    font-size: 13.5px;
+  }
+  .topbar nav a:hover { background: var(--surface-3); text-decoration: none; }
+  .theme-toggle {
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-2);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .theme-toggle:hover { background: var(--surface-3); border-color: var(--ink-4); }
+
+  .page {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+  .intro {
+    margin-bottom: 32px;
+  }
+  .intro .eyebrow {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--maroon);
+    margin-bottom: 8px;
+  }
+  .intro h1 {
+    font-family: var(--serif);
+    font-weight: 800;
+    font-size: 32px;
+    line-height: 1.15;
+    margin: 0 0 8px;
+    letter-spacing: -0.02em;
+  }
+  .intro p {
+    margin: 0 0 12px;
+    color: var(--ink-2);
+    max-width: 880px;
+  }
+  .intro .hint {
+    font-size: 12.5px;
+    color: var(--ink-3);
+    font-style: italic;
+  }
+
+  /* Section */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-sm);
+  }
+  .section-h {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  .section-h h2 {
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -0.015em;
+  }
+  .section-h .section-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+  .section-h .section-meta {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--ink-3);
+  }
+  .section > p.lead {
+    margin: 0 0 18px;
+    color: var(--ink-2);
+    font-size: 14.5px;
+  }
+
+  /* ──── Section 1: Process Stack ──── */
+  .proc-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  .proc-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 240px;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    margin-bottom: 4px;
+    border-radius: var(--radius-sm);
+    transition: all 0.15s ease;
+    cursor: pointer;
+  }
+  .proc-row:hover {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    transform: translateX(2px);
+  }
+  .proc-row.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .proc-row.active .proc-cmd { color: rgba(255,255,255,.85); }
+  .proc-row.active .proc-msg { color: rgba(255,255,255,.65); }
+  .proc-indent {
+    color: var(--ink-4);
+    font-size: 12px;
+  }
+  .proc-cmd {
+    color: var(--ink);
+    font-weight: 500;
+    word-break: break-all;
+  }
+  .proc-msg {
+    color: var(--ink-3);
+    font-size: 11.5px;
+    font-family: var(--sans);
+    text-align: right;
+  }
+  .proc-arrow {
+    text-align: center;
+    color: var(--accent);
+    font-size: 18px;
+    line-height: 1;
+    margin: 2px 0;
+    font-family: var(--mono);
+    font-weight: 600;
+  }
+  .proc-arrow .label {
+    display: inline-block;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 11px;
+    font-family: var(--sans);
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 3px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  /* ──── Section 2: Context onion ──── */
+  .onion-wrap {
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    gap: 24px;
+    align-items: start;
+  }
+  @media (max-width: 980px) {
+    .onion-wrap { grid-template-columns: 1fr; }
+  }
+  .onion {
+    position: relative;
+    padding: 20px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  .layer {
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 10px;
+    border: 1px solid;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative;
+  }
+  .layer:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+  .layer.active { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+  .layer-l1 {
+    background: var(--surface);
+    border-color: var(--line);
+  }
+  .layer-l2 {
+    background: var(--info-soft);
+    border-color: var(--info);
+    margin: 0 12px 10px;
+  }
+  [data-theme='dark'] .layer-l2 {
+    background: var(--info-soft);
+    border-color: var(--info);
+  }
+  .layer-l3 {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    margin: 0 24px 10px;
+  }
+  .layer-l4 {
+    background: var(--warning-soft);
+    border-color: var(--warning);
+    margin: 0 36px 10px;
+  }
+  .layer-l5 {
+    background: var(--purple-soft);
+    border-color: var(--purple);
+    margin: 0 48px 10px;
+  }
+  .layer-l6 {
+    background: var(--success-soft);
+    border-color: var(--success);
+    margin: 0 60px;
+  }
+  [data-theme='dark'] .layer-l1,
+  [data-theme='dark'] .layer-l2,
+  [data-theme='dark'] .layer-l3,
+  [data-theme='dark'] .layer-l4,
+  [data-theme='dark'] .layer-l5,
+  [data-theme='dark'] .layer-l6 {
+    color: var(--ink);
+  }
+  .layer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+  }
+  .layer-title {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--ink);
+    margin: 0;
+  }
+  .layer-tag {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--ink-3);
+    background: rgba(255,255,255,.5);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+  [data-theme='dark'] .layer-tag { background: rgba(0,0,0,.3); }
+  .layer-desc {
+    font-size: 12.5px;
+    color: var(--ink-2);
+    margin: 0;
+  }
+  .layer-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .layer-item {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: rgba(0,0,0,.06);
+    padding: 2px 7px;
+    border-radius: 3px;
+    color: var(--ink-2);
+  }
+  [data-theme='dark'] .layer-item { background: rgba(255,255,255,.08); }
+
+  .onion-detail {
+    position: sticky;
+    top: 88px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    box-shadow: var(--shadow);
+    max-height: calc(100vh - 110px);
+    overflow-y: auto;
+  }
+  .onion-detail .placeholder {
+    color: var(--ink-3);
+    font-style: italic;
+    text-align: center;
+    padding: 40px 16px;
+  }
+  .onion-detail h3 {
+    font-family: var(--serif);
+    font-weight: 800;
+    font-size: 18px;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  .onion-detail .scope-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 14px;
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--surface-3);
+    border-radius: 3px;
+  }
+  .onion-detail .desc {
+    color: var(--ink-2);
+    margin: 0 0 16px;
+    line-height: 1.55;
+    font-size: 13.5px;
+  }
+  .onion-detail .h4 {
+    font-family: var(--sans);
+    font-size: 11px;
+    color: var(--ink-3);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 16px 0 6px;
+  }
+  .onion-detail ul { margin: 0; padding: 0; list-style: none; }
+  .onion-detail li {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    font-size: 12.5px;
+    color: var(--ink-2);
+  }
+  .onion-detail li code { font-size: 11px; }
+
+  /* ──── Section 3: Skill cards ──── */
+  .skill-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+  }
+  .skill-card {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .skill-card:hover {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+  }
+  .skill-card.active {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    box-shadow: var(--shadow-lg);
+  }
+  .skill-card .skill-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .skill-card .skill-icon {
+    width: 28px; height: 28px;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .skill-card.persona .skill-icon { background: var(--maroon); }
+  .skill-card.workflow .skill-icon { background: var(--success); }
+  .skill-card.utility .skill-icon { background: var(--warning); color: var(--warning-strong); }
+  .skill-card.utility .skill-icon { background: var(--info); color: #fff; }
+
+  .skill-name {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 13.5px;
+    color: var(--ink);
+  }
+  .skill-type {
+    font-size: 10.5px;
+    font-family: var(--sans);
+    font-weight: 600;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-left: auto;
+  }
+  .skill-card .skill-trigger {
+    font-size: 12px;
+    color: var(--ink-3);
+    margin: 0 0 6px;
+  }
+  .skill-card .skill-trigger b { color: var(--ink-2); font-weight: 600; }
+  .skill-card .skill-scopes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 8px;
+  }
+  .skill-card .skill-scope-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    background: rgba(0,0,0,.05);
+    color: var(--ink-3);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+  [data-theme='dark'] .skill-card .skill-scope-tag { background: rgba(255,255,255,.07); }
+
+  /* ──── Section 4: Message sequence ──── */
+  .seq-container {
+    position: relative;
+    padding-left: 60px;
+  }
+  .seq-step {
+    position: relative;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .seq-step:hover { background: var(--accent-soft); border-color: var(--accent); }
+  .seq-step.active { background: var(--accent-soft); border-color: var(--accent); }
+  .seq-step::before {
+    content: attr(data-step);
+    position: absolute;
+    left: -50px;
+    top: 14px;
+    width: 32px;
+    height: 32px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 12px;
+  }
+  .seq-step .seq-actors {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-3);
+    margin-bottom: 4px;
+  }
+  .seq-step .seq-actors .from { color: var(--info); font-weight: 600; }
+  .seq-step .seq-actors .to { color: var(--accent); font-weight: 600; }
+  .seq-step .seq-msg {
+    color: var(--ink);
+    font-size: 13.5px;
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+  .seq-step .seq-detail {
+    color: var(--ink-3);
+    font-size: 12.5px;
+    margin: 0;
+  }
+
+  /* Legend */
+  .legend-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .legend-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    color: var(--ink-2);
+  }
+  .legend-swatch {
+    width: 18px; height: 18px;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+  }
+  .legend-swatch.persona { background: var(--maroon); }
+  .legend-swatch.workflow { background: var(--success); }
+  .legend-swatch.utility { background: var(--info); }
+  .legend-swatch.l1 { background: var(--surface); border: 1px solid var(--line); }
+  .legend-swatch.l2 { background: var(--info-soft); border: 1px solid var(--info); }
+  .legend-swatch.l3 { background: var(--accent-soft); border: 1px solid var(--accent); }
+  .legend-swatch.l4 { background: var(--warning-soft); border: 1px solid var(--warning); }
+  .legend-swatch.l5 { background: var(--purple-soft); border: 1px solid var(--purple); }
+  .legend-swatch.l6 { background: var(--success-soft); border: 1px solid var(--success); }
+
+  footer {
+    margin-top: 40px;
+    padding: 20px 0 30px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-3);
+    font-size: 12.5px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  footer a { color: var(--ink-2); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <span class="brand-mark">SR</span>
+    Sprint Runner
+  </div>
+  <nav>
+    <a href="sprint-runner-diagram.html">← Overview</a>
+    <a href="#proc">Process stack</a>
+    <a href="#context">Context scopes</a>
+    <a href="#skills">Skills</a>
+    <a href="#seq">Message flow</a>
+  </nav>
+  <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+    <span id="themeIcon">🌙</span>
+    <span id="themeLabel">Dark</span>
+  </button>
+</div>
+
+<main class="page">
+
+  <header class="intro">
+    <div class="eyebrow">Deep dive · Inside Stage 6 (Work)</div>
+    <h1>Inside the Spawned Claude Session</h1>
+    <p>The overview diagram shows the runner's ten lifecycle stages. This page zooms into the one stage where the autonomous work actually happens — <strong>inside the spawned <code>claude --remote-control</code> session</strong>. It answers three questions:</p>
+    <p style="margin-left: 16px;">① <strong>How does the session get started?</strong> Process tree + what each layer passes to the next.<br/>
+       ② <strong>What does the session know?</strong> Context scopes layered from system prompt to current file edits.<br/>
+       ③ <strong>What skills run and when?</strong> Activation triggers + which context layers each skill consumes.</p>
+    <p class="hint">Click any element below to see its role, contents, and the surrounding context. Theme toggle top-right.</p>
+  </header>
+
+  <!-- ──────────────── SECTION 1: Process stack ──────────────── -->
+  <section class="section" id="proc">
+    <div class="section-h">
+      <span class="section-tag">§1</span>
+      <h2>Process stack &amp; spawn messaging</h2>
+      <span class="section-meta">~5 forks, 3 message types</span>
+    </div>
+    <p class="lead">From launchd to the Anthropic API, the spawned session sits at the bottom of a five-level process tree. Each layer hands something specific to the next: <strong>env vars</strong> (launchd → script), <strong>shell command + cwd</strong> (script → screen), <strong>argv with prompt</strong> (bash → claude), and <strong>HTTPS stream</strong> (claude ↔ Anthropic + claude.ai). Click each row for the exact handoff.</p>
+
+    <div class="proc-stack" id="procStack">
+      <div class="proc-row" data-proc="launchd">
+        <span class="proc-indent">└</span>
+        <span class="proc-cmd">/sbin/launchd</span>
+        <span class="proc-msg">macOS init · PID 1</span>
+      </div>
+      <div class="proc-arrow">↓ <span class="label">env: META_EPIC=606, STRICT_GATE=1, PATH, HOME</span></div>
+      <div class="proc-row" data-proc="script">
+        <span class="proc-indent">└</span>
+        <span class="proc-cmd">scripts/sprint-runner.sh</span>
+        <span class="proc-msg">orchestrator · ~700 LOC</span>
+      </div>
+      <div class="proc-arrow">↓ <span class="label">fork: <code>screen -dmS sprint-runner-618 bash -c "..."</code></span></div>
+      <div class="proc-row" data-proc="screen">
+        <span class="proc-indent">└</span>
+        <span class="proc-cmd">SCREEN -dmS sprint-runner-618</span>
+        <span class="proc-msg">detached PTY · macOS screen daemon</span>
+      </div>
+      <div class="proc-arrow">↓ <span class="label">spawn: <code>login -pflq</code> + <code>bash -c</code></span></div>
+      <div class="proc-row" data-proc="bash">
+        <span class="proc-indent">└</span>
+        <span class="proc-cmd">bash -c "cd $WORKTREE &amp;&amp; claude ..."</span>
+        <span class="proc-msg">inner shell · cwd = sprint-618 worktree</span>
+      </div>
+      <div class="proc-arrow">↓ <span class="label">exec: <code>claude --remote-control sprint-618 "$(cat $PROMPT_FILE)"</code></span></div>
+      <div class="proc-row" data-proc="claude">
+        <span class="proc-indent">└</span>
+        <span class="proc-cmd">claude --remote-control sprint-618</span>
+        <span class="proc-msg">the agent · interactive UI in detached PTY</span>
+      </div>
+      <div class="proc-arrow">↓ <span class="label">HTTPS: prompt cached, tool calls, model responses</span></div>
+      <div class="proc-row" data-proc="anthropic">
+        <span class="proc-indent">└</span>
+        <span class="proc-cmd">api.anthropic.com (Claude Opus 4.7)</span>
+        <span class="proc-msg">model inference · prompt-cached</span>
+      </div>
+      <div class="proc-arrow">↑ <span class="label">parallel: pair connection from <code>claude.ai/code</code></span></div>
+      <div class="proc-row" data-proc="remote-control">
+        <span class="proc-indent">└</span>
+        <span class="proc-cmd">claude.ai Remote Control (sprint-618)</span>
+        <span class="proc-msg">operator-side pairing · monitor + interrupt</span>
+      </div>
+    </div>
+
+    <div style="margin-top:18px; padding:14px 16px; background:var(--surface-2); border:1px solid var(--line); border-radius:var(--radius-sm); font-size:12.5px; color:var(--ink-3);">
+      <strong>Sibling processes spawned by the claude session itself</strong> (children of the agent, not shown in the stack above): <code>git</code>, <code>gh</code>, <code>npm</code>, <code>playwright</code>, <code>curl</code>, <code>gsutil</code>, and any other CLI invoked by tool calls. Each runs as a short-lived child of the claude PID inside the worktree's cwd.
+    </div>
+  </section>
+
+  <!-- ──────────────── SECTION 2: Context scope onion ──────────────── -->
+  <section class="section" id="context">
+    <div class="section-h">
+      <span class="section-tag">§2</span>
+      <h2>Context scopes</h2>
+      <span class="section-meta">6 layers, outermost loaded once at session start</span>
+    </div>
+    <p class="lead">The claude session reads context from six progressively narrower scopes. <strong>Outer scopes load once at session boot</strong> and stay resident; <strong>inner scopes load on demand</strong> via tool calls or skill invocations. Click any layer for what it contains and which skills consume it.</p>
+
+    <div class="onion-wrap">
+      <div class="onion" id="onion">
+
+        <div class="layer layer-l1" data-scope="claude-md-global">
+          <div class="layer-header">
+            <h3 class="layer-title">L1 · User-global CLAUDE.md</h3>
+            <span class="layer-tag">~/.claude/CLAUDE.md</span>
+          </div>
+          <p class="layer-desc">Operator's engineering manifesto. TDD discipline, no-shortcuts rules, commit cadence, persona triggers. Same across every project.</p>
+          <div class="layer-items">
+            <span class="layer-item">Scientific rigor</span>
+            <span class="layer-item">Issue-driven dev</span>
+            <span class="layer-item">DoD checklist</span>
+            <span class="layer-item">Persona triggers</span>
+          </div>
+
+          <div class="layer layer-l2" data-scope="claude-md-project">
+            <div class="layer-header">
+              <h3 class="layer-title">L2 · Project CLAUDE.md</h3>
+              <span class="layer-tag">toast-stats/CLAUDE.md</span>
+            </div>
+            <p class="layer-desc">Project-specific rules: tripwires, conventions, paths, key dependencies. Engineering Rules (R1–R11) live here.</p>
+            <div class="layer-items">
+              <span class="layer-item">Tripwires</span>
+              <span class="layer-item">R1–R11 rules</span>
+              <span class="layer-item">npm workspaces</span>
+              <span class="layer-item">Brand v1.0 notes</span>
+            </div>
+
+            <div class="layer layer-l3" data-scope="memory">
+              <div class="layer-header">
+                <h3 class="layer-title">L3 · Auto-memory</h3>
+                <span class="layer-tag">memory/MEMORY.md + linked files</span>
+              </div>
+              <p class="layer-desc">Persistent across sessions. User profile, feedback patterns, project state references. Linked memory files load on demand by topic.</p>
+              <div class="layer-items">
+                <span class="layer-item">User profile</span>
+                <span class="layer-item">Feedback patterns</span>
+                <span class="layer-item">Data pipeline ref</span>
+                <span class="layer-item">Brand v1.0 ref</span>
+              </div>
+
+              <div class="layer layer-l4" data-scope="bootstrap">
+                <div class="layer-header">
+                  <h3 class="layer-title">L4 · Bootstrap prompt (first user turn)</h3>
+                  <span class="layer-tag">scripts/sprint-bootstrap.prompt</span>
+                </div>
+                <p class="layer-desc">The runner's template, substituted with this sprint's variables. Tells the session: re-read rules + 5 newest lessons, re-confirm predecessor + prod, invoke <code>/sprint</code>, then close-out in strict order.</p>
+                <div class="layer-items">
+                  <span class="layer-item">{{EPIC}} = 617</span>
+                  <span class="layer-item">{{SPRINT_N}} = 1</span>
+                  <span class="layer-item">{{TARGET_ISSUE}} = 618</span>
+                  <span class="layer-item">{{PREV_ISSUE}} = none</span>
+                  <span class="layer-item">5-step closeout</span>
+                </div>
+
+                <div class="layer layer-l5" data-scope="skills">
+                  <div class="layer-header">
+                    <h3 class="layer-title">L5 · Skills (loaded on demand)</h3>
+                    <span class="layer-tag">~/.claude/skills/ + project skills/</span>
+                  </div>
+                  <p class="layer-desc">Each <code>SKILL.md</code> is loaded only when the skill activates (Skill tool, user invocation, or auto-trigger). Brings persona-specific rules + workflow.</p>
+                  <div class="layer-items">
+                    <span class="layer-item">/sprint</span>
+                    <span class="layer-item">/ron-pm</span>
+                    <span class="layer-item">/ron-sa</span>
+                    <span class="layer-item">/ron-ux</span>
+                    <span class="layer-item">/ron-qe</span>
+                    <span class="layer-item">/verify</span>
+                    <span class="layer-item">/run</span>
+                    <span class="layer-item">/review</span>
+                  </div>
+
+                  <div class="layer layer-l6" data-scope="working-context">
+                    <div class="layer-header">
+                      <h3 class="layer-title">L6 · Working context (per turn)</h3>
+                      <span class="layer-tag">Tool results · file reads · current diff</span>
+                    </div>
+                    <p class="layer-desc">The innermost, most volatile layer. Loaded by tool calls during the session: <code>Read</code> a file, <code>Grep</code> a pattern, <code>Bash</code> output, GitHub API responses. Trimmed/compacted as context fills.</p>
+                    <div class="layer-items">
+                      <span class="layer-item">Read tool results</span>
+                      <span class="layer-item">gh issue view payloads</span>
+                      <span class="layer-item">git diff output</span>
+                      <span class="layer-item">test runner stdout</span>
+                      <span class="layer-item">Playwright screenshots</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <aside class="onion-detail" id="onionDetail">
+        <div class="placeholder">
+          Click any layer in the onion to see its full contents, when it loads, and which skills consume it.
+        </div>
+      </aside>
+    </div>
+
+    <div style="margin-top:18px;">
+      <div class="legend-grid">
+        <div class="legend-row"><div class="legend-swatch l1"></div><span><b>L1</b> · Global manifesto (always loaded)</span></div>
+        <div class="legend-row"><div class="legend-swatch l2"></div><span><b>L2</b> · Project rules (always loaded)</span></div>
+        <div class="legend-row"><div class="legend-swatch l3"></div><span><b>L3</b> · Auto-memory (always loaded, links on-demand)</span></div>
+        <div class="legend-row"><div class="legend-swatch l4"></div><span><b>L4</b> · Bootstrap prompt (first user turn)</span></div>
+        <div class="legend-row"><div class="legend-swatch l5"></div><span><b>L5</b> · Skills (on-demand via Skill tool)</span></div>
+        <div class="legend-row"><div class="legend-swatch l6"></div><span><b>L6</b> · Working context (per-turn tool results)</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ──────────────── SECTION 3: Skill grid ──────────────── -->
+  <section class="section" id="skills">
+    <div class="section-h">
+      <span class="section-tag">§3</span>
+      <h2>Skill activation map</h2>
+      <span class="section-meta">8 skills · 3 categories · trigger-based</span>
+    </div>
+    <p class="lead">Skills are loaded on demand. The bootstrap prompt invokes <code>/sprint</code> first; <code>/sprint</code> then conditionally activates persona skills (<code>/ron-ux</code> for UI work, <code>/ron-sa</code> for architecture decisions, etc.) based on the work type. Click a card for activation criteria and consumed context.</p>
+
+    <div class="skill-grid" id="skillGrid">
+
+      <div class="skill-card workflow" data-skill="sprint">
+        <div class="skill-head"><span class="skill-icon">/sp</span><span class="skill-name">/sprint</span><span class="skill-type">Workflow</span></div>
+        <p class="skill-trigger"><b>Triggered:</b> First user turn (by bootstrap). Drives the whole sprint.</p>
+        <div class="skill-scopes">
+          <span class="skill-scope-tag">L2 rules</span>
+          <span class="skill-scope-tag">L3 memory</span>
+          <span class="skill-scope-tag">L4 bootstrap</span>
+          <span class="skill-scope-tag">L6 codebase</span>
+        </div>
+      </div>
+
+      <div class="skill-card persona" data-skill="ron-pm">
+        <div class="skill-head"><span class="skill-icon">PM</span><span class="skill-name">/ron-pm</span><span class="skill-type">Persona</span></div>
+        <p class="skill-trigger"><b>Triggered:</b> Scope decisions, feature-evaluation, product-spec lookups.</p>
+        <div class="skill-scopes">
+          <span class="skill-scope-tag">L1 manifesto</span>
+          <span class="skill-scope-tag">L2 product spec</span>
+          <span class="skill-scope-tag">L6 issue body</span>
+        </div>
+      </div>
+
+      <div class="skill-card persona" data-skill="ron-sa">
+        <div class="skill-head"><span class="skill-icon">SA</span><span class="skill-name">/ron-sa</span><span class="skill-type">Persona</span></div>
+        <p class="skill-trigger"><b>Triggered:</b> Structural changes ≥3 modules, new deps, refactors.</p>
+        <div class="skill-scopes">
+          <span class="skill-scope-tag">L1 manifesto</span>
+          <span class="skill-scope-tag">L2 architecture</span>
+          <span class="skill-scope-tag">L6 grep + reads</span>
+        </div>
+      </div>
+
+      <div class="skill-card persona" data-skill="ron-ux">
+        <div class="skill-head"><span class="skill-icon">UX</span><span class="skill-name">/ron-ux</span><span class="skill-type">Persona</span></div>
+        <p class="skill-trigger"><b>Triggered:</b> UI / CSS / new screens / accessibility / responsive.</p>
+        <div class="skill-scopes">
+          <span class="skill-scope-tag">L1 manifesto</span>
+          <span class="skill-scope-tag">L2 brand tokens</span>
+          <span class="skill-scope-tag">L6 design files</span>
+        </div>
+      </div>
+
+      <div class="skill-card persona" data-skill="ron-qe">
+        <div class="skill-head"><span class="skill-icon">QE</span><span class="skill-name">/ron-qe</span><span class="skill-type">Persona</span></div>
+        <p class="skill-trigger"><b>Triggered:</b> Test strategy, flaky tests, coverage analysis.</p>
+        <div class="skill-scopes">
+          <span class="skill-scope-tag">L1 manifesto</span>
+          <span class="skill-scope-tag">L2 test conventions</span>
+          <span class="skill-scope-tag">L6 test runs</span>
+        </div>
+      </div>
+
+      <div class="skill-card persona" data-skill="ron-sec">
+        <div class="skill-head"><span class="skill-icon">SEC</span><span class="skill-name">/ron-sec</span><span class="skill-type">Persona</span></div>
+        <p class="skill-trigger"><b>Triggered:</b> authn/authz changes, secrets, public surfaces, data retention.</p>
+        <div class="skill-scopes">
+          <span class="skill-scope-tag">L1 manifesto</span>
+          <span class="skill-scope-tag">L6 grep for secrets</span>
+        </div>
+      </div>
+
+      <div class="skill-card persona" data-skill="ron-ir">
+        <div class="skill-head"><span class="skill-icon">IR</span><span class="skill-name">/ron-ir</span><span class="skill-type">Persona</span></div>
+        <p class="skill-trigger"><b>Triggered:</b> Deploy failures, prod bugs, rollback decisions.</p>
+        <div class="skill-scopes">
+          <span class="skill-scope-tag">L1 manifesto</span>
+          <span class="skill-scope-tag">L6 prod logs</span>
+        </div>
+      </div>
+
+      <div class="skill-card utility" data-skill="verify">
+        <div class="skill-head"><span class="skill-icon">V</span><span class="skill-name">/verify</span><span class="skill-type">Utility</span></div>
+        <p class="skill-trigger"><b>Triggered:</b> Post-merge live-verification on ts.taverns.red.</p>
+        <div class="skill-scopes">
+          <span class="skill-scope-tag">L4 bootstrap step 5</span>
+          <span class="skill-scope-tag">L6 playwright</span>
+          <span class="skill-scope-tag">L6 prod CDN</span>
+        </div>
+      </div>
+
+      <div class="skill-card utility" data-skill="run">
+        <div class="skill-head"><span class="skill-icon">R</span><span class="skill-name">/run</span><span class="skill-type">Utility</span></div>
+        <p class="skill-trigger"><b>Triggered:</b> "Launch the app to see the change" — dev server + smoke.</p>
+        <div class="skill-scopes">
+          <span class="skill-scope-tag">L2 npm scripts</span>
+          <span class="skill-scope-tag">L6 dev server</span>
+        </div>
+      </div>
+
+      <div class="skill-card utility" data-skill="review">
+        <div class="skill-head"><span class="skill-icon">RV</span><span class="skill-name">/review</span><span class="skill-type">Utility</span></div>
+        <p class="skill-trigger"><b>Triggered:</b> Pre-push critical review of the branch diff.</p>
+        <div class="skill-scopes">
+          <span class="skill-scope-tag">L1 manifesto</span>
+          <span class="skill-scope-tag">L6 git diff</span>
+        </div>
+      </div>
+
+      <div class="skill-card utility" data-skill="hypothesis">
+        <div class="skill-head"><span class="skill-icon">H</span><span class="skill-name">/hypothesis</span><span class="skill-type">Utility</span></div>
+        <p class="skill-trigger"><b>Triggered:</b> Mysterious bugs needing multi-hypothesis testing in parallel.</p>
+        <div class="skill-scopes">
+          <span class="skill-scope-tag">L6 reproductions</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="margin-top:18px;">
+      <div class="legend-grid">
+        <div class="legend-row"><div class="legend-swatch persona"></div><span><b>Persona</b> · ron-* — opinionated framework + role</span></div>
+        <div class="legend-row"><div class="legend-swatch workflow"></div><span><b>Workflow</b> · drives a multi-step process</span></div>
+        <div class="legend-row"><div class="legend-swatch utility"></div><span><b>Utility</b> · one focused capability</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ──────────────── SECTION 4: Message sequence ──────────────── -->
+  <section class="section" id="seq">
+    <div class="section-h">
+      <span class="section-tag">§4</span>
+      <h2>Message flow during one sprint</h2>
+      <span class="section-meta">14 numbered turns · cradle to PR-merge to closeout</span>
+    </div>
+    <p class="lead">Sequential turns inside the spawned session, from bootstrap-prompt arrival through epic-closure. Each step shows the actor pair (<span style="color:var(--info); font-weight:600;">caller</span> → <span style="color:var(--accent); font-weight:600;">callee</span>) and the message intent. Click any step for surface details.</p>
+
+    <div class="seq-container" id="seqContainer">
+
+      <div class="seq-step" data-seq="01" data-step="01">
+        <div class="seq-actors"><span class="from">bash inner shell</span> → <span class="to">claude binary</span></div>
+        <p class="seq-msg">Cold start: claude --remote-control sprint-618 "&lt;bootstrap prompt text&gt;"</p>
+        <p class="seq-detail">Bootstrap prompt baked into argv. Session reads it as the first user turn. Working dir = sprint-618 worktree.</p>
+      </div>
+
+      <div class="seq-step" data-seq="02" data-step="02">
+        <div class="seq-actors"><span class="from">claude</span> → <span class="to">Read tool</span></div>
+        <p class="seq-msg">Re-read rules: tasks/rules.md + 5 newest tasks/lessons/*</p>
+        <p class="seq-detail">Per bootstrap step 1. Loads project-specific conventions and the most recent learnings. Re-grounds even if the session was running pre-cached.</p>
+      </div>
+
+      <div class="seq-step" data-seq="03" data-step="03">
+        <div class="seq-actors"><span class="from">claude</span> → <span class="to">Bash tool · gh CLI</span></div>
+        <p class="seq-msg">Re-confirm predecessor + prod reachability</p>
+        <p class="seq-detail"><code>gh issue view {{PREV_ISSUE}}</code> + <code>curl -sfI https://ts.taverns.red</code>. Belt-and-suspenders against runner-side staleness.</p>
+      </div>
+
+      <div class="seq-step" data-seq="04" data-step="04">
+        <div class="seq-actors"><span class="from">claude</span> → <span class="to">Bash tool · gh CLI</span></div>
+        <p class="seq-msg">Re-read epic body: confirm Sprint N (#{{TARGET_ISSUE}}) still target</p>
+        <p class="seq-detail"><code>gh issue view {{EPIC}} --json body</code>. Trust the epic over the bootstrap prompt — operator may have advanced something.</p>
+      </div>
+
+      <div class="seq-step" data-seq="05" data-step="05">
+        <div class="seq-actors"><span class="from">claude</span> → <span class="to">Skill tool · /sprint</span></div>
+        <p class="seq-msg">Invoke /sprint with target #{{TARGET_ISSUE}}</p>
+        <p class="seq-detail">/sprint loads its SKILL.md, brings sprint-execution framework into L5. From this point /sprint drives the Red → Green → Refactor cycle.</p>
+      </div>
+
+      <div class="seq-step" data-seq="06" data-step="06">
+        <div class="seq-actors"><span class="from">/sprint</span> → <span class="to">Skill tool · /ron-* persona(s)</span></div>
+        <p class="seq-msg">Activate work-appropriate persona(s) based on issue body</p>
+        <p class="seq-detail">UI work → /ron-ux. Architecture change → /ron-sa. Each persona's SKILL.md merges into L5. Multiple personas can be active simultaneously.</p>
+      </div>
+
+      <div class="seq-step" data-seq="07" data-step="07">
+        <div class="seq-actors"><span class="from">/sprint</span> → <span class="to">Read/Grep/Bash</span></div>
+        <p class="seq-msg">RED — write failing test for the new behaviour</p>
+        <p class="seq-detail">Inspect existing code, write the test, run it. Confirm it fails for the right reason. Commit with #{{TARGET_ISSUE}} ref.</p>
+      </div>
+
+      <div class="seq-step" data-seq="08" data-step="08">
+        <div class="seq-actors"><span class="from">/sprint</span> → <span class="to">Edit/Write/Bash</span></div>
+        <p class="seq-msg">GREEN — minimal implementation to pass the test</p>
+        <p class="seq-detail">Smallest change that turns red to green. Re-run test, confirm pass. Commit.</p>
+      </div>
+
+      <div class="seq-step" data-seq="09" data-step="09">
+        <div class="seq-actors"><span class="from">/sprint</span> → <span class="to">Edit/Bash</span></div>
+        <p class="seq-msg">REFACTOR — clean while keeping tests green</p>
+        <p class="seq-detail">Extract helpers, rename, tighten types. Full suite still green. Commit.</p>
+      </div>
+
+      <div class="seq-step" data-seq="10" data-step="10">
+        <div class="seq-actors"><span class="from">/sprint</span> → <span class="to">Bash · git + gh</span></div>
+        <p class="seq-msg">Open PR, watch CI, merge on green</p>
+        <p class="seq-detail"><code>git push -u</code> + <code>gh pr create</code> + watch checks. If CI red, report + exit.</p>
+      </div>
+
+      <div class="seq-step" data-seq="11" data-step="11">
+        <div class="seq-actors"><span class="from">/sprint</span> → <span class="to">/verify skill</span></div>
+        <p class="seq-msg">Live verify on ts.taverns.red after deploy</p>
+        <p class="seq-detail">Playwright smoke + CDN snapshot data-path check. Capture screenshots. SendUserFile for operator visibility.</p>
+      </div>
+
+      <div class="seq-step" data-seq="12" data-step="12">
+        <div class="seq-actors"><span class="from">claude</span> → <span class="to">Bash · gh CLI (4 calls)</span></div>
+        <p class="seq-msg">Closeout sequence (strict order per #626)</p>
+        <p class="seq-detail">Post evidence comment → <code>gh issue edit --add-label sprint-verified</code> → PATCH epic body to tick checkbox → <code>gh issue close</code> sub-issue.</p>
+      </div>
+
+      <div class="seq-step" data-seq="13" data-step="13">
+        <div class="seq-actors"><span class="from">claude</span> → <span class="to">Bash · grep + gh</span></div>
+        <p class="seq-msg">If last sprint, close epic too (#636 step 5)</p>
+        <p class="seq-detail"><code>grep -c '^- \[ \] \*\*Sprint' epic body</code>. Zero remaining? Post completion summary + <code>gh issue close</code> the epic.</p>
+      </div>
+
+      <div class="seq-step" data-seq="14" data-step="14">
+        <div class="seq-actors"><span class="from">claude</span> → <span class="to">exit</span></div>
+        <p class="seq-msg">Exit. Inner bash runs <code>echo</code>; screen terminates naturally.</p>
+        <p class="seq-detail">Worktree stays on disk (cleaned up next runner tick via gc_worktrees). Auto-branch may or may not still exist depending on merge config.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>
+    <div>Sprint Runner deep dive · <a href="sprint-runner-diagram.html">← back to overview</a></div>
+    <div>v0.9 · 2026-05-23 · paired with <a href="https://github.com/taverns-red/toast-stats/blob/main/scripts/sprint-bootstrap.prompt" target="_blank">sprint-bootstrap.prompt</a></div>
+  </footer>
+
+</main>
+
+<script>
+  // Theme toggle
+  const root = document.documentElement;
+  const themeBtn = document.getElementById('themeToggle');
+  const themeIcon = document.getElementById('themeIcon');
+  const themeLabel = document.getElementById('themeLabel');
+  function applyTheme(t) {
+    if (t === 'dark') { root.setAttribute('data-theme', 'dark'); themeIcon.textContent = '☀'; themeLabel.textContent = 'Light'; }
+    else { root.removeAttribute('data-theme'); themeIcon.textContent = '🌙'; themeLabel.textContent = 'Dark'; }
+    localStorage.setItem('sr-theme', t);
+  }
+  const saved = localStorage.getItem('sr-theme');
+  if (saved) applyTheme(saved);
+  else if (window.matchMedia('(prefers-color-scheme: dark)').matches) applyTheme('dark');
+  themeBtn.addEventListener('click', () => applyTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
+
+  // ──── Process row details (alert on click is too noisy; use console + active highlight)
+  document.querySelectorAll('.proc-row').forEach(row => {
+    row.addEventListener('click', () => {
+      document.querySelectorAll('.proc-row').forEach(r => r.classList.remove('active'));
+      row.classList.add('active');
+    });
+  });
+
+  // ──── Onion layer details
+  const SCOPES = {
+    'claude-md-global': {
+      title: 'L1 · User-global CLAUDE.md',
+      scope: 'Always loaded · system + user context',
+      desc: 'Operator\'s engineering manifesto. Applies to every Claude Code session regardless of project. Tells the session what kind of engineer to be.',
+      contents: [
+        'Scientific rigor: hypothesize-first, TDD-mandatory',
+        'No shortcuts: never skip tests, never comment-out, never assertion-pin',
+        'Issue-driven development: every change tracked by GH issue',
+        'Frequent small commits with conventional commit + issue ref',
+        'Definition of Done checklist (Lightweight vs Full)',
+        'Persona triggers — when to activate /ron-pm, /ron-sa, /ron-qe, etc.',
+        'Output discipline — chat brief, files for substance'
+      ],
+      consumers: ['Every skill', '/sprint reads this first', 'Personas inherit its principles']
+    },
+    'claude-md-project': {
+      title: 'L2 · Project CLAUDE.md',
+      scope: 'Always loaded · project context',
+      desc: 'Specific to toast-stats. Overrides or extends L1 for this codebase. Tripwires, conventions, paths, dependencies.',
+      contents: [
+        'Project overview: monorepo with npm workspaces',
+        'Commands: dev/build/test/lint',
+        'Architecture: collector → GCS → CDN → React SPA',
+        'Engineering Rules R1–R11 (no skip-tests, no assertion-pin, etc.)',
+        'Active tripwires (SnapshotBuilder dual-path, DCP goal independence, ...)',
+        'Key conventions (Prettier 80 cols, strict TS, filter pipeline pattern)',
+        'Brand v1.0 notes (token namespace, Phase 2 chrome blocked on ops#37)'
+      ],
+      consumers: ['/sprint for workflow rules', '/ron-ux for brand tokens', '/ron-qe for test conventions']
+    },
+    'memory': {
+      title: 'L3 · Auto-memory',
+      scope: 'Always loaded (index) · linked files on-demand',
+      desc: 'Persistent across sessions, project-scoped. MEMORY.md is an index; linked files (user_profile.md, feedback_*.md, reference_*.md) load when topically relevant.',
+      contents: [
+        'User profile: Ronald Servant, Toastmasters district leader, full-stack engineer',
+        'Engineering manifesto reference (links back to L1)',
+        'Workflow preferences (sprint planning, autonomous operation)',
+        'Feedback patterns (push verification, fix root cause, no timeout bumps)',
+        'Data pipeline architecture (scrape → GCS → CDN → frontend)',
+        'Brand v1.0 source-of-truth (taverns-red/ops:docs/brand/)'
+      ],
+      consumers: ['Most skills consult memory for user-level preferences', '/ron-pm for workflow patterns', '/ron-ir for past incident patterns']
+    },
+    'bootstrap': {
+      title: 'L4 · Bootstrap prompt',
+      scope: 'First user turn · session-specific',
+      desc: 'The runner\'s template (scripts/sprint-bootstrap.prompt) substituted with this sprint\'s variables. Arrives as the very first user message.',
+      contents: [
+        '{{EPIC}}, {{SPRINT_N}}, {{TARGET_ISSUE}}, {{PREV_ISSUE}} substituted by runner',
+        'Step 1: re-read rules + 5 newest lessons',
+        'Step 2: re-confirm predecessor closed + prod reachable',
+        'Step 3: re-read epic, confirm sprint is still next',
+        'Step 4: invoke /sprint',
+        'Step 5: closeout — label → tick checkbox → close sub-issue → close epic if last',
+        'Operating constraints: full local tool access, commit discipline, hard-stop after 3 failed iterations'
+      ],
+      consumers: ['Drives the entire session', '/sprint reads context from it', '/verify reads step 5 verification pattern']
+    },
+    'skills': {
+      title: 'L5 · Skills (on-demand)',
+      scope: 'Loaded by Skill tool invocation',
+      desc: 'Each SKILL.md merges into the session when its skill is invoked. Skills can stack (e.g., /sprint + /ron-ux active simultaneously).',
+      contents: [
+        '/sprint — sprint orchestrator workflow',
+        '/ron-pm — product manager persona',
+        '/ron-sa — software architect persona',
+        '/ron-ux — UX designer persona',
+        '/ron-qe — quality engineer persona',
+        '/ron-sec — security engineer persona',
+        '/ron-ir — incident responder persona',
+        '/verify — live-verification workflow',
+        '/run — launch the app for visual check',
+        '/review — critical pre-push review',
+        '/hypothesis — multi-hypothesis bug testing'
+      ],
+      consumers: ['Activated by /sprint based on the work shape', 'Each skill consumes L1+L2+L3 plus its own SKILL.md']
+    },
+    'working-context': {
+      title: 'L6 · Working context (per-turn)',
+      scope: 'Volatile · loaded by tool calls',
+      desc: 'The innermost layer. Loaded by Read/Grep/Bash/Edit/Write tool calls during the session. Compacted as the context window fills.',
+      contents: [
+        'Read tool results — source file contents',
+        'Grep/Glob results — pattern matches across the codebase',
+        'Bash output — test runs, git status, gh API responses',
+        'gh issue view payloads — current state of issues, PRs',
+        'Playwright screenshots — captured during live verify',
+        'PR diff content — for review and verification',
+        'Lesson file contents — re-read at session start (per bootstrap)',
+        'Design files in docs/design/ — for UI work'
+      ],
+      consumers: ['Every active skill consumes this layer', 'Compaction happens automatically as context fills']
+    }
+  };
+  const onionDetail = document.getElementById('onionDetail');
+  function renderScope(id) {
+    const s = SCOPES[id];
+    if (!s) return;
+    let html = `<h3>${s.title}</h3><span class="scope-tag">${s.scope}</span><p class="desc">${s.desc}</p>`;
+    html += '<div class="h4">Contents</div><ul>';
+    s.contents.forEach(c => { html += `<li>${c}</li>`; });
+    html += '</ul>';
+    html += '<div class="h4">Consumed by</div><ul>';
+    s.consumers.forEach(c => { html += `<li>${c}</li>`; });
+    html += '</ul>';
+    onionDetail.innerHTML = html;
+  }
+  document.querySelectorAll('.layer').forEach(l => {
+    l.addEventListener('click', e => {
+      e.stopPropagation();
+      document.querySelectorAll('.layer').forEach(x => x.classList.remove('active'));
+      l.classList.add('active');
+      renderScope(l.dataset.scope);
+    });
+  });
+
+  // ──── Skill cards
+  const SKILLS = {
+    'sprint': 'Drives Red → Green → Refactor against the target issue, files the PR, watches CI, hands off to /verify post-merge. The bootstrap prompt\'s step 4 invokes it. Heavy consumer of L2 project rules and L6 working context.',
+    'ron-pm': 'Product manager framework. Feature evaluation, scope decisions, Cohesion Test, "default to no." Updates docs/product-spec.md when features ship.',
+    'ron-sa': 'Software architect framework. Blast radius analysis, Separation of Concerns, evolutionary architecture. Activates when ≥3 modules touched.',
+    'ron-ux': 'UX designer framework. Brand consistency, accessibility, responsive (375/768/1280), dark mode. Reads the design file and brand tokens. KEY skill for #618 Club page redesign.',
+    'ron-qe': 'Quality engineer framework. Test strategy, flaky test triage, coverage analysis. Establishes baseline before changes.',
+    'ron-sec': 'Security engineer framework. Threat-modeling, zero-trust boundaries, secrets audits. Activates on authn/authz or public-surface changes.',
+    'ron-ir': 'Incident responder framework. Triage prod issues, manage rollbacks, run post-mortems. Restores service before investigating root cause.',
+    'verify': 'Project-specific post-merge verification: Playwright smoke against ts.taverns.red + CDN snapshot data-path check + screenshot capture. Returns evidence the bootstrap step 5 includes in its comment.',
+    'run': 'Launches the dev server or app to see a change in action. Useful when tests are insufficient to validate behavior.',
+    'review': 'Critical fresh-context review of the branch diff against main. Catches what the original author missed before push.',
+    'hypothesis': 'Multi-hypothesis testing for mysterious bugs. Generates competing hypotheses, writes falsifying tests for each, runs in parallel, narrows to one before proposing a fix.'
+  };
+  document.querySelectorAll('.skill-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.skill-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      const id = card.dataset.skill;
+      const desc = SKILLS[id];
+      if (!desc) return;
+      // Use the onion detail panel to show skill info too
+      onionDetail.innerHTML = `<h3>/${id}</h3><span class="scope-tag">Skill</span><p class="desc">${desc}</p>`;
+      onionDetail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  });
+
+  // ──── Sequence steps
+  document.querySelectorAll('.seq-step').forEach(s => {
+    s.addEventListener('click', () => {
+      document.querySelectorAll('.seq-step').forEach(x => x.classList.remove('active'));
+      s.classList.add('active');
+    });
+  });
+
+  // Smooth-scroll for nav links
+  document.querySelectorAll('.topbar nav a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const tgt = document.querySelector(a.getAttribute('href'));
+      if (tgt) tgt.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+</script>
+
+</body>
+</html>
