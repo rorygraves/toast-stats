@@ -115,4 +115,41 @@ describe('CommandPalette (#422)', () => {
     expect(links[0]?.getAttribute('href')).toBe('/district/57')
     expect(links[1]?.getAttribute('href')).toBe('/district/61')
   })
+
+  it('does not duplicate the district number when districtName is bare (#522)', async () => {
+    const { fetchCdnRankings } = await import('../../../services/cdn')
+    vi.mocked(fetchCdnRankings).mockResolvedValueOnce({
+      rankings: [
+        {
+          districtId: '86',
+          districtName: '86',
+          region: '6',
+          paidClubs: 100,
+          paidClubBase: 90,
+          clubGrowthPercent: 11.1,
+          totalPayments: 5000,
+          paymentBase: 4500,
+          paymentGrowthPercent: 11.1,
+          activeClubs: 100,
+          distinguishedClubs: 50,
+          selectDistinguished: 20,
+          presidentsDistinguished: 10,
+          distinguishedPercent: 50,
+          clubsRank: 1,
+          paymentsRank: 1,
+          distinguishedRank: 1,
+          aggregateScore: 300,
+          overallRank: 1,
+        },
+      ],
+      date: '2025-11-22',
+    })
+    renderPalette(true)
+
+    const listbox = await screen.findByRole('listbox', {
+      name: /search results/i,
+    })
+    expect(within(listbox).getByText('D86')).toBeInTheDocument()
+    expect(within(listbox).queryByText(/^86$/)).not.toBeInTheDocument()
+  })
 })

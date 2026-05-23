@@ -597,4 +597,28 @@ describe('RegionPage rank-within-region column (#515 #513)', () => {
       within(rows[2]!).getByTestId('region-rank-cell').textContent
     ).toMatch(/#1.*tied/i)
   })
+
+  it('does not duplicate the district number when districtName is bare (#522)', async () => {
+    mockedFetchCdnRankings.mockResolvedValueOnce({
+      rankings: [
+        mkRanking({
+          districtId: '86',
+          districtName: '86',
+          region: '6',
+          overallRank: 5,
+        }),
+      ],
+      date: '2026-05-12',
+    })
+    renderRegion('6')
+
+    const rows = await screen.findAllByRole('row')
+    const districtCell = within(rows[1]!).getByTestId(
+      'district-number-chip-D86'
+    )
+    expect(districtCell).toHaveTextContent('D86')
+    // The bare "86" name should NOT render as a sibling span — the chip
+    // already conveys the number.
+    expect(within(rows[1]!).queryByText(/^86$/)).not.toBeInTheDocument()
+  })
 })

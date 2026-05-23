@@ -17,6 +17,7 @@ import {
   getDistinguishedCountdown,
   type CountdownCell,
 } from '../utils/distinguishedCountdown'
+import { DistrictChipAndName } from '../components/DistrictChipAndName'
 
 interface KpiCardProps {
   label: string
@@ -387,16 +388,11 @@ const RegionPage: React.FC = () => {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        data-testid={`district-number-chip-D${d.districtId}`}
-                        className="districts-rankings-table__district-chip"
-                        aria-hidden="true"
-                      >
-                        D{d.districtId}
-                      </span>
-                      <span className="ml-3 text-sm font-medium text-gray-900">
-                        {d.districtName}
-                      </span>
+                      <DistrictChipAndName
+                        districtId={d.districtId}
+                        name={d.districtName}
+                        ariaHidden
+                      />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       #{d.overallRank}

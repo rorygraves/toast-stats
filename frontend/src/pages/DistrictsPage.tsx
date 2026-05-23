@@ -14,6 +14,7 @@ import { DataControlsBar } from '../components/DataControlsBar'
 import { useRankHistory } from '../hooks/useRankHistory'
 import InfoTooltip from '../components/InfoTooltip'
 import DistrictTierChip from '../components/DistrictTierChip'
+import { DistrictChipAndName } from '../components/DistrictChipAndName'
 import { useMyDistrict } from '../hooks/useMyDistrict'
 import { usePersistedState } from '../hooks/usePersistedState'
 import { useLastVisit } from '../hooks/useLastVisit'
@@ -25,12 +26,6 @@ import {
 } from '../utils/programYear'
 import { DistrictRanking } from '../types/districts'
 import { arrayToCSV, downloadCSV } from '../utils/csvExport'
-
-/** A descriptive name is anything beyond the bare district number — e.g.
- *  "District 57 Carolinas" but not "57". The D## chip already conveys
- *  the number, so showing it again is duplication. */
-const hasDescriptiveName = (name: string | undefined): boolean =>
-  !!name && !/^\d+$/.test(name.trim())
 
 const DistrictsPage: React.FC = () => {
   const navigate = useNavigate()
@@ -903,12 +898,12 @@ const DistrictsPage: React.FC = () => {
                     aria-selected={false}
                     className="districts-toolbar__search-suggestion"
                   >
-                    <span className="districts-toolbar__search-suggestion-num">
-                      D{s.districtId}
-                    </span>
-                    <span className="districts-toolbar__search-suggestion-name">
-                      {s.districtName}
-                    </span>
+                    <DistrictChipAndName
+                      districtId={s.districtId}
+                      name={s.districtName}
+                      chipClassName="districts-toolbar__search-suggestion-num"
+                      nameClassName="districts-toolbar__search-suggestion-name"
+                    />
                     <span className="districts-toolbar__search-suggestion-rank">
                       #{s.displayRank}
                     </span>
@@ -1063,23 +1058,12 @@ const DistrictsPage: React.FC = () => {
                               />
                             </svg>
                           </button>
-                          <span
-                            data-testid={`district-number-chip-D${district.districtId}`}
-                            className="districts-rankings-table__district-chip"
-                            aria-hidden="true"
-                          >
-                            D{district.districtId}
-                          </span>
-                          {/* TI's CSV districtName is just the number ("86"
-                              for D86), which the chip already shows. Only
-                              render the name span when it carries
-                              additional information (e.g. "District 57
-                              Carolinas"). */}
-                          {hasDescriptiveName(district.districtName) && (
-                            <span className="text-sm font-medium text-gray-900">
-                              {district.districtName}
-                            </span>
-                          )}
+                          <DistrictChipAndName
+                            districtId={district.districtId}
+                            name={district.districtName}
+                            nameClassName="text-sm font-medium text-gray-900"
+                            ariaHidden
+                          />
                           {/* Competitive award winner badges (#331) */}
                           {competitiveAwards?.byDistrict?.[district.districtId]
                             ?.extensionIsWinner && (

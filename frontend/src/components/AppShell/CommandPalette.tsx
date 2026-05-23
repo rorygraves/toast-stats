@@ -13,6 +13,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { fetchCdnRankings } from '../../services/cdn'
 import type { DistrictRanking } from '../../types/districts'
+import { DistrictChipAndName } from '../DistrictChipAndName'
 
 const MAX_RESULTS = 8
 
@@ -180,12 +181,12 @@ const OpenPalette: React.FC<OpenPaletteProps> = ({ onClose }) => {
                   onClick={onClose}
                   className="command-palette__result-link"
                 >
-                  <span className="command-palette__result-num">
-                    D{m.districtId}
-                  </span>
-                  <span className="command-palette__result-name">
-                    {m.districtName}
-                  </span>
+                  <DistrictChipAndName
+                    districtId={m.districtId}
+                    name={m.districtName}
+                    chipClassName="command-palette__result-num"
+                    nameClassName="command-palette__result-name"
+                  />
                   <span className="command-palette__result-region">
                     Region {m.region}
                   </span>

@@ -296,4 +296,32 @@ describe('DistrictsPage - District Search (#91)', () => {
     )
     expect(rankOneInSticky).toBeUndefined()
   })
+
+  it('search suggestions do not duplicate bare-numeric districtName (#522)', async () => {
+    mockedFetchCdnRankings.mockResolvedValueOnce({
+      rankings: [
+        {
+          ...MOCK_RANKINGS[0]!,
+          districtId: '86',
+          districtName: '86',
+          region: '6',
+        },
+      ],
+      date: '2025-11-22',
+      generatedAt: '2025-01-01T00:00:00Z',
+    })
+    renderWithProviders(<DistrictsPage />)
+
+    await screen.findByTestId('district-number-chip-D86')
+    const searchInput = screen.getByPlaceholderText(/search/i)
+    fireEvent.focus(searchInput)
+    fireEvent.change(searchInput, { target: { value: '86' } })
+
+    const suggestions = await screen.findByRole('listbox', {
+      name: /district search suggestions/i,
+    })
+    expect(within(suggestions).getByText('D86')).toBeInTheDocument()
+    // Bare "86" should NOT render as a sibling — the chip already conveys it.
+    expect(within(suggestions).queryByText(/^86$/)).not.toBeInTheDocument()
+  })
 })
