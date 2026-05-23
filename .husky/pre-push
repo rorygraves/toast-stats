@@ -1,21 +1,14 @@
-# Pre-push removed 2026-05-11. The previous behaviour ran the full
-# coverage suite across all 4 workspaces, which became chronically
-# flaky on multi-core local hardware under v8 coverage instrumentation
-# (Lesson 53). Each round of Lesson-51-style refactoring bought a
-# week of reliability before new tests pushed the suite back across
-# the contention cliff.
+# Pre-push gate restored 2026-05-23 (#482).
 #
-# Carving out the heavy tests would have required excluding ~30 files
-# from pre-push (page mounts, axe scans, integration tests, large
-# Recharts component tests). That ratio (30 excluded / 90 kept) is a
-# clear smell that the architecture needs a deeper fix — either
-# splitting unit vs integration as first-class vitest projects, or
-# matching the CI worker config locally so the test env is identical.
+# Runs the fast `unit` vitest project only. The full suite was removed in
+# May (exit 0) because the page-mount / journey / axe tests saturated worker
+# threads on multi-core dev machines and made the gate chronically flaky
+# (Lesson 53; tasks/473-flaky-prepush-diagnosis-2026-05-11.md).
 #
-# Both are sprint-scale changes. Until then: CI is the gate. CI runs
-# the full coverage suite in a single-tenant 2-CPU runner and has
-# always been reliable. Local devs can run `npm test` workspaces
-# directly when they want a quick check.
-#
-# Follow-up tracking the proper fix: #482.
-exit 0
+# #482 split vitest into first-class `unit` and `integration` projects. The
+# `unit` project runs well under the 30s pre-push budget (~18-20s on a 10-core
+# Mac) with zero variance across 10 runs — fast and reliable enough to gate
+# every push. The heavy `integration` project still
+# runs in CI (which runs both projects with --coverage), so nothing is lost
+# as the gate of record; this is purely a fast inner-loop signal.
+npm run test:unit --workspace=frontend
