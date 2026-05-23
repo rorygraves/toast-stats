@@ -51,6 +51,8 @@ downloads/
 test-cache*/
 test-snapshots/
 test-dir/
+test-results/
+**/test-results/
 
 # Generated reports
 typescript-report.json

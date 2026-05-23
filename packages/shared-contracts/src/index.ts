@@ -19,6 +19,7 @@ export type {
   DivisionStatisticsFile,
   AreaStatisticsFile,
   DistrictTotalsFile,
+  ProspectiveClub,
 } from './types/district-statistics-file.js'
 
 export type {
@@ -65,6 +66,7 @@ export {
   AreaStatisticsFileSchema,
   DistrictTotalsFileSchema,
   ScrapedRecordSchema,
+  ProspectiveClubSchema,
 } from './schemas/district-statistics-file.schema.js'
 
 export {

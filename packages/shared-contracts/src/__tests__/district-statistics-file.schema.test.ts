@@ -19,6 +19,7 @@ import {
   DivisionStatisticsFileSchema,
   AreaStatisticsFileSchema,
   DistrictTotalsFileSchema,
+  ProspectiveClubSchema,
 } from '../schemas/district-statistics-file.schema.js'
 
 // ============================================================================
@@ -464,6 +465,90 @@ describe('DistrictStatisticsFileSchema validation', () => {
       if (!result.success) {
         expect(result.error.message).toBeDefined()
       }
+    })
+  })
+
+  // ============================================================================
+  // ProspectiveClubs field tests (#489)
+  // ============================================================================
+
+  describe('prospectiveClubs (#489)', () => {
+    it('should accept DistrictStatisticsFile without prospectiveClubs (back-compat)', () => {
+      const data = createValidDistrictStatisticsFile()
+      const result = DistrictStatisticsFileSchema.safeParse(data)
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.prospectiveClubs).toBeUndefined()
+      }
+    })
+
+    it('should accept DistrictStatisticsFile with a populated prospectiveClubs array', () => {
+      const data = {
+        ...createValidDistrictStatisticsFile(),
+        prospectiveClubs: [
+          {
+            clubId: '00088888',
+            clubName: 'New ATO Toastmasters',
+            charterDate: '2026-02-01',
+            city: 'Ottawa',
+            region: 'ON',
+            country: 'Canada',
+            isProspective: true,
+          },
+        ],
+      }
+      const result = DistrictStatisticsFileSchema.safeParse(data)
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.prospectiveClubs).toHaveLength(1)
+        expect(result.data.prospectiveClubs?.[0]?.clubId).toBe('00088888')
+      }
+    })
+
+    it('should reject DistrictStatisticsFile with prospectiveClubs missing required clubId', () => {
+      const data = {
+        ...createValidDistrictStatisticsFile(),
+        prospectiveClubs: [{ clubName: 'No-id Club' }],
+      }
+      const result = DistrictStatisticsFileSchema.safeParse(data)
+      expect(result.success).toBe(false)
+    })
+  })
+
+  describe('ProspectiveClubSchema validation', () => {
+    it('should accept a club with only the required fields', () => {
+      const result = ProspectiveClubSchema.safeParse({
+        clubId: '00012345',
+        clubName: 'Minimal Club',
+      })
+      expect(result.success).toBe(true)
+    })
+
+    it('should accept a club with all optional fields populated', () => {
+      const result = ProspectiveClubSchema.safeParse({
+        clubId: '00012345',
+        clubName: 'Full Club',
+        charterDate: '2026-01-15',
+        city: 'Toronto',
+        region: 'ON',
+        country: 'Canada',
+        meetingDay: 'Tuesday',
+        meetingTime: '18:30',
+        website: 'https://example.org',
+        email: 'club@example.org',
+        isProspective: true,
+      })
+      expect(result.success).toBe(true)
+    })
+
+    it('should reject a club without clubId', () => {
+      const result = ProspectiveClubSchema.safeParse({ clubName: 'No-id' })
+      expect(result.success).toBe(false)
+    })
+
+    it('should reject a club without clubName', () => {
+      const result = ProspectiveClubSchema.safeParse({ clubId: '00012345' })
+      expect(result.success).toBe(false)
     })
   })
 })

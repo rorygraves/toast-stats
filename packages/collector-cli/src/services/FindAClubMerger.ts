@@ -21,6 +21,7 @@
  * writes around it.
  */
 
+import type { ProspectiveClub } from '@toastmasters/shared-contracts'
 import {
   TI_CLUB_NUMBER_KEY,
   type FacRawResponse,
@@ -28,7 +29,7 @@ import {
   type EnrichedClub,
   type MergeResult,
 } from '../types/findAClub.js'
-import { normaliseTiClub } from './FindAClubService.js'
+import { normaliseTiClub, type ClubEnrichment } from './FindAClubService.js'
 
 /** 8-char zero-pad a club number from anywhere (CSV row, FAC payload). */
 export function normaliseClubNumber(raw: unknown): string | null {
@@ -173,6 +174,15 @@ export function mergeFacIntoSnapshot(
     }
   }
 
+  // #489 — persist the FAC-only clubs into the snapshot as a compact
+  // ProspectiveClub[] so downstream consumers (analytics-core, the
+  // frontend prospective panel) can render them without a second
+  // FAC fetch. Always write the field (even when empty) — if we
+  // skipped on empty, a prior merge's stale prospectiveClubs would
+  // survive the `...snapshot.data` spread and ship to the frontend
+  // forever. The field must always reflect the CURRENT FAC delta.
+  const prospectiveClubs = facOnlyClubs.map(projectProspectiveClub)
+
   return {
     snapshot: {
       ...snapshot,
@@ -185,6 +195,7 @@ export function mergeFacIntoSnapshot(
         ...(enrichedParsedClubs !== undefined && {
           clubs: enrichedParsedClubs,
         }),
+        prospectiveClubs,
       },
     },
     matched,
@@ -192,4 +203,32 @@ export function mergeFacIntoSnapshot(
     facOnly: facOnlyClubs.length,
     facOnlyClubs,
   }
+}
+
+/**
+ * Compact projection of a FAC-only club enrichment into the
+ * ProspectiveClub shape served to the frontend (#489).
+ */
+function projectProspectiveClub(enriched: ClubEnrichment): ProspectiveClub {
+  // TI's FAC occasionally returns a club with no Identification.Name
+  // (rare; mostly fresh ATOs that haven't picked a final name yet).
+  // Fall back to a synthetic "Club <id>" label at the projection layer
+  // so the schema's clubName invariant stays meaningful and the UI
+  // doesn't need a parallel fallback.
+  const club: ProspectiveClub = {
+    clubId: enriched.clubId,
+    clubName: enriched.clubName ?? `Club ${enriched.clubId}`,
+  }
+  if (enriched.charterDate) club.charterDate = enriched.charterDate
+  if (enriched.address?.city) club.city = enriched.address.city
+  if (enriched.address?.region) club.region = enriched.address.region
+  if (enriched.address?.country) club.country = enriched.address.country
+  if (enriched.meetingDay) club.meetingDay = enriched.meetingDay
+  if (enriched.meetingTime) club.meetingTime = enriched.meetingTime
+  if (enriched.website) club.website = enriched.website
+  if (enriched.email) club.email = enriched.email
+  if (typeof enriched.isProspective === 'boolean') {
+    club.isProspective = enriched.isProspective
+  }
+  return club
 }

@@ -28,6 +28,7 @@ import type { DateRange } from './metadata.js'
 import type { LeadershipInsightsData } from './leadership.js'
 import type { YearOverYearData } from './yearOverYear.js'
 import type { PerformanceTargetsData } from './performanceTargets.js'
+import type { ProspectiveClub } from '@toastmasters/shared-contracts'
 
 /**
  * Complete district analytics structure.
@@ -55,6 +56,17 @@ export interface DistrictAnalytics {
   topPerformingAreas: AreaPerformance[]
   /** Top clubs by membership growth (positive growth only, sorted descending) */
   topGrowthClubs: Array<{ clubId: string; clubName: string; growth: number }>
+
+  /**
+   * FAC-only clubs (typically ATOs / fresh charters) that aren't in
+   * clubPerformance. Surfaced verbatim from the latest snapshot —
+   * never folded into rankings, distinguished counts, or membership
+   * trends. Always an array (possibly empty) — consistent with
+   * sibling list fields (`allClubs`, `vulnerableClubs`).
+   *
+   * @see Issue #489
+   */
+  prospectiveClubs: ProspectiveClub[]
 }
 
 /**

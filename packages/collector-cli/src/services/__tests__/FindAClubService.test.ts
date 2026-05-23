@@ -104,6 +104,7 @@ describe('normaliseTiClub', () => {
     const result = normaliseTiClub(realClub)
     expect(result).toEqual({
       clubId: '00001399',
+      clubName: 'South Suburban Toastmasters',
       charterDate: '1976-04-01',
       coordinates: { lat: 39.62285, lng: -105.01863 },
       address: {

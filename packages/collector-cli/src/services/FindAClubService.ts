@@ -114,6 +114,10 @@ export type TiResponse = z.infer<typeof TiResponseSchema>
 export interface ClubEnrichment {
   /** 8-char zero-padded club number — primary join key. */
   clubId: string
+  /** Display name from TI's Find-A-Club registry. Optional because
+   *  TI occasionally returns a club entry with no Name (rare; mostly
+   *  test fixtures). Surfaced by the prospective-clubs panel (#489). */
+  clubName?: string
   charterDate?: string // ISO date
   coordinates?: { lat: number; lng: number }
   address?: {
@@ -254,6 +258,9 @@ export function normaliseTiClub(club: TiClub): ClubEnrichment | null {
   if (!id) return null
 
   const result: ClubEnrichment = { clubId: id }
+
+  const name = club.Identification?.Name?.trim()
+  if (name) result.clubName = name
 
   const charterDate = parseNetDate(club.CharterDate)
   if (charterDate) result.charterDate = charterDate

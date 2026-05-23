@@ -188,6 +188,50 @@ export const DistrictTotalsFileSchema = z.object({
 })
 
 /**
+ * Zod schema for a prospective (FAC-only) club. Captures clubs that
+ * appear in the Find-A-Club registry but not in TI's
+ * clubPerformance — typically ATOs or fresh charters. Compact
+ * projection of the FAC enrichment; we omit fields a directory-style
+ * surface doesn't need (coordinates, phone, social links).
+ *
+ * @see Issue #489
+ */
+export const ProspectiveClubSchema = z.object({
+  /** 8-char zero-padded club number. */
+  clubId: z.string(),
+
+  /** Display name of the club. */
+  clubName: z.string(),
+
+  /** Charter date in ISO YYYY-MM-DD format, when known. */
+  charterDate: z.string().optional(),
+
+  /** City the club is registered in. */
+  city: z.string().optional(),
+
+  /** State / province code (e.g. 'ON', 'CA'). */
+  region: z.string().optional(),
+
+  /** Country name. */
+  country: z.string().optional(),
+
+  /** Recurring meeting day-of-week, when published. */
+  meetingDay: z.string().optional(),
+
+  /** Recurring meeting time, when published. */
+  meetingTime: z.string().optional(),
+
+  /** Public club website URL. */
+  website: z.string().optional(),
+
+  /** Public club contact email. */
+  email: z.string().optional(),
+
+  /** FAC's IsProspective flag — true for clubs in ATO state. */
+  isProspective: z.boolean().optional(),
+})
+
+/**
  * Zod schema for district statistics file.
  * Validates DistrictStatisticsFile interface structure.
  *
@@ -241,6 +285,18 @@ export const DistrictStatisticsFileSchema = z.object({
    * @see Requirements 2.3, 5.1
    */
   districtPerformance: z.array(ScrapedRecordSchema),
+
+  /**
+   * Clubs present in the public Find-A-Club registry but absent from
+   * TI's per-district performance reports — typically ATOs
+   * (Applications To Organize) or freshly-chartered clubs that haven't
+   * landed in clubPerformance yet. Optional and back-compat: snapshots
+   * predating #489 simply omit the field. Populated by
+   * FindAClubMerger; never included in analytics aggregates.
+   *
+   * @see Issue #489
+   */
+  prospectiveClubs: z.array(ProspectiveClubSchema).optional(),
 })
 
 /**

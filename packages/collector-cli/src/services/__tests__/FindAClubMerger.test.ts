@@ -49,7 +49,7 @@ const suspendedSnapshotOnly = {
 }
 
 const prospectiveFacOnlyClub = {
-  Identification: { Id: { Value: '00088888' } },
+  Identification: { Id: { Value: '00088888' }, Name: 'New ATO Toastmasters' },
   Address: {
     Street: '12 New Way',
     City: 'Toronto',
@@ -284,6 +284,99 @@ describe('mergeFacIntoSnapshot', () => {
     expect(result.facOnlyClubs[0]?.isProspective).toBe(true)
     // The prospective club must NOT have been merged into clubPerformance
     expect(result.snapshot.data?.clubPerformance).toHaveLength(1)
+  })
+
+  // #489 — the merger must now persist FAC-only clubs into the
+  // snapshot as a compact prospectiveClubs[] so downstream services
+  // (analytics-core, the frontend) can surface them without a second
+  // FAC fetch.
+  it('writes FAC-only clubs into snapshot.data.prospectiveClubs (#489)', () => {
+    const result = mergeFacIntoSnapshot(
+      {
+        districtId: '61',
+        data: { clubPerformance: [ottawaSnapshotRow] },
+        // pretend the previous merge already added something; the new
+        // merge replaces it (TI registry is the source of truth).
+      },
+      { Clubs: [ottawaFacClub, prospectiveFacOnlyClub] }
+    )
+
+    const dataRecord = result.snapshot.data as
+      | Record<string, unknown>
+      | undefined
+    const prospectiveClubs = dataRecord?.['prospectiveClubs'] as
+      | Array<Record<string, unknown>>
+      | undefined
+    expect(prospectiveClubs).toHaveLength(1)
+    const club = prospectiveClubs?.[0]
+    expect(club?.['clubId']).toBe('00088888')
+    expect(club?.['clubName']).toBe('New ATO Toastmasters')
+    expect(club?.['city']).toBe('Toronto')
+    expect(club?.['region']).toBe('ON')
+    expect(club?.['country']).toBe('Canada')
+    expect(club?.['isProspective']).toBe(true)
+    // We deliberately drop coordinates / phone / social — the panel
+    // doesn't render them, and keeping the payload small matters when
+    // the array ships in the analytics file every district every day.
+    expect(club?.['coordinates']).toBeUndefined()
+    expect(club?.['phone']).toBeUndefined()
+  })
+
+  it('writes an empty prospectiveClubs array when no FAC-only clubs are found (#489)', () => {
+    const result = mergeFacIntoSnapshot(
+      { districtId: '61', data: { clubPerformance: [ottawaSnapshotRow] } },
+      { Clubs: [ottawaFacClub] }
+    )
+    const dataRecord = result.snapshot.data as Record<string, unknown>
+    // Always materialize the field — see "clears stale prospectiveClubs"
+    // below for the regression that drove this decision.
+    expect(dataRecord['prospectiveClubs']).toEqual([])
+  })
+
+  // Regression: if a previous merge left a prospectiveClubs entry in
+  // the snapshot and today's FAC has none (the ATO chartered), the
+  // merger must NOT carry the stale entry forward via `...snapshot.data`.
+  it('clears stale prospectiveClubs when the current FAC produces none (#489)', () => {
+    const staleSnapshot = {
+      districtId: '61',
+      data: {
+        clubPerformance: [ottawaSnapshotRow],
+        prospectiveClubs: [
+          {
+            clubId: '00088888',
+            clubName: 'Yesterday ATO',
+            isProspective: true,
+          },
+        ],
+      },
+    }
+    const result = mergeFacIntoSnapshot(staleSnapshot, {
+      Clubs: [ottawaFacClub],
+    })
+    const dataRecord = result.snapshot.data as Record<string, unknown>
+    expect(dataRecord['prospectiveClubs']).toEqual([])
+  })
+
+  // The projection layer must produce a meaningful clubName even when
+  // TI's FAC entry omits Identification.Name — schema declares
+  // clubName as required, and an empty string would break the
+  // 'has a name' invariant the panel relies on.
+  it('falls back to "Club <id>" when the FAC entry has no Name (#489)', () => {
+    const namelessFacClub = {
+      Identification: { Id: { Value: '00077777' } },
+      Address: { City: 'Nowhere' },
+      IsProspective: true,
+    }
+    const result = mergeFacIntoSnapshot(
+      { districtId: '61', data: { clubPerformance: [ottawaSnapshotRow] } },
+      { Clubs: [ottawaFacClub, namelessFacClub] }
+    )
+    const dataRecord = result.snapshot.data as Record<string, unknown>
+    const prospectiveClubs = dataRecord['prospectiveClubs'] as Array<
+      Record<string, unknown>
+    >
+    expect(prospectiveClubs).toHaveLength(1)
+    expect(prospectiveClubs[0]?.['clubName']).toBe('Club 00077777')
   })
 
   it('is idempotent — merging twice produces the same enriched output', () => {

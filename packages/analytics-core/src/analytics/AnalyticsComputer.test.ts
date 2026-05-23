@@ -494,6 +494,44 @@ describe('AnalyticsComputer', () => {
         result.districtAnalytics.membershipChange
       )
     })
+
+    // #489 — Prospective (FAC-only) clubs flow through the latest
+    // snapshot into the DistrictAnalytics output so the frontend can
+    // render them without a second fetch.
+    it('should propagate prospectiveClubs from the latest snapshot', async () => {
+      const computer = new AnalyticsComputer()
+      const snapshot = createMockSnapshot('D101', '2024-01-15', [
+        createMockClub({ clubId: '1', membershipCount: 25 }),
+      ])
+      snapshot.prospectiveClubs = [
+        {
+          clubId: '00088888',
+          clubName: 'New ATO Toastmasters',
+          city: 'Ottawa',
+          region: 'ON',
+          country: 'Canada',
+          isProspective: true,
+        },
+      ]
+
+      const result = await computer.computeDistrictAnalytics('D101', [snapshot])
+
+      expect(result.districtAnalytics.prospectiveClubs).toHaveLength(1)
+      expect(result.districtAnalytics.prospectiveClubs[0]?.clubId).toBe(
+        '00088888'
+      )
+    })
+
+    it('should default prospectiveClubs to an empty array when the snapshot omits it', async () => {
+      const computer = new AnalyticsComputer()
+      const snapshot = createMockSnapshot('D101', '2024-01-15', [
+        createMockClub({ clubId: '1' }),
+      ])
+
+      const result = await computer.computeDistrictAnalytics('D101', [snapshot])
+
+      expect(result.districtAnalytics.prospectiveClubs).toEqual([])
+    })
   })
 
   describe('computeMembershipAnalytics', () => {

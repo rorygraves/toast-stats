@@ -64,6 +64,61 @@ export interface DistrictStatisticsFile {
    * @see Requirements 2.3
    */
   districtPerformance: ScrapedRecord[]
+
+  /**
+   * Clubs present in the public Find-A-Club registry but absent from
+   * TI's per-district performance reports — typically ATOs
+   * (Applications To Organize) or freshly-chartered clubs that haven't
+   * landed in clubPerformance yet. Optional and back-compat: snapshots
+   * predating #489 simply omit the field. Populated by
+   * FindAClubMerger; never included in analytics aggregates.
+   *
+   * @see Issue #489
+   */
+  prospectiveClubs?: ProspectiveClub[]
+}
+
+/**
+ * Prospective (FAC-only) club entry. Compact projection of the FAC
+ * enrichment for clubs that don't appear in clubPerformance — we
+ * skip coordinates/phone/social links since the directory-style
+ * panel doesn't render them in v1.
+ *
+ * @see Issue #489
+ */
+export interface ProspectiveClub {
+  /** 8-char zero-padded club number. */
+  clubId: string
+
+  /** Display name of the club. */
+  clubName: string
+
+  /** Charter date in ISO YYYY-MM-DD format, when known. */
+  charterDate?: string
+
+  /** City the club is registered in. */
+  city?: string
+
+  /** State / province code (e.g. 'ON', 'CA'). */
+  region?: string
+
+  /** Country name. */
+  country?: string
+
+  /** Recurring meeting day-of-week, when published. */
+  meetingDay?: string
+
+  /** Recurring meeting time, when published. */
+  meetingTime?: string
+
+  /** Public club website URL. */
+  website?: string
+
+  /** Public club contact email. */
+  email?: string
+
+  /** FAC's IsProspective flag — true for clubs in ATO state. */
+  isProspective?: boolean
 }
 
 /**

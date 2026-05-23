@@ -211,6 +211,11 @@ export class AnalyticsComputer implements IAnalyticsComputer {
           sortedSnapshots
         ).topGrowthClubs
 
+    // #489 — Prospective clubs are surfaced verbatim from the latest
+    // snapshot; they're a directory-style overlay, not an analytics
+    // input. Default to [] so the frontend can always assume an array.
+    const prospectiveClubs = latestSnapshot?.prospectiveClubs ?? []
+
     // Build district analytics (base result)
     const districtAnalytics: DistrictAnalytics = {
       districtId,
@@ -230,6 +235,7 @@ export class AnalyticsComputer implements IAnalyticsComputer {
       divisionRankings,
       topPerformingAreas,
       topGrowthClubs,
+      prospectiveClubs,
     }
 
     // Compute remaining extended analytics

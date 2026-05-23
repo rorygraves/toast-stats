@@ -4,10 +4,13 @@ import {
   cdnAnalyticsUrl,
   fetchFromCdn,
 } from '../services/cdn'
-import type { ClubHealthStatus } from '@toastmasters/shared-contracts'
+import type {
+  ClubHealthStatus,
+  ProspectiveClub,
+} from '@toastmasters/shared-contracts'
 
 // Re-export for backward compatibility with existing imports
-export type { ClubHealthStatus }
+export type { ClubHealthStatus, ProspectiveClub }
 
 export interface ClubTrend {
   clubId: string
@@ -194,6 +197,17 @@ export interface DistrictAnalytics {
    * Requirements: 7.1, 7.2, 7.3, 7.4
    */
   performanceTargets?: DistrictPerformanceTargets
+
+  /**
+   * Clubs in TI's public Find-A-Club registry that aren't yet in
+   * clubPerformance — typically ATOs (Applications To Organize) or
+   * freshly-chartered clubs that haven't appeared in the dashboard
+   * roster yet. Always an array (possibly empty). Deliberately NOT
+   * included in rankings, distinguished counts, or membership trends.
+   *
+   * @see Issue #489
+   */
+  prospectiveClubs: ProspectiveClub[]
 }
 
 // ========== District Performance Targets Types (from districts.ts) ==========

@@ -12,6 +12,7 @@ import {
 } from '../utils/programYear'
 import { DistrictDetailHeader } from '../components/DistrictDetailHeader'
 import { ClubsTable } from '../components/ClubsTable'
+import { ProspectiveClubsPanel } from '../components/ProspectiveClubsPanel'
 import ErrorBoundary from '../components/ErrorBoundary'
 import { LoadingSkeleton } from '../components/LoadingSkeleton'
 import type {
@@ -313,19 +314,22 @@ const DistrictClubsPage: React.FC = () => {
             {isLoading && allClubs.length === 0 ? (
               <LoadingSkeleton variant="table" count={6} />
             ) : (
-              <ClubsTable
-                clubs={allClubs}
-                districtId={districtId}
-                isLoading={isLoading}
-                onClubClick={handleClubClick}
-                initialSortField={initialSortField}
-                initialSortDirection={initialSortDir}
-                onSortChange={handleSortChange}
-                initialPage={initialPage}
-                onPageChange={handlePageChange}
-                initialFilterState={initialFilterState}
-                onFilterChange={handleFilterChange}
-              />
+              <>
+                <ClubsTable
+                  clubs={allClubs}
+                  districtId={districtId}
+                  isLoading={isLoading}
+                  onClubClick={handleClubClick}
+                  initialSortField={initialSortField}
+                  initialSortDirection={initialSortDir}
+                  onSortChange={handleSortChange}
+                  initialPage={initialPage}
+                  onPageChange={handlePageChange}
+                  initialFilterState={initialFilterState}
+                  onFilterChange={handleFilterChange}
+                />
+                <ProspectiveClubsPanel clubs={analytics?.prospectiveClubs} />
+              </>
             )}
           </div>
         </div>

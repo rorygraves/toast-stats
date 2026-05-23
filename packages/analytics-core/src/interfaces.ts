@@ -9,7 +9,10 @@ import type {
   ComputeOptions,
   ExtendedAnalyticsComputationResult,
 } from './types.js'
-import type { ScrapedRecord } from '@toastmasters/shared-contracts'
+import type {
+  ProspectiveClub,
+  ScrapedRecord,
+} from '@toastmasters/shared-contracts'
 
 /**
  * Raw CSV data structure from Toastmasters dashboard.
@@ -37,6 +40,18 @@ export interface DistrictStatistics {
   divisionPerformance: ScrapedRecord[]
   clubPerformance: ScrapedRecord[]
   districtPerformance: ScrapedRecord[]
+
+  /**
+   * Clubs in the public Find-A-Club registry but absent from
+   * clubPerformance — typically ATOs (Applications To Organize) or
+   * freshly-chartered clubs not yet reporting. Populated by the
+   * collector's FindAClubMerger. Optional and back-compat: pre-#489
+   * snapshots simply omit the field. Excluded from analytics
+   * aggregates by design (no DCP / payments / status data).
+   *
+   * @see Issue #489
+   */
+  prospectiveClubs?: ProspectiveClub[]
 }
 
 /**
