@@ -17,7 +17,17 @@ Do these steps in order, and stop if any check fails:
 
 4. **Run the sprint skill** for the target: invoke `/sprint` with issue `#{{TARGET_ISSUE}}` as the input. Follow the sprint skill's full workflow (Red / Green / Refactor / Verify per CLAUDE.md), including filing the PR and watching CI.
 
-5. **Stop short of closing the sub-issue.** The runner gates on sub-issue closure as the live-verification signal. Closing the sub-issue is the operator's call after they verify the change on ts.taverns.red. Leave a comment on the sub-issue summarising what shipped and what to verify, then stop.
+5. **Run live verification on `ts.taverns.red`, then close the sub-issue on pass.** Once the PR is merged and the deploy job is green, drive the actual change in production — not just a curl. Pattern proven on #444:
+
+   - Write a temporary Playwright smoke at `frontend/e2e/<feature>-verify.smoke.ts`, run with `BASE_URL=https://ts.taverns.red npx playwright test --config playwright.config.ts e2e/<feature>-verify.smoke.ts --workers=1`, then delete the file (no PR churn).
+   - Corroborate with a data-path check (fetch the prod CDN snapshot under `https://cdn.taverns.red/snapshots/<date>/`, decompress if gzipped, assert the new field/value lands).
+   - Capture full-page screenshots into `/tmp/` and surface them via `SendUserFile` so the operator sees the evidence.
+
+   **If every acceptance criterion verifies:** close the sub-issue with a comment containing the evidence table (selectors, counts, screenshot paths), then edit the epic body to tick the Sprint N checkbox. The runner's existing `PREV_STATE == CLOSED` gate will pick up the next sprint on the next tick.
+
+   **If any criterion fails:** leave the sub-issue open, post the failure evidence as a comment, and stop. Do not retry — the operator decides whether to re-launch, revert, or hand-fix.
+
+   Stop after either of those branches.
 
 Operating constraints:
 - This session has full local tool access (`gh`, `gcloud`, `supabase`, project skills). Don't try to delegate to a cloud agent — it would lack these.

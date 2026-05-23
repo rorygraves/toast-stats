@@ -2,9 +2,15 @@
 # scripts/sprint-runner.sh — cron-driven sprint runner for epic #574 (#575).
 #
 # Reads the checklist in GitHub issue #574, finds the first unchecked
-# Sprint N, and — if Sprint N-1's sub-issue is CLOSED (the manifesto's
-# live-verification gate) — launches a fresh `claude --remote-control`
-# session inside a detached `screen` to execute /sprint for that sprint.
+# Sprint N, and — if Sprint N-1's sub-issue is CLOSED — launches a
+# fresh `claude --remote-control` session inside a detached `screen`
+# to execute /sprint for that sprint.
+#
+# The PREV_STATE == CLOSED gate is the handshake between sessions: it
+# now means "the previous session self-verified on ts.taverns.red and
+# closed its sub-issue" (per sprint-bootstrap.prompt step 5), NOT
+# "operator manually verified." Operator still reopens if a close was
+# premature.
 #
 # Usage:
 #   scripts/sprint-runner.sh             # normal run
