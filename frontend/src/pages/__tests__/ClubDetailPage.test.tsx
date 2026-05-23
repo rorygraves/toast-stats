@@ -98,12 +98,21 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false } },
 })
 
-function renderWithRoute(clubId: string = '00000606') {
+function renderWithRoute(
+  clubId: string = '00000606',
+  fromClubsSearch?: string
+) {
+  const entry = fromClubsSearch
+    ? {
+        pathname: `/district/61/club/${clubId}`,
+        state: { fromClubsSearch },
+      }
+    : `/district/61/club/${clubId}`
   return render(
     <QueryClientProvider client={queryClient}>
       <ProgramYearProvider>
         <DarkModeProvider>
-          <MemoryRouter initialEntries={[`/district/61/club/${clubId}`]}>
+          <MemoryRouter initialEntries={[entry]}>
             <Routes>
               <Route
                 path="/district/:districtId/club/:clubId"
@@ -136,6 +145,41 @@ describe('ClubDetailPage (#208)', () => {
     expect(screen.queryByText('Home')).not.toBeInTheDocument()
     const breadcrumbLink = screen.getByRole('link', { name: 'District 61' })
     expect(breadcrumbLink).toHaveAttribute('href', '/district/61')
+  })
+
+  it('renders the District › Clubs › Club trail with a Clubs crumb (#577)', () => {
+    renderWithRoute()
+
+    // Intermediate Clubs crumb links to the clubs subview so users coming
+    // from a filtered list keep their context.
+    const clubsCrumb = screen.getByRole('link', { name: 'Clubs' })
+    expect(clubsCrumb).toHaveAttribute('href', '/district/61/clubs')
+
+    // The club name is the current page, not a link.
+    const current = screen.getByText('St Lawrence Toastmasters', {
+      selector: '[aria-current="page"]',
+    })
+    expect(current).toBeInTheDocument()
+  })
+
+  it('round-trips the prior clubs filter into the Clubs crumb (#577)', () => {
+    renderWithRoute('00000606', '?status=vulnerable')
+
+    expect(screen.getByRole('link', { name: 'Clubs' })).toHaveAttribute(
+      'href',
+      '/district/61/clubs?status=vulnerable'
+    )
+  })
+
+  it('no longer renders a redundant bottom "Back to District" button (#577)', () => {
+    renderWithRoute()
+
+    // The breadcrumb supersedes the old bottom button — one back
+    // affordance, not two. The District 61 crumb remains the back path.
+    const backButtons = screen.queryAllByRole('button', {
+      name: /Back to District 61/i,
+    })
+    expect(backButtons).toHaveLength(0)
   })
 
   it('renders membership stats grid with correct net change', () => {

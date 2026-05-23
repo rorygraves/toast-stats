@@ -186,6 +186,12 @@ const renderAt = (initialUrl: string) => {
         </Suspense>
       ),
     },
+    // Stub club-detail route so row-click navigation resolves and we can
+    // assert the navigation state (filter round-trip, #577).
+    {
+      path: '/district/:districtId/club/:clubId',
+      element: <div>club detail stub</div>,
+    },
   ]
 
   const router = createMemoryRouter(routes, { initialEntries: [initialUrl] })
@@ -216,6 +222,37 @@ describe('DistrictClubsPage (#570 — Phase 2)', () => {
 
     expect(await screen.findByText(/alpha toastmasters/i)).toBeInTheDocument()
     expect(screen.getByText(/beta speakers/i)).toBeInTheDocument()
+  })
+
+  it('shows a back-to-district breadcrumb crumb, not the old back button (#577)', async () => {
+    renderAt('/district/61/clubs')
+
+    await screen.findByText(/alpha toastmasters/i)
+
+    // The District 61 crumb links back to the overview.
+    const crumb = screen.getByRole('link', { name: 'District 61' })
+    expect(crumb).toHaveAttribute('href', '/district/61')
+
+    // The ad-hoc "← Back to District 61" button is gone — the breadcrumb
+    // is the single back affordance.
+    expect(
+      screen.queryByRole('button', { name: /Back to District 61/i })
+    ).not.toBeInTheDocument()
+  })
+
+  it('round-trips the current filter into club navigation state (#577)', async () => {
+    const user = userEvent.setup()
+    const { router } = renderAt('/district/61/clubs?status=vulnerable')
+
+    // Only Beta Speakers is vulnerable; click its row.
+    const beta = await screen.findByText(/beta speakers/i)
+    await user.click(beta)
+
+    expect(router.state.location.pathname).toBe('/district/61/club/1002')
+    expect(
+      (router.state.location.state as { fromClubsSearch?: string } | null)
+        ?.fromClubsSearch
+    ).toBe('?status=vulnerable')
   })
 
   it('applies ?status=vulnerable to filter clubs on load', async () => {

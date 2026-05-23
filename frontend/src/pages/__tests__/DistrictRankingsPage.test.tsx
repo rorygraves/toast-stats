@@ -158,6 +158,19 @@ describe('DistrictRankingsPage (#571 — Phase 3)', () => {
     expect(await screen.findByTestId('global-rankings-tab')).toBeInTheDocument()
   })
 
+  it('shows a back-to-district breadcrumb, not the old back button (#577)', async () => {
+    renderAt('/district/61/rankings')
+    await screen.findByTestId('global-rankings-tab')
+
+    expect(screen.getByRole('link', { name: 'District 61' })).toHaveAttribute(
+      'href',
+      '/district/61'
+    )
+    expect(
+      screen.queryByRole('button', { name: /Back to District 61/i })
+    ).not.toBeInTheDocument()
+  })
+
   it('defaults metric to aggregate when ?metric is absent', async () => {
     renderAt('/district/61/rankings')
     expect(await screen.findByTestId('metric-value')).toHaveTextContent(

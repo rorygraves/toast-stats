@@ -34,8 +34,8 @@ indistinguishable from real input**.
 
 ## Fix
 
-Strip the example lines from the META_EPIC body. Describe the format in
-prose and in a fenced code block (which the regex _also_ doesn't understand,
+Strip the example lines from the META*EPIC body. Describe the format in
+prose and in a fenced code block (which the regex \_also* doesn't understand,
 but fenced lines start with backticks, not `- [ ]`, so they don't match).
 
 ## How to apply

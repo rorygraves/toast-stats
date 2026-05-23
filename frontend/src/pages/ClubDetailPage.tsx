@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useDistrictAnalytics, ClubTrend } from '../hooks/useDistrictAnalytics'
 import { useDistricts } from '../hooks/useDistricts'
 import { useUrlProgramYear } from '../hooks/useUrlProgramYear'
@@ -14,6 +14,7 @@ import { formatDisplayDate } from '../utils/dateFormatting'
 import { formatCharterDate } from '../utils/formatCharterDate'
 import { getClubAnniversary } from '../utils/clubAnniversary'
 import { ClubAnniversaryBadge } from '../components/ClubAnniversaryBadge'
+import { SubpageBreadcrumb } from '../components/SubpageBreadcrumb'
 import {
   isProvisionallyDistinguished,
   getConfirmedLevel,
@@ -204,6 +205,17 @@ const ClubDetailPage: React.FC = () => {
     clubId: string
   }>()
   const navigate = useNavigate()
+  const location = useLocation()
+
+  // #577 — Filter round-trip: when the user arrived from a filtered clubs
+  // list, ClubsTable passed the prior search via navigation state. The
+  // "Clubs" breadcrumb prefers it so going back restores their filters;
+  // deep links without state fall back to the unfiltered clubs route.
+  const fromClubsSearch =
+    typeof (location.state as { fromClubsSearch?: unknown } | null)
+      ?.fromClubsSearch === 'string'
+      ? (location.state as { fromClubsSearch: string }).fromClubsSearch
+      : ''
 
   const { selectedProgramYear } = useUrlProgramYear()
 
@@ -398,26 +410,20 @@ const ClubDetailPage: React.FC = () => {
     <ErrorBoundary>
       <div className="min-h-screen">
         <div className="container mx-auto px-4 py-4 sm:py-8">
-          {/* Breadcrumbs — leading 'Home' crumb removed per #442 (the
-              AppShell's 'Districts' active nav already serves as the
-              top-level location signal). Trail starts at the parent
-              district so 'back to district' navigation stays one click
-              away. */}
-          <nav
-            className="flex items-center gap-2 text-sm text-gray-500 mb-6 font-tm-body"
-            aria-label="Breadcrumb"
-          >
-            <Link
-              to={`/district/${districtId}`}
-              className="hover:text-tm-loyal-blue transition-colors"
-            >
-              {districtName}
-            </Link>
-            <span aria-hidden="true">›</span>
-            <span className="text-gray-900 font-medium" aria-current="page">
-              {club.clubName}
-            </span>
-          </nav>
+          {/* Breadcrumbs (#577) — leading 'Home' crumb removed per #442
+              (the AppShell's 'Districts' active nav is the top-level
+              signal). Trail: District › Clubs › <club>. The Clubs crumb
+              restores the user's prior filtered list (filter round-trip). */}
+          <SubpageBreadcrumb
+            crumbs={[
+              { label: districtName, to: `/district/${districtId}` },
+              {
+                label: 'Clubs',
+                to: `/district/${districtId}/clubs${fromClubsSearch}`,
+              },
+              { label: club.clubName },
+            ]}
+          />
 
           {/* Redesigned hero per handoff (#23 follow-up). Loyal-blue panel
               with charter-style eyebrow + h1 + sub-line + right-side
@@ -912,28 +918,9 @@ const ClubDetailPage: React.FC = () => {
             isLoading={isLoadingStats}
           />
 
-          {/* Back to District button */}
-          <div className="flex justify-center py-4">
-            <button
-              onClick={() => navigate(`/district/${districtId}`)}
-              className="flex items-center gap-2 px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium font-tm-body"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-              Back to {districtName}
-            </button>
-          </div>
+          {/* Bottom "Back to District" button removed (#577) — the
+              breadcrumb at the top supersedes it. One back affordance,
+              not two. */}
         </div>
       </div>
     </ErrorBoundary>

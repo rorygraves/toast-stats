@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useDistricts } from '../hooks/useDistricts'
 import { useDistrictCachedDates } from '../hooks/useDistrictData'
 import { useDistrictStatistics } from '../hooks/useMembershipData'
@@ -12,6 +12,7 @@ import {
 } from '../utils/programYear'
 import { extractDivisionPerformance } from '../utils/extractDivisionPerformance'
 import { DistrictDetailHeader } from '../components/DistrictDetailHeader'
+import { SubpageBreadcrumb } from '../components/SubpageBreadcrumb'
 import { DivisionPerformanceCards } from '../components/DivisionPerformanceCards'
 import DistinguishedProgramCriteriaExplainer from '../components/DistinguishedProgramCriteriaExplainer'
 import { DivisionAreaRecognitionPanel } from '../components/DivisionAreaRecognitionPanel'
@@ -25,7 +26,6 @@ import ErrorBoundary from '../components/ErrorBoundary'
 
 const DistrictDivisionsPage: React.FC = () => {
   const { districtId } = useParams<{ districtId: string }>()
-  const navigate = useNavigate()
 
   const {
     selectedProgramYear,
@@ -129,15 +129,9 @@ const DistrictDivisionsPage: React.FC = () => {
             }
           />
 
-          <nav aria-label="District subview" className="mb-4">
-            <button
-              type="button"
-              onClick={() => navigate(`/district/${districtId}`)}
-              className="text-tm-loyal-blue hover:underline font-tm-headline font-medium"
-            >
-              ← Back to {districtName}
-            </button>
-          </nav>
+          <SubpageBreadcrumb
+            crumbs={[{ label: districtName, to: `/district/${districtId}` }]}
+          />
 
           <div className="space-y-4 sm:space-y-6">
             {districtStatistics ? (

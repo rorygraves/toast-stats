@@ -169,6 +169,19 @@ describe('DistrictDivisionsPage (#571 — Phase 3)', () => {
     ).toBeInTheDocument()
   })
 
+  it('shows a back-to-district breadcrumb, not the old back button (#577)', async () => {
+    renderAt('/district/61/divisions')
+    await screen.findByTestId('division-performance-cards')
+
+    expect(screen.getByRole('link', { name: 'District 61' })).toHaveAttribute(
+      'href',
+      '/district/61'
+    )
+    expect(
+      screen.queryByRole('button', { name: /Back to District 61/i })
+    ).not.toBeInTheDocument()
+  })
+
   it('redirects /district/:id?tab=divisions to /district/:id/divisions', async () => {
     const { router } = renderAt('/district/61?tab=divisions')
 

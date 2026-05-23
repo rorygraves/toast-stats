@@ -75,9 +75,10 @@ A data visualization platform for **Toastmasters district leaders** to track clu
 
 ### Cross-page chrome
 
-| Feature         | Description                                                                                       | Status     |
-| --------------- | ------------------------------------------------------------------------------------------------- | ---------- |
-| DataControlsBar | Tight 3-chip cluster (data-fresh pill, PY chip, date chip) on /districts and /district/:id (#528) | ✅ Shipped |
+| Feature           | Description                                                                                                                                                            | Status     |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| DataControlsBar   | Tight 3-chip cluster (data-fresh pill, PY chip, date chip) on /districts and /district/:id (#528)                                                                      | ✅ Shipped |
+| SubpageBreadcrumb | Back-to-district breadcrumb on routed sub-pages — `District N` on /clubs,/divisions,/rankings; `District N › Clubs › <club>` on club detail (filter round-trip) (#577) | ✅ Shipped |
 
 ### Observability
 

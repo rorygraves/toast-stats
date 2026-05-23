@@ -1,5 +1,10 @@
 import React, { useCallback, useMemo } from 'react'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import {
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from 'react-router-dom'
 import { useDistricts } from '../hooks/useDistricts'
 import { useDistrictAnalytics, ClubTrend } from '../hooks/useDistrictAnalytics'
 import { useDistrictCachedDates } from '../hooks/useDistrictData'
@@ -11,6 +16,7 @@ import {
   isDateInProgramYear,
 } from '../utils/programYear'
 import { DistrictDetailHeader } from '../components/DistrictDetailHeader'
+import { SubpageBreadcrumb } from '../components/SubpageBreadcrumb'
 import { ClubsTable } from '../components/ClubsTable'
 import { ProspectiveClubsPanel } from '../components/ProspectiveClubsPanel'
 import ErrorBoundary from '../components/ErrorBoundary'
@@ -96,6 +102,7 @@ const filterStateToUrlPatch = (
 const DistrictClubsPage: React.FC = () => {
   const { districtId } = useParams<{ districtId: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
 
   // Sort / page URL state -- mirrors DistrictDetailPage's conventions so
@@ -273,9 +280,13 @@ const DistrictClubsPage: React.FC = () => {
 
   const handleClubClick = useCallback(
     (club: ClubTrend) => {
-      navigate(`/district/${districtId}/club/${club.clubId}`)
+      // #577 — carry the current filter/search so the club page's "Clubs"
+      // breadcrumb can round-trip back to this exact filtered list.
+      navigate(`/district/${districtId}/club/${club.clubId}`, {
+        state: { fromClubsSearch: location.search },
+      })
     },
-    [navigate, districtId]
+    [navigate, districtId, location.search]
   )
 
   if (!districtId) {
@@ -300,15 +311,9 @@ const DistrictClubsPage: React.FC = () => {
             }
           />
 
-          <nav aria-label="District subview" className="mb-4">
-            <button
-              type="button"
-              onClick={() => navigate(`/district/${districtId}`)}
-              className="text-tm-loyal-blue hover:underline font-tm-headline font-medium"
-            >
-              ← Back to {districtName}
-            </button>
-          </nav>
+          <SubpageBreadcrumb
+            crumbs={[{ label: districtName, to: `/district/${districtId}` }]}
+          />
 
           <div className="space-y-4 sm:space-y-6">
             {isLoading && allClubs.length === 0 ? (
