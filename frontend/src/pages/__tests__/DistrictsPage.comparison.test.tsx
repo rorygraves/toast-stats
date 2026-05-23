@@ -178,8 +178,14 @@ describe('DistrictsPage - Comparison Mode (#93)', () => {
     fireEvent.click(pinButtons[0]) // District 57
     fireEvent.click(pinButtons[1]) // District 61
 
-    // ComparisonPanel should be visible
-    expect(screen.getByText(/Comparing 2 Districts/i)).toBeInTheDocument()
+    // ComparisonPanel should be visible. Await: the lazy chunk is only
+    // imported once a 2nd district is pinned (#488 — wrapper short-
+    // circuits to null below the comparison threshold to avoid a 400px
+    // CLS contributor on first paint), so its render is async on the
+    // first time a pair is pinned in a session.
+    expect(
+      await screen.findByText(/Comparing 2 Districts/i)
+    ).toBeInTheDocument()
   })
 
   it('should not show ComparisonPanel when only 1 district is pinned', async () => {
@@ -233,7 +239,10 @@ describe('DistrictsPage - Comparison Mode (#93)', () => {
     fireEvent.click(pinButtons[0]) // District 57
     fireEvent.click(pinButtons[1]) // District 61
 
-    expect(screen.getByText(/Comparing 2 Districts/i)).toBeInTheDocument()
+    // Same await rationale as the previous test (#488).
+    expect(
+      await screen.findByText(/Comparing 2 Districts/i)
+    ).toBeInTheDocument()
 
     // Unpin District 57 via the table row button
     const unpinButtons = screen.getAllByRole('button', {

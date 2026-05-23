@@ -386,18 +386,65 @@ const DistrictsPage: React.FC = () => {
   }
 
   if (isLoading) {
+    // #488 — Skeleton must use the SAME outer geometry as the loaded
+    // page (districts-page-root > districts-page > districts-page-header
+    // > districts-kpi-strip). Swapping a different wrapper (the prior
+    // `container mx-auto px-4 py-8`) for the real `.districts-page`
+    // wrapper on data-load was the dominant remaining CLS source — CI
+    // attributed score 0.1998 to that container alone. The static
+    // header text + KPI strip outer dimensions don't depend on the
+    // rankings query, so they can render immediately.
     return (
       <div className="districts-page-root">
-        <div className="container mx-auto px-4 py-8">
-          <div className="bg-white rounded-lg shadow-md p-8">
-            <div className="animate-pulse space-y-4">
-              <div className="h-8 bg-gray-200 rounded-sm w-1/3"></div>
-              <div className="h-4 bg-gray-200 rounded-sm w-2/3"></div>
-              <div className="space-y-3 mt-8">
-                {[...Array(10)].map((_, i) => (
-                  <div key={i} className="h-20 bg-gray-200 rounded-sm"></div>
-                ))}
+        <div className="districts-page">
+          <div className="districts-page-header">
+            <div className="districts-page-header__intro">
+              <p className="districts-page-header__eyebrow">
+                Program Year {selectedProgramYear.label.replace(/-/g, '–')}
+              </p>
+              <h1 className="districts-page-header__title">
+                District Rankings
+              </h1>
+              <p className="districts-page-header__lede">
+                Compare district performance across paid clubs, payments, and
+                distinguished clubs.
+              </p>
+              <p className="districts-page-header__orientation">
+                Each row below is one of the 117 Toastmasters districts
+                worldwide. Click a district to drill into its clubs, divisions,
+                and trends. Use the search bar (or press <kbd>/</kbd>) to jump
+                to a district by number or name. Star (★) a district to keep it
+                pinned at the top across visits.
+              </p>
+            </div>
+          </div>
+          <div className="districts-kpi-strip" aria-hidden="true">
+            {[
+              'Paid Clubs · Global',
+              'Total Payments',
+              'Distinguished Clubs',
+              'Districts Tracked',
+            ].map(label => (
+              <div key={label} className="districts-kpi-card">
+                <p className="districts-kpi-card__label">{label}</p>
+                <div
+                  className="districts-kpi-card__value animate-pulse bg-gray-200 rounded-sm"
+                  style={{ height: 30, width: '60%' }}
+                />
               </div>
+            ))}
+          </div>
+          <div
+            className="animate-pulse"
+            role="status"
+            aria-label="Loading district rankings"
+          >
+            <div className="h-20 bg-gray-100 rounded-sm mb-3" />
+            <div className="h-12 bg-gray-100 rounded-sm mb-3" />
+            <div className="space-y-3">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="h-16 bg-gray-200 rounded-sm" />
+              ))}
             </div>
           </div>
         </div>
