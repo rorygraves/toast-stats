@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Toast Stats — Walnut Creek Speakers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --loyal-50:#e6eef3; --loyal-100:#cbdde7; --loyal-200:#9ebccb;
+    --loyal-400:#2c6e90; --loyal-500:#004165; --loyal-600:#003352; --loyal-700:#002438;
+    --maroon-500:#7B1828; --maroon-600:#5a1120;
+    --yellow-300:#f9ecaa; --yellow-500:#F2DF74; --yellow-600:#c9b748;
+    --green-500:#16a34a; --green-600:#15803d;
+    --red-500:#dc2626; --red-600:#b91c1c;
+    --bg:#f6f7f8; --surface:#ffffff; --surface-2:#f9fafb; --surface-3:#f1f3f5;
+    --line:#e5e7eb; --line-2:#eceef0;
+    --ink:#0f1720; --ink-2:#344052; --ink-3:#5b6675; --ink-4:#8b94a3;
+    --link:var(--loyal-500);
+    --shadow-sm:0 1px 2px rgba(15,23,32,.04);
+    --shadow:0 1px 2px rgba(15,23,32,.04),0 1px 3px rgba(15,23,32,.06);
+    --radius-sm:6px; --radius:8px; --radius-lg:12px;
+    --serif:'Montserrat',system-ui,sans-serif;
+    --sans:'Source Sans 3',system-ui,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#0a0f15; --surface:#111922; --surface-2:#161f2a; --surface-3:#1a2330;
+      --line:#1f2a38; --line-2:#25313f;
+      --ink:#eef2f7; --ink-2:#c8d1dd; --ink-3:#8a96a6; --ink-4:#5d6878;
+      --link:#60a5d8;
+      --loyal-50:#112432; --loyal-100:#16344a; --loyal-200:#1c4866;
+    }
+  }
+
+  *,*::before,*::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: var(--sans); font-size: 14px; line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font-family: inherit; }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Topbar */
+  .topbar {
+    background: var(--surface); border-bottom: 1px solid var(--line);
+    padding: 0 24px; height: 56px;
+    display: flex; align-items: center; gap: 24px;
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: saturate(140%) blur(8px);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: var(--serif); font-weight: 800; font-size: 16px; letter-spacing: -0.005em; color: var(--ink); }
+  .brand-mark { width: 24px; height: 24px; border-radius: 5px; background: var(--loyal-500); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-family: var(--serif); font-weight: 800; font-size: 12px; }
+  .topbar nav { display: flex; gap: 4px; flex: 1; }
+  .topbar nav a { padding: 8px 12px; border-radius: var(--radius-sm); color: var(--ink-2); font-weight: 500; font-size: 13.5px; }
+  .topbar nav a:hover { background: var(--surface-3); text-decoration: none; }
+  .topbar nav a.active { color: var(--loyal-500); background: var(--loyal-50); }
+  .topbar nav a.disabled {
+    color: var(--ink-4); cursor: not-allowed; pointer-events: none;
+  }
+  .topbar nav a.disabled::after {
+    content: "soon";
+    font-family: var(--mono); font-size: 9px; font-weight: 500;
+    background: var(--surface-3); color: var(--ink-4);
+    padding: 1px 4px; border-radius: 3px; margin-left: 6px;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    vertical-align: 1px;
+  }
+  .topbar-tools { display: flex; align-items: center; gap: 12px; }
+  .icon-btn { width: 32px; height: 32px; border-radius: var(--radius-sm); background: transparent; border: none; cursor: pointer; color: var(--ink-3); display: inline-flex; align-items: center; justify-content: center; }
+  .icon-btn:hover { background: var(--surface-3); color: var(--ink); }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--maroon-500); color: #fff; font-family: var(--serif); font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; }
+
+  .page { max-width: 1280px; margin: 0 auto; padding: 24px; }
+
+  .crumbs { display: flex; align-items: center; gap: 6px; color: var(--ink-3); font-size: 12.5px; margin-bottom: 16px; flex-wrap: wrap; }
+  .crumbs a { color: var(--ink-2); }
+  .crumbs .sep { color: var(--ink-4); }
+  .crumbs .here { color: var(--ink); font-weight: 600; }
+
+  /* Club header card */
+  .club-header {
+    background: linear-gradient(135deg, var(--loyal-500) 0%, var(--loyal-600) 100%);
+    border-radius: var(--radius);
+    padding: 24px 28px;
+    margin-bottom: 20px;
+    color: #fff;
+    display: flex; gap: 18px; align-items: flex-start; justify-content: space-between;
+    flex-wrap: wrap;
+    box-shadow: var(--shadow);
+  }
+  .club-header-l { min-width: 0; flex: 1 1 320px; }
+  .club-header-eyebrow {
+    font-family: var(--serif); font-weight: 700;
+    font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: rgba(255,255,255,.7); margin-bottom: 8px;
+  }
+  .club-header h1 {
+    font-family: var(--serif); font-weight: 800; font-size: 28px;
+    line-height: 1.15; margin: 0 0 6px; letter-spacing: -0.015em;
+    color: #fff;
+  }
+  .club-header .sub {
+    font-size: 14px; color: rgba(255,255,255,.78);
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .club-header .sub .dot { width: 3px; height: 3px; border-radius: 50%; background: rgba(255,255,255,.4); }
+  .club-header-r { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: 999px;
+    font-size: 12px; font-weight: 600;
+    border: 1px solid rgba(255,255,255,.2);
+    background: rgba(255,255,255,.1); color: #fff;
+  }
+  .pill.thriving { background: #ffffff; border-color: #ffffff; color: #0d6b2f; }
+  .pill.thriving .ico { color: #15803d; }
+  .pill.tier { background: var(--yellow-500); border-color: var(--yellow-600); color: #5a4a14; }
+  .pill.tier.distinguished { background: #ffffff; color: #6b3a08; border-color: #ffffff; }
+  .pill.tier.distinguished .ico { color: #ca8a04; }
+  .pill .ico { width: 12px; height: 12px; }
+  .pill-sub {
+    font-size: 11px; color: rgba(255,255,255,.65); margin-top: 4px;
+  }
+
+  /* Stats grid */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 8px; margin-bottom: 20px;
+  }
+  .stat {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius-sm); padding: 12px 14px;
+    text-align: center;
+  }
+  .stat-label {
+    font-size: 10.5px; color: var(--ink-3); font-weight: 600;
+    text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px;
+  }
+  .stat-val {
+    font-family: var(--serif); font-weight: 800; font-size: 20px;
+    color: var(--ink); line-height: 1; letter-spacing: -0.01em;
+  }
+  .stat-val.pos { color: var(--green-600); }
+  .stat-val.neg { color: var(--red-600); }
+  .stat-val.muted { color: var(--ink-4); }
+  .stat-val.tick { color: var(--green-600); }
+  .stat-val.cross { color: var(--red-600); }
+
+  /* 2/3 + 1/3 layout */
+  .grid-23 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; }
+
+  /* Panel */
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+  .panel-h { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--line); gap: 10px; flex-wrap: wrap; }
+  .panel-h h2 { font-family: var(--serif); font-weight: 700; font-size: 14px; margin: 0; color: var(--ink); letter-spacing: -0.005em; display: flex; align-items: center; gap: 8px; }
+  .panel-h h2 .ico { color: var(--loyal-500); }
+  .panel-h .panel-meta { font-size: 12px; color: var(--ink-3); }
+  .panel-body { padding: 18px; }
+
+  /* Membership trend chart */
+  .chart-stats {
+    display: flex; gap: 18px; margin-bottom: 12px; padding-bottom: 14px;
+    border-bottom: 1px dashed var(--line);
+    font-size: 13px; flex-wrap: wrap;
+  }
+  .chart-stats .stat-row .label { color: var(--ink-3); margin-right: 4px; }
+  .chart-stats .stat-row .val { font-family: var(--serif); font-weight: 700; font-size: 18px; color: var(--ink); }
+  .chart-stats .stat-row .val.pos { color: var(--green-600); }
+  .chart-stats .stat-row .val.neg { color: var(--red-600); }
+  .mem-chart { width: 100%; height: 260px; display: block; }
+  .mem-chart .grid { stroke: var(--line-2); stroke-width: 1; }
+  .mem-chart .key-line { stroke: var(--ink-4); stroke-width: 1; stroke-dasharray: 3 4; opacity: .6; }
+  .mem-chart .axis-text { fill: var(--ink-4); font-size: 10.5px; font-family: var(--sans); }
+  .mem-chart .key-text { fill: var(--ink-3); font-size: 10px; font-weight: 600; font-family: var(--sans); }
+  .mem-chart .line { fill: none; stroke: var(--loyal-500); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  .mem-chart .area { fill: var(--loyal-500); opacity: .08; }
+  .mem-chart .dot { fill: var(--loyal-500); }
+  @media (prefers-color-scheme: dark) {
+    .mem-chart .line { stroke: #8ec5e8; } .mem-chart .area { fill: #8ec5e8; opacity: .14; } .mem-chart .dot { fill: #8ec5e8; }
+  }
+
+  /* DCP Projection */
+  .dcp-tier-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    margin-bottom: 14px;
+  }
+  .dcp-cell {
+    background: var(--surface-2); border: 1px solid var(--line);
+    border-radius: var(--radius-sm); padding: 12px; text-align: center;
+  }
+  .dcp-cell .lab { font-size: 10.5px; color: var(--ink-3); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+  .dcp-cell .val { font-size: 13px; font-weight: 600; }
+  .dcp-cell.outlook { background: #ecfdf5; border-color: #bbf7d0; }
+  .dcp-cell.outlook .val { color: #166534; }
+  @media (prefers-color-scheme: dark) {
+    .dcp-cell.outlook { background: rgba(22,163,74,.10); border-color: rgba(22,163,74,.3); }
+    .dcp-cell.outlook .val { color: #4ade80; }
+  }
+
+  .gap-section h3 {
+    font-family: var(--sans); font-size: 11px; color: var(--ink-3);
+    font-weight: 600; text-transform: uppercase; letter-spacing: .05em;
+    margin: 0 0 8px;
+  }
+  .gap-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 12px; border-radius: var(--radius-sm);
+    background: var(--surface-2); margin-bottom: 4px;
+    font-size: 13px;
+  }
+  .gap-row.met { background: #ecfdf5; }
+  .gap-row .tier-name { font-weight: 600; color: var(--ink); }
+  .gap-row .gap-val { font-family: var(--mono); font-size: 12px; color: var(--ink-2); }
+  .gap-row.met .gap-val { color: #15803d; font-weight: 600; }
+  @media (prefers-color-scheme: dark) {
+    .gap-row.met { background: rgba(22,163,74,.10); }
+    .gap-row.met .gap-val { color: #4ade80; }
+  }
+
+  /* Risk factors */
+  .risk-panel {
+    background: #fef2f2; border: 1px solid #fecaca;
+    border-radius: var(--radius); padding: 16px 18px; margin-bottom: 16px;
+    display: none; /* No risk for thriving demo club */
+  }
+  .risk-panel h2 { font-family: var(--serif); font-size: 14px; font-weight: 700; margin: 0 0 10px; color: #991b1b; }
+  .risk-panel ul { margin: 0; padding-left: 18px; color: #7f1d1d; }
+  .risk-panel li { font-size: 13px; line-height: 1.5; margin-bottom: 4px; }
+
+  /* Close to distinguished */
+  .ctd {
+    background: #fffbeb; border: 1px solid #fde68a;
+    border-radius: var(--radius); padding: 16px 18px; margin-bottom: 16px;
+    display: flex; gap: 12px; align-items: flex-start;
+  }
+  .ctd .star { color: var(--yellow-600); flex-shrink: 0; margin-top: 2px; }
+  .ctd h2 { font-family: var(--serif); font-size: 14px; font-weight: 700; margin: 0 0 4px; color: #78350f; }
+  .ctd p { margin: 0; color: #7c2d12; font-size: 13px; line-height: 1.5; }
+  .ctd p strong { color: #451a03; }
+  @media (prefers-color-scheme: dark) {
+    .ctd { background: rgba(202,138,4,.10); border-color: rgba(234,179,8,.4); }
+    .ctd h2 { color: #fcd34d; } .ctd p { color: #fde68a; } .ctd p strong { color: #fef3c7; }
+  }
+
+  /* DCP goals timeline */
+  .dcp-progress { margin-bottom: 18px; }
+  .dcp-progress-h {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 13px; margin-bottom: 8px;
+  }
+  .dcp-progress-h .lab { color: var(--ink-3); }
+  .dcp-progress-h .val { font-weight: 600; color: var(--ink); font-family: var(--mono); }
+  .dcp-progress-bar { height: 10px; background: var(--surface-3); border-radius: 5px; overflow: hidden; border: 1px solid var(--line); }
+  .dcp-progress-fill { height: 100%; background: var(--loyal-500); border-radius: 5px; transition: width .4s; }
+  @media (prefers-color-scheme: dark) { .dcp-progress-fill { background: #60a5d8; } }
+
+  .dcp-timeline-h {
+    font-size: 11px; color: var(--ink-3); text-transform: uppercase;
+    letter-spacing: .05em; font-weight: 600; margin: 18px 0 10px;
+  }
+  .timeline-row {
+    display: grid; grid-template-columns: 90px 1fr 60px 50px;
+    gap: 10px; align-items: center;
+    padding: 6px 0; font-size: 13px;
+  }
+  .timeline-row .date { color: var(--ink-3); font-family: var(--mono); font-size: 12px; }
+  .timeline-row .bar-track { height: 6px; background: var(--surface-3); border-radius: 3px; overflow: hidden; border: 1px solid var(--line); }
+  .timeline-row .bar-fill { height: 100%; background: var(--loyal-500); }
+  @media (prefers-color-scheme: dark) { .timeline-row .bar-fill { background: #60a5d8; } }
+  .timeline-row .num { font-family: var(--mono); font-size: 12px; text-align: right; color: var(--ink); }
+  .timeline-row .gain { font-family: var(--mono); font-size: 12px; text-align: right; font-weight: 600; }
+  .timeline-row .gain.pos { color: var(--green-600); }
+  .timeline-row .gain.neg { color: var(--red-600); }
+
+  /* Per-goal grid */
+  .goals-table {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  }
+  .goal-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; background: var(--surface-2);
+    border: 1px solid var(--line); border-radius: var(--radius-sm);
+    font-size: 13px;
+  }
+  .goal-row.met { background: #ecfdf5; border-color: #bbf7d0; }
+  .goal-row .check {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 1.5px solid var(--ink-4); flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: transparent;
+  }
+  .goal-row.met .check { background: var(--green-500); border-color: var(--green-500); color: #fff; }
+  .goal-row .goal-num { font-family: var(--mono); color: var(--ink-3); font-size: 11px; flex-shrink: 0; min-width: 16px; }
+  .goal-row .goal-name { flex: 1; color: var(--ink-2); min-width: 0; }
+  .goal-row.met .goal-name { color: var(--ink); font-weight: 500; }
+  @media (prefers-color-scheme: dark) {
+    .goal-row.met { background: rgba(22,163,74,.10); border-color: rgba(22,163,74,.4); }
+  }
+
+  .back-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin: 24px 0 0; padding: 8px 14px;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius-sm); color: var(--ink-2);
+    font-size: 13px; text-decoration: none;
+  }
+  .back-link:hover { background: var(--surface-3); color: var(--ink); text-decoration: none; }
+
+  /* ── Mobile (≤640px) ─────────────────────────────────────────── */
+  @media (max-width: 640px) {
+    .page { padding: 16px; }
+    .topbar { padding: 0 14px; gap: 10px; }
+    .topbar nav { display: none; }
+    .crumbs { font-size: 12px; }
+    .club-header { padding: 18px; gap: 12px; }
+    .club-header h1 { font-size: 22px; }
+    .stats-grid { grid-template-columns: repeat(4, 1fr); }
+    .stat-val { font-size: 16px; }
+    .grid-23 { grid-template-columns: 1fr; }
+    .goals-table { grid-template-columns: 1fr; }
+    .timeline-row { grid-template-columns: 70px 1fr 50px 40px; gap: 6px; font-size: 12px; }
+  }
+  @media (max-width: 420px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><span class="brand-mark">TS</span>Toast Stats</div>
+  <nav>
+    <a href="Toast Stats - Districts.html">Districts</a>
+    <a href="#" class="disabled">Regions</a>
+    <a href="#" class="disabled">Awards</a>
+    <a href="Toast Stats - History.html">History</a>
+    <a href="Toast Stats - Methodology.html">Methodology</a>
+  </nav>
+  <div class="topbar-tools">
+    <button class="icon-btn" aria-label="Help"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M6.2 6.2a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.6.5-.6.9V10"/><circle cx="8" cy="12" r=".4" fill="currentColor"/></svg></button>
+    <span class="avatar">JS</span>
+  </div>
+</div>
+
+<main class="page">
+
+  <!-- Breadcrumbs -->
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="Toast Stats - Districts.html">Districts</a>
+    <span class="sep">›</span>
+    <a href="Toast Stats - District.html">District 57</a>
+    <span class="sep">›</span>
+    <span class="here">Walnut Creek Speakers</span>
+  </nav>
+
+  <!-- Club header -->
+  <header class="club-header">
+    <div class="club-header-l">
+      <div class="club-header-eyebrow">Club #00045123 · Chartered May 1982</div>
+      <h1>Walnut Creek Speakers</h1>
+      <div class="sub">
+        <span>Area 04</span><span class="dot"></span>
+        <span>Division A</span><span class="dot"></span>
+        <span>District 57</span>
+      </div>
+    </div>
+    <div class="club-header-r">
+      <div>
+        <span class="pill thriving">
+          <svg class="ico" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="3"/></svg>
+          Thriving
+        </span>
+      </div>
+      <div>
+        <span class="pill tier distinguished">
+          <svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 8.5l3 3 7-7"/></svg>
+          Distinguished
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Stats grid -->
+  <div class="stats-grid">
+    <div class="stat"><div class="stat-label">Base</div><div class="stat-val">46</div></div>
+    <div class="stat"><div class="stat-label">Current</div><div class="stat-val">68</div></div>
+    <div class="stat"><div class="stat-label">Net Δ</div><div class="stat-val pos">+22</div></div>
+    <div class="stat"><div class="stat-label">DCP Goals</div><div class="stat-val">10/10</div></div>
+    <div class="stat"><div class="stat-label">Oct Renewals</div><div class="stat-val">38</div></div>
+    <div class="stat"><div class="stat-label">Apr Renewals</div><div class="stat-val">41</div></div>
+    <div class="stat"><div class="stat-label">New Members</div><div class="stat-val">17</div></div>
+    <div class="stat"><div class="stat-label">CSP</div><div class="stat-val tick">✓</div></div>
+  </div>
+
+  <!-- 2/3 + 1/3: Membership trend + DCP projection -->
+  <div class="grid-23">
+
+    <!-- Membership trend -->
+    <section class="panel">
+      <div class="panel-h">
+        <h2>
+          <svg class="ico" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 13l3-4 3 2 6-7"/><path d="M10 4h3v3"/></svg>
+          Membership Trend
+        </h2>
+        <span class="panel-meta">Program Year 2025–2026 · 12 data points</span>
+      </div>
+      <div class="panel-body">
+        <div class="chart-stats">
+          <div class="stat-row"><span class="label">Base</span><span class="val">46</span></div>
+          <div class="stat-row"><span class="label">Current</span><span class="val">68</span></div>
+          <div class="stat-row"><span class="label">Change</span><span class="val pos">+22 (+47.8%)</span></div>
+        </div>
+        <svg class="mem-chart" id="mem-chart" viewBox="0 0 800 260" preserveAspectRatio="none"></svg>
+      </div>
+    </section>
+
+    <!-- DCP projection -->
+    <section class="panel">
+      <div class="panel-h">
+        <h2>
+          <svg class="ico" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 13V8M8 13V3M13 13v-7"/></svg>
+          DCP Status
+        </h2>
+      </div>
+      <div class="panel-body">
+        <div class="dcp-tier-row">
+          <div class="dcp-cell">
+            <div class="lab">Current Level</div>
+            <div class="val" style="color: var(--green-600); font-weight: 700;">Distinguished</div>
+          </div>
+          <div class="dcp-cell outlook">
+            <div class="lab">Outlook</div>
+            <div class="val">✓ On Track</div>
+          </div>
+        </div>
+
+        <div class="gap-section">
+          <h3>Gap to Each Tier</h3>
+          <div class="gap-row met"><span class="tier-name">Distinguished</span><span class="gap-val">✓ Met</span></div>
+          <div class="gap-row met"><span class="tier-name">Select</span><span class="gap-val">✓ Met</span></div>
+          <div class="gap-row met"><span class="tier-name">President's</span><span class="gap-val">✓ Met</span></div>
+          <div class="gap-row"><span class="tier-name">Smedley</span><span class="gap-val">2 members</span></div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Close to distinguished (won't show for already-distinguished but kept for spec) -->
+  <div class="ctd" style="display: none;">
+    <svg class="star" width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M10 1l2.5 6 6.5.5-5 4.5L15.5 19 10 15.5 4.5 19 6 12 1 7.5 7.5 7z"/></svg>
+    <div>
+      <h2>Close to Distinguished</h2>
+      <p>This club has already met the required goals. They only need <strong>2 more members</strong> to achieve Distinguished status.</p>
+    </div>
+  </div>
+
+  <!-- DCP Goals -->
+  <section class="panel" style="margin-bottom: 16px;">
+    <div class="panel-h">
+      <h2>
+        <svg class="ico" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><path d="M5 8l2 2 4-4"/></svg>
+        DCP Goals Progress
+      </h2>
+      <span class="panel-meta">10 of 10 goals achieved</span>
+    </div>
+    <div class="panel-body">
+      <div class="dcp-progress">
+        <div class="dcp-progress-h">
+          <span class="lab">Current Progress</span>
+          <span class="val">10 / 10 goals</span>
+        </div>
+        <div class="dcp-progress-bar"><div class="dcp-progress-fill" style="width: 100%;"></div></div>
+      </div>
+
+      <div class="dcp-timeline-h">Goal Achievement Timeline</div>
+
+      <div class="timeline-row"><span class="date">Sep 1, 2025</span><div class="bar-track"><div class="bar-fill" style="width: 30%;"></div></div><span class="num">3/10</span><span class="gain"></span></div>
+      <div class="timeline-row"><span class="date">Nov 1, 2025</span><div class="bar-track"><div class="bar-fill" style="width: 50%;"></div></div><span class="num">5/10</span><span class="gain pos">+2</span></div>
+      <div class="timeline-row"><span class="date">Jan 1, 2026</span><div class="bar-track"><div class="bar-fill" style="width: 70%;"></div></div><span class="num">7/10</span><span class="gain pos">+2</span></div>
+      <div class="timeline-row"><span class="date">Mar 1, 2026</span><div class="bar-track"><div class="bar-fill" style="width: 90%;"></div></div><span class="num">9/10</span><span class="gain pos">+2</span></div>
+      <div class="timeline-row"><span class="date">Apr 26, 2026</span><div class="bar-track"><div class="bar-fill" style="width: 100%;"></div></div><span class="num">10/10</span><span class="gain pos">+1</span></div>
+
+      <div class="dcp-timeline-h">Per-Goal Status</div>
+      <div class="goals-table">
+        <div class="goal-row met"><span class="check">✓</span><span class="goal-num">1</span><span class="goal-name">CC awards</span></div>
+        <div class="goal-row met"><span class="check">✓</span><span class="goal-num">2</span><span class="goal-name">2 more CC awards</span></div>
+        <div class="goal-row met"><span class="check">✓</span><span class="goal-num">3</span><span class="goal-name">AC awards</span></div>
+        <div class="goal-row met"><span class="check">✓</span><span class="goal-num">4</span><span class="goal-name">2 more AC awards</span></div>
+        <div class="goal-row met"><span class="check">✓</span><span class="goal-num">5</span><span class="goal-name">Leadership award</span></div>
+        <div class="goal-row met"><span class="check">✓</span><span class="goal-num">6</span><span class="goal-name">2 more leadership awards</span></div>
+        <div class="goal-row met"><span class="check">✓</span><span class="goal-num">7</span><span class="goal-name">4 new members</span></div>
+        <div class="goal-row met"><span class="check">✓</span><span class="goal-num">8</span><span class="goal-name">4 more new members</span></div>
+        <div class="goal-row met"><span class="check">✓</span><span class="goal-num">9</span><span class="goal-name">CSP submitted</span></div>
+        <div class="goal-row met"><span class="check">✓</span><span class="goal-num">10</span><span class="goal-name">Trained officers</span></div>
+      </div>
+    </div>
+  </section>
+
+  <a class="back-link" href="Toast Stats - District.html">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 13L5 8l5-5"/></svg>
+    Back to District 57
+  </a>
+
+  <footer style="margin-top: 32px; padding: 16px 0 32px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 12.5px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+    <div>Toast Stats · ts.taverns.red · A Red Taverns production</div>
+    <div>Data: <a href="#">dashboards.toastmasters.org</a> · <a href="#">v3.4.1</a></div>
+  </footer>
+
+</main>
+
+<script>
+// Membership chart — simple line chart
+(function(){
+  const data = [
+    {x: 0,   y: 46, label: 'Jul 1'},   // PY start, base
+    {x: 30,  y: 48},
+    {x: 62,  y: 51},
+    {x: 92,  y: 56, label: 'Oct 1'},   // Oct renewals
+    {x: 130, y: 58},
+    {x: 165, y: 60},
+    {x: 200, y: 62},
+    {x: 230, y: 64},
+    {x: 275, y: 67, label: 'Apr 1'},   // Apr renewals
+    {x: 300, y: 68},
+  ];
+  const W = 800, H = 260, PT = 14, PR = 14, PB = 26, PL = 36;
+  const innerW = W - PL - PR, innerH = H - PT - PB;
+  const ys = data.map(d => d.y);
+  const yMin = Math.max(0, Math.min(...ys) - 4), yMax = Math.max(...ys) + 4;
+  const xMax = 365;
+  const xScale = (x) => PL + (x / xMax) * innerW;
+  const yScale = (y) => PT + (1 - (y - yMin) / (yMax - yMin)) * innerH;
+
+  let html = '';
+  // Y grid + labels (4 ticks)
+  for (let i = 0; i <= 3; i++) {
+    const v = yMin + (yMax - yMin) * (i / 3);
+    const y = yScale(v);
+    html += `<line class="grid" x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}"/>`;
+    html += `<text class="axis-text" x="${PL-6}" y="${y+4}" text-anchor="end">${Math.round(v)}</text>`;
+  }
+  // Key date verticals
+  const keys = [
+    {day: 0,   label: 'Jul 1'},
+    {day: 92,  label: 'Oct 1'},
+    {day: 275, label: 'Apr 1'},
+    {day: 365, label: 'Jun 30'},
+  ];
+  keys.forEach(k => {
+    const x = xScale(k.day);
+    html += `<line class="key-line" x1="${x}" y1="${PT}" x2="${x}" y2="${H-PB}"/>`;
+    html += `<text class="key-text" x="${x}" y="${H-10}" text-anchor="middle">${k.label}</text>`;
+  });
+  // Line + area
+  const pts = data.map(d => `${xScale(d.x).toFixed(1)},${yScale(d.y).toFixed(1)}`).join(' ');
+  const areaPts = pts + ` ${xScale(data[data.length-1].x).toFixed(1)},${(PT+innerH).toFixed(1)} ${xScale(data[0].x).toFixed(1)},${(PT+innerH).toFixed(1)}`;
+  html += `<polygon class="area" points="${areaPts}"/>`;
+  html += `<polyline class="line" points="${pts}"/>`;
+  // Dots
+  data.forEach(d => {
+    html += `<circle class="dot" cx="${xScale(d.x).toFixed(1)}" cy="${yScale(d.y).toFixed(1)}" r="3"><title>${d.label || ''}: ${d.y} members</title></circle>`;
+  });
+  document.getElementById('mem-chart').innerHTML = html;
+})();
+</script>
+</body>
+</html>
