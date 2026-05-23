@@ -1422,6 +1422,154 @@
     color: #fcd34d;
   }
 
+  /* ── #620 DCP Goals Progress panel — progress bar + per-goal grid ─────────
+     Pixel-mapped to club-reference.html (.dcp-progress / .goals-table /
+     .goal-row). The reference's prefers-color-scheme dark rules are remapped
+     onto our [data-theme='dark'] scope (R10). The progress fill uses the same
+     dark accent (#8ec5e8) as the membership chart line for page consistency.
+     The Goal Achievement Timeline (reference .timeline-row) is Sprint 4 (#621)
+     and intentionally not styled here. */
+  .dcp-progress {
+    margin-bottom: 18px;
+  }
+
+  .dcp-progress-h {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+
+  .dcp-progress-h__lab {
+    color: var(--ink-3);
+  }
+
+  .dcp-progress-h__val {
+    font-weight: 600;
+    color: var(--ink);
+    font-family: var(--mono);
+  }
+
+  .dcp-progress-bar {
+    height: 10px;
+    background: var(--surface-3);
+    border-radius: 5px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+  }
+
+  .dcp-progress-fill {
+    height: 100%;
+    background: var(--loyal-500);
+    border-radius: 5px;
+    transition: width 0.4s;
+  }
+
+  [data-theme='dark'] .dcp-progress-fill {
+    background: #8ec5e8;
+  }
+
+  /* Per-Goal Status sub-heading (reference .dcp-timeline-h). */
+  .dcp-subhead {
+    font-size: 11px;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    margin: 18px 0 10px;
+  }
+
+  /* 2-col on desktop, 1-col ≤640px (acceptance: mobile grid collapses). */
+  .goals-table {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .goal-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-sm);
+    font-size: 13px;
+  }
+
+  .goal-row.met {
+    background: #ecfdf5;
+    border-color: #bbf7d0;
+  }
+
+  .goal-row .check {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid var(--ink-4);
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    line-height: 1;
+    color: transparent;
+  }
+
+  .goal-row.met .check {
+    background: var(--green-500);
+    border-color: var(--green-500);
+    color: #fff;
+  }
+
+  .goal-row .goal-num {
+    font-family: var(--mono);
+    color: var(--ink-3);
+    font-size: 11px;
+    flex-shrink: 0;
+    min-width: 16px;
+  }
+
+  .goal-row .goal-name {
+    flex: 1;
+    color: var(--ink-2);
+    min-width: 0;
+  }
+
+  .goal-row.met .goal-name {
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  [data-theme='dark'] .goal-row.met {
+    background: rgba(22, 163, 74, 0.1);
+    border-color: rgba(22, 163, 74, 0.4);
+  }
+
+  /* Per-goal grid loading placeholder (shown while the raw record loads). */
+  .dcp-goals-skeleton {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 18px;
+  }
+
+  .dcp-goals-skeleton__row {
+    height: 40px;
+    border-radius: var(--rds-radius-sm);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    opacity: 0.6;
+  }
+
+  @media (max-width: 640px) {
+    .goals-table,
+    .dcp-goals-skeleton {
+      grid-template-columns: 1fr;
+    }
+  }
+
   /* Distinguished Program criteria explainer (#362). Collapsible
      <details> on the Divisions & Areas tab. */
   .ddp-criteria {

@@ -25,12 +25,16 @@ import {
   type ClubDCPProjection,
   type DistinguishedLevel,
 } from '../utils/dcpProjections'
-import { isCloseToDistinguished } from '../utils/closeToDistinguished'
+import { CLOSE_TO_DISTINGUISHED_MAX_MEMBERS } from '../utils/closeToDistinguished'
+import {
+  computeMembersToDistinguished,
+  deriveGoalContext,
+} from '../utils/membersToDistinguished'
 import { LoadingSkeleton } from '../components/LoadingSkeleton'
 import { EmptyState } from '../components/ErrorDisplay'
 import ErrorBoundary from '../components/ErrorBoundary'
 import { useDistrictStatistics } from '../hooks/useMembershipData'
-import { ClubDCPGoalsCard } from '../components/ClubDCPGoalsCard'
+import { ClubDCPGoalsPanel } from '../components/ClubDCPGoalsPanel'
 
 // ── DCP Status Card ────────────────────────────────────────────────────────
 // Re-skinned to club-reference.html (#619): a `.club-panel` with a bordered
@@ -274,6 +278,25 @@ const ClubDetailPage: React.FC = () => {
     return calculateClubProjection(club)
   }, [club])
 
+  // Close-to-Distinguished result (#620). The issue asks us to reuse the
+  // `membersToDistinguished` engine: it returns non-null only when adding
+  // members is the *only* remaining barrier (closing the membership
+  // qualification gap and/or earning the member-based DCP goals 7 & 8). We then
+  // bound it by the calibrated CLOSE_TO_DISTINGUISHED_MAX_MEMBERS threshold so
+  // the banner is encouragement, not noise (preserves the #433 fix that
+  // suppressed far-off clubs). Already-Distinguished clubs return null upstream.
+  const closeToDistinguished = useMemo(() => {
+    if (!club || !projection) return null
+    const result = computeMembersToDistinguished(
+      projection,
+      deriveGoalContext(club)
+    )
+    if (!result) return null
+    return result.membersNeeded <= CLOSE_TO_DISTINGUISHED_MAX_MEMBERS
+      ? result
+      : null
+  }, [club, projection])
+
   // Filter trends by program year
   const programYear = effectiveProgramYear ?? selectedProgramYear
 
@@ -512,42 +535,6 @@ const ClubDetailPage: React.FC = () => {
                 )}
             </div>
           </header>
-
-          {/* Close-to-Distinguished call-out (#366, #433). Renders above the
-              stats grid when the club has met the 5-goal threshold AND is
-              within CLOSE_TO_DISTINGUISHED_MAX_MEMBERS members of qualifying.
-              Beyond that the banner is noise, not encouragement. */}
-          {projection &&
-            isCloseToDistinguished(projection.gapToDistinguished) && (
-              <section
-                role="region"
-                aria-labelledby="close-to-distinguished-heading"
-                className="club-close-to-distinguished"
-              >
-                <span
-                  aria-hidden="true"
-                  className="club-close-to-distinguished__icon"
-                >
-                  ★
-                </span>
-                <div className="club-close-to-distinguished__body">
-                  <h2
-                    id="close-to-distinguished-heading"
-                    className="club-close-to-distinguished__title"
-                  >
-                    Close to Distinguished
-                  </h2>
-                  <p className="club-close-to-distinguished__copy">
-                    This club has met the {latestDcpGoals} DCP goal threshold.{' '}
-                    <strong>
-                      {projection.gapToDistinguished.members} more member
-                      {projection.gapToDistinguished.members > 1 ? 's' : ''}
-                    </strong>{' '}
-                    will lock in Distinguished status.
-                  </p>
-                </div>
-              </section>
-            )}
 
           {/* 8-stat strip (#618) — pixel-perfect to club-reference.html.
               Dedicated `.club-stats-grid` lays out 8 columns on desktop,
@@ -841,105 +828,67 @@ const ClubDetailPage: React.FC = () => {
             </div>
           )}
 
-          {/* DCP Goals Timeline */}
-          {filteredDcpGoalsTrend.length > 0 && (
-            <div className="redesign-panel mb-6">
-              <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2 font-tm-headline">
-                <svg
-                  className="w-5 h-5 text-green-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+          {/* Close-to-Distinguished call-out (#366, #433; repositioned #620).
+              club-reference.html places it directly below the 2/3 + 1/3 trend
+              row and above the DCP Goals panel — moved here from above the
+              stats grid. Trigger + copy now come from the membersToDistinguished
+              engine (see the `closeToDistinguished` memo). */}
+          {closeToDistinguished && (
+            <section
+              role="region"
+              aria-labelledby="close-to-distinguished-heading"
+              className="club-close-to-distinguished"
+            >
+              <span
+                aria-hidden="true"
+                className="club-close-to-distinguished__icon"
+              >
+                ★
+              </span>
+              <div className="club-close-to-distinguished__body">
+                <h2
+                  id="close-to-distinguished-heading"
+                  className="club-close-to-distinguished__title"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
-                  />
-                </svg>
-                DCP Goals Progress
-              </h2>
-
-              {/* Current Progress */}
-              <div className="mb-4">
-                <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="text-gray-600 font-tm-body">
-                    Current Progress
-                  </span>
-                  <span className="font-semibold text-gray-900 font-tm-body">
-                    {latestDcpGoals} / 10 goals
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div
-                    className="bg-tm-loyal-blue h-3 rounded-full transition-all duration-300"
-                    style={{
-                      width: `${(latestDcpGoals / 10) * 100}%`,
-                    }}
-                  ></div>
-                </div>
+                  Close to Distinguished
+                </h2>
+                <p className="club-close-to-distinguished__copy">
+                  {closeToDistinguished.goalsEarned.length === 0 ? (
+                    <>
+                      This club has already met the required goals. They only
+                      need{' '}
+                      <strong>
+                        {closeToDistinguished.membersNeeded} more member
+                        {closeToDistinguished.membersNeeded > 1 ? 's' : ''}
+                      </strong>{' '}
+                      to achieve Distinguished status.
+                    </>
+                  ) : (
+                    <>
+                      <strong>
+                        {closeToDistinguished.membersNeeded} more member
+                        {closeToDistinguished.membersNeeded > 1 ? 's' : ''}
+                      </strong>{' '}
+                      will earn the remaining DCP goal
+                      {closeToDistinguished.goalsEarned.length > 1
+                        ? 's'
+                        : ''}{' '}
+                      and lock in Distinguished status.
+                    </>
+                  )}
+                </p>
               </div>
-
-              {/* Goal Achievement Timeline */}
-              <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2 font-tm-body">
-                Goal Achievement Timeline
-              </h3>
-              <div className="space-y-2">
-                {(() => {
-                  const changed = filteredDcpGoalsTrend.filter(
-                    (point, index, arr) => {
-                      if (index === 0) return true
-                      return (
-                        point.goalsAchieved !== arr[index - 1]?.goalsAchieved
-                      )
-                    }
-                  )
-                  return changed.map((point, index) => {
-                    const prevGoals =
-                      index > 0
-                        ? (changed[index - 1]?.goalsAchieved ?? 0)
-                        : (filteredDcpGoalsTrend[0]?.goalsAchieved ?? 0)
-                    const gained = point.goalsAchieved - prevGoals
-                    return (
-                      <div
-                        key={index}
-                        className="flex items-center gap-3 text-sm"
-                      >
-                        <span className="text-gray-600 w-24 flex-shrink-0 font-tm-body">
-                          {formatDate(point.date)}
-                        </span>
-                        <div className="flex-1 bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-tm-loyal-blue h-2 rounded-full"
-                            style={{
-                              width: `${(point.goalsAchieved / 10) * 100}%`,
-                            }}
-                          ></div>
-                        </div>
-                        <span className="text-gray-900 w-12 text-right font-tm-body">
-                          {point.goalsAchieved}/10
-                        </span>
-                        {index > 0 && (
-                          <span
-                            className={`text-xs w-8 text-right font-medium font-tm-body ${
-                              gained > 0 ? 'text-green-600' : 'text-red-600'
-                            }`}
-                          >
-                            {gained > 0 ? '+' : ''}
-                            {gained}
-                          </span>
-                        )}
-                      </div>
-                    )
-                  })
-                })()}
-              </div>
-            </div>
+            </section>
           )}
 
-          {/* DCP Goals Progress — per-goal breakdown (#242, reordered #265) */}
-          <ClubDCPGoalsCard
+          {/* DCP Goals Progress panel (#620) — pixel-mapped to
+              club-reference.html: a current-progress bar + a flat per-goal
+              status grid. The Goal Achievement Timeline (the panel's middle
+              section) ships separately in Sprint 4 (#621). The bar + meta use
+              the authoritative trend count (always present); the per-goal grid
+              uses the raw clubPerformance record. */}
+          <ClubDCPGoalsPanel
+            goalsAchieved={latestDcpGoals}
             clubRecord={clubRawRecord}
             isLoading={isLoadingStats}
           />

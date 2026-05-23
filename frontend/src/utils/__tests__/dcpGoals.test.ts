@@ -1,9 +1,13 @@
 /**
- * Tests for ClubDCPGoalsCard (#242) — extractDcpGoalProgress utility
+ * Tests for extractDcpGoalProgress (#242).
+ *
+ * Was components/__tests__/ClubDCPGoalsCard.test.ts; that component was replaced
+ * by ClubDCPGoalsPanel in #620, but these tests only ever exercised the
+ * dcpGoals util, so they moved here with it (no behaviour change).
  */
 
 import { describe, it, expect } from 'vitest'
-import { extractDcpGoalProgress } from '../../utils/dcpGoals'
+import { extractDcpGoalProgress } from '../dcpGoals'
 
 describe('extractDcpGoalProgress (#242)', () => {
   it('should extract all 10 goals from a raw CSV record', () => {

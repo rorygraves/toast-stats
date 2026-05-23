@@ -389,7 +389,10 @@ describe('Close-to-Distinguished call-out — ClubDetailPage', () => {
     expect(callout).toHaveClass('club-close-to-distinguished')
   })
 
-  it('positions the call-out before the stats grid', () => {
+  it('positions the call-out between the trend row and the DCP Goals panel (#620)', () => {
+    // #620 moves the call-out from above the stats grid to its
+    // club-reference.html home: directly below the 2/3 + 1/3 trend row and
+    // above the DCP Goals Progress panel.
     setClubOverrides({
       membershipBase: 17,
       membershipTrend: [{ date: '2026-03-15', count: 17 }],
@@ -397,17 +400,23 @@ describe('Close-to-Distinguished call-out — ClubDetailPage', () => {
       distinguishedLevel: 'NotDistinguished',
       aprilRenewals: 0,
     })
-    renderWithRoute()
+    const { container } = renderWithRoute()
 
     const callout = screen.getByRole('region', {
       name: /close to distinguished/i,
     })
-    // #619 added a chart-stats "Base" too; scope to the stats grid.
-    const baseLabel = screen
-      .getAllByText('Base')
-      .find(el => el.closest('.club-stats-grid')) as HTMLElement
-    // DOCUMENT_POSITION_FOLLOWING (4) means callout precedes baseLabel
-    expect(callout.compareDocumentPosition(baseLabel)).toBe(
+    const trendGrid = container.querySelector('.club-trend-grid') as HTMLElement
+    const dcpPanel = screen
+      .getByText('DCP Goals Progress')
+      .closest('.club-panel') as HTMLElement
+
+    // DOCUMENT_POSITION_FOLLOWING (4): the argument node comes after the
+    // reference node in document order.
+    // trendGrid → callout → dcpPanel.
+    expect(trendGrid.compareDocumentPosition(callout)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    )
+    expect(callout.compareDocumentPosition(dcpPanel)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
     )
   })
