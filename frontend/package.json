@@ -11,6 +11,7 @@
     "lint": "eslint . --report-unused-disable-directives --max-warnings 500",
     "test": "vitest --run",
     "test:watch": "vitest",
+    "test:journey:stress": "for i in 1 2 3 4 5; do echo \"=== journey stress run $i/5 ===\" && vitest run src/__tests__/integration/journeys/ --reporter=dot || exit 1; done",
     "typecheck": "tsc --noEmit --skipLibCheck --project tsconfig.json",
     "typecheck:count": "tsc --noEmit --skipLibCheck --project tsconfig.json 2>&1 | grep -E \"error TS[0-9]+\" | wc -l || echo \"0\"",
     "typecheck:errors": "tsc --noEmit --skipLibCheck --project tsconfig.json 2>&1 | grep -E \"error TS[0-9]+\" || echo \"No TypeScript errors found\"",
