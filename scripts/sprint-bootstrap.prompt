@@ -23,9 +23,9 @@ Do these steps in order, and stop if any check fails:
    - Corroborate with a data-path check (fetch the prod CDN snapshot under `https://cdn.taverns.red/snapshots/<date>/`, decompress if gzipped, assert the new field/value lands).
    - Capture full-page screenshots into `/tmp/` and surface them via `SendUserFile` so the operator sees the evidence.
 
-   **If every acceptance criterion verifies:** close the sub-issue with a comment containing the evidence table (selectors, counts, screenshot paths), then edit the epic body to tick the Sprint N checkbox. The runner's existing `PREV_STATE == CLOSED` gate will pick up the next sprint on the next tick.
+   **If every acceptance criterion verifies:** post the evidence-table comment (selectors, counts, screenshot paths), then **apply the `sprint-verified` label** with `gh issue edit {{TARGET_ISSUE}} --add-label sprint-verified --repo taverns-red/toast-stats`. Verify the add succeeded (`gh issue view {{TARGET_ISSUE}} --json labels --jq '.labels[].name' | grep -qx sprint-verified`). Only after the label is confirmed present, close the sub-issue and tick the Sprint N checkbox in the epic body. The runner's gate (`STRICT_GATE=1` in cron) requires both CLOSED *and* the label, so labeling before closing is what unblocks the next tick. If the label add or its verification fails, **stop** — leave the issue open and unlabeled, post the failure as a comment, and let the operator intervene.
 
-   **If any criterion fails:** leave the sub-issue open, post the failure evidence as a comment, and stop. Do not retry — the operator decides whether to re-launch, revert, or hand-fix.
+   **If any criterion fails:** leave the sub-issue open and unlabeled, post the failure evidence as a comment, and stop. Do not retry — the operator decides whether to re-launch, revert, or hand-fix.
 
    Stop after either of those branches.
 

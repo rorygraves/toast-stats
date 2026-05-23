@@ -23,8 +23,13 @@
 #   STRICT_GATE=0|1       Require `sprint-verified` label on predecessor (default 0)
 #   SPRINT_RUNNER_LOG     Path to append-log; used for size-based rotation
 #
-# Crontab line (paste into `crontab -e`, adjust path if your checkout differs):
-#   17,47 9-21 * * *  /Users/rservant/code/toast-stats/scripts/sprint-runner.sh >> /Users/rservant/.toast-stats-sprint-runner.log 2>&1
+# Scheduling: this script is invoked by a launchd LaunchAgent — NOT crontab —
+# at minutes :17 and :47 of every hour. Plist lives at:
+#   ~/Library/LaunchAgents/red.taverns.toast-stats.sprint-runner.plist
+# Environment overrides (EPIC, STRICT_GATE, etc.) are set in that plist's
+# <key>EnvironmentVariables</key> dict. To apply changes:
+#   launchctl unload <plist> && launchctl load <plist>
+#   launchctl list | grep sprint-runner    # verify registered (PID '-' = idle, OK)
 
 set -euo pipefail
 
