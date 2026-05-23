@@ -37,6 +37,11 @@
 #                         At least one of META_EPIC or EPIC must be set.
 #   STRICT_GATE=0|1       Require `sprint-verified` label on predecessor (default 0)
 #   SPRINT_RUNNER_LOG     Path to append-log; used for size-based rotation
+#   WORKTREE_BASE         Parent dir for per-sprint git worktrees
+#                         (default: ~/sprint-worktrees). Each sprint gets
+#                         <WORKTREE_BASE>/sprint-<N>. Isolates the spawned
+#                         session's file edits, branches, and index from the
+#                         operator's primary checkout. See #625.
 #
 # Scheduling: this script is invoked by a launchd LaunchAgent — NOT crontab —
 # at minutes :17 and :47 of every hour. Plist lives at:
@@ -57,6 +62,7 @@ LOCK_DIR="/tmp/toast-stats-sprint.lock"
 BOOTSTRAP_PROMPT="$REPO_DIR/scripts/sprint-bootstrap.prompt"
 LOG_FILE="${SPRINT_RUNNER_LOG:-$HOME/.toast-stats-sprint-runner.log}"
 LOG_ROTATE_BYTES=$((1024 * 1024))
+WORKTREE_BASE="${WORKTREE_BASE:-$HOME/sprint-worktrees}"
 
 # Populated by resolve_active_epic(); used by callers to decide whether
 # auto-tick fires and to print the source in --status.
@@ -71,9 +77,10 @@ case "${1:-}" in
   --dry-run) MODE=dry-run ;;
   --status)  MODE=status ;;
   --reap)    MODE=reap ;;
+  --gc)      MODE=gc ;;
   "") ;;
   *) echo "Unknown arg: $1" >&2
-     echo "Usage: $0 [--dry-run|--status|--reap]" >&2
+     echo "Usage: $0 [--dry-run|--status|--reap|--gc]" >&2
      exit 2 ;;
 esac
 
@@ -265,7 +272,99 @@ reap_screen_session() {
       kill -9 $still 2>/dev/null || true
     fi
   fi
+  # Also remove the worktree (idempotent — no-op if it doesn't exist).
+  remove_sprint_worktree "$n"
   notify "sprint-runner" "Reaped session $session"
+}
+
+# === Worktree helpers (#625) ===
+# Each spawned sprint session runs inside its own git worktree at
+# $WORKTREE_BASE/sprint-<N>. This isolates the session's file edits, branches,
+# and index from the operator's primary checkout. The worktree's branch is
+# whatever the spawned claude checks out — we don't enforce a naming pattern.
+#
+# Reconciliation is convergent: any worktree under $WORKTREE_BASE without a
+# paired screen session is an orphan and gets GC'd. Source of truth is the
+# filesystem + `screen -ls`; no bookkeeping files to corrupt.
+
+create_sprint_worktree() {
+  # Creates $WORKTREE_BASE/sprint-<N> off of main. Returns 0 + echoes path on
+  # success; returns non-zero on failure. Idempotent: if a worktree at the
+  # target path already exists (orphan from previous run), removes it first.
+  local n="$1"
+  local wt="$WORKTREE_BASE/sprint-$n"
+  mkdir -p "$WORKTREE_BASE"
+  if [[ -e "$wt" ]]; then
+    log "Worktree $wt already exists — removing before re-create"
+    git -C "$REPO_DIR" worktree remove --force "$wt" 2>/dev/null \
+      || rm -rf "$wt"
+  fi
+  # Always check that git's metadata isn't holding a stale ref to this path.
+  git -C "$REPO_DIR" worktree prune 2>/dev/null || true
+  # --detach: start at main's HEAD without claiming the main branch (which is
+  # checked out in the operator's primary checkout). Spawned claude will
+  # `git checkout -b feat/...` for its actual work.
+  if ! git -C "$REPO_DIR" worktree add --detach "$wt" main 2>/dev/null; then
+    log "ERROR: failed to create worktree at $wt"
+    return 1
+  fi
+  printf '%s\n' "$wt"
+}
+
+remove_sprint_worktree() {
+  local n="$1"
+  local wt="$WORKTREE_BASE/sprint-$n"
+  [[ -e "$wt" ]] || return 0
+  log "Removing worktree $wt"
+  # --force handles dirty trees; rm -rf is last-resort for filesystem corner cases.
+  git -C "$REPO_DIR" worktree remove --force "$wt" 2>/dev/null \
+    || rm -rf "$wt"
+  git -C "$REPO_DIR" worktree prune 2>/dev/null || true
+}
+
+# Returns a newline-separated list of orphan worktree paths
+# (worktrees under $WORKTREE_BASE with no matching screen session).
+find_orphan_worktrees() {
+  [[ -d "$WORKTREE_BASE" ]] || return 0
+  local wt n
+  for wt in "$WORKTREE_BASE"/sprint-*; do
+    [[ -d "$wt" ]] || continue
+    n="${wt##*/sprint-}"
+    if ! screen -ls 2>&1 | grep -q "sprint-runner-$n"; then
+      printf '%s\n' "$wt"
+    fi
+  done
+}
+
+gc_worktrees() {
+  # Reconcile worktrees with screen sessions. Removes any worktree under
+  # $WORKTREE_BASE without a paired screen-runner-N session. Best-effort
+  # branch cleanup (only deletes branches `git branch -d` accepts — i.e.,
+  # merged into main). Idempotent. Safe to call every tick.
+  [[ -d "$WORKTREE_BASE" ]] || return 0
+  git -C "$REPO_DIR" worktree prune 2>/dev/null || true
+
+  local orphans
+  orphans=$(find_orphan_worktrees)
+  [[ -z "$orphans" ]] && return 0
+
+  local wt n branch
+  while IFS= read -r wt; do
+    n="${wt##*/sprint-}"
+    # Capture the branch the worktree was on, so we can attempt to delete it.
+    branch=$(git -C "$wt" branch --show-current 2>/dev/null || true)
+    log "GC: orphan worktree $wt (no sprint-runner-$n screen) — removing"
+    git -C "$REPO_DIR" worktree remove --force "$wt" 2>/dev/null \
+      || rm -rf "$wt"
+    # Best-effort branch cleanup. `git branch -d` refuses unmerged branches,
+    # which is what we want — operator can inspect crashed-session branches.
+    if [[ -n "$branch" && "$branch" != "main" ]]; then
+      git -C "$REPO_DIR" branch -d "$branch" 2>/dev/null \
+        && log "GC: deleted merged branch $branch" \
+        || log "GC: branch $branch left alone (unmerged or already gone)"
+    fi
+  done <<< "$orphans"
+  git -C "$REPO_DIR" worktree prune 2>/dev/null || true
 }
 
 # === Gate check ===
@@ -326,6 +425,33 @@ mode_status() {
     printf '%s\n' "$sessions" | while read -r s; do log "  - $s"; done
   fi
 
+  # Worktree state (read-only — never removes during --status).
+  if [[ -d "$WORKTREE_BASE" ]]; then
+    local wt_count=0
+    local wt
+    for wt in "$WORKTREE_BASE"/sprint-*; do
+      [[ -d "$wt" ]] && wt_count=$((wt_count + 1))
+    done
+    if (( wt_count == 0 )); then
+      log "Worktrees: (none under $WORKTREE_BASE)"
+    else
+      log "Worktrees under $WORKTREE_BASE:"
+      local orphans
+      orphans=$(find_orphan_worktrees)
+      for wt in "$WORKTREE_BASE"/sprint-*; do
+        [[ -d "$wt" ]] || continue
+        local n="${wt##*/sprint-}"
+        if printf '%s\n' "$orphans" | grep -qx "$wt"; then
+          log "  - $wt  [ORPHAN — no sprint-runner-$n screen; next run will GC]"
+        else
+          log "  - $wt  [active — paired with sprint-runner-$n]"
+        fi
+      done
+    fi
+  else
+    log "Worktrees: $WORKTREE_BASE does not exist yet (no sessions launched)"
+  fi
+
   if ! resolve_active_epic; then
     log "Active epic: (none) — $EPIC_SOURCE"
     return 0
@@ -380,12 +506,25 @@ mode_reap() {
       rm -rf "$LOCK_DIR"
     fi
   fi
+  # And any orphan worktrees.
+  gc_worktrees
+}
+
+mode_gc() {
+  log "MODE: gc"
+  log "Worktree base: $WORKTREE_BASE"
+  gc_worktrees
+  log "GC complete."
 }
 
 mode_run() {
   rotate_log_if_large
   acquire_lock || exit 0
   cd "$REPO_DIR"
+
+  # Reconcile worktrees first — any orphan from a previous tick gets cleaned
+  # up before we potentially launch a new sprint. Cheap idempotent op.
+  gc_worktrees
 
   if ! resolve_active_epic; then
     if (( META_PAUSED == 1 )); then
@@ -484,12 +623,19 @@ mode_run() {
   PROMPT_FILE=$(mktemp -t sprint-runner-prompt.XXXXXX)
   printf '%s' "$prompt" > "$PROMPT_FILE"
 
+  # Create a dedicated worktree for this sprint (#625) so the spawned
+  # session's branches and edits stay isolated from the operator's primary
+  # checkout.
+  local worktree
+  worktree=$(create_sprint_worktree "$target_n") || die "Failed to create worktree for sprint-$target_n"
+  log "Created worktree at $worktree"
+
   local session_name="sprint-runner-$target_n"
   log "Launching detached screen session $session_name"
 
   # `screen -dmS` allocates a PTY so claude's interactive UI works.
   screen -dmS "$session_name" bash -c "
-    cd '$REPO_DIR' && \
+    cd '$worktree' && \
     claude --remote-control 'sprint-$target_n' \"\$(cat '$PROMPT_FILE')\";
     EXIT_CODE=\$?;
     rm -f '$PROMPT_FILE';
@@ -526,5 +672,6 @@ mode_run() {
 case "$MODE" in
   status)      mode_status ;;
   reap)        mode_reap ;;
+  gc)          mode_gc ;;
   run|dry-run) mode_run ;;
 esac
