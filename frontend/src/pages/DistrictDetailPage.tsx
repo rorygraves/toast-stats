@@ -33,6 +33,7 @@ import type { MultiYearPaymentData } from '../hooks/usePaymentsTrend'
 import { extractDivisionPerformance } from '../utils/extractDivisionPerformance'
 import { DistrictOverview } from '../components/DistrictOverview'
 import { NotableDatesSection } from '../components/NotableDatesSection'
+import { LongestServingClubsLeaderboard } from '../components/LongestServingClubsLeaderboard'
 import { DistinguishedDistrictTrophyCase } from '../components/DistinguishedDistrictTrophyCase'
 import { useCompetitiveAwards } from '../hooks/useCompetitiveAwards'
 
@@ -571,6 +572,12 @@ const DistrictDetailPageInner: React.FC = () => {
                     {...(effectiveProgramYear?.year !== undefined && {
                       programYearStart: effectiveProgramYear.year,
                     })}
+                  />
+
+                  {/* Longest-serving clubs leaderboard (#449) */}
+                  <LongestServingClubsLeaderboard
+                    clubs={allClubs}
+                    {...(districtId !== undefined && { districtId })}
                   />
                 </section>
               )}
