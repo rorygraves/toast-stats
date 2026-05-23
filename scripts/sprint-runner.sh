@@ -710,7 +710,7 @@ mode_run() {
     exit 0
   fi
 
-  log "Launched. Attach: screen -r $session_name. Or pair via claude.ai Remote Control as 'sprint-$target_n'."
+  log "Launched. Attach: screen -r $session_name. Or pair via claude.ai Remote Control as 'sprint-$target_issue'."
   notify "sprint-runner" "Launched Sprint $target_n (#$target_issue)"
   break  # cascade: one launch per tick is the cap (#627)
   done
