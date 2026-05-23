@@ -526,6 +526,23 @@ mode_run() {
   # up before we potentially launch a new sprint. Cheap idempotent op.
   gc_worktrees
 
+  # Cascade (#627): after an epic auto-ticks complete, re-resolve and try to
+  # launch the next epic's first sprint in the same tick. Capped to prevent
+  # runaway loops on a malformed META_EPIC.
+  local max_cascades=8
+  local cascade=0
+  while (( cascade < max_cascades )); do
+    cascade=$((cascade + 1))
+
+    # Reset epic resolution between iterations so resolve_active_epic re-reads
+    # META_EPIC. Only reset for META-resolved sources — a pinned EPIC env
+    # never cascades (it bails on the no-auto-advance branch).
+    if [[ "$EPIC_SOURCE" == "resolved via"* ]]; then
+      EPIC=""
+    fi
+    EPIC_SOURCE=""
+    META_PAUSED=0
+
   if ! resolve_active_epic; then
     if (( META_PAUSED == 1 )); then
       log "Paused: $EPIC_SOURCE — skipping tick."
@@ -582,7 +599,10 @@ mode_run() {
     log "Epic #$EPIC has no unchecked sprints — complete."
     # Auto-advance ONLY when EPIC was resolved from META_EPIC (not pinned).
     if [[ "$EPIC_SOURCE" == "resolved via"* ]]; then
-      advance_meta_epic "$EPIC" || log "Auto-tick failed; next tick will retry."
+      if advance_meta_epic "$EPIC"; then
+        continue  # cascade: re-resolve next epic in same tick (#627)
+      fi
+      log "Auto-tick failed; next tick will retry."
     else
       log "EPIC is $EPIC_SOURCE — skipping auto-advance (operator must tick META_EPIC manually if applicable)."
     fi
@@ -666,6 +686,12 @@ mode_run() {
 
   log "Launched. Attach: screen -r $session_name. Or pair via claude.ai Remote Control as 'sprint-$target_n'."
   notify "sprint-runner" "Launched Sprint $target_n (#$target_issue)"
+  break  # cascade: one launch per tick is the cap (#627)
+  done
+
+  if (( cascade >= max_cascades )); then
+    log "WARNING: cascade limit ($max_cascades) reached without progress — possible runaway. Investigate META_EPIC #${META_EPIC:-?}."
+  fi
 }
 
 # === Dispatch ===
