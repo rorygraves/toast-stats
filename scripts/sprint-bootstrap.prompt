@@ -1,4 +1,4 @@
-You were launched by `scripts/sprint-runner.sh` (a local cron job) to execute one sprint from epic #574. Remote Control is enabled on this session as `sprint-{{SPRINT_N}}` so the operator can monitor / intervene from claude.ai.
+You were launched by `scripts/sprint-runner.sh` (a local launchd job) to execute one sprint from epic #{{EPIC}}. Remote Control is enabled on this session as `sprint-{{SPRINT_N}}` so the operator can monitor / intervene from claude.ai.
 
 Target this run:
 - Sprint {{SPRINT_N}}, sub-issue **#{{TARGET_ISSUE}}**
@@ -13,7 +13,7 @@ Do these steps in order, and stop if any check fails:
    - `curl -sfI https://ts.taverns.red >/dev/null && echo prod-up` — confirm production is reachable.
    - If either check fails, STOP. Do not proceed; report to the operator via Remote Control and exit.
 
-3. **Re-read the epic** with `gh issue view 574 --json body` and confirm Sprint {{SPRINT_N}} (#{{TARGET_ISSUE}}) is still the first unchecked sprint. If the epic has been edited (e.g. the operator manually advanced something), trust the epic over this prompt and re-pick the correct target.
+3. **Re-read the epic** with `gh issue view {{EPIC}} --json body` and confirm Sprint {{SPRINT_N}} (#{{TARGET_ISSUE}}) is still the first unchecked sprint. If the epic has been edited (e.g. the operator manually advanced something), trust the epic over this prompt and re-pick the correct target.
 
 4. **Run the sprint skill** for the target: invoke `/sprint` with issue `#{{TARGET_ISSUE}}` as the input. Follow the sprint skill's full workflow (Red / Green / Refactor / Verify per CLAUDE.md), including filing the PR and watching CI.
 

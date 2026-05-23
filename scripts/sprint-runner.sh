@@ -1,10 +1,20 @@
 #!/usr/bin/env bash
-# scripts/sprint-runner.sh — cron-driven sprint runner for epic #574 (#575, #603).
+# scripts/sprint-runner.sh — autonomous sprint runner (#575, #603, #604, #605).
 #
-# Reads the checklist in GitHub issue #EPIC, finds the first unchecked
-# Sprint N, and — if Sprint N-1's sub-issue is CLOSED — launches a
-# fresh `claude --remote-control` session inside a detached `screen`
-# to execute /sprint for that sprint.
+# Three-level hierarchy:
+#   META_EPIC (roadmap of epics)  →  EPIC (sprint checklist)  →  Sprint sub-issue
+#
+# On each tick the runner:
+#   1. Resolves the active EPIC from the META_EPIC's checklist (or honors a
+#      pinned EPIC env var override).
+#   2. Reads the active epic's sprint checklist, finds the first unchecked
+#      Sprint N, and — if Sprint N-1's sub-issue is CLOSED — launches a
+#      fresh `claude --remote-control` session inside detached `screen` to
+#      execute /sprint for that sprint.
+#   3. If the active epic has no unchecked sprints, the runner auto-ticks
+#      that epic's line in the META_EPIC and notifies. The next tick picks
+#      the next epic. Auto-tick only fires when EPIC was resolved from
+#      META_EPIC (not when pinned via env).
 #
 # The CLOSED gate is the handshake between sessions: it means
 # "the previous session self-verified on ts.taverns.red and closed its
@@ -12,14 +22,19 @@
 # a close was premature. When STRICT_GATE=1, the gate additionally
 # requires the predecessor issue to carry a `sprint-verified` label.
 #
+# Pause autonomy: apply `runner-paused` label to the META_EPIC. Remove to resume.
+#
 # Usage:
 #   scripts/sprint-runner.sh             # normal run
 #   scripts/sprint-runner.sh --dry-run   # report what it would launch, no side effects
 #   scripts/sprint-runner.sh --status    # read-only state report (no lock)
 #   scripts/sprint-runner.sh --reap      # kill stuck sprint-runner screen sessions
 #
-# Environment overrides:
-#   EPIC=574              GitHub issue number of the roadmap epic
+# Environment:
+#   META_EPIC=<n>         GitHub issue # of the meta-epic (roadmap of epics).
+#   EPIC=<n>              Pin a specific epic; bypasses META_EPIC resolution
+#                         AND auto-advance. Use for testing or temporary overrides.
+#                         At least one of META_EPIC or EPIC must be set.
 #   STRICT_GATE=0|1       Require `sprint-verified` label on predecessor (default 0)
 #   SPRINT_RUNNER_LOG     Path to append-log; used for size-based rotation
 #
@@ -35,12 +50,18 @@ set -euo pipefail
 
 # === Configuration ===
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-EPIC="${EPIC:-574}"
+META_EPIC="${META_EPIC:-}"
+EPIC="${EPIC:-}"
 STRICT_GATE="${STRICT_GATE:-0}"
 LOCK_DIR="/tmp/toast-stats-sprint.lock"
 BOOTSTRAP_PROMPT="$REPO_DIR/scripts/sprint-bootstrap.prompt"
 LOG_FILE="${SPRINT_RUNNER_LOG:-$HOME/.toast-stats-sprint-runner.log}"
 LOG_ROTATE_BYTES=$((1024 * 1024))
+
+# Populated by resolve_active_epic(); used by callers to decide whether
+# auto-tick fires and to print the source in --status.
+EPIC_SOURCE=""
+META_PAUSED=0
 
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 
@@ -129,6 +150,94 @@ find_first_unchecked_sprint() {
   printf '%s %s\n' "$n" "$issue"
 }
 
+# === META_EPIC helpers ===
+# Format: `- [ ] **Epic <anything>** — #N`
+find_first_unchecked_epic() {
+  local body="$1" line
+  line=$(printf '%s\n' "$body" | grep -m1 -E '^- \[ \] \*\*Epic[^*]*\*\* — #[0-9]+' || true)
+  [[ -z "$line" ]] && return 0
+  printf '%s\n' "$line" | grep -oE '#[0-9]+' | head -1 | tr -d '#'
+}
+
+# Resolve which epic the runner should work on this tick.
+# Sets globals: EPIC, EPIC_SOURCE, META_PAUSED.
+# Returns 0 if EPIC is set and runnable; 1 with explanation in EPIC_SOURCE otherwise.
+resolve_active_epic() {
+  EPIC_SOURCE=""
+  META_PAUSED=0
+
+  if [[ -n "$EPIC" ]]; then
+    EPIC_SOURCE="pinned via EPIC env"
+    return 0
+  fi
+
+  if [[ -z "$META_EPIC" ]]; then
+    EPIC_SOURCE="ERROR: neither EPIC nor META_EPIC env set"
+    return 1
+  fi
+
+  local labels
+  labels=$(gh issue view "$META_EPIC" --json labels --jq '.labels[].name' 2>/dev/null || true)
+  if printf '%s\n' "$labels" | grep -qx 'runner-paused'; then
+    META_PAUSED=1
+    EPIC_SOURCE="META_EPIC #$META_EPIC has runner-paused label"
+    return 1
+  fi
+
+  local meta_body
+  meta_body=$(gh issue view "$META_EPIC" --json body --jq .body 2>/dev/null) || {
+    EPIC_SOURCE="ERROR: gh issue view #$META_EPIC failed"
+    return 1
+  }
+
+  local found
+  found=$(find_first_unchecked_epic "$meta_body")
+  if [[ -z "$found" ]]; then
+    EPIC_SOURCE="META_EPIC #$META_EPIC has no unchecked epic line — roadmap complete (or empty)"
+    return 1
+  fi
+
+  EPIC="$found"
+  EPIC_SOURCE="resolved via META_EPIC #$META_EPIC"
+  return 0
+}
+
+# Tick the active epic's line in the META_EPIC body. Idempotent: if the line
+# is already ticked or missing, returns non-zero without making a write.
+# Uses a non-digit boundary (`#N([^0-9]|$)`) so #1 doesn't match #10/#100.
+advance_meta_epic() {
+  local epic="$1"
+  [[ -n "$META_EPIC" ]] || { log "advance_meta_epic: META_EPIC unset"; return 1; }
+  log "Auto-ticking Epic #$epic in META_EPIC #$META_EPIC"
+
+  local body
+  body=$(gh issue view "$META_EPIC" --json body --jq .body 2>/dev/null) || {
+    log "ERROR: failed to fetch META_EPIC body"
+    return 1
+  }
+
+  local new_body
+  new_body=$(printf '%s' "$body" | sed -E '/^- \[ \] \*\*Epic[^*]*\*\* — #'"${epic}"'([^0-9]|$)/ s/^- \[ \]/- [x]/')
+
+  if [[ "$body" == "$new_body" ]]; then
+    log "WARNING: META_EPIC body unchanged — no matching unticked epic line for #$epic"
+    return 1
+  fi
+
+  local tmp
+  tmp=$(mktemp -t meta-epic-body.XXXXXX)
+  printf '%s' "$new_body" > "$tmp"
+  if gh issue edit "$META_EPIC" --body-file "$tmp" >/dev/null 2>&1; then
+    log "Auto-ticked Epic #$epic in META_EPIC #$META_EPIC"
+    notify "sprint-runner" "Advanced past Epic #$epic"
+    rm -f "$tmp"
+    return 0
+  fi
+  log "ERROR: gh issue edit #$META_EPIC failed"
+  rm -f "$tmp"
+  return 1
+}
+
 # === Screen session helpers ===
 list_sprint_screens() {
   # macOS `screen -ls` writes to stderr → 2>&1.
@@ -194,7 +303,7 @@ check_gate() {
 mode_status() {
   log "MODE: status (read-only, no lock)"
   log "Repo: $REPO_DIR"
-  log "Epic: #$EPIC  Strict gate: $STRICT_GATE"
+  log "META_EPIC: ${META_EPIC:-(unset)}   EPIC env: ${EPIC:-(unset)}   Strict gate: $STRICT_GATE"
 
   if [[ -d "$LOCK_DIR" ]]; then
     local lpid
@@ -217,13 +326,19 @@ mode_status() {
     printf '%s\n' "$sessions" | while read -r s; do log "  - $s"; done
   fi
 
+  if ! resolve_active_epic; then
+    log "Active epic: (none) — $EPIC_SOURCE"
+    return 0
+  fi
+  log "Active epic: #$EPIC ($EPIC_SOURCE)"
+
   local body
   body=$(read_epic_body) || { log "Failed to read epic body"; return 1; }
 
   local pair
   pair=$(find_first_unchecked_sprint "$body")
   if [[ -z "$pair" ]]; then
-    log "Target: (none — roadmap complete)"
+    log "Target: (none — epic #$EPIC complete; next run will auto-advance if META_EPIC-resolved)"
     return 0
   fi
   local n issue
@@ -272,6 +387,19 @@ mode_run() {
   acquire_lock || exit 0
   cd "$REPO_DIR"
 
+  if ! resolve_active_epic; then
+    if (( META_PAUSED == 1 )); then
+      log "Paused: $EPIC_SOURCE — skipping tick."
+      exit 0
+    fi
+    if [[ "$EPIC_SOURCE" == *"roadmap complete"* ]]; then
+      log "$EPIC_SOURCE"
+      exit 0
+    fi
+    die "$EPIC_SOURCE"
+  fi
+  log "Active epic: #$EPIC ($EPIC_SOURCE)"
+
   local body
   body=$(read_epic_body) || die "gh issue view #$EPIC failed"
 
@@ -302,7 +430,13 @@ mode_run() {
   local pair
   pair=$(find_first_unchecked_sprint "$body")
   if [[ -z "$pair" ]]; then
-    log "No unchecked sprints in epic #$EPIC. Roadmap complete."
+    log "Epic #$EPIC has no unchecked sprints — complete."
+    # Auto-advance ONLY when EPIC was resolved from META_EPIC (not pinned).
+    if [[ "$EPIC_SOURCE" == "resolved via"* ]]; then
+      advance_meta_epic "$EPIC" || log "Auto-tick failed; next tick will retry."
+    else
+      log "EPIC is $EPIC_SOURCE — skipping auto-advance (operator must tick META_EPIC manually if applicable)."
+    fi
     exit 0
   fi
   local target_n target_issue
@@ -332,6 +466,7 @@ mode_run() {
     -e "s|{{SPRINT_N}}|$target_n|g" \
     -e "s|{{TARGET_ISSUE}}|$target_issue|g" \
     -e "s|{{PREV_ISSUE}}|${prev_issue:-none}|g" \
+    -e "s|{{EPIC}}|$EPIC|g" \
     "$BOOTSTRAP_PROMPT")
 
   # PROMPT_FILE is exported into the trap via cleanup() so it's removed
