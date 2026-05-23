@@ -787,9 +787,17 @@
     gap: 12px;
     padding: 24px 28px;
     margin-bottom: 20px;
+    /* #618 — gradient per club-reference.html (was a flat fill). --loyal-500
+       and --loyal-600 are NOT dark-overridden in redesign.css, so the hero
+       stays loyal-blue in both themes (acceptance criterion). */
     background-color: var(--loyal-500);
+    background-image: linear-gradient(
+      135deg,
+      var(--loyal-500) 0%,
+      var(--loyal-600) 100%
+    );
     color: #ffffff;
-    border-radius: var(--rds-radius-lg);
+    border-radius: var(--rds-radius-md);
     box-shadow: var(--rds-shadow);
   }
 
@@ -813,15 +821,15 @@
     font-size: 11px;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.78);
+    color: rgba(255, 255, 255, 0.7);
   }
 
   .club-hero__title {
     margin: 8px 0 6px;
     font-family: var(--serif);
     font-weight: 800;
-    font-size: 30px;
-    line-height: 1.1;
+    font-size: 28px;
+    line-height: 1.15;
     letter-spacing: -0.015em;
     color: #ffffff;
   }
@@ -832,8 +840,8 @@
     flex-wrap: wrap;
     gap: 10px;
     font-family: var(--sans);
-    font-size: 13px;
-    color: rgba(255, 255, 255, 0.85);
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.78);
   }
 
   .club-hero__sub-divider {
@@ -866,6 +874,16 @@
     height: 8px;
     border-radius: 50%;
     flex-shrink: 0;
+  }
+
+  /* #618 — match the reference Thriving pill: green text on the white pill,
+     paired with the green dot (colour is never the only signal). The pill
+     background is a fixed white in BOTH themes, so the text uses the literal
+     reference green (#0d6b2f) rather than --green-600 — the dark-mode token
+     lifts to #22c55e, which drops below 4.5:1 on white. */
+  .club-hero__pill--thriving,
+  .club-hero__pill--healthy {
+    color: #0d6b2f;
   }
 
   .club-hero__pill--thriving .club-hero__pill-dot {
@@ -960,6 +978,99 @@
   .club-close-to-distinguished__copy strong {
     color: var(--ink);
     font-weight: 600;
+  }
+
+  /* 8-stat strip (#618) — pixel-perfect to club-reference.html. 8 columns
+     on desktop, 4 at ≤640px, 2 at ≤420px. Surface cards with hairline
+     borders; values in the display face. All colours via tokens so the
+     dark-mode cascade (redesign.css) applies without per-element overrides. */
+  .club-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .club-stat {
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-sm);
+    padding: 12px 14px;
+    text-align: center;
+  }
+
+  .club-stat__label {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+  }
+
+  .club-stat__val {
+    font-family: var(--serif);
+    font-weight: 800;
+    font-size: 20px;
+    line-height: 1;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+
+  .club-stat__val--pos,
+  .club-stat__val--tick {
+    color: var(--green-600);
+  }
+
+  .club-stat__val--neg,
+  .club-stat__val--cross {
+    color: var(--red-600);
+  }
+
+  .club-stat__val--muted {
+    color: var(--ink-4);
+  }
+
+  @media (max-width: 640px) {
+    .club-stats-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .club-stat__val {
+      font-size: 16px;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .club-stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  /* Bottom back-link (#618) — neutral surface chip, anchor (not button). */
+  .club-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 24px;
+    padding: 8px 14px;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-sm);
+    color: var(--ink-2);
+    font-family: var(--sans);
+    font-size: 13px;
+    text-decoration: none;
+  }
+
+  .club-back-link:hover {
+    background-color: var(--surface-3);
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .club-back-link__icon {
+    flex-shrink: 0;
   }
 
   /* Distinguished Program criteria explainer (#362). Collapsible

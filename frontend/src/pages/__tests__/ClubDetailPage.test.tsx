@@ -171,28 +171,43 @@ describe('ClubDetailPage (#208)', () => {
     )
   })
 
-  it('no longer renders a redundant bottom "Back to District" button (#577)', () => {
+  it('renders a bottom "Back to District" link (#618 redesign re-adds it as an anchor)', () => {
     renderWithRoute()
 
-    // The breadcrumb supersedes the old bottom button — one back
-    // affordance, not two. The District 61 crumb remains the back path.
-    const backButtons = screen.queryAllByRole('button', {
+    // #577 removed the old bottom *button* as redundant with the breadcrumb.
+    // The #618 redesign (operator-confirmed, pixel-perfect to
+    // club-reference.html) reintroduces a bottom back affordance — but as an
+    // anchor link (reference uses a `.back-link` <a>), not a button. The
+    // breadcrumb's District crumb still provides top-of-page back nav.
+    const backLink = screen.getByRole('link', {
       name: /Back to District 61/i,
     })
-    expect(backButtons).toHaveLength(0)
+    expect(backLink).toHaveAttribute('href', '/district/61')
+
+    // Still no *button* affordance — the reference is an anchor, and we keep
+    // a single styled treatment.
+    expect(
+      screen.queryAllByRole('button', { name: /Back to District 61/i })
+    ).toHaveLength(0)
   })
 
   it('renders membership stats grid with correct net change', () => {
     renderWithRoute()
 
-    // Stats labels
+    // Stats labels — #618 renames "Net Change" → "Net Δ" to match the
+    // pixel-perfect club-reference.html stat strip.
     expect(screen.getByText('Base')).toBeInTheDocument()
     expect(screen.getByText('Current')).toBeInTheDocument()
-    expect(screen.getByText('Net Change')).toBeInTheDocument()
+    expect(screen.getByText('Net Δ')).toBeInTheDocument()
     expect(screen.getByText('DCP Goals')).toBeInTheDocument()
 
-    // Net Change = -5 (appears in stats grid + chart)
+    // Net Δ = -5 (appears in stats grid + chart)
     expect(screen.getAllByText('-5').length).toBeGreaterThanOrEqual(1)
+
+    // The 8-stat strip uses the dedicated responsive grid class (#618):
+    // 8-col desktop → 4-col ≤640px → 2-col ≤420px (enforced in CSS).
+    const grid = screen.getByText('Base').closest('.club-stats-grid')
+    expect(grid).not.toBeNull()
   })
 
   it('renders not found state for invalid club ID', () => {

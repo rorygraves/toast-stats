@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { useDistrictAnalytics, ClubTrend } from '../hooks/useDistrictAnalytics'
 import { useDistricts } from '../hooks/useDistricts'
 import { useUrlProgramYear } from '../hooks/useUrlProgramYear'
@@ -409,7 +409,10 @@ const ClubDetailPage: React.FC = () => {
   return (
     <ErrorBoundary>
       <div className="min-h-screen">
-        <div className="container mx-auto px-4 py-4 sm:py-8">
+        {/* #618 — page container locked to the reference 1280px max-width
+            with 24px padding (16px ≤640px), replacing Tailwind's `container`
+            (which widens to 1536px at 2xl). */}
+        <div className="mx-auto max-w-[1280px] px-4 py-4 sm:px-6 sm:py-6">
           {/* Breadcrumbs (#577) — leading 'Home' crumb removed per #442
               (the AppShell's 'Districts' active nav is the top-level
               signal). Trail: District › Clubs › <club>. The Clubs crumb
@@ -561,25 +564,43 @@ const ClubDetailPage: React.FC = () => {
               </section>
             )}
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          {/* 8-stat strip (#618) — pixel-perfect to club-reference.html.
+              Dedicated `.club-stats-grid` lays out 8 columns on desktop,
+              collapsing to 4 (≤640px) then 2 (≤420px) in CSS. Stat value
+              colour is carried by a `--pos/--neg/--muted/--tick/--cross`
+              modifier so the cross-cutting dark-mode override lives in CSS
+              (R10), not inline Tailwind classes. Net Δ and CSP keep their
+              sign / ✓✗ glyph so colour is never the only signal. */}
+          <div className="club-stats-grid">
             {[
               { label: 'Base', value: baseMembership },
               { label: 'Current', value: latestMembership },
               {
-                label: 'Net Change',
+                label: 'Net Δ',
                 value: `${membershipChange > 0 ? '+' : ''}${membershipChange}`,
-                color:
+                valClass:
                   membershipChange > 0
-                    ? 'text-green-600'
+                    ? 'pos'
                     : membershipChange < 0
-                      ? 'text-red-600'
+                      ? 'neg'
                       : '',
               },
               { label: 'DCP Goals', value: `${latestDcpGoals}/10` },
-              { label: 'Oct Renewals', value: club.octoberRenewals ?? '—' },
-              { label: 'Apr Renewals', value: club.aprilRenewals ?? '—' },
-              { label: 'New Members', value: club.newMembers ?? '—' },
+              {
+                label: 'Oct Renewals',
+                value: club.octoberRenewals ?? '—',
+                valClass: club.octoberRenewals === undefined ? 'muted' : '',
+              },
+              {
+                label: 'Apr Renewals',
+                value: club.aprilRenewals ?? '—',
+                valClass: club.aprilRenewals === undefined ? 'muted' : '',
+              },
+              {
+                label: 'New Members',
+                value: club.newMembers ?? '—',
+                valClass: club.newMembers === undefined ? 'muted' : '',
+              },
               {
                 label: 'CSP',
                 value:
@@ -588,12 +609,12 @@ const ClubDetailPage: React.FC = () => {
                     : club.cspSubmitted
                       ? '✓'
                       : '✗',
-                color:
+                valClass:
                   club.cspSubmitted === undefined
-                    ? 'text-gray-400'
+                    ? 'muted'
                     : club.cspSubmitted
-                      ? 'text-green-600'
-                      : 'text-red-600',
+                      ? 'tick'
+                      : 'cross',
                 title:
                   club.cspSubmitted === undefined
                     ? 'CSP data not available for this program year'
@@ -604,15 +625,15 @@ const ClubDetailPage: React.FC = () => {
             ].map(stat => (
               <div
                 key={stat.label}
-                className="bg-white rounded-lg shadow-sm p-3 border border-gray-200 text-center"
+                className="club-stat"
                 title={'title' in stat ? (stat.title as string) : undefined}
               >
-                <div className="text-xs text-gray-500 font-tm-body mb-1">
-                  {stat.label}
-                </div>
+                <div className="club-stat__label">{stat.label}</div>
                 <div
-                  className={`text-lg font-semibold font-tm-body tabular-nums ${
-                    'color' in stat && stat.color ? stat.color : 'text-gray-900'
+                  className={`club-stat__val tabular-nums${
+                    'valClass' in stat && stat.valClass
+                      ? ` club-stat__val--${stat.valClass}`
+                      : ''
                   }`}
                 >
                   {stat.value}
@@ -918,9 +939,30 @@ const ClubDetailPage: React.FC = () => {
             isLoading={isLoadingStats}
           />
 
-          {/* Bottom "Back to District" button removed (#577) — the
-              breadcrumb at the top supersedes it. One back affordance,
-              not two. */}
+          {/* Bottom back-link (#618) — the redesign reintroduces a footer
+              back affordance as an anchor (reference `.back-link` <a>), so a
+              user who has scrolled the full page can return without scrolling
+              back up to the breadcrumb. #577 removed the old *button*; this is
+              a single styled link, not a duplicate button. */}
+          <Link to={`/district/${districtId}`} className="club-back-link">
+            <svg
+              className="club-back-link__icon"
+              width="14"
+              height="14"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.8}
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M10 13L5 8l5-5"
+              />
+            </svg>
+            Back to {districtName}
+          </Link>
         </div>
       </div>
     </ErrorBoundary>
