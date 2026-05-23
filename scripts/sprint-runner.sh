@@ -486,11 +486,26 @@ mode_run() {
     echo \"[sprint-runner] claude exited with code \$EXIT_CODE — session ending.\"
   "
 
-  # Verify the session actually came up. screen -dmS exits 0 even on PTY
-  # allocation failure on some macOS configurations.
-  sleep 1
-  if ! screen -ls 2>&1 | grep -q "$session_name"; then
-    die "screen -dmS reported success but session $session_name not present in screen -ls"
+  # Verify the session actually came up. `screen -dmS` exits 0 even on PTY
+  # allocation failure on some macOS configurations. The screen daemon can
+  # take up to ~5s to register its socket in the .screen directory after
+  # forking, so retry rather than checking once. If still not visible,
+  # warn-and-exit-0 rather than die — the inner `claude` may have argv
+  # captured from `$(cat $PROMPT_FILE)` already; killing the parent script
+  # via `die` doesn't kill the screen, so reporting a hard error is misleading
+  # and clutters launchd's last-exit-code with false alarms.
+  local verified=0
+  for _ in 1 2 3 4 5; do
+    if screen -ls 2>&1 | grep -q "$session_name"; then
+      verified=1
+      break
+    fi
+    sleep 1
+  done
+  if (( verified == 0 )); then
+    log "WARNING: $session_name not visible in screen -ls after 5s — leaving alone. Next tick will detect a live session or relaunch fresh."
+    notify "sprint-runner" "Sprint $target_n launch unverifiable — check screen -ls"
+    exit 0
   fi
 
   log "Launched. Attach: screen -r $session_name. Or pair via claude.ai Remote Control as 'sprint-$target_n'."
