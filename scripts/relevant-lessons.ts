@@ -15,13 +15,14 @@
 
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import {
   parseRelevantLessons,
   resolveRelevantLessons,
 } from './lib/relevantLessons'
 
-const REPO_ROOT = join(__dirname, '..')
+const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
 function readIssueBody(arg: string): string {
   if (arg === '--stdin') return readFileSync(0, 'utf8')
@@ -70,4 +71,7 @@ function main(): void {
   }
 }
 
-main()
+// Only run when invoked as a script, not when imported by a test.
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  main()
+}
