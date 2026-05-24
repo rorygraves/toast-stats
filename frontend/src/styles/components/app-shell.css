@@ -1991,7 +1991,10 @@
     font-family: var(--serif);
     font-weight: 700;
     font-size: 14px;
-    color: var(--loyal-500);
+    /* --link, not --loyal-500: --loyal-500 (#004165) has no dark remap and
+       renders ~1.6:1 on the dark surface. --link is loyal-500 in light
+       (identical) and #60a5d8 in dark (#608, R10). */
+    color: var(--link);
     text-decoration: none;
   }
 
@@ -2019,7 +2022,9 @@
 
   .awards-race-card__progress-fill {
     height: 100%;
-    background-color: var(--loyal-500);
+    /* --link (dark-remapping) — see leader-link note. --loyal-500 was a
+       near-invisible navy fill on the dark track (#608). */
+    background-color: var(--link);
     border-radius: 2px;
     transition: width 400ms ease;
   }
