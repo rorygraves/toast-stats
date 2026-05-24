@@ -225,6 +225,16 @@ export interface DistinguishedDistrictStatus {
    * to deriving it from the rankings row.
    */
   netClubGrowth?: number
+  /**
+   * Absolute counts remaining to the *minimum* (Distinguished) tier for
+   * the three headline metrics (#686, epic #683 F4). `max(0, target −
+   * current)` against the Distinguished tier thresholds; 0 means that
+   * metric's minimum is met. Optional to tolerate CDN snapshots written
+   * before the fields existed — consumers derive from the rankings row.
+   */
+  paymentsRemaining?: number
+  paidClubsRemaining?: number
+  distinguishedClubsRemaining?: number
 }
 
 /**

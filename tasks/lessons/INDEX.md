@@ -61,3 +61,4 @@
 - **100** [deps, vite, rolldown, build, ci, verification] — Vite 8 is Rolldown; verify breakage empirically, not from the migration guide (#613, #597)
 - **101** [deps, eslint, build, ci, monorepo, verification] — A major bump that unbundles a sub-package breaks every import that relied on the transitive copy (#614, #597)
 - **102** [analytics, frontend, dcp, data-pipeline] — A clamped tier-gap is not a signed delta; don't render `max(0, …)` under a "growth/change" label (#684, #683)
+- **103** [analytics, dcp, data-pipeline] — A "remaining-to-threshold" countdown must be derived from the same gate it counts down to (#686, #683)

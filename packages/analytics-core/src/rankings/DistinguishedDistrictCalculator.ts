@@ -93,6 +93,22 @@ export interface DistinguishedDistrictStatus {
    * render as +8 "growth" (#684).
    */
   netClubGrowth: number
+  /**
+   * Absolute counts remaining to reach the *minimum* (Distinguished)
+   * tier, for the three headline metrics Amy tracks (#686, epic #683 F4).
+   * Each is `max(0, target − current)` where the target is derived from
+   * the Distinguished `TIER_THRESHOLDS` entry — the same thresholds
+   * `meetsThreshold` uses — so a count of 0 means that metric's minimum
+   * is met (it does NOT, on its own, mean the tier is earned: the other
+   * metrics and the 5 prerequisites still gate). Always relative to the
+   * minimum tier, not `nextTierGap` (which tracks the *next* tier above
+   * the current one). The percentage-point gaps live on `nextTierGap`;
+   * these are the concrete counts (#684 distinguished % uses paidClubBase
+   * as the denominator, not activeClubs — lesson 60).
+   */
+  paymentsRemaining: number
+  paidClubsRemaining: number
+  distinguishedClubsRemaining: number
 }
 
 // ========== Tier Thresholds ==========
@@ -165,6 +181,7 @@ export class DistinguishedDistrictCalculator {
       : 'NotDistinguished'
 
     const nextTierGap = this.computeNextTierGap(currentTier, ranking)
+    const remaining = this.computeRemainingToMinimum(ranking)
 
     return {
       districtId: ranking.districtId,
@@ -173,6 +190,7 @@ export class DistinguishedDistrictCalculator {
       prerequisites,
       nextTierGap,
       netClubGrowth: ranking.paidClubs - ranking.paidClubBase,
+      ...remaining,
     }
   }
 
@@ -300,6 +318,55 @@ export class DistinguishedDistrictCalculator {
         return 1
       case 'none':
         return 0
+    }
+  }
+
+  /**
+   * Absolute counts remaining to the *minimum* (Distinguished) tier (#686).
+   * Targets are derived from the Distinguished `TIER_THRESHOLDS` entry so
+   * they track the same rule `meetsThreshold` enforces — a count of 0 means
+   * that metric's Distinguished minimum is satisfied.
+   *
+   *   payments   target = ceil(paymentBase × (1 + paymentGrowthMin/100))
+   *   paidClubs  target = ceil(paidClubBase × (1 + clubGrowthMin/100))
+   *   distinguished target = ceil(paidClubBase × distinguishedPercentMin/100)
+   *
+   * Distinguished % uses `paidClubBase` as the denominator, not
+   * `activeClubs` (TI DDP Item 1490; lesson 60). `Math.ceil` because the
+   * thresholds are minimums — you must reach the next whole unit.
+   */
+  private computeRemainingToMinimum(ranking: DistrictRanking): {
+    paymentsRemaining: number
+    paidClubsRemaining: number
+    distinguishedClubsRemaining: number
+  } {
+    const min = TIER_THRESHOLDS.find(t => t.tier === 'Distinguished')
+    // TIER_THRESHOLDS always contains Distinguished; guard keeps TS happy.
+    if (!min) {
+      return {
+        paymentsRemaining: 0,
+        paidClubsRemaining: 0,
+        distinguishedClubsRemaining: 0,
+      }
+    }
+
+    const paymentTarget = Math.ceil(
+      ranking.paymentBase * (1 + min.paymentGrowthMin / 100)
+    )
+    const paidClubTarget = Math.ceil(
+      ranking.paidClubBase * (1 + min.clubGrowthMin / 100)
+    )
+    const distinguishedTarget = Math.ceil(
+      ranking.paidClubBase * (min.distinguishedPercentMin / 100)
+    )
+
+    return {
+      paymentsRemaining: Math.max(0, paymentTarget - ranking.totalPayments),
+      paidClubsRemaining: Math.max(0, paidClubTarget - ranking.paidClubs),
+      distinguishedClubsRemaining: Math.max(
+        0,
+        distinguishedTarget - ranking.distinguishedClubs
+      ),
     }
   }
 }
