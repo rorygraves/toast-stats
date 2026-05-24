@@ -128,4 +128,50 @@ describe('ClubDCPGoalsPanel (#620)', () => {
     )
     expect(container.querySelector('.dcp-goals-skeleton')).not.toBeNull()
   })
+
+  it('renders the Goal Achievement Timeline between the bar and the grid (#621)', () => {
+    const { container } = render(
+      <ClubDCPGoalsPanel
+        goalsAchieved={7}
+        clubRecord={record}
+        isLoading={false}
+        timelineRows={[
+          {
+            targetDate: '2025-09-01',
+            actualDate: '2025-09-01',
+            goalsMet: 3,
+            totalGoals: 10,
+            gain: null,
+            isFallback: false,
+          },
+          {
+            targetDate: '2025-11-01',
+            actualDate: '2025-11-01',
+            goalsMet: 7,
+            totalGoals: 10,
+            gain: 4,
+            isFallback: false,
+          },
+        ]}
+      />
+    )
+    expect(screen.getByText('Goal Achievement Timeline')).toBeInTheDocument()
+    // DOM order: progress bar → timeline → per-goal grid.
+    const markers = Array.from(
+      container.querySelectorAll('.dcp-progress, .goal-timeline, .goals-table')
+    ).map(el => el.className.split(' ')[0])
+    expect(markers).toEqual(['dcp-progress', 'goal-timeline', 'goals-table'])
+  })
+
+  it('omits the timeline when no rows are provided (Sprint 3 behaviour)', () => {
+    const { container } = render(
+      <ClubDCPGoalsPanel
+        goalsAchieved={7}
+        clubRecord={record}
+        isLoading={false}
+      />
+    )
+    expect(container.querySelector('.goal-timeline')).toBeNull()
+    expect(screen.queryByText('Goal Achievement Timeline')).toBeNull()
+  })
 })

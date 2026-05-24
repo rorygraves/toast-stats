@@ -56,6 +56,13 @@ export {
 
 export type { MultiYearTrendDirection } from './analytics/index.js'
 
+// Goal Achievement Timeline primitive (#621)
+export {
+  goalsMetAtDate,
+  TOTAL_DCP_GOALS,
+  type GoalsMetResult,
+} from './analytics/goalsMetAtDate.js'
+
 // Type definitions
 export type {
   // Metadata

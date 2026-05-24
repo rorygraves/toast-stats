@@ -1427,8 +1427,7 @@
      .goal-row). The reference's prefers-color-scheme dark rules are remapped
      onto our [data-theme='dark'] scope (R10). The progress fill uses the same
      dark accent (#8ec5e8) as the membership chart line for page consistency.
-     The Goal Achievement Timeline (reference .timeline-row) is Sprint 4 (#621)
-     and intentionally not styled here. */
+     The Goal Achievement Timeline (.timeline-row) is added by #621 below. */
   .dcp-progress {
     margin-bottom: 18px;
   }
@@ -1567,6 +1566,88 @@
     .goals-table,
     .dcp-goals-skeleton {
       grid-template-columns: 1fr;
+    }
+  }
+
+  /* ── #621 Goal Achievement Timeline ──────────────────────────────────────
+     Historical DCP-goals progression between the progress bar and the per-goal
+     grid. Pixel-mapped to club-reference.html (.timeline-row). The reference's
+     prefers-color-scheme dark bar-fill is remapped onto [data-theme='dark']
+     (R10), reusing the panel's #8ec5e8 accent for page consistency. Gain
+     colours reuse --green-600 / --red-600 (already dark-remapped + AA-safe,
+     proven in #618). */
+  .goal-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .timeline-row {
+    display: grid;
+    grid-template-columns: 90px 1fr 60px 50px;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .timeline-row .date {
+    color: var(--ink-3);
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .timeline-row .bar-track {
+    height: 6px;
+    background: var(--surface-3);
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+  }
+
+  .timeline-row .bar-fill {
+    height: 100%;
+    background: var(--loyal-500);
+  }
+
+  [data-theme='dark'] .timeline-row .bar-fill {
+    background: #8ec5e8;
+  }
+
+  .timeline-row .num {
+    font-family: var(--mono);
+    font-size: 12px;
+    text-align: right;
+    color: var(--ink);
+  }
+
+  .timeline-row .gain {
+    font-family: var(--mono);
+    font-size: 12px;
+    text-align: right;
+    font-weight: 600;
+    color: var(--ink-3);
+  }
+
+  .timeline-row .gain.pos {
+    color: var(--green-600);
+  }
+
+  .timeline-row .gain.neg {
+    color: var(--red-600);
+  }
+
+  /* Footnote explaining the * marker on fallback rows. */
+  .goal-timeline__note {
+    margin: 10px 0 0;
+    font-size: 11px;
+    color: var(--ink-4);
+  }
+
+  @media (max-width: 640px) {
+    .timeline-row {
+      grid-template-columns: 70px 1fr 50px 40px;
+      gap: 6px;
+      font-size: 12px;
     }
   }
 

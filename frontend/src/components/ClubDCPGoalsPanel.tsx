@@ -20,6 +20,8 @@
  */
 import React from 'react'
 import { extractDcpGoalProgress, type ScrapedRecord } from '../utils/dcpGoals'
+import { GoalAchievementTimeline } from './GoalAchievementTimeline'
+import type { GoalTimelineRow } from '../hooks/useClubGoalTimeline'
 
 interface ClubDCPGoalsPanelProps {
   /** Authoritative goals-achieved count (0–10) for the bar + header meta. */
@@ -28,12 +30,19 @@ interface ClubDCPGoalsPanelProps {
   clubRecord: ScrapedRecord | null | undefined
   /** True while the raw record is still loading. */
   isLoading: boolean
+  /**
+   * Goal Achievement Timeline rows (#621), computed by the parent via
+   * `useClubGoalTimeline`. Empty/omitted → the timeline section is hidden
+   * (preserves Sprint 3 behaviour for callers that don't supply it).
+   */
+  timelineRows?: GoalTimelineRow[]
 }
 
 export const ClubDCPGoalsPanel: React.FC<ClubDCPGoalsPanelProps> = ({
   goalsAchieved,
   clubRecord,
   isLoading,
+  timelineRows = [],
 }) => {
   const clamped = Math.max(0, Math.min(10, goalsAchieved))
   const pct = (clamped / 10) * 100
@@ -81,6 +90,10 @@ export const ClubDCPGoalsPanel: React.FC<ClubDCPGoalsPanelProps> = ({
             <div className="dcp-progress-fill" style={{ width: `${pct}%` }} />
           </div>
         </div>
+
+        {/* Goal Achievement Timeline (#621) — historical progression, between
+            the progress bar and the per-goal grid. Hidden when no rows. */}
+        <GoalAchievementTimeline rows={timelineRows} />
 
         {/* Per-Goal Status grid */}
         {isLoading ? (

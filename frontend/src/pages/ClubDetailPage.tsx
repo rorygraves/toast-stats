@@ -35,6 +35,7 @@ import { EmptyState } from '../components/ErrorDisplay'
 import ErrorBoundary from '../components/ErrorBoundary'
 import { useDistrictStatistics } from '../hooks/useMembershipData'
 import { ClubDCPGoalsPanel } from '../components/ClubDCPGoalsPanel'
+import { useClubGoalTimeline } from '../hooks/useClubGoalTimeline'
 
 // ── DCP Status Card ────────────────────────────────────────────────────────
 // Re-skinned to club-reference.html (#619): a `.club-panel` with a bordered
@@ -313,6 +314,16 @@ const ClubDetailPage: React.FC = () => {
       p => p.date >= programYear.startDate && p.date <= programYear.endDate
     )
   }, [club, programYear])
+
+  // Goal Achievement Timeline rows (#621). Built from the PY-filtered trend so
+  // nearest-prior fallback stays within the selected program year. As-of date =
+  // the effective end date (most recent snapshot in the PY), falling back to
+  // the PY end if dates haven't resolved yet.
+  const goalTimelineRows = useClubGoalTimeline(
+    filteredDcpGoalsTrend,
+    programYear,
+    effectiveEndDate ?? programYear.endDate
+  )
 
   // Compute stats
   const baseMembership =
@@ -881,16 +892,18 @@ const ClubDetailPage: React.FC = () => {
             </section>
           )}
 
-          {/* DCP Goals Progress panel (#620) — pixel-mapped to
-              club-reference.html: a current-progress bar + a flat per-goal
-              status grid. The Goal Achievement Timeline (the panel's middle
-              section) ships separately in Sprint 4 (#621). The bar + meta use
-              the authoritative trend count (always present); the per-goal grid
-              uses the raw clubPerformance record. */}
+          {/* DCP Goals Progress panel (#620 + #621) — pixel-mapped to
+              club-reference.html: a current-progress bar, the Goal Achievement
+              Timeline (#621), then a flat per-goal status grid. The bar + meta
+              use the authoritative trend count (always present); the per-goal
+              grid uses the raw clubPerformance record; the timeline rows are
+              computed from the PY-filtered trend (R3 — passed in, not
+              re-derived in the child). */}
           <ClubDCPGoalsPanel
             goalsAchieved={latestDcpGoals}
             clubRecord={clubRawRecord}
             isLoading={isLoadingStats}
+            timelineRows={goalTimelineRows}
           />
 
           {/* Bottom back-link (#618) — the redesign reintroduces a footer
