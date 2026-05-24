@@ -8,8 +8,9 @@ Do these steps in order, and stop if any check fails:
 
 1. **Re-read the rules, then load RELEVANT lessons (not just newest).** Required reading per CLAUDE.md Phase 1:
    - `tasks/rules.md` in full.
+   - **Per-sprint manifest (preferred):** if the sub-issue body has a `## Relevant lessons` section, read **in full** every lesson it lists — the operator curated these during grooming, so they win over tag inference. Dry-run what would load with `scripts/relevant-lessons.sh {{TARGET_ISSUE}}` (prints each resolved path, exits non-zero if a listed file is missing). When a manifest is present you may skip the tag-inference step below, but still read the 2 newest.
    - `tasks/lessons/INDEX.md` in full — it lists every per-file lesson with its tags. `_(ref-only)_` entries are `auto_load: false` (incident/superseded/noise): searchable, but do NOT auto-load them.
-   - Infer this sprint's work-type tags from the sub-issue's title / labels / body (e.g. a CSS sprint → `css`, `dark-mode`, `frontend`; a runner sprint → `bash`, `automation`, `sprint-runner`). Read **in full** every auto-loadable lesson in INDEX whose tags intersect that set. (When Sprint 3 ships the per-sprint `## Relevant lessons` manifest, prefer it over inference.)
+   - **Tag inference (fallback, when there's no manifest):** infer this sprint's work-type tags from the sub-issue's title / labels / body (e.g. a CSS sprint → `css`, `dark-mode`, `frontend`; a runner sprint → `bash`, `automation`, `sprint-runner`). Read **in full** every auto-loadable lesson in INDEX whose tags intersect that set.
    - Read the **2 newest** lessons (highest filename numbers) regardless of tag — they are operationally fresh.
    - Stop after that. Do not bulk-read the whole corpus.
 
