@@ -43,15 +43,21 @@ const RegionsPage: React.FC = () => {
     [rollups]
   )
 
+  // Derive (don't sync) the effective selection: a stale selection that a
+  // refetch dropped self-heals to "All" at render time, so the user is never
+  // stranded on an empty leaderboard + grid — and no setState-in-effect.
+  const effectiveRegion =
+    selectedRegion && regionIds.includes(selectedRegion) ? selectedRegion : null
+
   // Filter step (R11): "All" (null) shows every region; a selection isolates
   // one across both the leaderboard and the grid so the user can jump
   // straight to it instead of scanning all 14 rows (#685).
   const displayedRollups = useMemo(
     () =>
-      selectedRegion
-        ? rollups.filter(r => r.region === selectedRegion)
+      effectiveRegion
+        ? rollups.filter(r => r.region === effectiveRegion)
         : rollups,
-    [rollups, selectedRegion]
+    [rollups, effectiveRegion]
   )
 
   const dnarCount = useMemo(
@@ -90,7 +96,7 @@ const RegionsPage: React.FC = () => {
 
       <RegionFinder
         regions={regionIds}
-        selected={selectedRegion}
+        selected={effectiveRegion}
         onSelect={setSelectedRegion}
       />
 

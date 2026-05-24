@@ -272,6 +272,21 @@ describe('Region pages dark-mode contrast (#609)', () => {
     ).toBeGreaterThanOrEqual(4.5)
   })
 
+  it('finder chip FOCUS ring clears 3:1 on the dark surface (WCAG 1.4.11)', () => {
+    const outline =
+      ruleValue(appShellCss, '.region-finder__chip:focus-visible', 'outline') ??
+      ''
+    // outline shorthand: `2px solid var(--link)` — pull the var/color token.
+    const colorToken =
+      outline.match(/var\(--[\w-]+\)|#[0-9a-fA-F]{3,8}/)?.[0] ?? ''
+    const fg = resolveVar(colorToken)
+    const ratio = calculateContrastRatio(fg, surface)
+    expect(
+      ratio,
+      `focus ring ${fg} on ${surface} = ${ratio.toFixed(2)}:1`
+    ).toBeGreaterThanOrEqual(3)
+  })
+
   it('finder chip ACTIVE text clears AA on its brand background', () => {
     const fg = resolveVar(
       ruleValue(appShellCss, '.region-finder__chip--active', 'color') ?? ''

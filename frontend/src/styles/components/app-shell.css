@@ -658,7 +658,10 @@
   }
 
   .region-finder__chip:focus-visible {
-    outline: 2px solid var(--loyal-500);
+    /* --link, not --loyal-500: the focus ring must clear 3:1 against the dark
+       surface too (WCAG 1.4.11). Raw --loyal-500 has no dark remap → ~1.6:1
+       navy-on-dark; --link remaps to #60a5d8 in dark (Lesson 093/096). */
+    outline: 2px solid var(--link);
     outline-offset: 2px;
   }
 
