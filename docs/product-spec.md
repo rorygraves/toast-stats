@@ -65,6 +65,14 @@ A data visualization platform for **Toastmasters district leaders** to track clu
 | Club anniversary badge      | Club hero pill: quiet / milestone-gold / upcoming countdown for charter anniversaries (#445)                                                                                                                                                                                                                                                                                                                                                                | ✅ Shipped |
 | Years Chartered column      | Sortable "Years" column in the Clubs table — years since charter, em-dash when unknown (#448)                                                                                                                                                                                                                                                                                                                                                               | ✅ Shipped |
 
+### Regions Overview (`/regions`)
+
+| Feature            | Description                                                                                                                                                                      | Status     |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| Region leaderboard | Sortable 14-region table (districts, paid clubs, payments, distinguished, score); aggregate of the per-district feed (#494, #496)                                                | ✅ Shipped |
+| Region cards grid  | 14 KPI cards with leading-district + requirements ribbon, each linking to `/region/:n` (#495)                                                                                    | ✅ Shipped |
+| Region finder bar  | Jump-to-region filter: numbered chips + "All regions" reset isolate one region across both leaderboard and grid — a region is one click away, not a scroll-and-hover hunt (#685) | ✅ Shipped |
+
 ### Region Page (`/region/:n`)
 
 | Feature                 | Description                                                                                                                                                           | Status     |
