@@ -29,7 +29,13 @@ Set the staging bucket's CORS `origin` to the wildcard `["*"]` (GET/HEAD only).
   {
     "origin": ["*"],
     "method": ["GET", "HEAD"],
-    "responseHeader": ["Content-Type", "Content-Encoding", "Content-Length", "Cache-Control", "ETag"],
+    "responseHeader": [
+      "Content-Type",
+      "Content-Encoding",
+      "Content-Length",
+      "Cache-Control",
+      "ETag"
+    ],
     "maxAgeSeconds": 3600
   }
 ]
@@ -60,12 +66,12 @@ exact enumeration is impossible. `*` is the only mechanism that works.
 - **The bucket is already world-readable.** Anonymous `GET` with no `Origin`
   header returns the data today. CORS only governs **browser cross-origin JS
   reads**; it adds no access-control gate for non-browser clients. So `*` does
-  not widen *who* can read the data — it is already public.
+  not widen _who_ can read the data — it is already public.
 - **The data is non-sensitive** — public Toastmasters district performance
   stats, the same data served on the public production site.
 - **GET/HEAD only, anonymous (no credentials).** `Access-Control-Allow-Origin:
-  *` is only dangerous when combined with credentialed requests; these are not.
-- **Production is untouched.** Production data is served from the *separate*
+*` is only dangerous when combined with credentialed requests; these are not.
+- **Production is untouched.** Production data is served from the _separate_
   bucket `gs://toast-stats-data-ca` via `cdn.taverns.red`, which keeps its
   narrow exact-origin allowlist (`ts.taverns.red`, `localhost:5173`). This ADR
   changes only `gs://toast-stats-data-staging`.
