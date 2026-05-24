@@ -370,8 +370,13 @@
     color: #F87171 !important;
 }
 
+/* #610: -900 joins the group. The club anniversary badge (the only consumer)
+   pairs text-yellow-900 with bg-yellow-100, whose dark remap darkens the pill;
+   without remapping the text too it stayed Tailwind #713f12 -> ~1.2:1 on the
+   darkened amber (Lesson 94 — fg and bg must remap together). */
 [data-theme='dark'] .text-yellow-700,
-[data-theme='dark'] .text-yellow-800 {
+[data-theme='dark'] .text-yellow-800,
+[data-theme='dark'] .text-yellow-900 {
     color: #FDE68A !important;
 }
 
@@ -388,8 +393,11 @@
     color: #4ADE80 !important;
 }
 
+/* #610: -900 joins the group — see the yellow note above. The upcoming-
+   anniversary badge pairs text-blue-900 with bg-blue-50 (dark-remapped). */
 [data-theme='dark'] .text-blue-700,
-[data-theme='dark'] .text-blue-800 {
+[data-theme='dark'] .text-blue-800,
+[data-theme='dark'] .text-blue-900 {
     color: #93C5FD !important;
 }
 

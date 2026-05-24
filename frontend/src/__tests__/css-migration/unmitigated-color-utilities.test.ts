@@ -72,8 +72,8 @@ const EXPECTED_FAILURES = new Set<string>([
   // lighter shade override in dark mode.
   'text-red-900',
   'text-green-900',
-  'text-yellow-900',
-  'text-blue-900',
+  // text-yellow-900 / text-blue-900 mitigated in Sprint 14 (#610) — the club
+  // anniversary badge consumes them, now remapped light in the dark block.
   // High-saturation fill colors — text-on-fill contrast may degrade on the
   // dark surface; needs a per-callsite check before override.
   'bg-red-500',
