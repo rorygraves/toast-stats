@@ -3,6 +3,9 @@
     "target": "ES2020",
     "lib": ["ES2020"],
     "moduleResolution": "node",
+    // node10 (formerly "node") is deprecated in TS6, removed in TS7 (#612).
+    // Migrating resolution to node16/bundler is its own task; tracked in #597.
+    "ignoreDeprecations": "6.0",
     "rootDir": "./src",
     // TypeScript Steering Document Requirements - Strict Mode
     "strict": true,

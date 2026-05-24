@@ -57,3 +57,4 @@
 - **096** [dark-mode, css, accessibility] — The catch-all dark-mode sweep is where the brand-token traps hide (#611, #574)
 - **097** [process, lessons, automation, sprint-runner] — Promote the always-relevant invariant, not every `category: principle` (#649, #647)
 - **098** [process, lessons, automation, sprint-runner, prompts] — A curated manifest beats tag inference when the operator knows better (#650, #647)
+- **099** [typescript, build, deps, monorepo, tsconfig] — `ignoreDeprecations` is the sanctioned staging path for a TS major bump, not a suppression (#612, #597) _(ref-only)_
