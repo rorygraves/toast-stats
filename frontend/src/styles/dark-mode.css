@@ -143,12 +143,16 @@
     color: var(--text-muted) !important;
 }
 
+/* #609: gray-500/400 were hardcoded #6B6575 — 3.16:1 on the page surface and
+   2.62:1 on the lighter bg-gray-800 region cards, below WCAG AA for the muted
+   body text the Region pages use (table headers, KPI bases, card sublabels).
+   Map them to --text-muted like gray-600 already does (5.06–6.10:1). */
 [data-theme='dark'] .text-gray-500 {
-    color: #6B6575 !important;
+    color: var(--text-muted) !important;
 }
 
 [data-theme='dark'] .text-gray-400 {
-    color: #6B6575 !important;
+    color: var(--text-muted) !important;
 }
 
 [data-theme='dark'] .text-gray-300 {
@@ -651,6 +655,14 @@
     background-color: rgba(247, 209, 100, 0.85) !important;
 }
 
+/* #609: the golden chip keeps a light bg, so its text must stay DARK. The
+   global `.text-gray-900` override forces text light (#F0ECF5) — light on gold
+   is 1.70:1. This compound selector (more specific) restores dark text on the
+   chip, the readable pairing the comment above always intended (8.94:1). */
+[data-theme='dark'] .bg-tm-happy-yellow.text-gray-900 {
+    color: #111827 !important;
+}
+
 [data-theme='dark'] .border-tm-happy-yellow {
     border-color: rgba(247, 209, 100, 0.85) !important;
 }
@@ -662,6 +674,14 @@
 /* Smedley tier — base uses `bg-purple-100 text-purple-900
    border-purple-400`. Dark-mode: translucent purple + light text. */
 [data-theme='dark'] .bg-purple-100 {
+    background-color: rgba(168, 85, 247, 0.20) !important;
+}
+
+/* #609: the Region page (and DistrictTierChip) Smedley chips use bg-purple-200,
+   which had NO dark remap — text-purple-900 lightens to #E9D5FF but the bg
+   stayed light purple (#e9d5ff), 1.00:1. Mirror the bg-purple-100 treatment so
+   the lightened text reads (10.33:1). */
+[data-theme='dark'] .bg-purple-200 {
     background-color: rgba(168, 85, 247, 0.20) !important;
 }
 
