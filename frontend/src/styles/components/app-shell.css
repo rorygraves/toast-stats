@@ -306,6 +306,14 @@
     color: var(--maroon-500);
   }
 
+  /* #609: --maroon-500 (#7b1828) has no dark remap — it sits at 1.69:1 on the
+     dark surface. A scoped lightened maroon (the same #E8879A the dark theme
+     already uses for --tm-true-maroon) clears AA at 7.05:1. Scoped rather than
+     remapping --maroon-500 globally, which has 10 other consumers (R8). */
+  [data-theme='dark'] .districts-page-header__eyebrow {
+    color: #e8879a;
+  }
+
   .districts-page-header__title {
     margin: 8px 0 8px;
     font-family: var(--serif);
