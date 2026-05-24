@@ -347,7 +347,7 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
   // Handle sort
   const handleSort = (field: SortField) => {
     let newField = sortField
-    let newDirection = sortDirection
+    let newDirection: SortDirection
     if (sortField === field) {
       newDirection = sortDirection === 'asc' ? 'desc' : 'asc'
       setSortDirection(newDirection)
