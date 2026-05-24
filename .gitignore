@@ -78,6 +78,7 @@ logs.txt
 # Agent tooling
 .kiro/
 .agent/
+.routine-tmp/
 
 # Data (local-only)
 data/
