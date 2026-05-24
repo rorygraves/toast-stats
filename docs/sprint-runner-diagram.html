@@ -470,7 +470,7 @@
   <header class="intro">
     <div class="eyebrow">Interactive · Built 2026-05-23</div>
     <h1>How the sprint runner works</h1>
-    <p>One launchd tick, end to end. Cron fires every <code style="font-family:var(--mono)">:17</code>/<code style="font-family:var(--mono)">:47</code>; the script resolves which work item to execute, spawns an isolated Claude session in its own git worktree, watches the work ship, and either cascades to the next epic or waits for the next tick. <strong>Every numbered stage below was reshaped by at least one bug discovered in live operation.</strong></p>
+    <p>One launchd tick, end to end. Cron fires every <code style="font-family:var(--mono)">:02</code>/<code style="font-family:var(--mono)">:17</code>/<code style="font-family:var(--mono)">:32</code>/<code style="font-family:var(--mono)">:47</code> (15-min cadence); the script resolves which work item to execute, spawns an isolated Claude session in its own git worktree, watches the work ship, and either cascades to the next epic or waits for the next tick. <strong>Every numbered stage below was reshaped by at least one bug discovered in live operation.</strong></p>
     <p class="hint">Click any boxed node to see what it does, which bugs were fixed there, and which lessons document the design rationale.</p>
   </header>
 
@@ -483,7 +483,7 @@
         <div class="stage-header">
           <span class="stage-num">1</span>
           <h2>Schedule</h2>
-          <span class="stage-meta">every :17, :47</span>
+          <span class="stage-meta">every :02, :17, :32, :47</span>
         </div>
         <p class="stage-desc">launchd fires the script on a calendar interval. The plist captures env vars (META_EPIC, STRICT_GATE) so the script knows its target.</p>
         <div class="nodes">
@@ -703,7 +703,7 @@
     'launchd': {
       title: 'launchd LaunchAgent',
       type: 'Local system',
-      desc: 'macOS native scheduler. The plist lives in ~/Library/LaunchAgents/. Fires the script at minute :17 and :47 of every hour, regardless of when the previous run finished. Survives reboot via LaunchAgent auto-load.',
+      desc: 'macOS native scheduler. The plist lives in ~/Library/LaunchAgents/. Fires the script at minutes :02, :17, :32, :47 of every hour (15-min cadence), regardless of when the previous run finished. Survives reboot via LaunchAgent auto-load.',
       issues: [],
       lessons: []
     },

@@ -44,7 +44,7 @@
 #                         operator's primary checkout. See #625.
 #
 # Scheduling: this script is invoked by a launchd LaunchAgent — NOT crontab —
-# at minutes :17 and :47 of every hour. Plist lives at:
+# at minutes :02, :17, :32, :47 of every hour (15-min cadence). Plist lives at:
 #   ~/Library/LaunchAgents/red.taverns.toast-stats.sprint-runner.plist
 # Environment overrides (EPIC, STRICT_GATE, etc.) are set in that plist's
 # <key>EnvironmentVariables</key> dict. To apply changes:
