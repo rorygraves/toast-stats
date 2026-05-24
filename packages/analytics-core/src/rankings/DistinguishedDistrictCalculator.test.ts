@@ -245,6 +245,45 @@ describe('DistinguishedDistrictCalculator', () => {
     })
   })
 
+  describe('Net club growth — signed actual net change (#684)', () => {
+    // F1 (epic #683): the region table conflated `netClubGrowthGap`
+    // (distance to the next tier's net-growth rule) with the actual
+    // signed net change. A shrinking district (D48: 79 → 71) rendered
+    // as +8 because the gap is `max(0, required − netChange)`. The
+    // status must expose the signed actual net change separately.
+    it('reports a negative netClubGrowth when the district lost clubs (D48: 79 → 71)', () => {
+      const ranking = buildRanking({
+        districtId: '48',
+        paidClubs: 71,
+        paidClubBase: 79,
+      })
+
+      const result = calculator.calculate(ranking)
+
+      expect(result.netClubGrowth).toBe(-8)
+      // The distinguished-gap concept is a distinct number: a
+      // NotDistinguished district's gap to the 'no-loss' rule is
+      // max(0, 0 − (−8)) = 8. The two must not be confused.
+      expect(result.nextTierGap?.netClubGrowthGap).toBe(8)
+    })
+
+    it('reports a positive netClubGrowth when the district gained clubs', () => {
+      const ranking = buildRanking({ paidClubs: 105, paidClubBase: 100 })
+
+      const result = calculator.calculate(ranking)
+
+      expect(result.netClubGrowth).toBe(5)
+    })
+
+    it('reports zero netClubGrowth when paid clubs are unchanged', () => {
+      const ranking = buildRanking({ paidClubs: 100, paidClubBase: 100 })
+
+      const result = calculator.calculate(ranking)
+
+      expect(result.netClubGrowth).toBe(0)
+    })
+  })
+
   describe('Bulk calculation', () => {
     it('should calculate tiers for multiple districts', () => {
       const rankings: DistrictRanking[] = [

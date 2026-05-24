@@ -70,11 +70,13 @@ const ddStatus = (
 })
 
 describe('getDistinguishedCountdown (#516 #534)', () => {
-  it('returns the four numeric gaps + two officer-award booleans', () => {
+  it('returns the three numeric gaps + two officer-award booleans', () => {
+    // netClubGrowth is no longer part of the countdown — the region
+    // table renders the signed net change from the rankings row, not
+    // the clamped tier-gap (#684).
     const awards = mkAwards(ddStatus(), false, true)
     const c = getDistinguishedCountdown('61', awards)
     expect(c).not.toBeNull()
-    expect(c!.netClubGrowth).toEqual({ kind: 'gap', value: 3 })
     expect(c!.paymentGrowth).toEqual({ kind: 'gap', value: 12 })
     expect(c!.distinguishedPercent).toEqual({ kind: 'gap', value: 8 })
     // #534 — the fourth numeric DD prerequisite, distinct from the
@@ -111,18 +113,17 @@ describe('getDistinguishedCountdown (#516 #534)', () => {
     })
     const awards = mkAwards(status, false, false)
     const c = getDistinguishedCountdown('61', awards)
-    expect(c!.netClubGrowth).toEqual({ kind: 'met' })
     expect(c!.paymentGrowth).toEqual({ kind: 'met' })
     expect(c!.distinguishedPercent).toEqual({ kind: 'gap', value: 4 })
   })
 
-  it('returns "met" for all three numeric metrics when nextTierGap is null (district at Smedley)', () => {
+  it('returns "met" for the numeric metrics when nextTierGap is null (district at Smedley)', () => {
     const status = ddStatus({ currentTier: 'Smedley', nextTierGap: null })
     const awards = mkAwards(status, true, true)
     const c = getDistinguishedCountdown('61', awards)
-    expect(c!.netClubGrowth).toEqual({ kind: 'met' })
     expect(c!.paymentGrowth).toEqual({ kind: 'met' })
     expect(c!.distinguishedPercent).toEqual({ kind: 'met' })
+    expect(c!.clubGrowthPercent).toEqual({ kind: 'met' })
   })
 
   it('returns null when the district has no Distinguished District status entry', () => {

@@ -83,6 +83,16 @@ export interface DistinguishedDistrictStatus {
   prerequisites: DistinguishedDistrictPrerequisites
   /** Gap to the next higher tier (null if at Smedley) */
   nextTierGap: DistinguishedDistrictGap | null
+  /**
+   * Signed actual net change in paid clubs this program year
+   * (`paidClubs − paidClubBase`). Distinct from `nextTierGap`'s
+   * `netClubGrowthGap`, which is the clamped distance to the next tier's
+   * net-growth rule (`max(0, required − netChange)`) and can never be
+   * negative. A shrinking district has a negative `netClubGrowth` but a
+   * positive `netClubGrowthGap` — conflating the two made D48 (79 → 71)
+   * render as +8 "growth" (#684).
+   */
+  netClubGrowth: number
 }
 
 // ========== Tier Thresholds ==========
@@ -162,6 +172,7 @@ export class DistinguishedDistrictCalculator {
       allPrerequisitesMet,
       prerequisites,
       nextTierGap,
+      netClubGrowth: ranking.paidClubs - ranking.paidClubBase,
     }
   }
 

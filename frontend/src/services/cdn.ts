@@ -217,6 +217,14 @@ export interface DistinguishedDistrictStatus {
   allPrerequisitesMet: boolean
   prerequisites: DistinguishedDistrictPrerequisites
   nextTierGap: DistinguishedDistrictGap | null
+  /**
+   * Signed actual net change in paid clubs this program year
+   * (`paidClubs − paidClubBase`). Distinct from `nextTierGap`'s
+   * clamped `netClubGrowthGap` (#684). Optional to tolerate CDN
+   * snapshots written before the field existed — consumers fall back
+   * to deriving it from the rankings row.
+   */
+  netClubGrowth?: number
 }
 
 /**

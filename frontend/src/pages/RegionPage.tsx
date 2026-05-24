@@ -96,6 +96,28 @@ const CountdownTd: React.FC<{
   </td>
 )
 
+/* Net Club Growth = the SIGNED actual net change in paid clubs this
+   program year (paidClubs − paidClubBase). Growth is green +N, loss is
+   maroon −N, matching the KpiCard delta convention above. This is a
+   distinct quantity from the clamped distinguished-gap that used to
+   render here and made a shrinking district look like it was growing
+   (#684). */
+const NetGrowthTd: React.FC<{ value: number }> = ({ value }) => {
+  const sign = value >= 0 ? '+' : ''
+  const tone = value >= 0 ? 'text-green-700' : 'text-tm-true-maroon'
+  return (
+    <td
+      data-testid="countdown-netClubGrowth"
+      className="px-3 py-4 whitespace-nowrap text-sm text-right"
+    >
+      <span className={`${tone} font-semibold tabular-nums`}>
+        {sign}
+        {value}
+      </span>
+    </td>
+  )
+}
+
 /* Per-tier display label + chip style. Pre-Distinguished districts get
    an em-dash; achieved tiers get a colored chip matching the tier. */
 type AchievedTier = Exclude<DistinguishedDistrictTier, 'NotDistinguished'>
@@ -153,13 +175,14 @@ const TierTd: React.FC<{ tier: DistinguishedDistrictTier | null }> = ({
    sub-components. */
 const DistinguishedCells: React.FC<{
   districtId: string
+  netClubGrowth: number
   awards: import('../services/cdn').CompetitiveAwardStandings | null
-}> = ({ districtId, awards }) => {
+}> = ({ districtId, netClubGrowth, awards }) => {
   const c = getDistinguishedCountdown(districtId, awards)
   const tier = awards?.distinguishedDistrict?.[districtId]?.currentTier ?? null
   return (
     <>
-      <CountdownTd metric="netClubGrowth" cell={c?.netClubGrowth ?? null} />
+      <NetGrowthTd value={netClubGrowth} />
       <CountdownTd metric="paymentGrowth" cell={c?.paymentGrowth ?? null} />
       <CountdownTd
         metric="distinguishedPercent"
@@ -408,6 +431,11 @@ const RegionPage: React.FC = () => {
                     </td>
                     <DistinguishedCells
                       districtId={d.districtId}
+                      netClubGrowth={
+                        awards?.distinguishedDistrict?.[d.districtId]
+                          ?.netClubGrowth ??
+                        (d.paidClubs ?? 0) - (d.paidClubBase ?? 0)
+                      }
                       awards={awards ?? null}
                     />
                   </tr>

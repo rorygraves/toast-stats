@@ -11,7 +11,6 @@ export type CountdownCell =
   | { kind: 'boolean'; met: boolean }
 
 export interface DistinguishedCountdown {
-  netClubGrowth: CountdownCell
   paymentGrowth: CountdownCell
   distinguishedPercent: CountdownCell
   /** % Club Growth threshold (DD prerequisite #4 — distinct from the
@@ -37,19 +36,14 @@ export function getDistinguishedCountdown(
   const gap = status.nextTierGap
   const numeric: Pick<
     DistinguishedCountdown,
-    | 'netClubGrowth'
-    | 'paymentGrowth'
-    | 'distinguishedPercent'
-    | 'clubGrowthPercent'
+    'paymentGrowth' | 'distinguishedPercent' | 'clubGrowthPercent'
   > = gap
     ? {
-        netClubGrowth: gapCell(gap.netClubGrowthGap),
         paymentGrowth: gapCell(gap.paymentGrowthGap),
         distinguishedPercent: gapCell(gap.distinguishedPercentGap),
         clubGrowthPercent: gapCell(gap.clubGrowthGap),
       }
     : {
-        netClubGrowth: { kind: 'met' },
         paymentGrowth: { kind: 'met' },
         distinguishedPercent: { kind: 'met' },
         clubGrowthPercent: { kind: 'met' },
