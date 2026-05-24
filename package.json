@@ -65,7 +65,7 @@
     "minimatch": "^10.2.3",
     "fast-xml-parser": "^5.5.8",
     "flatted": "^3.3.3",
-    "vite": "^7.3.2",
+    "vite": "^8.0.14",
     "@google-cloud/storage": {
       "teeny-request": {
         "http-proxy-agent": "^7.0.0"
