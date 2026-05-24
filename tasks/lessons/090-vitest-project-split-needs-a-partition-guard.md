@@ -9,6 +9,8 @@ issues: [482, 616]
 
 # Lesson 090 — Splitting one test suite into named projects needs a partition guard, or files silently fall out of both
 
+> **Promoted to R20** (partition guard) **and R19** (branch-from-remote-tip catch) (2026-05-24, #649). This file is preserved for historical context.
+
 **Date:** 2026-05-23
 **Issue:** #482 (test-infra: first-class vitest unit/integration projects, epic #616)
 **Tags:** testing, vitest, test-infra, ci, falsifiability

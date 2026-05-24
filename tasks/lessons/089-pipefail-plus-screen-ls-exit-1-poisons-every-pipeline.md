@@ -9,6 +9,8 @@ issues: [633, 634]
 
 # Lesson 089 — `set -o pipefail` + macOS `screen -ls` exit 1 = silently broken detection
 
+> **Promoted to R14** (2026-05-24, #649). This file is preserved for historical context.
+
 **Date:** 2026-05-23
 **Issues:** #633 (verify retry), #634 (critical orphan false-positive)
 **Tags:** macOS, screen, bash, pipefail, false-diagnoses

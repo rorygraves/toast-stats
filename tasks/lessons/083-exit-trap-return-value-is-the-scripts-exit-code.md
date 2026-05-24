@@ -9,6 +9,8 @@ issues: [603]
 
 # Lesson 083 — A bash EXIT trap's return value becomes the script's exit code
 
+> **Promoted to R13** (2026-05-24, #649). This file is preserved for historical context.
+
 **Date:** 2026-05-23
 **Issue:** #603 (sprint-runner hardening)
 **Tags:** bash, traps, exit-codes

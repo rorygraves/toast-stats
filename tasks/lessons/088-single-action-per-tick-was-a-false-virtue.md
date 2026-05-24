@@ -9,6 +9,8 @@ issues: [627]
 
 # Lesson 088 — "Single action per tick" was a false virtue in the autonomous runner
 
+> **Promoted to R18** (2026-05-24, #649). This file is preserved for historical context.
+
 **Date:** 2026-05-23
 **Issue:** #627 (sprint-runner cascade)
 **Tags:** automation, sprint-runner, design-philosophy

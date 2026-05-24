@@ -9,6 +9,8 @@ issues: [636]
 
 # Lesson 091 — Bootstrap prompt scope must be explicit, or runs diverge
 
+> **Promoted to R17** (2026-05-24, #649). This file is preserved for historical context.
+
 **Date:** 2026-05-23
 **Issue:** #636 (epic auto-closure gap)
 **Tags:** automation, prompts, sprint-runner, underspecification

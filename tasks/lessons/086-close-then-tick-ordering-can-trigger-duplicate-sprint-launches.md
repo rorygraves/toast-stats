@@ -9,6 +9,8 @@ issues: [626]
 
 # Lesson 086 — Close-then-tick ordering invites a duplicate-launch race
 
+> **Promoted to R15** (2026-05-24, #649). This file is preserved for historical context.
+
 **Date:** 2026-05-23
 **Issue:** #626 (sprint-runner reaps in-flight session)
 **Tags:** automation, race-conditions, sprint-runner, distributed-state

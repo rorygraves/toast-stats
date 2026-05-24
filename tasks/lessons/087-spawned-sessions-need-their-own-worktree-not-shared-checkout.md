@@ -9,6 +9,8 @@ issues: [625]
 
 # Lesson 087 — Spawned automation sessions need their own git worktree
 
+> **Promoted to R19** (2026-05-24, #649). This file is preserved for historical context.
+
 **Date:** 2026-05-23
 **Issue:** #625 (sprint-runner worktree isolation)
 **Tags:** automation, git-worktree, concurrency, sprint-runner

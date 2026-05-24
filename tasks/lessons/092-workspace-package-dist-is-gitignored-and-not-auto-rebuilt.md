@@ -9,6 +9,8 @@ issues: [645]
 
 # Lesson 092 — Workspace-package `dist/` is gitignored; local pre-push does not auto-rebuild
 
+> **Promoted to R16** (2026-05-24, #649). This file is preserved for historical context.
+
 **Date:** 2026-05-23
 **Issue:** #645 (bootstrap prompt — require workspace-package rebuild after source edits)
 **Tags:** monorepo, npm-workspaces, build, pre-push, sprint-runner
