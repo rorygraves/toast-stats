@@ -29,6 +29,7 @@
     "test:integration": "npm run test:integration --workspace=frontend",
     "test:projects:check": "npm run test:projects:check --workspace=frontend",
     "test:coverage": "npm run test --workspaces -- --coverage",
+    "test:scripts": "vitest run --config scripts/vitest.config.ts",
     "test:watch": "npm run test:watch --workspaces --if-present",
     "lint": "npm run lint --workspaces",
     "lint:yaml": "yamllint -c .yamllint.yml .github/ docs/",
@@ -45,7 +46,9 @@
     "cleanup:frontend": "bash frontend/scripts/cleanup-test-dirs.sh",
     "pipeline:dry-run": "npx tsx scripts/prune-month-end-pipeline.ts --dry-run",
     "pipeline:run": "npx tsx scripts/prune-month-end-pipeline.ts --execute",
-    "pipeline:step": "npx tsx scripts/prune-month-end-pipeline.ts"
+    "pipeline:step": "npx tsx scripts/prune-month-end-pipeline.ts",
+    "lessons:index": "npx tsx scripts/regenerate-lessons-index.ts",
+    "lessons:index:check": "npx tsx scripts/regenerate-lessons-index.ts --check"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.3",

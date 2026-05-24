@@ -1,3 +1,12 @@
+---
+id: '093'
+category: lesson
+tags: [gcs, ci, data-pipeline, automation]
+auto_load: true
+date: 2026-05-24
+issues: [580, 657]
+---
+
 # Lesson 093 — GCS CORS has no subdomain wildcard; dynamic preview hosts force `*`
 
 **Date:** 2026-05-24

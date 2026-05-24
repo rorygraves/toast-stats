@@ -1,3 +1,12 @@
+---
+id: '086'
+category: incident
+tags: [automation, sprint-runner]
+auto_load: false
+date: 2026-05-23
+issues: [577, 615, 606]
+---
+
 # Lesson 086 — A sprint-runner relaunch can land on already-merged-but-unverified work; verify the ship state before re-running /sprint
 
 **Date:** 2026-05-23

@@ -11,6 +11,12 @@ description: #525 listed 5 tests as flaky under parallel-coverage CI load.
   sentinel (`npm run test:journey:stress`) + this closing record, not
   a "fix" PR for a symptom that no longer reproduces.
 type: feedback
+id: '078'
+category: incident
+tags: [tests, flaky, vitest]
+auto_load: false
+date: 2026-05-22
+issues: [525]
 ---
 
 # Lesson 78 — Journey-test flake family is closed; the cure is upstream

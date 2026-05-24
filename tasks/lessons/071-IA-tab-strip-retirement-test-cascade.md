@@ -7,6 +7,12 @@ description: When the LAST tab in a tabbed UI gets routed away (so the
   tests. Lesson 68 said budget 5–10×; Lesson 71 is the corollary —
   sometimes the "budget" is mostly a delete key.
 type: feedback
+id: '071'
+category: lesson
+tags: [vitest, tests, frontend]
+auto_load: true
+date: 2026-05-22
+issues: [571]
 ---
 
 # Lesson 71 — IA tab-strip retirement deletes more test code than the prod diff

@@ -4,6 +4,12 @@ description: A bug report that names one file may hide parallel implementations
   of the same formula in other packages. Grep the codebase before declaring
   a fix complete.
 type: feedback
+id: '061'
+category: principle
+tags: [monorepo, analytics, data-pipeline, dcp]
+auto_load: true
+date: 2026-05-20
+issues: [545]
 ---
 
 # Lesson 61 — Fix the formula everywhere, not just the one in the bug report

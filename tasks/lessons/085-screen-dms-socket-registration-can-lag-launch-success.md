@@ -1,4 +1,20 @@
+---
+id: '085'
+category: superseded
+tags: [screen, bash, automation, flaky]
+auto_load: false
+superseded_by: '089'
+date: 2026-05-23
+issues: [623]
+---
+
 # Lesson 085 — `screen -dmS` returns 0 before the socket is visible to `screen -ls`
+
+> ⚠️ **SUPERSEDED by [Lesson 089](089-pipefail-plus-screen-ls-exit-1-poisons-every-pipeline.md).**
+> The `screen -ls` failure documented here was **misdiagnosed** as socket-registration
+> lag. Lesson 089 root-caused it to `set -o pipefail` + `screen -ls` exiting 1 poisoning
+> the pipeline — not a timing race. The general "eventual-visibility" intuition survives,
+> but for the `screen -ls` case trust 089. Kept for history; `auto_load: false`.
 
 **Date:** 2026-05-23
 **Issue:** #623 (sprint-runner false-negative post-launch verify)

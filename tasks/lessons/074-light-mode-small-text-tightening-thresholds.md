@@ -8,6 +8,12 @@ description: WCAG AA for normal text is 4.5:1. Tailwind's text-gray-400
   AA at 12px and re-coloring it would balloon the diff into design
   territory.
 type: feedback
+id: '074'
+category: lesson
+tags: [accessibility, css, dark-mode, frontend]
+auto_load: true
+date: 2026-05-22
+issues: [564]
 ---
 
 # Lesson 74 — Light-mode small-text contrast: where to tighten, where to stop

@@ -1,3 +1,12 @@
+---
+id: '085'
+category: lesson
+tags: [frontend, router, accessibility]
+auto_load: true
+date: 2026-05-23
+issues: [577, 568, 615]
+---
+
 # Lesson 085 — A breadcrumb removed to fix a collision on ONE page should not stay removed on pages where the collision can't occur
 
 **Date:** 2026-05-23

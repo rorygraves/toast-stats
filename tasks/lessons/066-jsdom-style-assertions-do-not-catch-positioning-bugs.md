@@ -5,6 +5,12 @@ description: Asserting `toHaveStyle({ left: "X%" })` on an absolutely-positioned
   X% of where you expect. If a positioned ancestor wraps the element, the %
   resolves against the wrapper's zero-width box and the visual position is wrong.
 type: feedback
+id: '066'
+category: principle
+tags: [vitest, tests, frontend, css]
+auto_load: true
+date: 2026-05-22
+issues: [559]
 ---
 
 # Lesson 66 — JSDOM style assertions don't catch positioning bugs

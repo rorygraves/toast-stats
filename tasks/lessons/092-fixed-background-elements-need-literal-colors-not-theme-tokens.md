@@ -1,3 +1,12 @@
+---
+id: '092'
+category: lesson
+tags: [dark-mode, css, frontend]
+auto_load: true
+date: 2026-05-23
+issues: [618, 617, 638, 639]
+---
+
 # Lesson 092 — A fixed-background element needs literal text colours, not theme tokens
 
 **Date:** 2026-05-23

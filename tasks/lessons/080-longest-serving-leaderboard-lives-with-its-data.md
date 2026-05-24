@@ -10,6 +10,12 @@ description: #449's stub said "Top-N on /awards page"; the parent epic
   "recognition planner" purpose. When an issue stub names a location
   that no longer matches reality, trust the data shape over the stub.
 type: feedback
+id: '080'
+category: principle
+tags: [frontend, router, scope]
+auto_load: true
+date: 2026-05-22
+issues: [449, 443]
 ---
 
 # Lesson 80 — A new surface lives next to the data it reads

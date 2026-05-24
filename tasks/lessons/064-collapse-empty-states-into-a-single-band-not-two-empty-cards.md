@@ -4,6 +4,12 @@ description: When two side-by-side panels both render "All quiet" /
   "None this PY", neither is communicating anything — collapse them
   into one compact band that says it once.
 type: feedback
+id: '064'
+category: lesson
+tags: [frontend, css]
+auto_load: true
+date: 2026-05-21
+issues: [551]
 ---
 
 # Lesson 64 — Collapse adjacent empty-state panels into a single band

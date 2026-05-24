@@ -7,6 +7,12 @@ description: When the same formula lives in two packages (analytics-core
   call sites inline-invoke it at the field assignment — not behind a
   private wrapper method. Wrappers re-introduce the drift surface.
 type: feedback
+id: '076'
+category: principle
+tags: [monorepo, analytics, tdd]
+auto_load: true
+date: 2026-05-22
+issues: [547]
 ---
 
 # Lesson 76 — Shared formula helper eliminates the two-copies trap

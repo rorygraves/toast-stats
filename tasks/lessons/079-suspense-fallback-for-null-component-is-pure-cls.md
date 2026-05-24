@@ -9,6 +9,12 @@ description: LazyComparisonPanel wrapped ComparisonPanel in Suspense with
   more than 2× the 0.1 WCAG/Lighthouse threshold. The fix is one line
   in the wrapper, not in the component or its CSS.
 type: feedback
+id: '079'
+category: principle
+tags: [frontend, react, cls, performance]
+auto_load: true
+date: 2026-05-22
+issues: [488]
 ---
 
 # Lesson 79 — A Suspense fallback for a possibly-null component is pure CLS

@@ -1,3 +1,12 @@
+---
+id: '086'
+category: incident
+tags: [automation, sprint-runner]
+auto_load: false
+date: 2026-05-23
+issues: [626]
+---
+
 # Lesson 086 — Close-then-tick ordering invites a duplicate-launch race
 
 **Date:** 2026-05-23

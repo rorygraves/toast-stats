@@ -1,3 +1,12 @@
+---
+id: '089'
+category: principle
+tags: [bash, screen, automation, ci]
+auto_load: true
+date: 2026-05-23
+issues: [633, 634]
+---
+
 # Lesson 089 — `set -o pipefail` + macOS `screen -ls` exit 1 = silently broken detection
 
 **Date:** 2026-05-23

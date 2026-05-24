@@ -5,6 +5,12 @@ description: Removing a tab from a tabbed UI doesn't just delete one
   content." Plan the test-rewrite cost up front; it's 5–10× the
   component edit.
 type: feedback
+id: '068'
+category: lesson
+tags: [vitest, tests, frontend]
+auto_load: true
+date: 2026-05-22
+issues: [569]
 ---
 
 # Lesson 68 — Tab merge cascades into the test surface — budget for it

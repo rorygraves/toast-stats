@@ -1,3 +1,12 @@
+---
+id: '095'
+category: lesson
+tags: [dark-mode, css, accessibility]
+auto_load: true
+date: 2026-05-24
+issues: [610, 574]
+---
+
 # Lesson 095 — A global dark-token bump must be sized for the LIGHTEST surface it lands on
 
 **Date:** 2026-05-24

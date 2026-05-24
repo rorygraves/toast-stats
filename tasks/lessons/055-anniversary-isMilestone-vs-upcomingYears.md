@@ -1,3 +1,12 @@
+---
+id: '055'
+category: lesson
+tags: [frontend, dcp]
+auto_load: true
+date: 2026-05-12
+issues: [507]
+---
+
 # Lesson 55 — `isMilestone` fires on `years`, not `upcomingYears`
 
 **Date:** 2026-05-12

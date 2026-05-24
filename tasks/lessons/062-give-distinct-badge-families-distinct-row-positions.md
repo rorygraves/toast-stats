@@ -4,6 +4,12 @@ description: When a row already has inline badges, a new badge class with
   different semantics deserves its own column — not another inline pill.
   Same shape ≠ same meaning, and the position telegraphs the distinction.
 type: feedback
+id: '062'
+category: lesson
+tags: [frontend, css]
+auto_load: true
+date: 2026-05-20
+issues: [546]
 ---
 
 # Lesson 62 — Give distinct badge families distinct row positions

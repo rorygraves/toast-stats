@@ -16,6 +16,12 @@ description: #353's redesign-tokens.test.ts asserted JetBrains Mono was
   to-do note. When a new spec wants to lift it, prove the budget
   still holds before changing the assertion.
 type: feedback
+id: '081'
+category: principle
+tags: [tests, performance, cls, brand]
+auto_load: true
+date: 2026-05-23
+issues: [339]
 ---
 
 # Lesson 81 — A deferral test is a load-bearing budget check, not a to-do note

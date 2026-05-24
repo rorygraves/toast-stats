@@ -1,3 +1,11 @@
+---
+id: '054'
+category: lesson
+tags: [tdd, ci, automation]
+auto_load: true
+issues: [483, 491]
+---
+
 # 🗓️ 2026-05-12 — Lesson 54: TDD discipline slipped the moment the pre-push gate went away
 
 **Discovery:** During the Find-A-Club epic and its bug-audit follow-ups (PRs #483–#491), I shipped a steady stream of well-tested code — but the tests were never red. I wrote `FindAClubMerger.ts` first, then 11 tests after. Same pattern for `FindAClubService.ts`, `EducationLevelsCard.tsx`, the 6 bug fixes in #487. Tests existed, suites were green, CI passed. Looked like TDD. Wasn't TDD. The user called it out: "Feels like we're letting TDD slip now that pre-push is disabled."

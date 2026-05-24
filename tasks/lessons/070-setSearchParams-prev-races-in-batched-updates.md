@@ -5,6 +5,12 @@ description: Two setSearchParams(prev => …) calls dispatched in the same
   the first. Bail out on no-op writes (e.g. delete a key that isn't
   present) so the simultaneous filter write survives.
 type: feedback
+id: '070'
+category: lesson
+tags: [router, react, hooks, frontend]
+auto_load: true
+date: 2026-05-22
+issues: [570]
 ---
 
 # Lesson 70 — `setSearchParams(prev => …)` races against same-batch updaters

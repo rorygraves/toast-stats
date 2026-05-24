@@ -4,6 +4,12 @@ description: When a KPI card shows "current vs. recognition thresholds",
   a single bullet bar (marker + tier ticks) beats four parallel progress
   bars. Same data, far less ink.
 type: feedback
+id: '063'
+category: lesson
+tags: [charts, frontend]
+auto_load: true
+date: 2026-05-21
+issues: [550]
 ---
 
 # Lesson 63 — Bullet bars show progress; stacked bars show comparison

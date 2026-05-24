@@ -5,6 +5,12 @@ description: Every Tailwind color utility a component adopts is a new
   parallel maintenance, or unreadable contrast accumulates silently —
   no test fails, no lint flags it, but production looks broken.
 type: feedback
+id: '067'
+category: lesson
+tags: [dark-mode, css, frontend]
+auto_load: true
+date: 2026-05-22
+issues: [564]
 ---
 
 # Lesson 67 — Dark-mode overrides must keep up with component color utilities

@@ -4,6 +4,11 @@ description: When a styled chip wraps an absolutely-positioned opacity-0
   <select>, the parent label loses the browser's default focus ring. Add
   `focus-within:ring-*` so keyboard users still see focus.
 type: feedback
+id: '058'
+category: lesson
+tags: [accessibility, css, frontend]
+auto_load: true
+date: 2026-05-15
 ---
 
 # Lesson 58 — Invisible `<select>` overlays lose focus visibility (WCAG 2.4.7)

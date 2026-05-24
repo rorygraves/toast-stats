@@ -1,3 +1,12 @@
+---
+id: '088'
+category: incident
+tags: [automation, sprint-runner]
+auto_load: false
+date: 2026-05-23
+issues: [627]
+---
+
 # Lesson 088 — "Single action per tick" was a false virtue in the autonomous runner
 
 **Date:** 2026-05-23

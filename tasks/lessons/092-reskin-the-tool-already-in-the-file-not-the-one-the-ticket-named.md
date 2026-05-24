@@ -1,3 +1,12 @@
+---
+id: '092'
+category: lesson
+tags: [frontend, charts, scope]
+auto_load: true
+date: 2026-05-23
+issues: [619, 617]
+---
+
 # Lesson 092 — Re-skin with the tool already in the file, not the one the ticket named
 
 **Date:** 2026-05-23

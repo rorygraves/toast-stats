@@ -1,3 +1,12 @@
+---
+id: '087'
+category: lesson
+tags: [automation, sprint-runner, monorepo]
+auto_load: true
+date: 2026-05-23
+issues: [625]
+---
+
 # Lesson 087 — Spawned automation sessions need their own git worktree
 
 **Date:** 2026-05-23

@@ -1,3 +1,12 @@
+---
+id: '091'
+category: lesson
+tags: [prompts, automation, sprint-runner]
+auto_load: true
+date: 2026-05-23
+issues: [636]
+---
+
 # Lesson 091 — Bootstrap prompt scope must be explicit, or runs diverge
 
 **Date:** 2026-05-23

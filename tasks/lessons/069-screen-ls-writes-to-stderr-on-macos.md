@@ -4,6 +4,12 @@ description: BSD `screen` on macOS sends its session list to stderr. Piping
   with `2>/dev/null | grep` silently swallows the very output you want to
   match, so any "is a session alive?" guard built that way is a no-op.
 type: feedback
+id: '069'
+category: lesson
+tags: [bash, screen, sprint-runner, automation]
+auto_load: true
+date: 2026-05-22
+issues: [575]
 ---
 
 # Lesson 69 — macOS `screen -ls` writes to stderr, not stdout

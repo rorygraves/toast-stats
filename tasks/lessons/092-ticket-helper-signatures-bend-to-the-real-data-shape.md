@@ -1,3 +1,12 @@
+---
+id: '092'
+category: lesson
+tags: [analytics, hooks, scope]
+auto_load: true
+date: 2026-05-23
+issues: [621, 617]
+---
+
 # Lesson 092 — A ticket's helper signature is a sketch; bend it to the real data shape
 
 **Date:** 2026-05-23

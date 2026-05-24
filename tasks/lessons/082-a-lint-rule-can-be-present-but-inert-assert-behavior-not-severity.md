@@ -12,6 +12,12 @@ description: #375 wanted to "unblock dependabot" by fixing setState-in-effect
   rule fires. Assert behavior, not declared severity, when the whole point is
   enforcement.
 type: feedback
+id: '082'
+category: principle
+tags: [ci, tests, tdd]
+auto_load: true
+date: 2026-05-23
+issues: [375, 345, 348]
 ---
 
 # Lesson 82 — A lint rule can be present-but-inert; assert behavior, not severity

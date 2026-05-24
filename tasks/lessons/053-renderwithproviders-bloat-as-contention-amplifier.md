@@ -1,3 +1,11 @@
+---
+id: '053'
+category: principle
+tags: [vitest, tests, flaky, frontend, react]
+auto_load: true
+issues: [473]
+---
+
 # 🗓️ 2026-05-11 — Lesson 53: renderWithProviders Bloat as Contention Amplifier (#473)
 
 **Discovery:** While fixing the chronically-flaky local pre-push gate, I traced the failures to worker contention rather than test bugs (Lesson 51 already established this category). But the deeper finding was _which_ tests amplify the contention: any test file that uses `renderWithProviders` from `componentTestUtils.tsx` for a component that doesn't actually need a router or React Query pays the cost of `new QueryClient()` + `createMemoryRouter([{path:'*',element:ui}])` + `RouterProvider` + `PerformanceWrapper` on every `render()` — multiplied by every test in the file. For `GlobalRankingsAccessibility.test.tsx` that's 36 wasted provider stacks per file run, all racing the rest of the suite for worker time under v8 coverage instrumentation.

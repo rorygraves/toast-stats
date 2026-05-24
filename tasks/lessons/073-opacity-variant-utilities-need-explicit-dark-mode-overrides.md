@@ -7,6 +7,12 @@ description: bg-tm-*-N / text-tm-*-N / border-tm-*-N classes bake their rgba
   fall back on, and overriding the underlying CSS var only fixes the base
   utility, not the opacity variants.
 type: feedback
+id: '073'
+category: lesson
+tags: [dark-mode, css, frontend]
+auto_load: true
+date: 2026-05-22
+issues: [564]
 ---
 
 # Lesson 73 — Opacity-variant utilities need explicit dark-mode overrides

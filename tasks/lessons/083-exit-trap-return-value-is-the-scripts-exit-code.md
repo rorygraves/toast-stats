@@ -1,3 +1,12 @@
+---
+id: '083'
+category: principle
+tags: [bash, automation]
+auto_load: true
+date: 2026-05-23
+issues: [603]
+---
+
 # Lesson 083 — A bash EXIT trap's return value becomes the script's exit code
 
 **Date:** 2026-05-23

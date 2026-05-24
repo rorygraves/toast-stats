@@ -1,3 +1,12 @@
+---
+id: '093'
+category: principle
+tags: [dark-mode, css, accessibility]
+auto_load: true
+date: 2026-05-23
+issues: [608, 574]
+---
+
 # Lesson 093 — A token that doesn't remap in dark is a trap for every consumer that isn't `--link`
 
 **Date:** 2026-05-23

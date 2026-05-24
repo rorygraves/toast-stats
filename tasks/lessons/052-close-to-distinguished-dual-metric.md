@@ -1,3 +1,11 @@
+---
+id: '052'
+category: principle
+tags: [frontend, scope, dcp]
+auto_load: true
+issues: [433]
+---
+
 # 🗓️ 2026-05-10 — Lesson 52: "Close to Distinguished" had two definitions in two surfaces (#433)
 
 **Discovery**: The ClubDetailPage banner and the ClubsTable quick-filter chip both said "Close to Distinguished" but defined "close" differently. Banner used `projection.gapToDistinguished.members` (raw tier gap from `dcpProjections.ts` — `min(absoluteGap, growthGap)`). Chip used `membersNeeded` (sophisticated value from `membersToDistinguished.computeMembersToDistinguished` — qualification + Goal 7/8 aware). They share a numeric scale (≤ 4 means "close") but answer different questions. A club can satisfy one without the other. Neither was wrong on its own — but the labels implied a parity that didn't exist.

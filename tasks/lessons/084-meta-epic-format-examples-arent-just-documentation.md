@@ -1,3 +1,12 @@
+---
+id: '084'
+category: principle
+tags: [bash, automation, prompts]
+auto_load: true
+date: 2026-05-23
+issues: [605]
+---
+
 # Lesson 084 — A "documentation example" of a parsed format is also valid input
 
 **Date:** 2026-05-23

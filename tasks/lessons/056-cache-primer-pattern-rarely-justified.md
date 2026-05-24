@@ -4,6 +4,12 @@ description:
   Keeping a hook call "for cache warming" usually doesn't pay back the
   cost of the re-render + mapping pass; delete when the only consumer is gone.
 type: feedback
+id: '056'
+category: lesson
+tags: [react, hooks, performance, frontend]
+auto_load: true
+date: 2026-05-14
+issues: [523, 519, 520, 521]
 ---
 
 # Lesson 56 — Cache-primer hook calls rarely earn their keep

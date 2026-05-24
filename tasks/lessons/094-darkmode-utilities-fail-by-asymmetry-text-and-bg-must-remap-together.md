@@ -1,3 +1,12 @@
+---
+id: '094'
+category: principle
+tags: [dark-mode, css, accessibility]
+auto_load: true
+date: 2026-05-24
+issues: [609, 574]
+---
+
 # Lesson 094 — In a Tailwind-utility dark theme, text and background must remap _together_; the asymmetry is the bug
 
 **Date:** 2026-05-24

@@ -3,6 +3,12 @@ name: Trust the program rules on percentage denominators
 description: When a percentage is gating a recognition tier, use the denominator
   the program specifies — not the one that's most convenient to compute.
 type: feedback
+id: '060'
+category: principle
+tags: [dcp, analytics]
+auto_load: true
+date: 2026-05-15
+issues: [538, 537]
 ---
 
 # Lesson 60 — Trust the program rules on percentage denominators

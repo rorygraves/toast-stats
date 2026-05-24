@@ -11,6 +11,12 @@ description: Three call sites rendering `D{id}` + optional district name
   only when descriptive") unifies, the visuals stay byte-identical,
   and the PR diff stays a refactor instead of becoming a design change.
 type: feedback
+id: '077'
+category: principle
+tags: [frontend, react, css]
+auto_load: true
+date: 2026-05-22
+issues: [522]
 ---
 
 # Lesson 77 — Presentational extraction: override classes, don't invent variants

@@ -8,6 +8,12 @@ description: jest-axe's color-contrast rule is auto-disabled in JSDOM
   and ship the static guard with an allowlist (`EXPECTED_FAILURES`)
   that future PRs can only SHRINK.
 type: feedback
+id: '075'
+category: principle
+tags: [accessibility, vitest, tests, frontend]
+auto_load: true
+date: 2026-05-22
+issues: [583, 564]
 ---
 
 # Lesson 75 — axe-core in JSDOM + the allowlist-as-tracked-debt pattern

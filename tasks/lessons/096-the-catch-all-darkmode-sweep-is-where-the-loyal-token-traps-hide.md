@@ -1,3 +1,12 @@
+---
+id: '096'
+category: lesson
+tags: [dark-mode, css, accessibility]
+auto_load: true
+date: 2026-05-24
+issues: [611, 574]
+---
+
 # Lesson 096 — The catch-all dark-mode sweep is where the brand-token traps hide
 
 **Date:** 2026-05-24

@@ -4,6 +4,12 @@ description: Two "latest" queries on the same page can resolve to different
   snapshots if data publishes between them — pin both to a single resolved
   date instead.
 type: feedback
+id: '059'
+category: principle
+tags: [data-pipeline, react, hooks, frontend]
+auto_load: true
+date: 2026-05-15
+issues: [535, 513]
 ---
 
 # Lesson 59 — Pin related queries to the same snapshot date

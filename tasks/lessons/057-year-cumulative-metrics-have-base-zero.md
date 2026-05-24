@@ -4,6 +4,12 @@ description:
   Distinguished Clubs and similar year-cumulative counts reset to 0 on
   July 1, so PY-start base is always 0 — Δ equals current.
 type: project
+id: '057'
+category: principle
+tags: [dcp, analytics, data-pipeline]
+auto_load: true
+date: 2026-05-14
+issues: [526, 513]
 ---
 
 # Lesson 57 — Year-cumulative metrics have base = 0 each program year

@@ -1,3 +1,12 @@
+---
+id: '092'
+category: lesson
+tags: [frontend, scope, dcp]
+auto_load: true
+date: 2026-05-23
+issues: [620]
+---
+
 # Lesson 092 — In a re-skin sprint, find what already ships the feature and replace it; don't bolt a second one on
 
 **Date:** 2026-05-23

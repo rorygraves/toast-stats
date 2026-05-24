@@ -6,6 +6,12 @@ description: Several DistrictDetailPage tests overload the global
   read `entry.target.id` will throw asynchronously, polluting test
   output even when assertions pass. Guard with `entry.target?.id`.
 type: feedback
+id: '072'
+category: lesson
+tags: [vitest, tests, react, frontend]
+auto_load: true
+date: 2026-05-22
+issues: [572]
 ---
 
 # Lesson 72 — IntersectionObserver callbacks must tolerate test-local mock shapes

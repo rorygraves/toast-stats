@@ -4,6 +4,12 @@ description: A linear [0, max] bar crushes tightly-clustered tier
   thresholds into a single illegible cluster at the right edge. Zoom the
   scale around the tier band so each threshold has room to breathe.
 type: feedback
+id: '065'
+category: lesson
+tags: [charts, frontend]
+auto_load: true
+date: 2026-05-21
+issues: [558]
 ---
 
 # Lesson 65 — When tier thresholds cluster, zoom the scale into the band

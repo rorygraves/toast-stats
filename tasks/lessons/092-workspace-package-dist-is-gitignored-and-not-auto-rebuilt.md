@@ -1,3 +1,12 @@
+---
+id: '092'
+category: lesson
+tags: [monorepo, build]
+auto_load: true
+date: 2026-05-23
+issues: [645]
+---
+
 # Lesson 092 — Workspace-package `dist/` is gitignored; local pre-push does not auto-rebuild
 
 **Date:** 2026-05-23
