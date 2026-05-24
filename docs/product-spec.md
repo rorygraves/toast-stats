@@ -28,16 +28,16 @@ A data visualization platform for **Toastmasters district leaders** to track clu
 
 ### Landing Page
 
-| Feature                     | Description                                                             | Status     |
-| --------------------------- | ----------------------------------------------------------------------- | ---------- |
-| Global district rankings    | Borda-count rankings across membership, payments, DCP                   | ✅ Shipped |
-| Multi-year comparison table | YoY district metrics comparison                                         | ✅ Shipped |
-| Historical rank charts      | Track rank progression over program years                               | ✅ Shipped |
-| Program year selector       | Switch between program years (July-June)                                | ✅ Shipped |
-| Dark mode                   | Full theme toggle                                                       | ✅ Shipped |
-| Region filter pill bar      | Always-visible toggle pills for region filtering                        | ✅ Shipped |
-| Awards Race section         | Top-3 leaderboards for Extension, 20-Plus, Retention awards (collapsed) | ✅ Shipped |
-| Inline award badges         | Trophy pills next to district names for competitive award winners       | ✅ Shipped |
+| Feature                     | Description                                                                                     | Status     |
+| --------------------------- | ----------------------------------------------------------------------------------------------- | ---------- |
+| Global district rankings    | Borda-count rankings across membership, payments, DCP                                           | ✅ Shipped |
+| Multi-year comparison table | YoY district metrics comparison                                                                 | ✅ Shipped |
+| Historical rank charts      | Track rank progression over program years                                                       | ✅ Shipped |
+| Program year selector       | Switch between program years (July-June)                                                        | ✅ Shipped |
+| Dark mode                   | Full theme toggle — WCAG AA contrast verified on every route (Track D sweep #608–#611 complete) | ✅ Shipped |
+| Region filter pill bar      | Always-visible toggle pills for region filtering                                                | ✅ Shipped |
+| Awards Race section         | Top-3 leaderboards for Extension, 20-Plus, Retention awards (collapsed)                         | ✅ Shipped |
+| Inline award badges         | Trophy pills next to district names for competitive award winners                               | ✅ Shipped |
 
 ### District Detail Page
 

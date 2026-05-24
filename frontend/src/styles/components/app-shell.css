@@ -233,6 +233,15 @@
     color: var(--maroon-500);
   }
 
+  /* #611: --maroon-500 (#7b1828) has no dark remap — 1.69:1 on the dark
+     surface. Scoped lightened maroon (the same #e8879a the dark theme already
+     uses) clears AA, mirroring the #609 .districts-page-header__eyebrow fix.
+     Scoped rather than remapping --maroon-500 globally (10+ consumers, R8).
+     Shared by the Methodology and History page headers. */
+  [data-theme='dark'] .placeholder-page__eyebrow {
+    color: #e8879a;
+  }
+
   .placeholder-page__title {
     margin: 8px 0 12px;
     font-family: var(--serif);
@@ -384,6 +393,17 @@
   .districts-page-header__diff-strip time {
     font-variant-numeric: tabular-nums;
     color: var(--loyal-500);
+  }
+
+  /* #611: the diff-strip text/strong/time are raw --loyal-600/-700/-500
+     (none remap in dark) on the dark --loyal-50 pill (#112432) → navy-on-navy,
+     1.01-1.47:1. --link is the dark-safe blue the theme already remaps
+     (#60a5d8); a single scoped color clears AA for all three (the strong stays
+     distinguished by weight). Scoped, so light mode is untouched (Lesson 093). */
+  [data-theme='dark'] .districts-page-header__diff-strip,
+  [data-theme='dark'] .districts-page-header__diff-strip strong,
+  [data-theme='dark'] .districts-page-header__diff-strip time {
+    color: var(--link);
   }
 
   .districts-page-header__actions {
@@ -2330,6 +2350,14 @@
     border-color: var(--loyal-200);
     color: var(--loyal-500);
     font-weight: 600;
+  }
+
+  /* #611: text is raw --loyal-500 (#004165, no dark remap) on the dark
+     --loyal-50 pill (#112432) → navy-on-navy, 1.47:1. --link is the dark-safe
+     blue the theme already remaps (#60a5d8 in dark); using it here keeps the
+     swap CSS-addressable and clears AA on the pill (Lesson 093). */
+  [data-theme='dark'] .history-page-year-chip--current {
+    color: var(--link);
   }
 
   .history-page-year-chip__live {
