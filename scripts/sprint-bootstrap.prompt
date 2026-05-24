@@ -17,6 +17,8 @@ Do these steps in order, and stop if any check fails:
 
 4. **Run the sprint skill** for the target: invoke `/sprint` with issue `#{{TARGET_ISSUE}}` as the input. Follow the sprint skill's full workflow (Red / Green / Refactor / Verify per CLAUDE.md), including filing the PR and watching CI.
 
+   **Workspace-package builds (#645).** If your changes touch any file under `packages/*/src/`, run the matching `npm run build:<package>` step (e.g. `npm run build:analytics-core`) BEFORE `npm run test` or any pre-push verification. The frontend imports built artifacts from `packages/*/dist/` (gitignored, not auto-rebuilt). CI rebuilds automatically; the local pre-push hook does not. Skipping the build means tests pass for you (because you happened to rebuild as you worked) but break for any operator pulling fresh from main.
+
 5. **Run live verification on `ts.taverns.red`, then close the sub-issue on pass.** Once the PR is merged and the deploy job is green, drive the actual change in production — not just a curl. Pattern proven on #444:
 
    - Write a temporary Playwright smoke at `frontend/e2e/<feature>-verify.smoke.ts`, run with `BASE_URL=https://ts.taverns.red npx playwright test --config playwright.config.ts e2e/<feature>-verify.smoke.ts --workers=1`, then delete the file (no PR churn).
