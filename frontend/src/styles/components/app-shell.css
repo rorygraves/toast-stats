@@ -606,6 +606,59 @@
     color: #ffffff;
   }
 
+  /* Region finder (#685) — jump-to-region filter bar on the /regions index.
+     Token-driven so contrast remaps in dark mode (Lesson 094); mirrors the
+     districts-toolbar region-chip primitive for cross-page consistency. */
+  .region-finder {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .region-finder__label {
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-right: 4px;
+  }
+
+  .region-finder__chip {
+    border: 1px solid var(--line);
+    background-color: var(--surface);
+    color: var(--ink-2);
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background-color 150ms, border-color 150ms, color 150ms;
+    min-width: 40px;
+    text-align: center;
+  }
+
+  .region-finder__chip:hover {
+    border-color: var(--loyal-200);
+    color: var(--loyal-500);
+  }
+
+  .region-finder__chip--active,
+  .region-finder__chip--active:hover {
+    background-color: var(--loyal-500);
+    border-color: var(--loyal-500);
+    color: #ffffff;
+  }
+
+  .region-finder__chip:focus-visible {
+    outline: 2px solid var(--loyal-500);
+    outline-offset: 2px;
+  }
+
   /* Search input */
   .districts-toolbar__search {
     position: relative;
