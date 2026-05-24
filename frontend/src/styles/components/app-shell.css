@@ -644,7 +644,10 @@
 
   .region-finder__chip:hover {
     border-color: var(--loyal-200);
-    color: var(--loyal-500);
+    /* --link, not raw --loyal-500: --loyal-500 (#004165) has no dark remap,
+       so it would render navy-on-dark (~1.6:1) on hover. --link remaps to
+       #60a5d8 in dark while staying the same navy in light (Lesson 093/096). */
+    color: var(--link);
   }
 
   .region-finder__chip--active,

@@ -225,4 +225,68 @@ describe('Region pages dark-mode contrast (#609)', () => {
       `${cls}: ${fg} on ${bg} = ${ratio.toFixed(2)}:1`
     ).toBeGreaterThanOrEqual(4.5)
   })
+
+  // RegionFinder jump-to-region chips (#685). Token-driven CSS rules (not
+  // dark-scoped overrides) — their dark colour is the dark remap of each var.
+  // The hover state is the trap: raw `--loyal-500` (#004165, no dark remap)
+  // would render ~1.6:1 navy-on-dark; `--link` (#60a5d8 in dark) clears AA.
+  /** Value of `prop` from the first plain (non-dark-scoped) `selector { … }`. */
+  function ruleValue(css: string, selector: string, prop: string) {
+    const re = new RegExp(
+      '(?:^|[\\n}])\\s*' +
+        selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') +
+        '[^{]*\\{'
+    )
+    const m = re.exec(css)
+    if (!m) return null
+    const open = css.indexOf('{', m.index)
+    const close = css.indexOf('}', open)
+    const pm = css
+      .slice(open + 1, close)
+      .match(new RegExp('(?:^|[;{\\s])' + prop + '\\s*:\\s*([^;!]+)'))
+    return pm ? pm[1].trim() : null
+  }
+
+  it('finder chip default text clears AA on the dark surface', () => {
+    const fg = resolveVar(
+      ruleValue(appShellCss, '.region-finder__chip', 'color') ?? ''
+    )
+    const bg = resolveVar(
+      ruleValue(appShellCss, '.region-finder__chip', 'background-color') ?? ''
+    )
+    const ratio = calculateContrastRatio(fg, bg)
+    expect(
+      ratio,
+      `chip ${fg} on ${bg} = ${ratio.toFixed(2)}:1`
+    ).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('finder chip HOVER text clears AA on the dark surface', () => {
+    const fg = resolveVar(
+      ruleValue(appShellCss, '.region-finder__chip:hover', 'color') ?? ''
+    )
+    const ratio = calculateContrastRatio(fg, surface)
+    expect(
+      ratio,
+      `chip:hover ${fg} on ${surface} = ${ratio.toFixed(2)}:1`
+    ).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('finder chip ACTIVE text clears AA on its brand background', () => {
+    const fg = resolveVar(
+      ruleValue(appShellCss, '.region-finder__chip--active', 'color') ?? ''
+    )
+    const bg = resolveVar(
+      ruleValue(
+        appShellCss,
+        '.region-finder__chip--active',
+        'background-color'
+      ) ?? ''
+    )
+    const ratio = calculateContrastRatio(fg, bg)
+    expect(
+      ratio,
+      `active ${fg} on ${bg} = ${ratio.toFixed(2)}:1`
+    ).toBeGreaterThanOrEqual(4.5)
+  })
 })
