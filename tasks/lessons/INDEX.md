@@ -56,3 +56,4 @@
 - **095** [dark-mode, css, accessibility] — A global dark-token bump must be sized for the LIGHTEST surface it lands on (#610, #574)
 - **096** [dark-mode, css, accessibility] — The catch-all dark-mode sweep is where the brand-token traps hide (#611, #574)
 - **097** [process, lessons, automation, sprint-runner] — Promote the always-relevant invariant, not every `category: principle` (#649, #647)
+- **098** [process, lessons, automation, sprint-runner, prompts] — A curated manifest beats tag inference when the operator knows better (#650, #647)
