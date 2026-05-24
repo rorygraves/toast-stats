@@ -83,9 +83,22 @@ Read `tasks/rules.md` completely before every task. Key rules:
 
 ## Learning Artifacts
 
-- `tasks/lessons.md` — Append-only log of discoveries (38+ entries). Read last 5 before each task.
+- `tasks/lessons/` — Per-file lessons (one discovery each, tagged frontmatter). `tasks/lessons/INDEX.md` is the always-loadable tag index (regenerate with `npm run lessons:index`).
 - `tasks/rules.md` — Curated high-signal rules distilled from lessons. Read completely before each task.
 - `docs/product-spec.md` — Shipped features, business rules, product decisions.
+
+### Per-sprint relevant-lessons manifest (#650)
+
+A sprint sub-issue body **SHOULD** include a `## Relevant lessons` section when there are specific lessons the spawned session must read. The bootstrap prompt (step 1) loads these in full — operator curation wins over the loader's tag inference. Format (one bullet per lesson; the trailing reason is optional but recommended):
+
+```markdown
+## Relevant lessons
+
+- [Lesson 087](tasks/lessons/087-spawned-sessions-need-their-own-worktree-not-shared-checkout.md) — branch a long-lived worktree from origin/main, not the stale base
+- [Lesson 092](tasks/lessons/092-workspace-package-dist-is-gitignored-and-not-auto-rebuilt.md) — rebuild workspace dist before tests
+```
+
+Only the strict `- [text](path)` (or `* [text](path)`) bullet form is recognized — a colon separator or a space before `(` is silently skipped. Dry-run what a session would load with `scripts/relevant-lessons.sh <issue#>` (or `--stdin`): it prints each resolved path and exits non-zero if a listed lesson file is missing.
 
 ## Key Conventions
 
