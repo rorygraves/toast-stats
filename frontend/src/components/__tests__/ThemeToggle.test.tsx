@@ -103,4 +103,21 @@ describe('ThemeToggle (#120)', () => {
 
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
   })
+
+  // #700 — the icon colour must come from a theme-aware token, not a hardcoded
+  // near-white literal that vanishes against the light header surface.
+  it('does not hardcode a near-white icon colour inline (#700)', () => {
+    renderWithProvider()
+    const button = screen.getByRole('button')
+    // The old bug: style={{ color: 'rgba(255, 255, 255, 0.8)' }} — invisible in
+    // light mode. Colour must be driven by CSS (--ink-3), not inline white.
+    expect(button.style.color).not.toMatch(/255,\s*255,\s*255/)
+    expect(button.style.color).toBe('')
+  })
+
+  it('carries the theme-aware styling class (#700)', () => {
+    renderWithProvider()
+    const button = screen.getByRole('button')
+    expect(button.classList.contains('app-shell-theme-toggle')).toBe(true)
+  })
 })
