@@ -1968,10 +1968,13 @@
     background-color: var(--surface-3);
   }
 
+  /* Active = --link text on --loyal-50 per handoff (#670). --link equals
+     --loyal-500 in light (byte-identical to the old look) but remaps to a
+     dark-safe #60a5d8 — never raw --loyal-500, the navy-on-navy dark trap
+     (lessons 093/096). */
   .clubs-status-segmented__btn--active {
-    background-color: var(--surface);
-    color: var(--loyal-500);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    background-color: var(--loyal-50);
+    color: var(--link);
   }
 
   .clubs-status-segmented__count {
@@ -1991,8 +1994,8 @@
   }
 
   .clubs-status-segmented__btn--active .clubs-status-segmented__count {
-    background-color: var(--loyal-50);
-    color: var(--loyal-500);
+    background-color: var(--surface);
+    color: var(--link);
   }
 
   /* Clubs tab quick-filter chip strip (#24 follow-up). Sits above the
@@ -2031,28 +2034,29 @@
   }
 
   .clubs-quick-filter-chip:hover {
+    background-color: var(--surface-3);
     border-color: var(--loyal-200);
-    color: var(--loyal-500);
+    color: var(--link);
   }
 
+  /* Active chip matches the segmented control: --link text on --loyal-50,
+     not a solid --loyal-500 fill — keeps the accent dark-safe (#670). */
   .clubs-quick-filter-chip--active {
-    background-color: var(--loyal-500);
-    border-color: var(--loyal-500);
-    color: #ffffff;
+    background-color: var(--loyal-50);
+    border-color: var(--loyal-200);
+    color: var(--link);
   }
 
   .clubs-quick-filter-chip--active:hover {
-    background-color: var(--loyal-600);
-    border-color: var(--loyal-600);
-    color: #ffffff;
+    background-color: var(--loyal-100);
+    border-color: var(--loyal-200);
+    color: var(--link);
   }
 
+  /* Star stays gold in both rest and active states (the active fill is now
+     a light tint, so a white star would vanish). */
   .clubs-quick-filter-chip__star {
     color: var(--yellow-600);
-  }
-
-  .clubs-quick-filter-chip--active .clubs-quick-filter-chip__star {
-    color: #ffffff;
   }
 
   .clubs-quick-filter-chip__clear {
@@ -2064,6 +2068,168 @@
     background-color: rgba(123, 24, 40, 0.06);
     border-color: var(--maroon-500);
     color: var(--maroon-500);
+  }
+
+  /* ── Clubs column-filter popover re-skin (#670, epic #665 Sprint 4) ──
+     The open filter popover (ColumnHeader dropdown + Text/Numeric/Categorical
+     filters) was the last legacy-gray surface on the clubs table; #668 parked
+     it here. Token-driven so dark mode works via the [data-theme='dark']
+     remaps (R10, lessons 093/096) — no baked opacity-variants (lesson 073).
+     The active accent matches the segmented/chip controls: --link text on
+     --loyal-50, never raw --loyal-500 (the navy-on-navy dark trap). */
+  .clubs-filter-popover {
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-lg);
+  }
+
+  .clubs-filter-heading {
+    color: var(--ink);
+  }
+
+  /* Hairline separators inside the popover (was border-gray-100). */
+  .clubs-filter-divider {
+    border-color: var(--line);
+  }
+
+  /* Small field labels (Minimum/Maximum) and caption/summary text. */
+  .clubs-filter-label,
+  .clubs-filter-note {
+    color: var(--ink-3);
+  }
+
+  .clubs-filter-meta {
+    color: var(--ink-3);
+    background-color: var(--surface-2);
+  }
+
+  /* Sort A-Z / Z-A + operator toggles. Layout (padding, radius, focus ring)
+     stays on Tailwind in the JSX; these classes own only the themed colours. */
+  .clubs-filter-btn {
+    background-color: var(--surface);
+    border-color: var(--line);
+    color: var(--ink-2);
+  }
+
+  .clubs-filter-btn:hover {
+    background-color: var(--surface-3);
+    border-color: var(--loyal-200);
+    color: var(--ink);
+  }
+
+  .clubs-filter-btn--active {
+    background-color: var(--loyal-50);
+    border-color: var(--loyal-200);
+    color: var(--link);
+  }
+
+  .clubs-filter-btn--active:hover {
+    background-color: var(--loyal-100);
+    border-color: var(--loyal-200);
+    color: var(--link);
+  }
+
+  /* Apply — primary. White on the brand navy --loyal-500, fixed both themes. */
+  .clubs-filter-btn--primary {
+    background-color: var(--loyal-500);
+    border-color: var(--loyal-500);
+    color: #ffffff;
+  }
+
+  .clubs-filter-btn--primary:hover {
+    background-color: var(--loyal-600);
+    border-color: var(--loyal-600);
+  }
+
+  /* Clear (popover footer) — neutral ghost. */
+  .clubs-filter-btn--ghost {
+    background-color: var(--surface-2);
+    border-color: var(--line);
+    color: var(--ink-2);
+  }
+
+  .clubs-filter-btn--ghost:hover {
+    background-color: var(--surface-3);
+    color: var(--ink);
+  }
+
+  .clubs-filter-input {
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--ink);
+  }
+
+  .clubs-filter-input::placeholder {
+    color: var(--ink-4);
+  }
+
+  .clubs-filter-input:hover {
+    border-color: var(--loyal-200);
+  }
+
+  .clubs-filter-input:focus {
+    outline: none;
+    border-color: var(--link);
+    box-shadow: 0 0 0 2px var(--loyal-200);
+  }
+
+  /* Text "Clear" / "Clear Filter" / "Select All" links. */
+  .clubs-filter-link {
+    color: var(--link);
+  }
+
+  .clubs-filter-link:hover {
+    text-decoration: underline;
+  }
+
+  /* Categorical option rows. */
+  .clubs-filter-option {
+    color: var(--ink-2);
+  }
+
+  .clubs-filter-option:hover {
+    background-color: var(--surface-3);
+  }
+
+  /* Checkbox box: unchecked / checked / partial (select-all indeterminate). */
+  .clubs-filter-checkbox {
+    background-color: var(--surface);
+    border-color: var(--line);
+  }
+
+  .clubs-filter-checkbox:hover {
+    border-color: var(--loyal-200);
+  }
+
+  .clubs-filter-checkbox--checked {
+    background-color: var(--loyal-500);
+    border-color: var(--loyal-500);
+  }
+
+  .clubs-filter-checkbox--partial {
+    background-color: var(--loyal-50);
+    border-color: var(--loyal-200);
+  }
+
+  .clubs-filter-checkbox__pip {
+    background-color: var(--link);
+  }
+
+  /* Input clear (×) button. */
+  .clubs-filter-x {
+    color: var(--ink-4);
+  }
+
+  .clubs-filter-x:hover {
+    color: var(--ink);
+    background-color: var(--surface-3);
+  }
+
+  /* Validation error band (numeric out-of-range). --red-600 remaps in dark. */
+  .clubs-filter-error {
+    color: var(--red-600);
+    background-color: var(--surface-2);
+    border: 1px solid var(--line);
   }
 
   /* Awards Race 3-card contender summary (#357). Sits between the

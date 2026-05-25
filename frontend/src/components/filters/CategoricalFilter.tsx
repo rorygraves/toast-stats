@@ -78,17 +78,19 @@ export const CategoricalFilter: React.FC<CategoricalFilterProps> = ({
 
   return (
     <div
-      className={`p-4 bg-white border border-gray-200 rounded-lg shadow-lg min-w-64 max-w-80 ${className}`}
+      className={`p-4 clubs-filter-popover shadow-lg min-w-64 max-w-80 ${className}`}
     >
       <div className="space-y-3">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-700">{label}</span>
+          <span className="text-sm font-medium clubs-filter-heading">
+            {label}
+          </span>
           {hasSelection && (
             <button
               type="button"
               onClick={handleClear}
-              className="text-xs text-tm-loyal-blue hover:text-tm-loyal-blue hover:underline font-medium focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue rounded transition-all duration-200"
+              className="text-xs clubs-filter-link font-medium focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue rounded transition-all duration-200"
               tabIndex={0}
               aria-label="Clear categorical filter"
             >
@@ -99,7 +101,7 @@ export const CategoricalFilter: React.FC<CategoricalFilterProps> = ({
 
         {/* Select All/None (only for multiple mode) */}
         {multiple && options.length > 1 && (
-          <div className="pb-2 border-b border-gray-100">
+          <div className="pb-2 border-b clubs-filter-divider">
             <div
               role="checkbox"
               aria-checked={allSelected}
@@ -111,15 +113,15 @@ export const CategoricalFilter: React.FC<CategoricalFilterProps> = ({
                   handleSelectAll()
                 }
               }}
-              className="flex items-center gap-2 cursor-pointer text-sm text-tm-loyal-blue hover:underline font-medium focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue rounded px-1 py-1"
+              className="flex items-center gap-2 cursor-pointer text-sm clubs-filter-link hover:underline font-medium focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue rounded px-1 py-1"
             >
               <div
-                className={`w-4 h-4 min-w-[16px] min-h-[16px] border-2 rounded-xs flex items-center justify-center flex-shrink-0 transition-colors duration-200 ${
+                className={`w-4 h-4 min-w-[16px] min-h-[16px] border-2 rounded-xs flex items-center justify-center flex-shrink-0 transition-colors duration-200 clubs-filter-checkbox${
                   allSelected
-                    ? 'bg-tm-loyal-blue border-tm-loyal-blue'
+                    ? '--checked'
                     : localSelected.length > 0
-                      ? 'bg-blue-100 border-tm-loyal-blue'
-                      : 'bg-white border-gray-300'
+                      ? '--partial'
+                      : ''
                 }`}
               >
                 {allSelected && (
@@ -138,7 +140,7 @@ export const CategoricalFilter: React.FC<CategoricalFilterProps> = ({
                   </svg>
                 )}
                 {localSelected.length > 0 && !allSelected && (
-                  <div className="w-2 h-2 bg-tm-loyal-blue rounded-xs" />
+                  <div className="w-2 h-2 clubs-filter-checkbox__pip rounded-xs" />
                 )}
               </div>
               <span>{allSelected ? 'Deselect All' : 'Select All'}</span>
@@ -163,13 +165,11 @@ export const CategoricalFilter: React.FC<CategoricalFilterProps> = ({
                     handleToggle(option)
                   }
                 }}
-                className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 rounded px-2 py-2 transition-colors duration-200 focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue focus:ring-inset"
+                className="flex items-center gap-3 cursor-pointer clubs-filter-option rounded px-2 py-2 transition-colors duration-200 focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue focus:ring-inset"
               >
                 <div
-                  className={`w-4 h-4 min-w-[16px] min-h-[16px] border-2 rounded-xs flex items-center justify-center flex-shrink-0 transition-colors duration-200 ${
-                    isSelected
-                      ? 'bg-tm-loyal-blue border-tm-loyal-blue'
-                      : 'bg-white border-gray-300 hover:border-gray-400'
+                  className={`w-4 h-4 min-w-[16px] min-h-[16px] border-2 rounded-xs flex items-center justify-center flex-shrink-0 transition-colors duration-200 clubs-filter-checkbox${
+                    isSelected ? '--checked' : ''
                   }`}
                 >
                   {isSelected && (
@@ -188,9 +188,7 @@ export const CategoricalFilter: React.FC<CategoricalFilterProps> = ({
                     </svg>
                   )}
                 </div>
-                <span className="text-sm text-gray-700 select-none">
-                  {option}
-                </span>
+                <span className="text-sm select-none">{option}</span>
               </div>
             )
           })}
@@ -198,12 +196,12 @@ export const CategoricalFilter: React.FC<CategoricalFilterProps> = ({
 
         {/* Selection Summary */}
         {hasSelection && (
-          <div className="text-xs text-gray-500 bg-gray-50 rounded px-2 py-1 border-t border-gray-100">
+          <div className="text-xs clubs-filter-meta rounded px-2 py-1 border-t clubs-filter-divider">
             {localSelected.length === 1
               ? `1 ${label.toLowerCase()} selected`
               : `${localSelected.length} ${label.toLowerCase()}s selected`}
             {localSelected.length <= 3 && (
-              <div className="mt-1 text-gray-600">
+              <div className="mt-1 clubs-filter-note">
                 {localSelected.join(', ')}
               </div>
             )}
