@@ -792,7 +792,10 @@
      pinned; (3) a right-edge fade signals more columns. */
   .region-rankings__scroll {
     /* Width of the pinned Region Rank column; the District column pins to its
-       right at exactly this offset. Sized to fit "#10 (tied)" at px-6. */
+       right at exactly this offset. 120px clears the widest rank label
+       ("#10 (tied)", ~70px) plus the effective 16px cell padding (the
+       `.districts-rankings-table td` rule wins over Tailwind px-6), with
+       headroom — so the two sticky columns never overlap. */
     --rank-col-w: 120px;
   }
 
@@ -816,6 +819,9 @@
     left: 0;
     width: var(--rank-col-w);
     min-width: var(--rank-col-w);
+    /* Restore the row rule that border-collapse drops from a positioned cell
+       (kept symmetric with the District column so the seam doesn't break). */
+    box-shadow: inset 0 -1px 0 var(--line-2);
   }
 
   .districts-rankings-table .region-rankings__sticky-col--district {
