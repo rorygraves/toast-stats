@@ -69,3 +69,4 @@
 - **107** [dark-mode, css, accessibility, frontend, tailwind] — Tailwind's `dark:` is OS-keyed; under a manual theme toggle it MISFIRES in the OS-dark + app-light quadrant (#710, #683)
 - **108** [tests, playwright, css, frontend, accessibility] — Verify a sticky header by measuring the sticky cell, not the `<thead>` wrapper (#667, #665)
 - **109** [frontend, css, tests, scope, dark-mode] — A render-time class guard scopes to the resting state; let that be the deferral boundary, but don't mistake it for a contrast audit (#668, #665)
+- **110** [tests, e2e, css, frontend, verification] — jsdom `textContent` ignores CSS `text-transform`; a live `innerText` assertion doesn't (#669, #665)
