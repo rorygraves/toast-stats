@@ -2489,23 +2489,115 @@
      removed; the full sorted+filtered set renders in one capped-height
      container so the header stays in view while the body scrolls. The
      container is keyboard-operable (role/tabindex/aria-label on the element)
-     per WCAG 2.1.1. Re-skin to redesign tokens lands in Sprint 2 (#668);
-     the legacy gray header chrome stays for now. */
+     per WCAG 2.1.1. */
   .clubs-table-scroll {
     max-height: 70vh;
     overflow-y: auto;
   }
 
+  /* ── Clubs table chrome re-skin (#668, epic #665 Sprint 2) ──
+     Replaces the legacy gray Tailwind utilities (text-gray-*, bg-gray-50,
+     border-gray-200, divide-gray-200, font-tm-headline) with redesign tokens.
+     Token-driven, so dark mode "just works" via the [data-theme='dark']
+     remaps in redesign.css — no component-level branches (R10, lessons
+     093/096). Status-colored rows + tier/status pills stay on their own
+     classes (Sprint 3 #669); the column-filter popover stays gray until the
+     controls re-skin (Sprint 4 #670). */
+
+  /* Panel header — title + results/filters band. The divider is the legacy
+     border-gray-200; → --line. The "All Clubs" title is Montserrat per
+     HANDOFF §215. */
+  .clubs-panel-header {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .clubs-panel-title {
+    color: var(--ink);
+    font-family: var(--serif);
+  }
+
+  /* Muted text outside the table grid (results count, empty-state copy,
+     mobile sort label) — was text-gray-{400,500,600}. */
+  .clubs-text-muted {
+    color: var(--ink-3);
+  }
+
   /* Sticky header: pin the th cells (more robust than a sticky <thead>
-     under border-collapse) with an opaque background so scrolling rows
-     don't bleed through. bg-gray-50 (#f9fafb) is the current legacy
-     surface — Sprint 2 swaps it for a themed token; keeping a literal
-     here is deliberate until then so the header isn't transparent. */
+     under border-collapse) with an opaque themed background so scrolling
+     rows don't bleed through (lesson 092 — the bg must be a token, not a
+     literal, or dark mode shows a light cell). --surface-2 per the scope. */
   .clubs-table-sticky-head th {
     position: sticky;
     top: 0;
     z-index: 1;
-    background-color: #f9fafb;
+    background-color: var(--surface-2);
+    border-bottom: 1px solid var(--line);
+  }
+
+  /* Column-header sort handle (ColumnHeader.tsx) resting chrome — was
+     text-gray-700 + hover:bg-gray-100 / hover:text-gray-900. */
+  .clubs-col-header {
+    color: var(--ink-3);
+  }
+
+  .clubs-col-header:hover,
+  .clubs-col-header:focus {
+    background-color: var(--surface-3);
+    color: var(--ink);
+  }
+
+  /* Sort-direction caret — was text-gray-400 group-hover:text-gray-700.
+     (The active-state accent stays --tm-loyal-blue in the component.) */
+  .clubs-col-header__arrow {
+    color: var(--ink-4);
+  }
+
+  .clubs-col-header:hover .clubs-col-header__arrow {
+    color: var(--ink-3);
+  }
+
+  /* Row rules replace divide-y divide-gray-200. Applies to every row
+     (default + status-colored) so the hairline is consistent. */
+  #clubs-table tbody tr {
+    border-bottom: 1px solid var(--line);
+  }
+
+  /* Default (non-status) row — was bg-white hover:bg-gray-50. Status rows
+     keep their own red/yellow bg classes (Sprint 3). Hover → --surface-3
+     per HANDOFF §122 ("table rows have a hover background swap"). */
+  .clubs-table-row {
+    background-color: var(--surface);
+  }
+
+  .clubs-table-row:hover {
+    background-color: var(--surface-3);
+  }
+
+  /* Primary cell text — was text-gray-900. */
+  #clubs-table td {
+    color: var(--ink);
+  }
+
+  /* De-emphasised cell text: division/area labels, zero values, and the "—"
+     placeholders — were text-gray-{400,500,600}. */
+  .clubs-cell-muted {
+    color: var(--ink-3);
+  }
+
+  /* Mobile sort controls (the dropdown + direction toggle above the card
+     list) — were border-gray-300 / text-gray-700 / bg-white / text-gray-500. */
+  .clubs-mobile-select {
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--ink);
+  }
+
+  .clubs-sort-dir {
+    color: var(--ink-3);
+  }
+
+  .clubs-sort-dir:hover {
+    color: var(--ink);
   }
 
   /* History page year strip (#367) — chip row of archived years. */

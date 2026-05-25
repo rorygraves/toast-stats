@@ -174,7 +174,9 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
       case 'vulnerable':
         return 'bg-yellow-50 hover:bg-yellow-100'
       default:
-        return 'bg-white hover:bg-gray-50'
+        // Default (non-status) row — token-driven surface + hover (#668).
+        // Status rows above keep their semantic red/yellow bg (Sprint 3 #669).
+        return 'clubs-table-row'
     }
   }
 
@@ -319,11 +321,9 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
   return (
     <div className="redesign-panel">
       {/* Header with Export and Results Count */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="p-6 clubs-panel-header">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-gray-900 font-tm-headline">
-            All Clubs
-          </h3>
+          <h3 className="text-xl font-bold clubs-panel-title">All Clubs</h3>
           <ExportButton
             onExport={() =>
               exportClubPerformance(
@@ -350,7 +350,7 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
         </div>
 
         {/* Results Count and Quick Filters */}
-        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+        <div className="flex flex-wrap items-center gap-4 text-sm clubs-text-muted">
           <div>
             {sortedClubs.length === clubs.length ? (
               <>Total: {clubs.length} clubs</>
@@ -652,7 +652,7 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
       {!isLoading && sortedClubs.length === 0 && clubs.length > 0 && (
         <div className="p-12 text-center">
           <svg
-            className="w-16 h-16 text-gray-400 mx-auto mb-4"
+            className="w-16 h-16 clubs-text-muted mx-auto mb-4"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -664,10 +664,10 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
               d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
             />
           </svg>
-          <p className="text-gray-600 font-medium">
+          <p className="clubs-text-muted font-medium">
             No clubs match your filters
           </p>
-          <p className="text-gray-500 text-sm mt-1">
+          <p className="clubs-text-muted text-sm mt-1">
             Try adjusting your column filters
           </p>
         </div>
@@ -680,7 +680,7 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
           <div className="flex items-center gap-2 mb-3">
             <label
               htmlFor="mobile-sort"
-              className="text-xs text-gray-500 font-medium"
+              className="text-xs clubs-text-muted font-medium"
             >
               Sort by:
             </label>
@@ -696,7 +696,7 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
                   setSortDirection('asc')
                 }
               }}
-              className="text-xs border border-gray-300 rounded-md px-2 py-1 text-gray-700 bg-white"
+              className="text-xs clubs-mobile-select rounded-md px-2 py-1"
               aria-label="Sort clubs"
             >
               {COLUMN_CONFIGS.filter(c => c.sortable).map(config => (
@@ -710,7 +710,7 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
               onClick={() =>
                 setSortDirection(d => (d === 'asc' ? 'desc' : 'asc'))
               }
-              className="text-xs text-gray-500 hover:text-gray-700 px-1"
+              className="text-xs clubs-sort-dir px-1"
               aria-label={`Sort direction: ${sortDirection === 'asc' ? 'ascending' : 'descending'}`}
             >
               {sortDirection === 'asc' ? '↑' : '↓'}
@@ -740,8 +740,8 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
           aria-label="All clubs table"
           tabIndex={0}
         >
-          <table className="w-full table-auto">
-            <thead className="clubs-table-sticky-head bg-gray-50 border-b border-gray-200">
+          <table id="clubs-table" className="w-full table-auto">
+            <thead className="clubs-table-sticky-head">
               <tr>
                 {COLUMN_CONFIGS.map(config => (
                   <th key={config.field} className="p-0">
@@ -766,7 +766,7 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody>
               {sortedClubs.map(club => (
                 <tr
                   key={club.clubId}
@@ -774,29 +774,27 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
                   className={`${getRowColor(club.currentStatus)} cursor-pointer transition-colors`}
                 >
                   <td className="px-2 py-3 whitespace-nowrap">
-                    <div className="font-medium text-gray-900 text-sm">
-                      {club.clubName}
-                    </div>
+                    <div className="font-medium text-sm">{club.clubName}</div>
                   </td>
-                  <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-600 text-center">
+                  <td className="px-2 py-3 whitespace-nowrap text-sm clubs-cell-muted text-center">
                     {club.divisionName}
                   </td>
-                  <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-600 text-center">
+                  <td className="px-2 py-3 whitespace-nowrap text-sm clubs-cell-muted text-center">
                     {club.areaName}
                   </td>
-                  <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center text-gray-900">
+                  <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center">
                     {club.latestMembership}
                   </td>
-                  <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center text-gray-900">
+                  <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center">
                     {club.latestDcpGoals}
                   </td>
-                  <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center text-gray-900 font-medium">
+                  <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center font-medium">
                     {club.membersNeeded > 0 ? (
                       <span className="text-tm-true-maroon">
                         {club.membersNeeded}
                       </span>
                     ) : (
-                      <span className="text-gray-400">—</span>
+                      <span className="clubs-cell-muted">—</span>
                     )}
                   </td>
                   <td className="px-2 py-3 whitespace-nowrap text-center">
@@ -814,7 +812,7 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
                         {isProvisionallyDistinguished(club) ? '*' : ''}
                       </span>
                     ) : (
-                      <span className="text-sm text-gray-400">—</span>
+                      <span className="text-sm clubs-cell-muted">—</span>
                     )}
                   </td>
                   <td className="px-2 py-3 whitespace-nowrap text-center">
@@ -826,9 +824,9 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
                   </td>
                   <td className="px-2 py-3 whitespace-nowrap text-sm text-center">
                     {club.clubStatus ? (
-                      <span className="text-gray-900">{club.clubStatus}</span>
+                      <span>{club.clubStatus}</span>
                     ) : (
-                      <span className="text-gray-400">—</span>
+                      <span className="clubs-cell-muted">—</span>
                     )}
                   </td>
                   <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center">
@@ -836,14 +834,14 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
                       <span
                         className={
                           club.octoberRenewals === 0
-                            ? 'text-gray-500'
-                            : 'text-gray-900'
+                            ? 'clubs-cell-muted'
+                            : undefined
                         }
                       >
                         {club.octoberRenewals}
                       </span>
                     ) : (
-                      <span className="text-gray-500">—</span>
+                      <span className="clubs-cell-muted">—</span>
                     )}
                   </td>
                   <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center">
@@ -851,38 +849,34 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
                       <span
                         className={
                           club.aprilRenewals === 0
-                            ? 'text-gray-500'
-                            : 'text-gray-900'
+                            ? 'clubs-cell-muted'
+                            : undefined
                         }
                       >
                         {club.aprilRenewals}
                       </span>
                     ) : (
-                      <span className="text-gray-500">—</span>
+                      <span className="clubs-cell-muted">—</span>
                     )}
                   </td>
                   <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center">
                     {club.newMembers !== undefined ? (
                       <span
                         className={
-                          club.newMembers === 0
-                            ? 'text-gray-500'
-                            : 'text-gray-900'
+                          club.newMembers === 0 ? 'clubs-cell-muted' : undefined
                         }
                       >
                         {club.newMembers}
                       </span>
                     ) : (
-                      <span className="text-gray-500">—</span>
+                      <span className="clubs-cell-muted">—</span>
                     )}
                   </td>
                   <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center">
                     {club.yearsChartered !== null ? (
-                      <span className="text-gray-900">
-                        {club.yearsChartered}
-                      </span>
+                      <span>{club.yearsChartered}</span>
                     ) : (
-                      <span className="text-gray-500">—</span>
+                      <span className="clubs-cell-muted">—</span>
                     )}
                   </td>
                 </tr>
