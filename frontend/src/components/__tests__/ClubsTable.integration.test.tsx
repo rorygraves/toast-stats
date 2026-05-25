@@ -346,13 +346,13 @@ describe('ClubsTable Integration Tests', () => {
       expect(screen.getByText('Echo Communicators')).toBeInTheDocument()
     })
 
-    it('should handle pagination state with large datasets', () => {
+    it('renders all rows for large datasets (no pagination) — #667', () => {
       /**
        * **Feature: clubs-table-column-filtering, Integration Test**
-       * Tests pagination state consistency
+       * #667 (epic #665) — pagination removed; the full set renders.
        */
 
-      // Create a larger dataset to test pagination
+      // Create a larger dataset to confirm every row renders.
       const largeClubSet: ClubTrend[] = Array.from({ length: 30 }, (_, i) => ({
         clubId: `club-${i}`,
         clubName: `Club ${i}`,
@@ -393,18 +393,15 @@ describe('ClubsTable Integration Tests', () => {
       // Should show total count
       expect(screen.getByText('Total: 30 clubs')).toBeInTheDocument()
 
-      // Should show 25 clubs per page (1 header + 25 data rows = 26 total)
+      // All 30 clubs render (1 header + 30 data rows = 31 total) — no page boundary.
       const tableRows = screen.getAllByRole('row')
-      expect(tableRows).toHaveLength(26)
+      expect(tableRows).toHaveLength(31)
 
-      // Should show first page of clubs (0-24)
+      // First, last, and a formerly-page-2 club are all present.
       expect(screen.getByText('Club 0')).toBeInTheDocument()
       expect(screen.getByText('Club 24')).toBeInTheDocument()
-
-      // The pagination might show more than 25 clubs if it's not working correctly
-      // Let's just verify we have the expected number of rows
-      const allRows = screen.getAllByRole('row')
-      expect(allRows.length).toBeGreaterThanOrEqual(26) // At least header + 25 data rows
+      expect(screen.getByText('Club 25')).toBeInTheDocument()
+      expect(screen.getByText('Club 29')).toBeInTheDocument()
     })
 
     it('should handle loading and empty states correctly', () => {

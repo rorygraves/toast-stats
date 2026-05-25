@@ -92,13 +92,16 @@ describe('ClubsTable', () => {
     })
   })
 
-  describe('Pagination', () => {
+  describe('Renders all rows (no pagination) — #667', () => {
     /**
      * Validates: Requirements 5.3
-     * Pagination should maintain proper page boundaries with filtered datasets
+     * #667 (epic #665) — pagination removed. The table renders ALL
+     * sorted+filtered rows in one sticky-header scroll container. Spec
+     * change, NOT assertion pinning: the old "25 per page" boundary no
+     * longer exists by design.
      */
 
-    it('should display 25 clubs per page when more than 25 clubs exist', () => {
+    it('renders all clubs when more than 25 exist (no page boundary)', () => {
       const clubs = Array.from({ length: 30 }, (_, i) =>
         createMockClub({
           clubId: `club-${i}`,
@@ -117,12 +120,16 @@ describe('ClubsTable', () => {
       // Should show total count
       expect(screen.getByText('Total: 30 clubs')).toBeInTheDocument()
 
-      // Should have 26 rows (1 header + 25 data rows)
+      // Should have 31 rows (1 header + all 30 data rows) — no pagination.
       const tableRows = screen.getAllByRole('row')
-      expect(tableRows.length).toBe(26)
+      expect(tableRows.length).toBe(31)
+      // Both the first and the 26th club (formerly on page 2) are present.
+      expect(screen.getByText('Club 00')).toBeInTheDocument()
+      expect(screen.getByText('Club 25')).toBeInTheDocument()
+      expect(screen.getByText('Club 29')).toBeInTheDocument()
     })
 
-    it('should display all clubs when fewer than 25 exist', () => {
+    it('renders all clubs when fewer than 25 exist', () => {
       const clubs = Array.from({ length: 10 }, (_, i) =>
         createMockClub({
           clubId: `club-${i}`,
@@ -143,7 +150,7 @@ describe('ClubsTable', () => {
       expect(tableRows.length).toBe(11)
     })
 
-    it('should calculate correct number of pages', () => {
+    it('shows no pagination controls', () => {
       const clubs = Array.from({ length: 30 }, (_, i) =>
         createMockClub({
           clubId: `club-${i}`,
@@ -159,14 +166,15 @@ describe('ClubsTable', () => {
         />
       )
 
-      // 30 clubs / 25 per page = 2 pages
-      // Pagination shows "Showing X to Y of Z results"
-      expect(screen.getByText(/Showing/)).toBeInTheDocument()
-      expect(screen.getByText(/results/)).toBeInTheDocument()
-
-      // Verify pagination controls are present (page 1 and page 2 buttons)
-      expect(screen.getByRole('button', { name: 'Page 1' })).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Page 2' })).toBeInTheDocument()
+      // The "Showing X to Y of Z results" pagination summary and the
+      // numbered page buttons are gone.
+      expect(screen.queryByText(/results/)).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: 'Page 1' })
+      ).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: 'Page 2' })
+      ).not.toBeInTheDocument()
     })
   })
 

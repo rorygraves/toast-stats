@@ -7,6 +7,15 @@ import { ClubTrend } from '../../hooks/useDistrictAnalytics'
  * Performance tests for ClubsTable component
  * **Feature: clubs-table-column-filtering**
  * **Validates: Requirements 5.1**
+ *
+ * #667 (epic #665) — pagination removed. The table now renders ALL
+ * sorted+filtered rows in one sticky-header scroll container, so the
+ * assertions move from "26 rows per page" to "every club renders" plus
+ * a render-time budget over a realistic district (~300 clubs). The
+ * 1000-club case is logged as a stress measurement, NOT gated — a hard
+ * threshold here is a flaky CI tripwire on shared runners. If the budget
+ * is ever exceeded in practice, virtualization is the fix (epic deferred
+ * it; this test is the tripwire).
  */
 
 // Helper to generate large datasets for performance testing
@@ -40,23 +49,24 @@ const generateLargeClubDataset = (size: number): ClubTrend[] => {
   }))
 }
 
+// Count rendered data rows (total rows minus the single header row).
+const dataRowCount = () => screen.getAllByRole('row').length - 1
+
 describe('ClubsTable Performance Tests', () => {
   afterEach(() => {
     cleanup()
     vi.restoreAllMocks()
   })
 
-  describe('Performance with Large Datasets', () => {
-    it('should render and filter 1000 clubs within performance requirements', () => {
+  describe('Renders all rows (no pagination) — #667', () => {
+    it('renders every club in a realistic ~300-club district within budget', () => {
       /**
-       * **Feature: clubs-table-column-filtering, Performance Test**
-       * **Validates: Requirements 5.1 - filters should update within 100ms for datasets up to 1000 clubs**
+       * **Validates: Requirements 5.1** — with pagination gone, all rows
+       * render. A district maxes out near ~300 clubs; assert the full set
+       * is in the DOM and the initial render stays under a generous budget.
        */
+      const clubs = generateLargeClubDataset(300)
 
-      // Generate 1000 clubs for performance testing
-      const clubs = generateLargeClubDataset(1000)
-
-      // Measure initial render time
       const renderStart = performance.now()
       render(
         <ClubsTable
@@ -65,87 +75,48 @@ describe('ClubsTable Performance Tests', () => {
           isLoading={false}
         />
       )
-      const renderEnd = performance.now()
-      const renderTime = renderEnd - renderStart
+      const renderTime = performance.now() - renderStart
 
-      // Verify the table rendered successfully
+      // The count line reflects the full set, not a page.
+      expect(screen.getByText('Total: 300 clubs')).toBeInTheDocument()
+
+      // Every club is in the DOM — no page boundary.
+      expect(dataRowCount()).toBe(300)
+      expect(screen.getByText('Test Club 0')).toBeInTheDocument()
+      expect(screen.getByText('Test Club 299')).toBeInTheDocument()
+
+      // Generous render budget for a realistic district. Logged for
+      // visibility; the assertion is intentionally loose to avoid CI flake.
+      console.log(`Render time for 300 clubs: ${renderTime.toFixed(2)}ms`)
+      expect(renderTime).toBeLessThan(2000)
+    })
+
+    it('renders all 1000 clubs (stress measurement — logged, not gated)', () => {
+      /**
+       * Above any real district size. We assert correctness (all rows
+       * present) and LOG the render time as a tripwire signal, but do not
+       * gate on it — a hard threshold here flakes on shared CI runners.
+       */
+      const clubs = generateLargeClubDataset(1000)
+
+      const renderStart = performance.now()
+      render(
+        <ClubsTable
+          clubs={clubs}
+          districtId="test-district"
+          isLoading={false}
+        />
+      )
+      const renderTime = performance.now() - renderStart
+
       expect(screen.getByText('Total: 1000 clubs')).toBeInTheDocument()
+      expect(dataRowCount()).toBe(1000)
 
-      // Verify that initial render is reasonable (should be much faster than 100ms)
-      // Note: This is just a basic check - actual performance depends on hardware
-      console.log(`Render time for 1000 clubs: ${renderTime.toFixed(2)}ms`)
-
-      // Test that the table shows the correct number of clubs
-      expect(clubs.length).toBe(1000)
-
-      // Verify pagination is working (should show 25 clubs per page)
-      const tableRows = screen.getAllByRole('row')
-      // Should have 1 header row + 25 data rows = 26 total rows
-      expect(tableRows.length).toBe(26)
-
-      // Test that the Clear All Filters button is not shown when no filters are active
-      expect(screen.queryByText(/Clear All Filters/)).not.toBeInTheDocument()
-
-      // The performance requirement is that filtering should complete within 100ms
-      // Since we can't easily test actual filter performance in this test environment,
-      // we verify that the component can handle large datasets without crashing
-      expect(true).toBe(true)
-    })
-
-    it('should handle medium datasets (500 clubs) efficiently', () => {
-      /**
-       * **Feature: clubs-table-column-filtering, Performance Test**
-       * **Validates: Requirements 5.1 - performance with medium datasets**
-       */
-
-      // Generate 500 clubs
-      const clubs = generateLargeClubDataset(500)
-
-      render(
-        <ClubsTable
-          clubs={clubs}
-          districtId="test-district"
-          isLoading={false}
-        />
+      console.log(
+        `[stress] Render time for 1000 clubs: ${renderTime.toFixed(2)}ms ` +
+          `— informational only, not gated. If this climbs past ~1s on CI, ` +
+          `revisit virtualization (epic #665 deferred it).`
       )
-
-      // Verify the table rendered successfully
-      expect(screen.getByText('Total: 500 clubs')).toBeInTheDocument()
-
-      // Verify pagination is working
-      const tableRows = screen.getAllByRole('row')
-      expect(tableRows.length).toBe(26) // 1 header + 25 data rows
-
-      // Test that the component handles the dataset without issues
-      expect(clubs.length).toBe(500)
-    })
-
-    it('should handle small datasets (100 clubs) efficiently', () => {
-      /**
-       * **Feature: clubs-table-column-filtering, Performance Test**
-       * **Validates: Requirements 5.1 - performance with small datasets**
-       */
-
-      // Generate 100 clubs
-      const clubs = generateLargeClubDataset(100)
-
-      render(
-        <ClubsTable
-          clubs={clubs}
-          districtId="test-district"
-          isLoading={false}
-        />
-      )
-
-      // Verify the table rendered successfully
-      expect(screen.getByText('Total: 100 clubs')).toBeInTheDocument()
-
-      // With 100 clubs, all should fit on 4 pages (25 per page)
-      // First page should show 25 clubs
-      const tableRows = screen.getAllByRole('row')
-      expect(tableRows.length).toBe(26) // 1 header + 25 data rows
-
-      expect(clubs.length).toBe(100)
     })
   })
 

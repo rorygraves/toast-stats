@@ -35,12 +35,14 @@ describe('redirectLegacyDistrictTab', () => {
       expect(out).toBe('/district/61/clubs?status=vulnerable&search=acme')
     })
 
-    it('preserves sort / dir / page', () => {
+    it('preserves sort / dir but strips legacy page (#667)', () => {
+      // #667 (epic #665) — pagination removed; the obsolete ?page= param
+      // is dropped from the redirect target while sort/dir carry through.
       const out = redirectLegacyDistrictTab(
         base('tab=clubs&sort=members&dir=desc&page=2'),
         '61'
       )
-      expect(out).toBe('/district/61/clubs?sort=members&dir=desc&page=2')
+      expect(out).toBe('/district/61/clubs?sort=members&dir=desc')
     })
 
     it('maps intervention-required → intervention', () => {
