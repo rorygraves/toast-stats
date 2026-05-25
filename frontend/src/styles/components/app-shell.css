@@ -2526,7 +2526,6 @@
      under border-collapse) with an opaque themed background so scrolling
      rows don't bleed through (lesson 092 — the bg must be a token, not a
      literal, or dark mode shows a light cell). --surface-2 per the scope. */
-  #clubs-table thead th,
   .clubs-table-sticky-head th {
     position: sticky;
     top: 0;
