@@ -875,6 +875,15 @@
     letter-spacing: 0.02em;
   }
 
+  /* #699: in dark mode --loyal-50 (the pill bg) remaps to #112432 but
+     --loyal-600 (the text) has NO dark remap — navy #003352 on navy #112432
+     is 1.21:1, illegible (lessons 093/096 trap). --link is the dark-safe blue
+     the theme already uses (#60a5d8 → 5.95:1); scoped to dark so light mode is
+     byte-identical. Border --loyal-200 already remaps (#1c4866). */
+  [data-theme='dark'] .districts-rankings-table__district-chip {
+    color: var(--link);
+  }
+
   .districts-rankings-table {
     width: 100%;
     border-collapse: collapse;
