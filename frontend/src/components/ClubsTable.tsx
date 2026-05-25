@@ -13,6 +13,31 @@ import { CLOSE_TO_DISTINGUISHED_MAX_MEMBERS } from '../utils/closeToDistinguishe
 import ClubCard from './ClubCard'
 import { useIsMobile } from '../hooks/useIsMobile'
 
+// DCP tier pill maps (#669). Confirmed tiers carry their HANDOFF §256 color
+// (Smedley maroon, President's loyal-500, Select loyal-400, Distinguished
+// green); a provisional tier shows the striped-yellow "projected" stripe
+// instead, since the membership isn't yet confirmed by April renewals.
+// NotDistinguished has no pill — a muted em-dash (neutral "not yet").
+// Module-scope: these are constant, so they don't re-allocate per render.
+type ConfirmedTier = Exclude<
+  ClubTrend['distinguishedLevel'],
+  'NotDistinguished'
+>
+
+const TIER_DISPLAY: Record<ConfirmedTier, string> = {
+  Distinguished: 'Distinguished',
+  Select: 'Select',
+  President: "President's",
+  Smedley: 'Smedley',
+}
+
+const TIER_MODIFIER: Record<ConfirmedTier, string> = {
+  Distinguished: 'clubs-tier-pill--distinguished',
+  Select: 'clubs-tier-pill--select',
+  President: 'clubs-tier-pill--presidents',
+  Smedley: 'clubs-tier-pill--smedley',
+}
+
 /**
  * Props for the ClubsTable component
  */
@@ -194,30 +219,6 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
       default:
         return 'Thriving'
     }
-  }
-
-  // DCP tier pill (#669). Confirmed tiers carry their HANDOFF §256 color
-  // (Smedley maroon, President's loyal-500, Select loyal-400, Distinguished
-  // green); a provisional tier shows the striped-yellow "projected" stripe
-  // instead, since the membership isn't yet confirmed by April renewals.
-  // NotDistinguished has no pill — a muted em-dash (neutral "not yet").
-  const TIER_DISPLAY: Record<
-    Exclude<ClubTrend['distinguishedLevel'], 'NotDistinguished'>,
-    string
-  > = {
-    Distinguished: 'Distinguished',
-    Select: 'Select',
-    President: "President's",
-    Smedley: 'Smedley',
-  }
-  const TIER_MODIFIER: Record<
-    Exclude<ClubTrend['distinguishedLevel'], 'NotDistinguished'>,
-    string
-  > = {
-    Distinguished: 'clubs-tier-pill--distinguished',
-    Select: 'clubs-tier-pill--select',
-    President: 'clubs-tier-pill--presidents',
-    Smedley: 'clubs-tier-pill--smedley',
   }
 
   // Sort the filtered clubs
