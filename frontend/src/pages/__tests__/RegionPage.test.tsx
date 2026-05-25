@@ -230,11 +230,10 @@ describe('RegionPage Distinguished countdown columns (#516 #513)', () => {
     mockedFetchCdnAwards.mockResolvedValue(awardsFixture())
     renderRegion('2')
 
+    // #687: "Net Club Growth" is no longer a standalone countdown header —
+    // it became the Δ sub-column of the Paid Clubs base→current→Δ group.
     expect(
-      await screen.findByRole('columnheader', { name: /net club growth/i })
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('columnheader', { name: /payment growth/i })
+      await screen.findByRole('columnheader', { name: /payment growth/i })
     ).toBeInTheDocument()
     expect(
       screen.getByRole('columnheader', { name: /distinguished %/i })
@@ -627,6 +626,136 @@ describe('RegionPage KPI strip — base / current / Δ / ±% (#514 #513)', () =>
   })
 })
 
+describe('RegionPage base → current → Δ column model (#687 epic #683)', () => {
+  const row61 = () =>
+    screen
+      .findByTestId('district-number-chip-D61')
+      .then(el => el.closest('tr')!)
+
+  it('renders grouped headers for the three metrics', async () => {
+    mockedFetchCdnRankings.mockResolvedValueOnce({
+      rankings: [mkRanking({ districtId: '61', region: '2' })],
+      date: '2026-05-12',
+    })
+    renderRegion('2')
+
+    expect(
+      await screen.findByRole('columnheader', { name: /^paid clubs$/i })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('columnheader', { name: /membership payments/i })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('columnheader', { name: /distinguished clubs/i })
+    ).toBeInTheDocument()
+  })
+
+  it('retains the liked single columns (region rank, district, world rank, score)', async () => {
+    mockedFetchCdnRankings.mockResolvedValueOnce({
+      rankings: [mkRanking({ districtId: '61', region: '2' })],
+      date: '2026-05-12',
+    })
+    renderRegion('2')
+
+    expect(
+      await screen.findByRole('columnheader', { name: /region rank/i })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('columnheader', { name: /^district$/i })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('columnheader', { name: /world rank/i })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('columnheader', { name: /^score$/i })
+    ).toBeInTheDocument()
+  })
+
+  it('renders Paid Clubs as base → current → signed Δ', async () => {
+    mockedFetchCdnRankings.mockResolvedValueOnce({
+      rankings: [
+        mkRanking({
+          districtId: '61',
+          region: '2',
+          paidClubs: 100,
+          paidClubBase: 90,
+        }),
+      ],
+      date: '2026-05-12',
+    })
+    mockedFetchCdnAwards.mockResolvedValue(null)
+    renderRegion('2')
+
+    const row = await row61()
+    expect(within(row).getByTestId('paid-base')).toHaveTextContent('90')
+    expect(within(row).getByTestId('paid-current')).toHaveTextContent('100')
+    // Δ is the signed net growth, reusing the #684 cell testid.
+    expect(
+      within(row).getByTestId('countdown-netClubGrowth')
+    ).toHaveTextContent(/\+10/)
+  })
+
+  it('renders Membership Payments as base → current → signed Δ', async () => {
+    mockedFetchCdnRankings.mockResolvedValueOnce({
+      rankings: [
+        mkRanking({
+          districtId: '61',
+          region: '2',
+          totalPayments: 5000,
+          paymentBase: 4500,
+        }),
+      ],
+      date: '2026-05-12',
+    })
+    renderRegion('2')
+
+    const row = await row61()
+    expect(within(row).getByTestId('payments-base')).toHaveTextContent('4,500')
+    expect(within(row).getByTestId('payments-current')).toHaveTextContent(
+      '5,000'
+    )
+    const delta = within(row).getByTestId('payments-delta')
+    expect(delta).toHaveTextContent(/\+500/)
+    expect(delta.querySelector('span')).toHaveClass('text-green-700')
+  })
+
+  it('renders a shrinking Payments Δ as a negative maroon value', async () => {
+    mockedFetchCdnRankings.mockResolvedValueOnce({
+      rankings: [
+        mkRanking({
+          districtId: '61',
+          region: '2',
+          totalPayments: 4200,
+          paymentBase: 4500,
+        }),
+      ],
+      date: '2026-05-12',
+    })
+    renderRegion('2')
+
+    const row = await row61()
+    const delta = within(row).getByTestId('payments-delta')
+    expect(delta).toHaveTextContent(/-300/)
+    expect(delta).not.toHaveTextContent(/\+300/)
+    expect(delta.querySelector('span')).toHaveClass('text-tm-true-maroon')
+  })
+
+  it('treats Distinguished Clubs as year-cumulative — base 0, Δ = current', async () => {
+    mockedFetchCdnRankings.mockResolvedValueOnce({
+      rankings: [
+        mkRanking({ districtId: '61', region: '2', distinguishedClubs: 48 }),
+      ],
+      date: '2026-05-12',
+    })
+    renderRegion('2')
+
+    const row = await row61()
+    expect(within(row).getByTestId('dist-base')).toHaveTextContent('0')
+    expect(within(row).getByTestId('dist-current')).toHaveTextContent('48')
+    expect(within(row).getByTestId('dist-delta')).toHaveTextContent(/\+48/)
+  })
+})
+
 describe('RegionPage rank-within-region column (#515 #513)', () => {
   it('renders a "Region Rank" column header on the district table', async () => {
     mockedFetchCdnRankings.mockResolvedValueOnce({
@@ -668,15 +797,15 @@ describe('RegionPage rank-within-region column (#515 #513)', () => {
     renderRegion('2')
 
     const rows = await screen.findAllByRole('row')
-    // skip header row at index 0
-    const rank1 = within(rows[1]!).getByTestId('region-rank-cell')
-    const rank2 = within(rows[2]!).getByTestId('region-rank-cell')
-    const rank3 = within(rows[3]!).getByTestId('region-rank-cell')
+    // skip the two header rows (#687 added a Base/Current/Δ sub-header row)
+    const rank1 = within(rows[2]!).getByTestId('region-rank-cell')
+    const rank2 = within(rows[3]!).getByTestId('region-rank-cell')
+    const rank3 = within(rows[4]!).getByTestId('region-rank-cell')
     expect(rank1.textContent).toContain('#1')
     expect(rank2.textContent).toContain('#2')
     expect(rank3.textContent).toContain('#3')
     // D61 (score 300) ranks #1 within region 2.
-    expect(within(rows[1]!).getByText(/D61/)).toBeInTheDocument()
+    expect(within(rows[2]!).getByText(/D61/)).toBeInTheDocument()
   })
 
   it('marks tied region ranks (same aggregateScore) as tied', async () => {
@@ -700,11 +829,12 @@ describe('RegionPage rank-within-region column (#515 #513)', () => {
     renderRegion('3')
 
     const rows = await screen.findAllByRole('row')
-    expect(
-      within(rows[1]!).getByTestId('region-rank-cell').textContent
-    ).toMatch(/#1.*tied/i)
+    // skip the two header rows (#687 Base/Current/Δ sub-header row)
     expect(
       within(rows[2]!).getByTestId('region-rank-cell').textContent
+    ).toMatch(/#1.*tied/i)
+    expect(
+      within(rows[3]!).getByTestId('region-rank-cell').textContent
     ).toMatch(/#1.*tied/i)
   })
 
@@ -723,12 +853,13 @@ describe('RegionPage rank-within-region column (#515 #513)', () => {
     renderRegion('6')
 
     const rows = await screen.findAllByRole('row')
-    const districtCell = within(rows[1]!).getByTestId(
+    // skip the two header rows (#687 Base/Current/Δ sub-header row)
+    const districtCell = within(rows[2]!).getByTestId(
       'district-number-chip-D86'
     )
     expect(districtCell).toHaveTextContent('D86')
     // The bare "86" name should NOT render as a sibling span — the chip
     // already conveys the number.
-    expect(within(rows[1]!).queryByText(/^86$/)).not.toBeInTheDocument()
+    expect(within(rows[2]!).queryByText(/^86$/)).not.toBeInTheDocument()
   })
 })

@@ -87,36 +87,60 @@ const renderCountdownInner = (cell: CountdownCell | null): React.ReactNode => {
 const CountdownTd: React.FC<{
   metric: keyof import('../utils/distinguishedCountdown').DistinguishedCountdown
   cell: CountdownCell | null
-}> = ({ metric, cell }) => (
+  groupStart?: boolean
+}> = ({ metric, cell, groupStart }) => (
   <td
     data-testid={`countdown-${metric}`}
-    className="px-3 py-4 whitespace-nowrap text-sm text-right"
+    className={`px-3 py-4 whitespace-nowrap text-sm text-right${
+      groupStart ? ' border-l border-[var(--line)]' : ''
+    }`}
   >
     {renderCountdownInner(cell)}
   </td>
 )
 
-/* Net Club Growth = the SIGNED actual net change in paid clubs this
-   program year (paidClubs − paidClubBase). Growth is green +N, loss is
-   maroon −N, matching the KpiCard delta convention above. This is a
-   distinct quantity from the clamped distinguished-gap that used to
-   render here and made a shrinking district look like it was growing
-   (#684). */
-const NetGrowthTd: React.FC<{ value: number }> = ({ value }) => {
+/* Signed Δ cell for a base→current→Δ metric group (#687). Renders the
+   SIGNED actual change: growth green +N, loss maroon −N, matching the
+   KpiCard delta convention above. Distinct from the clamped
+   distinguished-gap that once rendered here and made a shrinking district
+   look like it was growing (#684) — `value` must already be the signed
+   `current − base`, never a `max(0, …)` gap (lesson 102). */
+const SignedDeltaTd: React.FC<{ value: number; testid: string }> = ({
+  value,
+  testid,
+}) => {
   const sign = value >= 0 ? '+' : ''
   const tone = value >= 0 ? 'text-green-700' : 'text-tm-true-maroon'
   return (
     <td
-      data-testid="countdown-netClubGrowth"
+      data-testid={testid}
       className="px-3 py-4 whitespace-nowrap text-sm text-right"
     >
       <span className={`${tone} font-semibold tabular-nums`}>
         {sign}
-        {value}
+        {value.toLocaleString()}
       </span>
     </td>
   )
 }
+
+/* Base / Current numeric cell for a metric group (#687). `groupStart`
+   draws the left separator that visually binds each base→current→Δ
+   triple (border uses var(--line), so it remaps in dark mode). */
+const MetricValueTd: React.FC<{
+  value: number
+  testid: string
+  groupStart?: boolean
+}> = ({ value, testid, groupStart }) => (
+  <td
+    data-testid={testid}
+    className={`px-3 py-4 whitespace-nowrap text-right text-sm text-gray-900 tabular-nums${
+      groupStart ? ' border-l border-[var(--line)]' : ''
+    }`}
+  >
+    {value.toLocaleString()}
+  </td>
+)
 
 /* Per-tier display label + chip style. Pre-Distinguished districts get
    an em-dash; achieved tiers get a colored chip matching the tier. */
@@ -170,20 +194,23 @@ const TierTd: React.FC<{ tier: DistinguishedDistrictTier | null }> = ({
   )
 }
 
-/* Trailing six cells (5 countdown + 1 tier) for one district row.
-   Folds the awards lookup so the row map stays a clean list of
+/* Trailing five countdown + 1 tier cells for one district row (#687
+   moved the former Net Club Growth cell into the Paid Clubs group as its
+   signed Δ). Folds the awards lookup so the row map stays a clean list of
    sub-components. */
 const DistinguishedCells: React.FC<{
   districtId: string
-  netClubGrowth: number
   awards: import('../services/cdn').CompetitiveAwardStandings | null
-}> = ({ districtId, netClubGrowth, awards }) => {
+}> = ({ districtId, awards }) => {
   const c = getDistinguishedCountdown(districtId, awards)
   const tier = awards?.distinguishedDistrict?.[districtId]?.currentTier ?? null
   return (
     <>
-      <NetGrowthTd value={netClubGrowth} />
-      <CountdownTd metric="paymentGrowth" cell={c?.paymentGrowth ?? null} />
+      <CountdownTd
+        metric="paymentGrowth"
+        cell={c?.paymentGrowth ?? null}
+        groupStart
+      />
       <CountdownTd
         metric="distinguishedPercent"
         cell={c?.distinguishedPercent ?? null}
@@ -333,61 +360,136 @@ const RegionPage: React.FC = () => {
 
       <div className="districts-rankings-table-wrap">
         <div className="overflow-x-auto">
-          <table className="districts-rankings-table">
+          <table
+            className="districts-rankings-table"
+            aria-label={`Region ${region} district rankings`}
+          >
+            {/* Two-tier header (#687). The four liked single columns span
+                both rows; each metric is a base→current→Δ group with a
+                colspan group label over Base / Current / Δ sub-headers. */}
             <thead>
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  rowSpan={2}
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider align-bottom"
+                >
                   Region Rank
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  rowSpan={2}
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider align-bottom"
+                >
                   District
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  rowSpan={2}
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider align-bottom"
+                >
                   World Rank
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Paid Clubs
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Distinguished
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  rowSpan={2}
+                  scope="col"
+                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider align-bottom"
+                >
                   Score
                 </th>
-                {/* Show the gap to the next Distinguished tier per
-                    district: numeric for the three DD prerequisites that
-                    the pipeline calculates a delta for, ✓ / em-dash for
-                    the two officer-award booleans. */}
-                <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Net Club Growth
+                {/* Three base→current→Δ metric groups (Amy's request). */}
+                <th
+                  colSpan={3}
+                  scope="colgroup"
+                  className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-l border-[var(--line)]"
+                >
+                  Paid Clubs
                 </th>
-                <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  colSpan={3}
+                  scope="colgroup"
+                  className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-l border-[var(--line)]"
+                >
+                  Membership Payments
+                </th>
+                <th
+                  colSpan={3}
+                  scope="colgroup"
+                  className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-l border-[var(--line)]"
+                >
+                  Distinguished Clubs
+                </th>
+                {/* Distinguished-prerequisite countdown columns (Sprint 5
+                    territory) — left untouched by #687. */}
+                <th
+                  rowSpan={2}
+                  scope="col"
+                  className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider align-bottom border-l border-[var(--line)]"
+                >
                   Payment Growth
                 </th>
-                <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  rowSpan={2}
+                  scope="col"
+                  className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider align-bottom"
+                >
                   Distinguished %
                 </th>
-                <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  rowSpan={2}
+                  scope="col"
+                  className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider align-bottom"
+                >
                   Club Growth %
                 </th>
-                <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  rowSpan={2}
+                  scope="col"
+                  className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider align-bottom"
+                >
                   Education / Training
                 </th>
                 {/* CGD = Club Growth Director — TI officer award. Renamed
                     from "Club Growth" to disambiguate from the % Club
-                    Growth prerequisite immediately to its left. Title
-                    attribute spells out the acronym for non-TM viewers. */}
+                    Growth prerequisite to its left. */}
                 <th
-                  className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  rowSpan={2}
+                  scope="col"
+                  className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider align-bottom"
                   title="Club Growth Director — officer award"
                 >
                   CGD
                 </th>
                 {/* Current Distinguished tier when achieved; em-dash
                     for districts still below. */}
-                <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  rowSpan={2}
+                  scope="col"
+                  className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider align-bottom"
+                >
                   Tier
                 </th>
+              </tr>
+              {/* Sub-header row: Base / Current / Δ under each metric group. */}
+              <tr>
+                {[
+                  'Paid Clubs',
+                  'Membership Payments',
+                  'Distinguished Clubs',
+                ].flatMap(group =>
+                  ['Base', 'Current', 'Δ'].map((sub, j) => (
+                    <th
+                      key={`${group}-${sub}`}
+                      scope="col"
+                      title={`${group} — ${sub === 'Δ' ? 'change vs base' : sub}`}
+                      className={`px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider${
+                        j === 0 ? ' border-l border-[var(--line)]' : ''
+                      }`}
+                    >
+                      {sub}
+                    </th>
+                  ))
+                )}
               </tr>
             </thead>
             <tbody>
@@ -420,22 +522,59 @@ const RegionPage: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       #{d.overallRank}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
-                      {d.paidClubs}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
-                      {d.distinguishedClubs}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 tabular-nums">
+                    <td
+                      data-testid="score-cell"
+                      className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 tabular-nums"
+                    >
                       {d.aggregateScore}
                     </td>
-                    <DistinguishedCells
-                      districtId={d.districtId}
-                      netClubGrowth={
+                    {/* Paid Clubs: base → current → signed net growth (#1).
+                        Net growth prefers the snapshot field, falling back
+                        to paidClubs − paidClubBase (lesson 102). */}
+                    <MetricValueTd
+                      testid="paid-base"
+                      value={d.paidClubBase ?? 0}
+                      groupStart
+                    />
+                    <MetricValueTd
+                      testid="paid-current"
+                      value={d.paidClubs ?? 0}
+                    />
+                    <SignedDeltaTd
+                      testid="countdown-netClubGrowth"
+                      value={
                         awards?.distinguishedDistrict?.[d.districtId]
                           ?.netClubGrowth ??
                         (d.paidClubs ?? 0) - (d.paidClubBase ?? 0)
                       }
+                    />
+                    {/* Membership Payments: base → current → signed Δ. */}
+                    <MetricValueTd
+                      testid="payments-base"
+                      value={d.paymentBase ?? 0}
+                      groupStart
+                    />
+                    <MetricValueTd
+                      testid="payments-current"
+                      value={d.totalPayments ?? 0}
+                    />
+                    <SignedDeltaTd
+                      testid="payments-delta"
+                      value={(d.totalPayments ?? 0) - (d.paymentBase ?? 0)}
+                    />
+                    {/* Distinguished Clubs: year-cumulative, so base = 0 and
+                        Δ = current (lesson 57). */}
+                    <MetricValueTd testid="dist-base" value={0} groupStart />
+                    <MetricValueTd
+                      testid="dist-current"
+                      value={d.distinguishedClubs ?? 0}
+                    />
+                    <SignedDeltaTd
+                      testid="dist-delta"
+                      value={d.distinguishedClubs ?? 0}
+                    />
+                    <DistinguishedCells
+                      districtId={d.districtId}
                       awards={awards ?? null}
                     />
                   </tr>
