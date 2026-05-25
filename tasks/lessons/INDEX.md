@@ -67,3 +67,4 @@
 - **106** [automation, sprint-runner, prompts] — `Closes #N` in an auto-merged sprint PR defeats the tick-before-close ordering (#689, #626, #683)
 - **107** [dark-mode, css, accessibility, tests, vitest] — A CSS-parsing audit's selector matcher must exclude pseudo-class rules, or `:hover`/`:focus` shadows the resting state (#700, #701)
 - **107** [dark-mode, css, accessibility, frontend, tailwind] — Tailwind's `dark:` is OS-keyed; under a manual theme toggle it MISFIRES in the OS-dark + app-light quadrant (#710, #683)
+- **108** [tests, playwright, css, frontend, accessibility] — Verify a sticky header by measuring the sticky cell, not the `<thead>` wrapper (#667, #665)
