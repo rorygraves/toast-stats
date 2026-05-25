@@ -11,6 +11,16 @@ name: Deploy
 on:
   push:
     branches: [main]
+    # Don't rebuild + redeploy prod when a merge touches only non-code
+    # artifacts (lessons, docs, markdown, ignore/license) — the deployed
+    # site would be byte-identical. workflow_dispatch still allows a
+    # manual deploy from any state.
+    paths-ignore:
+      - '**/*.md'
+      - 'tasks/**'
+      - 'docs/**'
+      - '.gitignore'
+      - 'LICENSE'
   workflow_dispatch:
 
 # Prevent concurrent deployments
