@@ -267,7 +267,7 @@ export const ColumnHeader: React.FC<ColumnHeaderProps> = ({
         ref={buttonRef}
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
         onKeyDown={handleKeyDown}
-        className="group flex items-center gap-1 px-2 py-2 text-left text-[9px] font-medium text-gray-700 uppercase tracking-wider hover:bg-gray-100 hover:text-gray-900 hover:shadow-xs focus:bg-gray-100 focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue focus:ring-inset transition-all duration-200 w-full cursor-pointer"
+        className="clubs-col-header group flex items-center gap-1 px-2 py-2 text-left text-[9px] font-medium uppercase tracking-wider hover:shadow-xs focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue focus:ring-inset transition-all duration-200 w-full cursor-pointer"
         tabIndex={0}
         aria-expanded={isDropdownOpen}
         aria-haspopup="true"
@@ -276,7 +276,7 @@ export const ColumnHeader: React.FC<ColumnHeaderProps> = ({
         <span className="flex-1">{label}</span>
         {(sortable || filterable) && (
           <svg
-            className={`w-2.5 h-2.5 transition-all duration-200 ${isDropdownOpen ? 'rotate-180' : ''} ${hasActiveState() ? 'text-tm-loyal-blue' : 'text-gray-400 group-hover:text-gray-700'}`}
+            className={`w-2.5 h-2.5 transition-all duration-200 ${isDropdownOpen ? 'rotate-180' : ''} ${hasActiveState() ? 'text-tm-loyal-blue' : 'clubs-col-header__arrow'}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

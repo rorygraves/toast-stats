@@ -219,14 +219,16 @@ describe('ColumnHeader', () => {
       expect(filterIcon).toBeInTheDocument()
     })
 
-    it('displays gray filter icon when no filter is active', () => {
+    it('displays muted filter icon when no filter is active', () => {
       render(<ColumnHeader {...defaultProps} currentFilter={null} />)
 
       const headerButton = screen.getByRole('button')
 
-      // Check for gray filter indicator (inactive state)
+      // Inactive caret uses the token-driven muted class (#668 re-skin —
+      // was text-gray-400; colour now resolves via .clubs-col-header__arrow
+      // in app-shell.css so dark mode remaps for free).
       const filterIcon = headerButton.querySelector(
-        'svg[class*="text-gray-400"]'
+        'svg[class*="clubs-col-header__arrow"]'
       )
       expect(filterIcon).toBeInTheDocument()
     })
@@ -321,9 +323,10 @@ describe('ColumnHeader', () => {
       const headerButton = screen.getByRole('button')
       const buttonClasses = headerButton.className
 
-      // Verify hover classes are present
-      expect(buttonClasses).toMatch(/hover:bg-gray-100/)
-      expect(buttonClasses).toMatch(/hover:text-gray-900/)
+      // Hover bg/text feedback now lives in .clubs-col-header (#668 re-skin —
+      // was hover:bg-gray-100 / hover:text-gray-900; the CSS rule swaps to
+      // --surface-3 / --ink so dark mode remaps for free, R10).
+      expect(buttonClasses).toMatch(/clubs-col-header/)
       expect(buttonClasses).toMatch(/hover:shadow-xs/)
 
       // Verify cursor-pointer for interactivity
@@ -344,13 +347,15 @@ describe('ColumnHeader', () => {
 
       expect(icons.length).toBeGreaterThan(0)
 
-      // At least one icon should have group-hover classes
+      // At least one icon carries the re-skinned caret class (#668 — its
+      // group-hover colour shift now lives in .clubs-col-header__arrow CSS;
+      // was group-hover:text-gray-700) or the inline transition.
       const hasHoverIcon = Array.from(icons).some(icon => {
         const iconClasses =
           icon.className.baseVal || icon.getAttribute('class') || ''
         return (
-          iconClasses.includes('group-hover:text-gray-700') ||
-          iconClasses.includes('transition-colors')
+          iconClasses.includes('clubs-col-header__arrow') ||
+          iconClasses.includes('transition-all')
         )
       })
       expect(hasHoverIcon).toBe(true)
