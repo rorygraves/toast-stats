@@ -118,7 +118,7 @@ export const TextFilter: React.FC<TextFilterProps> = ({
             value={localValue}
             onChange={e => handleInputChange(e.target.value)}
             placeholder={placeholder}
-            className="w-full px-3 py-2 text-sm rounded clubs-filter-input focus:outline-hidden transition-colors duration-200"
+            className="w-full px-3 py-2 text-sm rounded clubs-filter-input focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue focus:border-transparent transition-colors duration-200"
             autoFocus
             tabIndex={0}
             aria-label={`Filter text input. Current operator: ${operator}`}

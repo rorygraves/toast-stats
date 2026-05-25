@@ -129,7 +129,7 @@ export const NumericFilter: React.FC<NumericFilterProps> = ({
               placeholder="Min"
               min={min}
               max={max}
-              className="w-full px-3 py-2 text-sm rounded clubs-filter-input focus:outline-hidden transition-colors duration-200"
+              className="w-full px-3 py-2 text-sm rounded clubs-filter-input focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue focus:border-transparent transition-colors duration-200"
               tabIndex={0}
               aria-label={`Minimum ${label.toLowerCase()} value`}
             />
@@ -145,7 +145,7 @@ export const NumericFilter: React.FC<NumericFilterProps> = ({
               placeholder="Max"
               min={min}
               max={max}
-              className="w-full px-3 py-2 text-sm rounded clubs-filter-input focus:outline-hidden transition-colors duration-200"
+              className="w-full px-3 py-2 text-sm rounded clubs-filter-input focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue focus:border-transparent transition-colors duration-200"
               tabIndex={0}
               aria-label={`Maximum ${label.toLowerCase()} value`}
             />

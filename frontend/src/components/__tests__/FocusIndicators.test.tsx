@@ -172,7 +172,8 @@ describe('Focus Indicators', () => {
       const inputClasses = textInput?.className || ''
       expect(inputClasses).toContain('focus:outline-hidden')
       expect(inputClasses).toContain('focus:ring-2')
-      expect(inputClasses).toContain('focus:ring-blue-500')
+      // #670: themed ring token (has a dark-mode override, unlike blue-500).
+      expect(inputClasses).toContain('focus:ring-tm-loyal-blue')
     })
 
     it('should have focus indicators on operator buttons', () => {
@@ -195,7 +196,8 @@ describe('Focus Indicators', () => {
         const buttonClasses = button.className
         expect(buttonClasses).toContain('focus:outline-hidden')
         expect(buttonClasses).toContain('focus:ring-2')
-        expect(buttonClasses).toContain('focus:ring-blue-500')
+        // #670: themed ring token (has a dark-mode override, unlike blue-500).
+        expect(buttonClasses).toContain('focus:ring-tm-loyal-blue')
       })
     })
 
@@ -244,7 +246,8 @@ describe('Focus Indicators', () => {
         const inputClasses = input.className
         expect(inputClasses).toContain('focus:outline-hidden')
         expect(inputClasses).toContain('focus:ring-2')
-        expect(inputClasses).toContain('focus:ring-blue-500')
+        // #670: themed ring token (has a dark-mode override, unlike blue-500).
+        expect(inputClasses).toContain('focus:ring-tm-loyal-blue')
       })
     })
 
