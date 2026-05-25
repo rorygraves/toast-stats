@@ -63,9 +63,12 @@ async function sampleRowContrasts(page: Page, hover: boolean) {
       const { color, bg } = await loc.evaluate(el => {
         const fg = getComputedStyle(el).color
         // Resolve the first FULLY OPAQUE ancestor background. Translucent
-        // overlays (e.g. the chip's loyal-blue/10, which the browser reports
-        // as oklab(.../0.1)) are skipped — the underlying surface is the
-        // conservative contrast baseline and is always an rgb token.
+        // overlays (e.g. the chip's loyal-blue/10, reported as oklab(.../0.1))
+        // are skipped and we measure against the opaque surface beneath. This
+        // is an approximation: a translucent overlay slightly shifts the true
+        // contrast. It's adequate here because the only overlay is a ~10% tint
+        // and the bug under guard is a ~30x light/dark text flip, not a
+        // marginal few-tenths case.
         const isOpaqueRgb = (b: string) =>
           /^rgba?\([^)]*\)$/.test(b) &&
           !/,\s*0?\.\d+\s*\)$/.test(b) && // not rgba(...,0.x)

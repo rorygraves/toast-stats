@@ -61,7 +61,7 @@
  * tracks the app theme and never the OS. `:where()` keeps specificity at
  * a single class so it composes like a normal utility. Region components
  * use this; the broader codebase migration off raw `dark:` is tracked
- * separately (#710 follow-up). */
+ * separately (#715). */
 @custom-variant theme-dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 /* Tailwind v4 Theme Configuration - replaces tailwind.config.js */
