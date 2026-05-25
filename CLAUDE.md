@@ -149,7 +149,7 @@ Only the strict `- [text](path)` (or `* [text](path)`) bullet form is recognized
 **Full DoD** (everything else):
 
 - Failing test existed before the fix. Targeted tests now pass. No assertion pinning.
-- All tests pass. Zero regressions. CI/CD green. Live verification passes.
+- All tests pass. Zero regressions. CI green. Live verification passes on the **PR preview channel** — the per-PR Firebase URL posted as a sticky comment by `pr-preview.yml` — **pre-merge, not prod**. (Prod deploys are decoupled from per-sprint verification.)
 - Change is single-responsibility. Dead code and experiment files deleted.
 - **Learning captured — only if there was one.** Not every sprint yields a transferable insight, and a "no new lesson" sprint is a valid outcome. When the sprint did surface something durable, file it by kind in `tasks/lessons/` with frontmatter: **principle** (→ `category: principle`, candidate for an R-rule), **lesson** (→ `category: lesson` + `tags:` for relevance matching), or **incident** (→ `category: incident` + `auto_load: false`, reference-only). A restated commit message is not a lesson — if you cannot name the transferable takeaway in one sentence, do not file one. Regenerate `tasks/lessons/INDEX.md` (`npm run lessons:index`) when you add a lesson.
 
