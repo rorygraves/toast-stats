@@ -1,6 +1,11 @@
 # Production Deployment Workflow
-# Deploys frontend to Firebase Hosting
-# on every merge to main, after CI passes.
+# Deploys frontend to Firebase Hosting on a release-please release
+# (ADR-004). Production deploys are release-gated, not merge-gated:
+# release-please.yml calls this workflow when a release PR is merged
+# (releases_created == 'true'). workflow_dispatch is the manual/hotfix path.
+#
+# Full CI runs on PRs and on the release PR (a PR to main), so there is no
+# redundant per-merge CI re-run here.
 #
 # Prerequisites:
 #   1. Run scripts/setup-wif.sh (one-time)
@@ -9,18 +14,10 @@
 name: Deploy
 
 on:
-  push:
-    branches: [main]
-    # Don't rebuild + redeploy prod when a merge touches only non-code
-    # artifacts (lessons, docs, markdown, ignore/license) — the deployed
-    # site would be byte-identical. workflow_dispatch still allows a
-    # manual deploy from any state.
-    paths-ignore:
-      - '**/*.md'
-      - 'tasks/**'
-      - 'docs/**'
-      - '.gitignore'
-      - 'LICENSE'
+  # Invoked by release-please.yml when a release is published. Secrets are
+  # passed via `secrets: inherit` from the caller.
+  workflow_call:
+  # Manual / emergency hotfix deploy from any state.
   workflow_dispatch:
 
 # Prevent concurrent deployments
@@ -33,28 +30,24 @@ env:
   REGION: 'northamerica-northeast1'
   GCS_BUCKET: 'toast-stats-data-ca'
 
+# Least privilege for the deploy job. The redundant CI gate job (which
+# needed packages / pull-requests / security-events) was removed in
+# ADR-004, so those scopes are gone. When called from release-please.yml
+# these are capped by that workflow's permissions; they apply directly on
+# a workflow_dispatch run.
 permissions:
-  contents: write # Required to push version tags
-  id-token: write # Required for Workload Identity Federation
-  packages: write # Required by CI workflow
-  pull-requests: write # Required by CI workflow
-  security-events: write # Required by CI workflow
+  contents: write # version tags / git metadata
+  id-token: write # Workload Identity Federation (GCP auth)
 
 jobs:
   # ──────────────────────────────────────────────
-  # Gate: CI must pass before deployment
-  # ──────────────────────────────────────────────
-  ci:
-    name: CI Quality Gates
-    uses: ./.github/workflows/ci.yml
-
-  # ──────────────────────────────────────────────
   # Deploy Frontend to Firebase Hosting
   # ──────────────────────────────────────────────
+  # No CI gate job here: CI already ran on the PR and again on the
+  # release PR (the integration gate). See ADR-004.
   deploy-frontend:
     name: Deploy Frontend
     runs-on: ubuntu-latest
-    needs: [ci]
 
     steps:
       - name: Checkout code

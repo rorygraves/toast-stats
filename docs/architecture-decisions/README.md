@@ -19,9 +19,12 @@ Each ADR follows this template:
 
 ## Index
 
-| ADR                             | Title                             | Status   | Date     |
-| ------------------------------- | --------------------------------- | -------- | -------- |
-| [001](001-cdn-only-frontend.md) | CDN-only frontend (no API server) | Accepted | Jan 2026 |
+| ADR                                                | Title                                     | Status   | Date     |
+| -------------------------------------------------- | ----------------------------------------- | -------- | -------- |
+| [001](001-cdn-only-frontend.md)                    | CDN-only frontend (no API server)         | Accepted | Jan 2026 |
+| [002](002-staging-environment.md)                  | Staging environment and deployment flow   | Accepted | Apr 2026 |
+| [003](003-staging-bucket-cors-preview-channels.md) | Staging bucket CORS for Firebase previews | Accepted | May 2026 |
+| [004](004-release-gated-production-deploy.md)      | Release-gated production deploys          | Accepted | May 2026 |
 
 ## When to Write an ADR
 
