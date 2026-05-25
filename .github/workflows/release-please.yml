@@ -5,16 +5,40 @@ on:
     branches:
       - main
 
+# Superset of permissions needed by release-please AND the reusable deploy
+# workflow it calls (deploy.yml needs id-token for Workload Identity). A
+# called workflow's GITHUB_TOKEN permissions are capped by the caller, so
+# the deploy-relevant scopes must be granted here.
 permissions:
-  contents: write
-  pull-requests: write
+  contents: write # release-please tags + deploy version tags
+  pull-requests: write # release-please PR
+  id-token: write # WIF auth in deploy.yml
+  packages: write # required by deploy chain
+  security-events: write # required by deploy chain
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    outputs:
+      # Aggregate boolean: 'true' when ANY component was released by this
+      # run. Fires exactly once per release-PR merge regardless of how many
+      # components released — collapses the multi-component tag fan-out and
+      # still covers package-only changes that alter the deployed bundle.
+      releases_created: ${{ steps.release.outputs.releases_created }}
     steps:
       - uses: googleapis/release-please-action@v5
+        id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+  # Gate production deploy on a release-please release (ADR-004), not on
+  # every merge to main. The release PR gets full CI for free (it is a PR
+  # to main) — that is the integration gate; this fires only on its merge.
+  deploy:
+    name: Deploy on release
+    needs: release-please
+    if: needs.release-please.outputs.releases_created == 'true'
+    uses: ./.github/workflows/deploy.yml
+    secrets: inherit
