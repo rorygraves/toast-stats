@@ -366,7 +366,20 @@ const RegionPage: React.FC = () => {
       </div>
 
       <div className="districts-rankings-table-wrap">
-        <div className="overflow-x-auto">
+        {/* Intentional, documented horizontal scroll (#689, epic #683 F-mobile).
+            A 19-column ranking table can't fit a phone; collapsing to cards
+            would destroy the cross-row comparison that is the table's whole
+            purpose (ron-ux). Instead the scroll is made non-trap:
+            role=region + tabIndex + aria-label make it keyboard-operable
+            (WCAG 2.1.1 / axe scrollable-region-focusable); the sticky identity
+            columns keep each row labelled; the scroll-cue overlay signals more
+            columns to the right. */}
+        <div
+          className="overflow-x-auto region-rankings__scroll"
+          role="region"
+          tabIndex={0}
+          aria-label={`Region ${region} district rankings — scroll horizontally to see all metrics`}
+        >
           <table
             className="districts-rankings-table"
             aria-label={`Region ${region} district rankings`}
@@ -379,14 +392,14 @@ const RegionPage: React.FC = () => {
                 <th
                   rowSpan={2}
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider align-bottom"
+                  className="region-rankings__sticky-col region-rankings__sticky-col--rank px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider align-bottom"
                 >
                   Region Rank
                 </th>
                 <th
                   rowSpan={2}
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider align-bottom"
+                  className="region-rankings__sticky-col region-rankings__sticky-col--district px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider align-bottom"
                 >
                   District
                 </th>
@@ -526,7 +539,7 @@ const RegionPage: React.FC = () => {
                   >
                     <td
                       data-testid="region-rank-cell"
-                      className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 tabular-nums"
+                      className="region-rankings__sticky-col region-rankings__sticky-col--rank px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 tabular-nums"
                     >
                       #{rank.rank}
                       {rank.isTied && (
@@ -535,7 +548,10 @@ const RegionPage: React.FC = () => {
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td
+                      data-testid="region-district-cell"
+                      className="region-rankings__sticky-col region-rankings__sticky-col--district px-6 py-4 whitespace-nowrap"
+                    >
                       <DistrictChipAndName
                         districtId={d.districtId}
                         name={d.districtName}
@@ -613,6 +629,10 @@ const RegionPage: React.FC = () => {
             </tbody>
           </table>
         </div>
+        {/* Right-edge fade: a discoverability cue that the table scrolls for
+            more columns. Themed (transparent → --surface, remaps in dark),
+            pointer-events:none so it never blocks taps or scrolling. */}
+        <div className="region-rankings__scroll-cue" aria-hidden="true" />
       </div>
     </div>
   )

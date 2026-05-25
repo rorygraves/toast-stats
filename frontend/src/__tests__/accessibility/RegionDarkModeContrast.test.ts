@@ -304,4 +304,70 @@ describe('Region pages dark-mode contrast (#609)', () => {
       `active ${fg} on ${bg} = ${ratio.toFixed(2)}:1`
     ).toBeGreaterThanOrEqual(4.5)
   })
+
+  // Sticky identity columns (#689). The pinned Region Rank + District cells get
+  // an OPAQUE background so the metric columns don't bleed through as they
+  // scroll under them. That background is a genuinely new dark surface — it
+  // MUST be a theme token (var(--surface)/var(--surface-2)), never a hardcoded
+  // light literal, or dark mode shows light cells with light text (lesson 092).
+  const surface2 = resolveVar('var(--surface-2)')
+
+  it('sticky identity cells use a THEMED background, not a hardcoded literal', () => {
+    // The lesson-092 trap: a fixed light bg under theme-adaptive text. Assert
+    // the rule resolves through a var() that has a dark remap.
+    const bg = ruleValue(
+      appShellCss,
+      '.districts-rankings-table .region-rankings__sticky-col',
+      'background-color'
+    )
+    expect(bg, 'sticky-col background-color rule must exist').toBeTruthy()
+    expect(bg, `sticky-col bg "${bg}" must be a theme token`).toMatch(/var\(--/)
+    // and that token must differ between light and dark (i.e. it remaps).
+    expect(resolveVar(bg!)).not.toBe(lightTokens.get('--surface'))
+  })
+
+  it('rank-cell text clears AA on the sticky column in dark (default + hover)', () => {
+    // Rank cell wears text-gray-900 (→ --text-heading in dark). It sits on the
+    // sticky bg, which is --surface at rest and --surface-2 on hover/header.
+    // Lesson 095: size for the LIGHTEST surface it lands on (--surface-2).
+    const fg = utilityDark('text-gray-900', 'color', surface)
+    for (const bg of [surface, surface2]) {
+      const ratio = calculateContrastRatio(fg, bg)
+      expect(
+        ratio,
+        `rank text ${fg} on sticky ${bg} = ${ratio.toFixed(2)}:1`
+      ).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
+  it('header sticky cells use the themed thead surface', () => {
+    const bg = ruleValue(
+      appShellCss,
+      '.districts-rankings-table thead .region-rankings__sticky-col',
+      'background-color'
+    )
+    expect(bg, `thead sticky bg "${bg}" must be a theme token`).toMatch(
+      /var\(--/
+    )
+    // Header label is text-gray-500 (muted) → --text-muted; must clear AA on
+    // the thead surface it now sits on.
+    const fg = utilityDark('text-gray-500', 'color', surface2)
+    const ratio = calculateContrastRatio(fg, surface2)
+    expect(
+      ratio,
+      `header label ${fg} on thead ${surface2} = ${ratio.toFixed(2)}:1`
+    ).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('scroll-cue overlay is themed, not a hardcoded colour (lesson 092)', () => {
+    const bg = ruleValue(
+      appShellCss,
+      '.region-rankings__scroll-cue',
+      'background'
+    )
+    expect(bg, 'scroll-cue background rule must exist').toBeTruthy()
+    expect(bg, `scroll-cue "${bg}" must reference a theme token`).toMatch(
+      /var\(--surface\)/
+    )
+  })
 })

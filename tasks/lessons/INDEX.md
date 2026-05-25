@@ -63,3 +63,4 @@
 - **102** [analytics, frontend, dcp, data-pipeline] — A clamped tier-gap is not a signed delta; don't render `max(0, …)` under a "growth/change" label (#684, #683)
 - **103** [analytics, dcp, data-pipeline] — A "remaining-to-threshold" countdown must be derived from the same gate it counts down to (#686, #683)
 - **104** [analytics, frontend, dcp, data-pipeline] — Derive a count from raw integer inputs, not a vendor's pre-rounded percentage (#688, #683)
+- **105** [frontend, css, responsive, accessibility, ux] — Match the mobile-table pattern to the data's purpose, not a sibling table's precedent (#689, #683)
