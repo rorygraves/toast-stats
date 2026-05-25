@@ -25,6 +25,17 @@ export default defineConfig({
     // Set aggressive timeout limits for fast test execution
     testTimeout: 5000, // 5 seconds max per test
     hookTimeout: 5000, // 5 seconds max for setup/teardown hooks
+    // Cap local worker forks at 3. The default (one fork per core) saturates
+    // a busy dev machine — when something else is eating CPU (a background OS
+    // update/reindex, a persistent VM like Rancher Desktop, another build),
+    // forks starve each other and fast tests blow the 5s timeout, failing the
+    // pre-push gate for reasons unrelated to the code (worker-saturation
+    // flakiness, #473 / Lesson 53). A 50% cap still left ~4 timeouts on a
+    // heavily-contended machine; a fixed 3 forks gives each enough headroom
+    // to finish in time. CI runners are small and not oversubscribed, so they
+    // keep the default for full throughput.
+    // eslint-disable-next-line no-undef
+    maxWorkers: process.env.CI ? undefined : 3,
     exclude: baseExclude,
     coverage: {
       exclude: [...baseExclude],
