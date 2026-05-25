@@ -80,11 +80,15 @@ function resolve_(value: string, dark: boolean, depth = 0): string {
   return v
 }
 
-/** Value of `prop` from the LAST rule that names `selector` exactly and
- *  declares it (cascade last-wins — lesson 095). */
+/** Value of `prop` from the LAST *base* rule that names `selector` exactly and
+ *  declares it (cascade last-wins — lesson 095). The negative lookahead
+ *  excludes `:` as well as `\w-` so a pseudo-class rule
+ *  (`.x:hover { color: var(--ink) }`) can't shadow the resting-state colour
+ *  we're auditing — that shadowing made an earlier version of this audit
+ *  pass even when the base colour was reverted to white. */
 function declFor(css: string, selector: string, prop: string): string {
   const re = new RegExp(
-    selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![\\w-])',
+    selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![\\w-:])',
     'g'
   )
   let m: RegExpExecArray | null

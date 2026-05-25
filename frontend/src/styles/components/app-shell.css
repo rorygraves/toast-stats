@@ -158,7 +158,7 @@
      colour, invisible against the light header surface (--surface = #fff).
      Drive it from --ink-3 — the same theme-aware token the "?" help icon
      above uses — so it clears WCAG AA in BOTH modes (R10): #5b6675 on white
-     ≈ 5.8:1 (light), #8a96a6 on --surface ≈ 6.4:1 (dark). */
+     ≈ 5.8:1 (light), #8a96a6 on --surface ≈ 5.9:1 (dark). */
   .app-shell-theme-toggle {
     color: var(--ink-3);
   }
