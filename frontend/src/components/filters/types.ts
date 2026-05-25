@@ -135,19 +135,25 @@ export interface ProcessedClubTrend extends ClubTrend {
 }
 
 /**
- * Column configurations for the clubs table
+ * Column configurations for the clubs table.
+ *
+ * Order reconciled to the HANDOFF column set (#669, epic #665 Sprint 3):
+ * Club, Div, Area, Status, Members, Needed, New, Oct Renew, Apr Renew,
+ * DCP, Tier — then the kept extras (Club Status, Years) appended. The
+ * ClubsTable body `<td>` cells are hand-ordered to match this array, so
+ * the two MUST stay in lockstep.
  */
 export const COLUMN_CONFIGS: ColumnConfig[] = [
   {
     field: 'name',
-    label: 'Club Name',
+    label: 'Club',
     sortable: true,
     filterable: true,
     filterType: 'text',
   },
   {
     field: 'division',
-    label: 'Division',
+    label: 'Div',
     sortable: true,
     filterable: true,
     filterType: 'text',
@@ -160,6 +166,14 @@ export const COLUMN_CONFIGS: ColumnConfig[] = [
     filterType: 'text',
   },
   {
+    field: 'status',
+    label: 'Status',
+    sortable: true,
+    filterable: true,
+    filterType: 'categorical',
+    filterOptions: ['thriving', 'vulnerable', 'intervention-required'],
+  },
+  {
     field: 'membership',
     label: 'Members',
     sortable: true,
@@ -167,22 +181,43 @@ export const COLUMN_CONFIGS: ColumnConfig[] = [
     filterType: 'numeric',
   },
   {
-    field: 'dcpGoals',
-    label: 'DCP Goals',
+    field: 'membersNeeded',
+    label: 'Needed',
     sortable: true,
     filterable: true,
     filterType: 'numeric',
   },
   {
-    field: 'membersNeeded',
-    label: 'Members Needed',
+    field: 'newMembers',
+    label: 'New',
+    sortable: true,
+    filterable: true,
+    filterType: 'numeric',
+  },
+  {
+    field: 'octoberRenewals',
+    label: 'Oct Renew',
+    sortable: true,
+    filterable: true,
+    filterType: 'numeric',
+  },
+  {
+    field: 'aprilRenewals',
+    label: 'Apr Renew',
+    sortable: true,
+    filterable: true,
+    filterType: 'numeric',
+  },
+  {
+    field: 'dcpGoals',
+    label: 'DCP',
     sortable: true,
     filterable: true,
     filterType: 'numeric',
   },
   {
     field: 'distinguished',
-    label: 'Distinguished',
+    label: 'Tier',
     sortable: true,
     filterable: true,
     filterType: 'categorical',
@@ -207,41 +242,12 @@ export const COLUMN_CONFIGS: ColumnConfig[] = [
     },
   },
   {
-    field: 'status',
-    label: 'Status',
-    sortable: true,
-    filterable: true,
-    filterType: 'categorical',
-    filterOptions: ['thriving', 'vulnerable', 'intervention-required'],
-  },
-  {
     field: 'clubStatus',
     label: 'Club Status',
     sortable: true,
     filterable: true,
     filterType: 'categorical',
     filterOptions: ['Active', 'Suspended', 'Ineligible', 'Low'],
-  },
-  {
-    field: 'octoberRenewals',
-    label: 'Oct Ren',
-    sortable: true,
-    filterable: true,
-    filterType: 'numeric',
-  },
-  {
-    field: 'aprilRenewals',
-    label: 'Apr Ren',
-    sortable: true,
-    filterable: true,
-    filterType: 'numeric',
-  },
-  {
-    field: 'newMembers',
-    label: 'New',
-    sortable: true,
-    filterable: true,
-    filterType: 'numeric',
   },
   {
     field: 'yearsChartered',

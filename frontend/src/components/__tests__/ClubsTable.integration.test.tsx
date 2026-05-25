@@ -109,13 +109,13 @@ describe('ClubsTable Integration Tests', () => {
       // Should show all 5 clubs initially
       expect(screen.getByText('Total: 5 clubs')).toBeInTheDocument()
 
-      // Should show table headers
-      expect(screen.getByText('Club Name')).toBeInTheDocument()
-      expect(screen.getByText('Division')).toBeInTheDocument()
+      // Should show table headers (reconciled to HANDOFF column set, #669)
+      expect(screen.getByText('Club')).toBeInTheDocument()
+      expect(screen.getByText('Div')).toBeInTheDocument()
       expect(screen.getByText('Area')).toBeInTheDocument()
       expect(screen.getByText('Members')).toBeInTheDocument()
-      expect(screen.getByText('DCP Goals')).toBeInTheDocument()
-      expect(screen.getAllByText('Distinguished')).toHaveLength(2) // Header + data cell
+      expect(screen.getByText('DCP')).toBeInTheDocument()
+      expect(screen.getByText('Tier')).toBeInTheDocument()
       expect(screen.getByText('Status')).toBeInTheDocument()
 
       // Should show club data

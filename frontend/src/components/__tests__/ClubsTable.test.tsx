@@ -234,14 +234,17 @@ describe('ClubsTable', () => {
         />
       )
 
-      // There are two "Distinguished" texts - one in the column header and one in the badge
-      // We check that there are at least 2 (header + badge)
+      // Header is now "Tier" (#669), so "Distinguished" appears once — the
+      // tier pill in the data row.
       const distinguishedElements = screen.getAllByText('Distinguished')
-      expect(distinguishedElements.length).toBeGreaterThanOrEqual(2)
+      expect(distinguishedElements.length).toBeGreaterThanOrEqual(1)
 
-      // Verify the badge specifically exists in the data row
+      // Verify the tier pill specifically exists in the data row
       const dataRow = screen.getAllByRole('row')[1]
       expect(dataRow).toHaveTextContent('Distinguished')
+      expect(
+        dataRow.querySelector('.clubs-tier-pill--distinguished')
+      ).not.toBeNull()
     })
 
     it('should display dash for NotDistinguished clubs', () => {
@@ -438,10 +441,10 @@ describe('ClubsTable', () => {
 
       const dataRow = screen.getAllByRole('row')[1]
       const cells = dataRow.querySelectorAll('td')
-      // Columns 9, 10, 11 are Oct Ren, Apr Ren, New (0-indexed, after Club Status column)
-      expect(cells[9]).toHaveTextContent('0')
-      expect(cells[10]).toHaveTextContent('0')
-      expect(cells[11]).toHaveTextContent('0')
+      // New column order (#669): New=6, Oct Renew=7, Apr Renew=8 (0-indexed).
+      expect(cells[6]).toHaveTextContent('0')
+      expect(cells[7]).toHaveTextContent('0')
+      expect(cells[8]).toHaveTextContent('0')
     })
 
     it('should display "—" for undefined payment counts', () => {
@@ -465,10 +468,10 @@ describe('ClubsTable', () => {
 
       const dataRow = screen.getAllByRole('row')[1]
       const cells = dataRow.querySelectorAll('td')
-      // Columns 9, 10, 11 are Oct Ren, Apr Ren, New (0-indexed, after Club Status column)
-      expect(cells[9]).toHaveTextContent('—')
-      expect(cells[10]).toHaveTextContent('—')
-      expect(cells[11]).toHaveTextContent('—')
+      // New column order (#669): New=6, Oct Renew=7, Apr Renew=8 (0-indexed).
+      expect(cells[6]).toHaveTextContent('—')
+      expect(cells[7]).toHaveTextContent('—')
+      expect(cells[8]).toHaveTextContent('—')
     })
 
     it('should handle mixed defined and undefined payment values', () => {
@@ -492,10 +495,11 @@ describe('ClubsTable', () => {
 
       const dataRow = screen.getAllByRole('row')[1]
       const cells = dataRow.querySelectorAll('td')
-      // Columns 9, 10, 11 are Oct Ren, Apr Ren, New (0-indexed, after Club Status column)
-      expect(cells[9]).toHaveTextContent('10')
-      expect(cells[10]).toHaveTextContent('—')
-      expect(cells[11]).toHaveTextContent('0')
+      // New column order (#669): New=6, Oct Renew=7, Apr Renew=8 (0-indexed).
+      // octoberRenewals=10, aprilRenewals=undefined, newMembers=0.
+      expect(cells[6]).toHaveTextContent('0')
+      expect(cells[7]).toHaveTextContent('10')
+      expect(cells[8]).toHaveTextContent('—')
     })
   })
 
