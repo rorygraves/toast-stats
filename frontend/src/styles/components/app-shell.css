@@ -2197,7 +2197,12 @@
     border-color: var(--line);
   }
 
-  .clubs-filter-checkbox:hover {
+  /* Hover affordance is for the unchecked box only (the checked/partial
+     boxes carry their own --loyal-500/--loyal-200 borders); scoping avoids
+     the base :hover (higher pseudo-class specificity) lightening them. */
+  .clubs-filter-checkbox:not(.clubs-filter-checkbox--checked):not(
+      .clubs-filter-checkbox--partial
+    ):hover {
     border-color: var(--loyal-200);
   }
 
@@ -2225,9 +2230,11 @@
     background-color: var(--surface-3);
   }
 
-  /* Validation error band (numeric out-of-range). --red-600 remaps in dark. */
+  /* Validation error band (numeric out-of-range). --red-500 remaps lighter in
+     dark (#f87171) so the text clears AA on --surface-2 in both themes;
+     --red-600 was 4.42:1 in dark, just under (review #670). */
   .clubs-filter-error {
-    color: var(--red-600);
+    color: var(--red-500);
     background-color: var(--surface-2);
     border: 1px solid var(--line);
   }

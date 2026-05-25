@@ -118,9 +118,9 @@ export const CategoricalFilter: React.FC<CategoricalFilterProps> = ({
               <div
                 className={`w-4 h-4 min-w-[16px] min-h-[16px] border-2 rounded-xs flex items-center justify-center flex-shrink-0 transition-colors duration-200 clubs-filter-checkbox${
                   allSelected
-                    ? '--checked'
+                    ? ' clubs-filter-checkbox--checked'
                     : localSelected.length > 0
-                      ? '--partial'
+                      ? ' clubs-filter-checkbox--partial'
                       : ''
                 }`}
               >
@@ -169,7 +169,7 @@ export const CategoricalFilter: React.FC<CategoricalFilterProps> = ({
               >
                 <div
                   className={`w-4 h-4 min-w-[16px] min-h-[16px] border-2 rounded-xs flex items-center justify-center flex-shrink-0 transition-colors duration-200 clubs-filter-checkbox${
-                    isSelected ? '--checked' : ''
+                    isSelected ? ' clubs-filter-checkbox--checked' : ''
                   }`}
                 >
                   {isSelected && (

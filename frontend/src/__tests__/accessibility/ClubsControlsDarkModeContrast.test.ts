@@ -236,4 +236,19 @@ describe('Clubs controls dark-mode contrast (#670)', () => {
     const bg = resolveVar('var(--loyal-500)', 'dark')
     expect(calculateContrastRatio('#ffffff', bg)).toBeGreaterThanOrEqual(AA)
   })
+
+  // Validation error band text on --surface-2, both themes (review #670):
+  // --red-600 was 4.42:1 in dark; --red-500 remaps lighter and clears AA.
+  it('filter error band text clears AA on --surface-2 both themes', () => {
+    const fgToken = ruleProp(appShellCss, '.clubs-filter-error', 'color')
+    for (const theme of ['light', 'dark'] as const) {
+      const fg = resolveVar(fgToken, theme)
+      const bg = resolveVar('var(--surface-2)', theme)
+      const ratio = calculateContrastRatio(fg, bg)
+      expect(
+        ratio,
+        `error ${fg} on --surface-2 ${bg} (${theme}) = ${ratio.toFixed(2)}:1`
+      ).toBeGreaterThanOrEqual(AA)
+    }
+  })
 })
