@@ -1,4 +1,5 @@
-# Pre-push gate restored 2026-05-23 (#482).
+#!/usr/bin/env sh
+# Pre-push gate restored 2026-05-23 (#482); made path-aware 2026-05-25 (#720).
 #
 # Runs the fast `unit` vitest project only. The full suite was removed in
 # May (exit 0) because the page-mount / journey / axe tests saturated worker
@@ -8,7 +9,62 @@
 # #482 split vitest into first-class `unit` and `integration` projects. The
 # `unit` project runs well under the 30s pre-push budget (~18-20s on a 10-core
 # Mac) with zero variance across 10 runs — fast and reliable enough to gate
-# every push. The heavy `integration` project still
-# runs in CI (which runs both projects with --coverage), so nothing is lost
-# as the gate of record; this is purely a fast inner-loop signal.
-npm run test:unit --workspace=frontend
+# every push. The heavy `integration` project still runs in CI (which runs both
+# projects with --coverage), so nothing is lost as the gate of record; this is
+# purely a fast inner-loop signal.
+#
+# Path-aware (#720): mirrors the CI/Deploy `paths-ignore` set from #704
+# (**/*.md, tasks/**, docs/**, .gitignore, LICENSE). When EVERY file in the
+# push range is non-code, skip `test:unit`. This is NOT a --no-verify bypass —
+# there is genuinely nothing code-relevant to test, exactly as CI now skips the
+# same pushes. CI remains the gate of record. ALL-not-ANY: a mixed code+docs
+# push runs the gate. Ambiguous ranges (new branch / no remote ref / deletion /
+# empty stdin) default to RUNNING the gate, never to skipping.
+#
+# POSIX sh only: husky runs this with `sh -e`, so no bashisms ([[ ]], +=,
+# pipefail). The classifier is scripts/lib/changedFilesGate.ts (unit-tested),
+# invoked via the CLI bridge so there is no parallel bash reimplementation.
+set -eu
+
+ZERO='0000000000000000000000000000000000000000'
+
+run_gate() {
+  exec npm run test:unit --workspace=frontend
+}
+
+# git feeds pre-push one line per ref on stdin:
+#   <local ref> <local sha> <remote ref> <remote sha>
+changed=''
+saw_ref=0
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ -z "$local_ref" ] && continue
+  saw_ref=1
+
+  # Deletion of a remote ref (local sha all-zeros): nothing to push for it.
+  [ "$local_sha" = "$ZERO" ] && continue
+
+  # New branch on the remote (remote sha all-zeros): no base to diff against →
+  # ambiguous, fall back to running the gate.
+  [ "$remote_sha" = "$ZERO" ] && run_gate
+
+  # Files changed in the range being pushed. If the diff can't be computed
+  # (e.g. remote sha not present locally), fall back to running the gate.
+  if ! files=$(git diff --name-only "$remote_sha" "$local_sha" 2>/dev/null); then
+    run_gate
+  fi
+  changed="$changed$files
+"
+done
+
+# No refs on stdin, or every ref was a deletion → nothing to test, but default
+# to running the gate (safe default; the no-op test run is cheap).
+if [ "$saw_ref" -eq 0 ] || [ -z "$(printf '%s' "$changed" | tr -d '[:space:]')" ]; then
+  run_gate
+fi
+
+if printf '%s' "$changed" | npx tsx scripts/changed-files-gate.ts is-docs-only; then
+  echo "pre-push: docs/lessons-only push — skipping test:unit (CI is the gate of record)."
+  exit 0
+fi
+
+run_gate
