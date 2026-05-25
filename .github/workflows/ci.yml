@@ -3,8 +3,23 @@ name: CI
 on:
   push:
     branches: [develop]
+    # Skip CI when a push touches only non-code artifacts (lessons, docs,
+    # markdown, ignore/license). Runs whenever ANY changed file is outside
+    # these globs, so mixed code+docs changes are still fully gated.
+    paths-ignore:
+      - '**/*.md'
+      - 'tasks/**'
+      - 'docs/**'
+      - '.gitignore'
+      - 'LICENSE'
   pull_request:
     branches: [main, develop]
+    paths-ignore:
+      - '**/*.md'
+      - 'tasks/**'
+      - 'docs/**'
+      - '.gitignore'
+      - 'LICENSE'
   workflow_call:
 
 permissions:
