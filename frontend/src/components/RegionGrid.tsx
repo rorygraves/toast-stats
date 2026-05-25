@@ -34,43 +34,43 @@ export const RegionGrid: React.FC<RegionGridProps> = ({ rollups }) => {
           key={r.region}
           to={`/region/${r.region}`}
           aria-label={`Region ${r.region} — ${r.districtCount} districts`}
-          className="block bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:border-tm-loyal-blue dark:hover:border-blue-400 hover:shadow-sm transition-all focus-visible:outline-2 focus-visible:outline-tm-loyal-blue"
+          className="block bg-white theme-dark:bg-gray-800 rounded-lg p-4 border border-gray-200 theme-dark:border-gray-700 hover:border-tm-loyal-blue theme-dark:hover:border-blue-400 hover:shadow-sm transition-all focus-visible:outline-2 focus-visible:outline-tm-loyal-blue"
         >
           <header className="mb-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-tm-loyal-blue dark:text-blue-300">
+            <p className="text-xs font-semibold uppercase tracking-wider text-tm-loyal-blue theme-dark:text-blue-300">
               Region {r.region}
             </p>
-            <h3 className="text-sm font-tm-headline text-gray-900 dark:text-gray-50 mt-1">
+            <h3 className="text-sm font-tm-headline text-gray-900 theme-dark:text-gray-50 mt-1">
               leader: {r.leadingDistrictName}
             </h3>
           </header>
 
           <ul className="grid grid-cols-3 gap-2 text-xs mb-3" role="list">
             <li>
-              <span className="block text-gray-500 dark:text-gray-400">
+              <span className="block text-gray-500 theme-dark:text-gray-400">
                 {r.districtCount} districts
               </span>
             </li>
             <li>
-              <span className="block text-gray-900 dark:text-gray-100 font-semibold tabular-nums">
+              <span className="block text-gray-900 theme-dark:text-gray-100 font-semibold tabular-nums">
                 {r.paidClubs.toLocaleString()}
               </span>
-              <span className="block text-gray-500 dark:text-gray-400">
+              <span className="block text-gray-500 theme-dark:text-gray-400">
                 paid clubs
               </span>
             </li>
             <li>
-              <span className="block text-gray-900 dark:text-gray-100 font-semibold tabular-nums">
+              <span className="block text-gray-900 theme-dark:text-gray-100 font-semibold tabular-nums">
                 {Math.round(r.distinguishedPercent)}%
               </span>
-              <span className="block text-gray-500 dark:text-gray-400">
+              <span className="block text-gray-500 theme-dark:text-gray-400">
                 distinguished
               </span>
             </li>
           </ul>
 
           <div
-            className="flex items-center gap-1 pt-3 border-t border-gray-100 dark:border-gray-700"
+            className="flex items-center gap-1 pt-3 border-t border-gray-100 theme-dark:border-gray-700"
             aria-label="Requirements ribbon"
           >
             {REQUIREMENT_LABELS.map(({ key, label }) => {
@@ -87,8 +87,8 @@ export const RegionGrid: React.FC<RegionGridProps> = ({ rollups }) => {
                     className={
                       'inline-block w-2 h-2 rounded-full ' +
                       (met
-                        ? 'bg-green-500 dark:bg-green-400'
-                        : 'bg-gray-300 dark:bg-gray-600')
+                        ? 'bg-green-500 theme-dark:bg-green-400'
+                        : 'bg-gray-300 theme-dark:bg-gray-600')
                     }
                   />
                 </Tooltip>
