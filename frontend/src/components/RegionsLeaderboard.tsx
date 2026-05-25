@@ -74,84 +74,96 @@ export const RegionsLeaderboard: React.FC<RegionsLeaderboardProps> = ({
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table
-        className="w-full text-sm font-tm-body"
-        aria-label="Region rankings"
+    // Intentional, documented horizontal scroll (#689). role=region + tabIndex
+    // + aria-label make the overflow keyboard-operable (WCAG 2.1.1); the
+    // scroll-cue overlay (in the relative wrap) signals more columns to the
+    // right so the scroll isn't a hidden trap on a phone.
+    <div className="region-rankings__scroll-wrap">
+      <div
+        className="overflow-x-auto region-rankings__scroll"
+        role="region"
+        tabIndex={0}
+        aria-label="Region rankings — scroll horizontally to see all metrics"
       >
-        <thead className="border-b border-gray-200 dark:border-gray-700">
-          <tr>
-            {COLUMNS.map(col => {
-              const isActive = col.key === sortKey
-              const arrow = isActive ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''
-              return (
-                <th
-                  key={col.key}
-                  scope="col"
-                  className={
-                    'px-4 py-3 cursor-pointer select-none text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300 ' +
-                    (col.align === 'right' ? 'text-right' : 'text-left')
-                  }
-                  aria-sort={
-                    isActive
-                      ? sortDir === 'asc'
-                        ? 'ascending'
-                        : 'descending'
-                      : 'none'
-                  }
-                  onClick={() => handleHeaderClick(col.key)}
-                >
-                  {col.label}
-                  {arrow}
-                </th>
-              )
-            })}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-          {sorted.map(r => (
-            <tr
-              key={r.region}
-              className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-            >
-              <td className="px-4 py-3 text-left">
-                <Link
-                  to={`/region/${r.region}`}
-                  className="flex items-center gap-3 text-tm-loyal-blue hover:underline"
-                >
-                  <span
-                    className="inline-block px-2 py-0.5 text-xs font-mono rounded bg-tm-loyal-blue/10 text-tm-loyal-blue dark:bg-tm-loyal-blue/30 dark:text-blue-200"
-                    aria-hidden="true"
+        <table
+          className="w-full text-sm font-tm-body"
+          aria-label="Region rankings"
+        >
+          <thead className="border-b border-gray-200 dark:border-gray-700">
+            <tr>
+              {COLUMNS.map(col => {
+                const isActive = col.key === sortKey
+                const arrow = isActive ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''
+                return (
+                  <th
+                    key={col.key}
+                    scope="col"
+                    className={
+                      'px-4 py-3 cursor-pointer select-none text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-300 ' +
+                      (col.align === 'right' ? 'text-right' : 'text-left')
+                    }
+                    aria-sort={
+                      isActive
+                        ? sortDir === 'asc'
+                          ? 'ascending'
+                          : 'descending'
+                        : 'none'
+                    }
+                    onClick={() => handleHeaderClick(col.key)}
                   >
-                    Region {r.region}
-                  </span>
-                  <span className="text-gray-700 dark:text-gray-200 text-xs">
-                    leader: {r.leadingDistrictName}
-                  </span>
-                </Link>
-              </td>
-              <td className="px-4 py-3 text-right tabular-nums text-gray-700 dark:text-gray-200">
-                {r.districtCount}
-              </td>
-              <td className="px-4 py-3 text-right tabular-nums text-gray-700 dark:text-gray-200">
-                {r.paidClubs.toLocaleString()}
-              </td>
-              <td className="px-4 py-3 text-right tabular-nums text-gray-700 dark:text-gray-200">
-                {r.totalPayments.toLocaleString()}
-              </td>
-              <td className="px-4 py-3 text-right tabular-nums text-gray-700 dark:text-gray-200">
-                {r.distinguishedClubs.toLocaleString()}
-                <span className="text-gray-500 dark:text-gray-400 ml-1">
-                  · {Math.round(r.distinguishedPercent)}%
-                </span>
-              </td>
-              <td className="px-4 py-3 text-right tabular-nums font-semibold text-gray-900 dark:text-gray-50">
-                {r.aggregateScore.toLocaleString()}
-              </td>
+                    {col.label}
+                    {arrow}
+                  </th>
+                )
+              })}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+            {sorted.map(r => (
+              <tr
+                key={r.region}
+                className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+              >
+                <td className="px-4 py-3 text-left">
+                  <Link
+                    to={`/region/${r.region}`}
+                    className="flex items-center gap-3 text-tm-loyal-blue hover:underline"
+                  >
+                    <span
+                      className="inline-block px-2 py-0.5 text-xs font-mono rounded bg-tm-loyal-blue/10 text-tm-loyal-blue dark:bg-tm-loyal-blue/30 dark:text-blue-200"
+                      aria-hidden="true"
+                    >
+                      Region {r.region}
+                    </span>
+                    <span className="text-gray-700 dark:text-gray-200 text-xs">
+                      leader: {r.leadingDistrictName}
+                    </span>
+                  </Link>
+                </td>
+                <td className="px-4 py-3 text-right tabular-nums text-gray-700 dark:text-gray-200">
+                  {r.districtCount}
+                </td>
+                <td className="px-4 py-3 text-right tabular-nums text-gray-700 dark:text-gray-200">
+                  {r.paidClubs.toLocaleString()}
+                </td>
+                <td className="px-4 py-3 text-right tabular-nums text-gray-700 dark:text-gray-200">
+                  {r.totalPayments.toLocaleString()}
+                </td>
+                <td className="px-4 py-3 text-right tabular-nums text-gray-700 dark:text-gray-200">
+                  {r.distinguishedClubs.toLocaleString()}
+                  <span className="text-gray-500 dark:text-gray-400 ml-1">
+                    · {Math.round(r.distinguishedPercent)}%
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-right tabular-nums font-semibold text-gray-900 dark:text-gray-50">
+                  {r.aggregateScore.toLocaleString()}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="region-rankings__scroll-cue" aria-hidden="true" />
     </div>
   )
 }

@@ -49,6 +49,15 @@ const sampleRollups: RegionRollup[] = [
   mkRollup({ region: '03', aggregateScore: 900, leadingDistrictId: '99' }),
 ]
 
+describe('RegionsLeaderboard responsive scroll region (#689)', () => {
+  it('wraps the table in a focusable, labelled scroll region', () => {
+    renderWithRouter(<RegionsLeaderboard rollups={sampleRollups} />)
+    const scroller = screen.getByRole('region', { name: /scroll/i })
+    expect(scroller).toHaveAttribute('tabindex', '0')
+    expect(scroller.className).toMatch(/overflow-x-auto/)
+  })
+})
+
 describe('RegionsLeaderboard (#494)', () => {
   it('renders one table row per region', () => {
     renderWithRouter(<RegionsLeaderboard rollups={sampleRollups} />)

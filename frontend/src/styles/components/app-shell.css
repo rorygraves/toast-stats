@@ -776,11 +776,78 @@
 
   /* Rankings table chrome */
   .districts-rankings-table-wrap {
+    position: relative;
     background-color: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--rds-radius-md);
     box-shadow: var(--rds-shadow-sm);
     overflow: hidden;
+  }
+
+  /* Region rankings: intentional, documented horizontal scroll (#689, epic
+     #683). The 19-column table can't fit a phone and a regional leaderboard
+     exists to compare districts across rows, so card-collapse is wrong here
+     (ron-ux). The scroll is made non-trap three ways: (1) the scroller is a
+     focusable, labelled region in the markup; (2) the row-identity columns are
+     pinned; (3) a right-edge fade signals more columns. */
+  .region-rankings__scroll {
+    /* Width of the pinned Region Rank column; the District column pins to its
+       right at exactly this offset. Sized to fit "#10 (tied)" at px-6. */
+    --rank-col-w: 120px;
+  }
+
+  /* Minimal positioned wrapper for the regions-index leaderboard: just the
+     containing block for its scroll-cue. No border/shadow — the index table
+     sits chromeless in its section, unlike the detail page's table-wrap. */
+  .region-rankings__scroll-wrap {
+    position: relative;
+  }
+
+  /* Sticky identity columns (Region Rank = col 1, District = col 2). The
+     background MUST be a theme token (var(--surface)), never a hardcoded
+     literal, or scrolled cells bleed through in dark mode (lesson 092). */
+  .districts-rankings-table .region-rankings__sticky-col {
+    position: sticky;
+    z-index: 2;
+    background-color: var(--surface);
+  }
+
+  .districts-rankings-table .region-rankings__sticky-col--rank {
+    left: 0;
+    width: var(--rank-col-w);
+    min-width: var(--rank-col-w);
+  }
+
+  .districts-rankings-table .region-rankings__sticky-col--district {
+    left: var(--rank-col-w);
+    /* Right inset divider marks the sticky/scroll seam; bottom inset restores
+       the row rule that border-collapse drops from a positioned cell. */
+    box-shadow:
+      inset -1px 0 0 var(--line),
+      inset 0 -1px 0 var(--line-2);
+  }
+
+  /* Header sticky cells ride the thead surface and layer above body cells. */
+  .districts-rankings-table thead .region-rankings__sticky-col {
+    z-index: 3;
+    background-color: var(--surface-2);
+  }
+
+  /* Keep the pinned cells in sync with the row-hover highlight. */
+  .districts-rankings-table tbody tr:hover .region-rankings__sticky-col {
+    background-color: var(--surface-2);
+  }
+
+  /* Right-edge fade discoverability cue. Themed (transparent → --surface, so
+     it remaps in dark); pointer-events:none so it never blocks taps/scroll. */
+  .region-rankings__scroll-cue {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 40px;
+    pointer-events: none;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0), var(--surface));
   }
 
   /* District-number chip on each ranking row (#436). Standalone visual
