@@ -63,10 +63,13 @@ const KpiCard: React.FC<KpiCardProps> = ({ label, base, current }) => {
   )
 }
 
-/* Cell renderer for the Distinguished countdown columns. Numeric gaps
-   render as +N (maroon); metric-met as ✓ (green); boolean (officer
-   awards) as ✓ or em-dash. Em-dash when the cell prop is null
-   (district missing from awards or legacy snapshot). */
+/* Cell renderer for the Distinguished countdown columns. Absolute
+   remaining counts render as a plain maroon number (#688 — "277 to go",
+   a clamped non-negative countdown, NOT a signed delta, so no +/− prefix;
+   lesson 102 family); metric-met as ✓ (green); boolean (officer awards)
+   as ✓ or em-dash. Em-dash when the cell prop is null (district missing
+   from awards, or a legacy snapshot lacking both the canonical count and
+   the gap+base needed to derive it). */
 const renderCountdownInner = (cell: CountdownCell | null): React.ReactNode => {
   if (!cell) return <span className="text-gray-400">—</span>
   if (cell.kind === 'met')
@@ -79,7 +82,7 @@ const renderCountdownInner = (cell: CountdownCell | null): React.ReactNode => {
     )
   return (
     <span className="text-tm-true-maroon font-semibold tabular-nums">
-      +{cell.value}
+      {cell.value.toLocaleString()}
     </span>
   )
 }
@@ -194,34 +197,38 @@ const TierTd: React.FC<{ tier: DistinguishedDistrictTier | null }> = ({
   )
 }
 
-/* Trailing five countdown + 1 tier cells for one district row (#687
-   moved the former Net Club Growth cell into the Paid Clubs group as its
-   signed Δ). Folds the awards lookup so the row map stays a clean list of
-   sub-components. */
+/* Trailing remaining-to-Distinguished + officer-award + tier cells for
+   one district row. The three numeric columns (#688, epic #683 F4) show
+   the ABSOLUTE count remaining to the minimum Distinguished tier — paid
+   clubs / payments / distinguished clubs, Amy's spreadsheet order —
+   replacing the percentage-point prerequisite columns. Folds the awards
+   lookup so the row map stays a clean list of sub-components. */
 const DistinguishedCells: React.FC<{
   districtId: string
   awards: import('../services/cdn').CompetitiveAwardStandings | null
-}> = ({ districtId, awards }) => {
-  const c = getDistinguishedCountdown(districtId, awards)
+  ranking: import('../utils/distinguishedCountdown').RemainingInputs
+}> = ({ districtId, awards, ranking }) => {
+  const c = getDistinguishedCountdown(districtId, awards, ranking)
   const tier = awards?.distinguishedDistrict?.[districtId]?.currentTier ?? null
   return (
     <>
       <CountdownTd
-        metric="paymentGrowth"
-        cell={c?.paymentGrowth ?? null}
+        metric="paidClubsRemaining"
+        cell={c?.paidClubsRemaining ?? null}
         groupStart
       />
       <CountdownTd
-        metric="distinguishedPercent"
-        cell={c?.distinguishedPercent ?? null}
+        metric="paymentsRemaining"
+        cell={c?.paymentsRemaining ?? null}
       />
       <CountdownTd
-        metric="clubGrowthPercent"
-        cell={c?.clubGrowthPercent ?? null}
+        metric="distinguishedClubsRemaining"
+        cell={c?.distinguishedClubsRemaining ?? null}
       />
       <CountdownTd
         metric="educationTraining"
         cell={c?.educationTraining ?? null}
+        groupStart
       />
       <CountdownTd metric="clubGrowth" cell={c?.clubGrowth ?? null} />
       <TierTd tier={tier} />
@@ -419,39 +426,29 @@ const RegionPage: React.FC = () => {
                 >
                   Distinguished Clubs
                 </th>
-                {/* Distinguished-prerequisite countdown columns (Sprint 5
-                    territory) — left untouched by #687. */}
+                {/* Remaining-to-minimum-Distinguished columns (#688, epic
+                    #683 F4). Replaces the former percentage-point gap
+                    columns — Amy wants the absolute count, not the %.
+                    One banner over three sub-columns in spreadsheet order:
+                    paid clubs / payments / distinguished clubs. */}
+                <th
+                  colSpan={3}
+                  scope="colgroup"
+                  className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-l border-[var(--line)]"
+                  title="Absolute count of each metric still needed to reach the minimum Distinguished tier"
+                >
+                  Remaining to Distinguished
+                </th>
                 <th
                   rowSpan={2}
                   scope="col"
                   className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider align-bottom border-l border-[var(--line)]"
                 >
-                  Payment Growth
-                </th>
-                <th
-                  rowSpan={2}
-                  scope="col"
-                  className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider align-bottom"
-                >
-                  Distinguished %
-                </th>
-                <th
-                  rowSpan={2}
-                  scope="col"
-                  className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider align-bottom"
-                >
-                  Club Growth %
-                </th>
-                <th
-                  rowSpan={2}
-                  scope="col"
-                  className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider align-bottom"
-                >
                   Education / Training
                 </th>
                 {/* CGD = Club Growth Director — TI officer award. Renamed
                     from "Club Growth" to disambiguate from the % Club
-                    Growth prerequisite to its left. */}
+                    Growth prerequisite that used to sit to its left. */}
                 <th
                   rowSpan={2}
                   scope="col"
@@ -470,7 +467,8 @@ const RegionPage: React.FC = () => {
                   Tier
                 </th>
               </tr>
-              {/* Sub-header row: Base / Current / Δ under each metric group. */}
+              {/* Sub-header row: Base / Current / Δ under each metric group,
+                  then the three Remaining-to-Distinguished sub-columns. */}
               <tr>
                 {[
                   'Paid Clubs',
@@ -490,6 +488,31 @@ const RegionPage: React.FC = () => {
                     </th>
                   ))
                 )}
+                {/* #688: absolute count still needed for each metric, in
+                    Amy's spreadsheet order. The group banner above carries
+                    the "remaining to Distinguished" framing. */}
+                {[
+                  { label: 'Clubs', title: 'Paid clubs still needed' },
+                  {
+                    label: 'Payments',
+                    title: 'Membership payments still needed',
+                  },
+                  {
+                    label: 'Dist. Clubs',
+                    title: 'Distinguished clubs still needed',
+                  },
+                ].map((col, j) => (
+                  <th
+                    key={`remaining-${col.label}`}
+                    scope="col"
+                    title={col.title}
+                    className={`px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider${
+                      j === 0 ? ' border-l border-[var(--line)]' : ''
+                    }`}
+                  >
+                    {col.label}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
@@ -576,6 +599,13 @@ const RegionPage: React.FC = () => {
                     <DistinguishedCells
                       districtId={d.districtId}
                       awards={awards ?? null}
+                      ranking={{
+                        paidClubBase: d.paidClubBase ?? 0,
+                        paymentBase: d.paymentBase ?? 0,
+                        paidClubs: d.paidClubs ?? 0,
+                        totalPayments: d.totalPayments ?? 0,
+                        distinguishedClubs: d.distinguishedClubs ?? 0,
+                      }}
                     />
                   </tr>
                 )

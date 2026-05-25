@@ -198,6 +198,8 @@ describe('RegionPage Distinguished countdown columns (#516 #513)', () => {
             paymentGrowthGap: 12,
             distinguishedPercentGap: 8,
             clubGrowthGap: 0,
+            paidClubBase: 90,
+            paymentBase: 4500,
           },
         },
       },
@@ -222,7 +224,7 @@ describe('RegionPage Distinguished countdown columns (#516 #513)', () => {
       ...overrides,
     }) as CompetitiveAwardStandings
 
-  it('renders five countdown column headers', async () => {
+  it('renders the "Remaining to Distinguished" column group and drops the old % headers (#688)', async () => {
     mockedFetchCdnRankings.mockResolvedValueOnce({
       rankings: [mkRanking({ districtId: '61', region: '2' })],
       date: '2026-05-12',
@@ -230,29 +232,34 @@ describe('RegionPage Distinguished countdown columns (#516 #513)', () => {
     mockedFetchCdnAwards.mockResolvedValue(awardsFixture())
     renderRegion('2')
 
-    // #687: "Net Club Growth" is no longer a standalone countdown header —
-    // it became the Δ sub-column of the Paid Clubs base→current→Δ group.
+    // The new headline grouping (epic #683 F4): absolute counts remaining
+    // to the minimum Distinguished tier.
     expect(
-      await screen.findByRole('columnheader', { name: /payment growth/i })
+      await screen.findByRole('columnheader', {
+        name: /remaining to distinguished/i,
+      })
     ).toBeInTheDocument()
-    expect(
-      screen.getByRole('columnheader', { name: /distinguished %/i })
-    ).toBeInTheDocument()
-    // #534 — % Club Growth prerequisite, distinct from the CGD officer
-    // award below. Renamed the officer-award column to "CGD" to avoid
-    // ambiguity.
-    expect(
-      screen.getByRole('columnheader', { name: /club growth %/i })
-    ).toBeInTheDocument()
+    // Officer-award + tier columns are unchanged.
     expect(
       screen.getByRole('columnheader', { name: /education ?\/ ?training/i })
     ).toBeInTheDocument()
     expect(
       screen.getByRole('columnheader', { name: /^cgd$/i })
     ).toBeInTheDocument()
+    // The percentage-point prerequisite columns are GONE — Amy wants the
+    // count, not the percentage (replace, don't bolt on — lesson 092).
+    expect(
+      screen.queryByRole('columnheader', { name: /payment growth/i })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('columnheader', { name: /distinguished %/i })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('columnheader', { name: /club growth %/i })
+    ).not.toBeInTheDocument()
   })
 
-  it('renders the Club Growth % gap value (#534)', async () => {
+  it('renders the canonical absolute remaining counts when present (#688)', async () => {
     mockedFetchCdnRankings.mockResolvedValueOnce({
       rankings: [mkRanking({ districtId: '61', region: '2' })],
       date: '2026-05-12',
@@ -264,6 +271,9 @@ describe('RegionPage Distinguished countdown columns (#516 #513)', () => {
             districtId: '61',
             currentTier: 'NotDistinguished',
             allPrerequisitesMet: false,
+            paidClubsRemaining: 12,
+            paymentsRemaining: 277,
+            distinguishedClubsRemaining: 14,
             prerequisites: {
               dspSubmitted: false,
               trainingMet: false,
@@ -274,9 +284,11 @@ describe('RegionPage Distinguished countdown columns (#516 #513)', () => {
             nextTierGap: {
               tier: 'Distinguished',
               netClubGrowthGap: 0,
-              paymentGrowthGap: 0,
-              distinguishedPercentGap: 0,
-              clubGrowthGap: 4,
+              paymentGrowthGap: 4.1,
+              distinguishedPercentGap: 9,
+              clubGrowthGap: 7.76,
+              paidClubBase: 148,
+              paymentBase: 6738,
             },
           },
         },
@@ -287,29 +299,135 @@ describe('RegionPage Distinguished countdown columns (#516 #513)', () => {
     const row = (await screen.findByTestId('district-number-chip-D61')).closest(
       'tr'
     )!
+    // Absolute count, not a percentage, and no signed "+" prefix.
     expect(
-      within(row).getByTestId('countdown-clubGrowthPercent')
-    ).toHaveTextContent(/\+4/)
+      within(row).getByTestId('countdown-paymentsRemaining')
+    ).toHaveTextContent(/^277$/)
+    expect(
+      within(row).getByTestId('countdown-paidClubsRemaining')
+    ).toHaveTextContent(/^12$/)
+    expect(
+      within(row).getByTestId('countdown-distinguishedClubsRemaining')
+    ).toHaveTextContent(/^14$/)
   })
 
-  it('renders gap values as +N for the prerequisite-gap countdowns', async () => {
+  it('derives the absolute count from the rankings row on a pre-pipeline snapshot — D47 payments = 277 (#688)', async () => {
+    // No canonical *Remaining fields (snapshot predates the pipeline run),
+    // so the count is derived from the rankings row's base + current
+    // counts with the analytics formula — matching the canonical value
+    // EXACTLY. Real prod D47: base 148/6738, current 138/6529, dist 53.
+    mockedFetchCdnRankings.mockResolvedValueOnce({
+      rankings: [
+        mkRanking({
+          districtId: '47',
+          region: '2',
+          paidClubBase: 148,
+          paidClubs: 138,
+          paymentBase: 6738,
+          totalPayments: 6529,
+          distinguishedClubs: 53,
+        }),
+      ],
+      date: '2026-05-12',
+    })
+    mockedFetchCdnAwards.mockResolvedValue(
+      awardsFixture({
+        distinguishedDistrict: {
+          '47': {
+            districtId: '47',
+            currentTier: 'NotDistinguished',
+            allPrerequisitesMet: false,
+            prerequisites: {
+              dspSubmitted: false,
+              trainingMet: false,
+              marketAnalysisSubmitted: false,
+              communicationPlanSubmitted: false,
+              regionAdvisorVisitMet: false,
+            },
+            nextTierGap: null,
+          },
+        },
+      })
+    )
+    renderRegion('2')
+
+    const row = (await screen.findByTestId('district-number-chip-D47')).closest(
+      'tr'
+    )!
+    expect(
+      within(row).getByTestId('countdown-paymentsRemaining')
+    ).toHaveTextContent(/^277$/)
+    expect(
+      within(row).getByTestId('countdown-paidClubsRemaining')
+    ).toHaveTextContent(/^12$/)
+    expect(
+      within(row).getByTestId('countdown-distinguishedClubsRemaining')
+    ).toHaveTextContent(/^14$/)
+  })
+
+  it('renders ✓ when a remaining metric is met (0) and a plain count when not (#688)', async () => {
     mockedFetchCdnRankings.mockResolvedValueOnce({
       rankings: [mkRanking({ districtId: '61', region: '2' })],
       date: '2026-05-12',
     })
-    mockedFetchCdnAwards.mockResolvedValue(awardsFixture())
+    mockedFetchCdnAwards.mockResolvedValue(
+      awardsFixture({
+        distinguishedDistrict: {
+          '61': {
+            districtId: '61',
+            currentTier: 'NotDistinguished',
+            allPrerequisitesMet: false,
+            paidClubsRemaining: 0,
+            paymentsRemaining: 31,
+            distinguishedClubsRemaining: 5,
+            prerequisites: {
+              dspSubmitted: false,
+              trainingMet: false,
+              marketAnalysisSubmitted: false,
+              communicationPlanSubmitted: false,
+              regionAdvisorVisitMet: false,
+            },
+            nextTierGap: null,
+          },
+        },
+      })
+    )
     renderRegion('2')
 
     const row = (await screen.findByTestId('district-number-chip-D61')).closest(
       'tr'
     )!
-    // Payment growth + Distinguished % remain tier-gap countdowns.
     expect(
-      within(row).getByTestId('countdown-paymentGrowth')
-    ).toHaveTextContent(/\+12/)
+      within(row).getByTestId('countdown-paidClubsRemaining')
+    ).toHaveTextContent(/✓/)
     expect(
-      within(row).getByTestId('countdown-distinguishedPercent')
-    ).toHaveTextContent(/\+8/)
+      within(row).getByTestId('countdown-paymentsRemaining')
+    ).toHaveTextContent(/^31$/)
+    expect(
+      within(row).getByTestId('countdown-distinguishedClubsRemaining')
+    ).toHaveTextContent(/^5$/)
+  })
+
+  it('renders an em-dash for the remaining columns when the awards JSON is null (#688)', async () => {
+    mockedFetchCdnRankings.mockResolvedValueOnce({
+      rankings: [mkRanking({ districtId: '61', region: '2' })],
+      date: '2026-05-12',
+    })
+    mockedFetchCdnAwards.mockResolvedValue(null)
+    renderRegion('2')
+
+    const row = (await screen.findByTestId('district-number-chip-D61')).closest(
+      'tr'
+    )!
+    expect(
+      within(row).getByTestId('countdown-paidClubsRemaining')
+    ).toHaveTextContent(/—/)
+    expect(
+      within(row).getByTestId('countdown-paymentsRemaining')
+    ).toHaveTextContent(/—/)
+    expect(
+      within(row).getByTestId('countdown-distinguishedClubsRemaining')
+    ).toHaveTextContent(/—/)
   })
 
   // #684 (epic #683 F1): the Net Club Growth column shows the SIGNED
@@ -465,11 +583,17 @@ describe('RegionPage Distinguished countdown columns (#516 #513)', () => {
     const row = (await screen.findByTestId('district-number-chip-D61')).closest(
       'tr'
     )!
-    // Payment growth is a tier-gap countdown → ✓ when met. Net Club
-    // Growth is no longer a gap; it shows the signed net change
-    // (mkRanking default 100 − 90 = +10).
+    // Already at Distinguished ⇒ every remaining-to-minimum metric is met
+    // (✓), even though nextTierGap points at the higher Select tier. Net
+    // Club Growth shows the signed net change (mkRanking 100 − 90 = +10).
     expect(
-      within(row).getByTestId('countdown-paymentGrowth')
+      within(row).getByTestId('countdown-paymentsRemaining')
+    ).toHaveTextContent(/✓/)
+    expect(
+      within(row).getByTestId('countdown-paidClubsRemaining')
+    ).toHaveTextContent(/✓/)
+    expect(
+      within(row).getByTestId('countdown-distinguishedClubsRemaining')
     ).toHaveTextContent(/✓/)
     expect(
       within(row).getByTestId('countdown-netClubGrowth')
