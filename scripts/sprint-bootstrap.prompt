@@ -16,8 +16,8 @@ Do these steps in order, and stop if any check fails:
 
 2. **Re-confirm the predecessor is shipped.**
    - `gh issue view {{PREV_ISSUE}} --json state,closedAt,title` — confirm state is CLOSED.
-   - `curl -sfI https://ts.taverns.red >/dev/null && echo prod-up` — confirm production is reachable.
-   - If either check fails, STOP. Do not proceed; report to the operator via Remote Control and exit.
+   - If it is not CLOSED, STOP. Do not proceed; report to the operator via Remote Control and exit.
+   - (No prod reachability gate: verification is done on the PR preview channel, not prod — see step 5.)
 
 3. **Re-read the epic** with `gh issue view {{EPIC}} --json body` and confirm Sprint {{SPRINT_N}} (#{{TARGET_ISSUE}}) is still the first unchecked sprint. If the epic has been edited (e.g. the operator manually advanced something), trust the epic over this prompt and re-pick the correct target.
 
@@ -25,13 +25,14 @@ Do these steps in order, and stop if any check fails:
 
    **Workspace-package builds (#645).** If your changes touch any file under `packages/*/src/`, run the matching `npm run build:<package>` step (e.g. `npm run build:analytics-core`) BEFORE `npm run test` or any pre-push verification. The frontend imports built artifacts from `packages/*/dist/` (gitignored, not auto-rebuilt). CI rebuilds automatically; the local pre-push hook does not. Skipping the build means tests pass for you (because you happened to rebuild as you worked) but break for any operator pulling fresh from main.
 
-5. **Run live verification on `ts.taverns.red`, then close the sub-issue on pass.** Once the PR is merged and the deploy job is green, drive the actual change in production — not just a curl. Pattern proven on #444:
+5. **Run live verification on the PR preview channel (pre-merge), then merge and close on pass.** Verification happens on the per-PR Firebase preview, **NOT prod**. Once CI is green and the `PR Preview` job has deployed, read the preview URL from the sticky `pr-preview` comment — `gh pr view <PR#> --repo taverns-red/toast-stats --json comments --jq '.comments[].body | select(contains("Preview deployed"))'` — and extract the **Live URL**. Drive the actual change on that URL, not just a curl. Pattern adapted from #444:
 
-   - Write a temporary Playwright smoke at `frontend/e2e/<feature>-verify.smoke.ts`, run with `BASE_URL=https://ts.taverns.red npx playwright test --config playwright.config.ts e2e/<feature>-verify.smoke.ts --workers=1`, then delete the file (no PR churn).
-   - Corroborate with a data-path check (fetch the prod CDN snapshot under `https://cdn.taverns.red/snapshots/<date>/`, decompress if gzipped, assert the new field/value lands).
+   - Write a temporary Playwright smoke at `frontend/e2e/<feature>-verify.smoke.ts`, run with `BASE_URL=<preview-url> npx playwright test --config playwright.config.ts e2e/<feature>-verify.smoke.ts --workers=1`, then delete the file (no PR churn).
+   - The preview reads the **staging** CDN bucket (`toast-stats-data-staging`). For data/analytics changes that only land via the scheduled pipeline, code-proof is acceptable: assert the computed value in a unit/integration test and note it in the evidence comment rather than waiting on a CDN write.
+   - **No preview deployed?** `pr-preview.yml` is path-filtered to `frontend/**`, `packages/{shared-contracts,analytics-core}/**`, and firebase config. If the PR touches none of those, there is no live surface to drive — rely on the full test suite + the code-proof/data-path check, and note that in the evidence comment.
    - Capture full-page screenshots into `/tmp/` and surface them via `SendUserFile` so the operator sees the evidence.
 
-   **If every acceptance criterion verifies, do these in this exact order** (the runner's stale-session reap heuristic looks for the ticked checkbox; see #626):
+   **If every acceptance criterion verifies, merge the PR** (`gh pr merge <PR#> --squash --repo taverns-red/toast-stats`, or confirm the operator merged it), **then do these in this exact order** (the runner's stale-session reap heuristic looks for the ticked checkbox; see #626):
 
    1. Post the evidence-table comment on #{{TARGET_ISSUE}} (selectors, counts, screenshot paths).
    2. **Apply the `sprint-verified` label**: `gh issue edit {{TARGET_ISSUE}} --add-label sprint-verified --repo taverns-red/toast-stats`. Verify it landed: `gh issue view {{TARGET_ISSUE}} --json labels --jq '.labels[].name' | grep -qx sprint-verified`. If the add or verify fails, **stop** — leave the issue open and unlabeled, post the failure as a comment, and exit.
