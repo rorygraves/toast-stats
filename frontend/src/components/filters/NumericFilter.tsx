@@ -96,20 +96,18 @@ export const NumericFilter: React.FC<NumericFilterProps> = ({
   const hasValue = localMin !== '' || localMax !== ''
 
   return (
-    <div
-      className={`p-4 bg-white border border-gray-200 rounded-lg shadow-lg min-w-64 ${className}`}
-    >
+    <div className={`p-4 clubs-filter-popover shadow-lg min-w-64 ${className}`}>
       <div className="space-y-3">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-700">
+          <span className="text-sm font-medium clubs-filter-heading">
             {label} Range
           </span>
           {hasValue && (
             <button
               type="button"
               onClick={handleClear}
-              className="text-xs text-tm-loyal-blue hover:text-tm-loyal-blue hover:underline font-medium focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue rounded transition-all duration-200"
+              className="text-xs clubs-filter-link font-medium focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue rounded transition-all duration-200"
               tabIndex={0}
               aria-label="Clear numeric filter"
             >
@@ -121,7 +119,9 @@ export const NumericFilter: React.FC<NumericFilterProps> = ({
         {/* Range Inputs */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Minimum</label>
+            <label className="block text-xs clubs-filter-label mb-1">
+              Minimum
+            </label>
             <input
               type="number"
               value={localMin}
@@ -129,13 +129,15 @@ export const NumericFilter: React.FC<NumericFilterProps> = ({
               placeholder="Min"
               min={min}
               max={max}
-              className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-300 rounded hover:border-gray-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 transition-colors duration-200"
+              className="w-full px-3 py-2 text-sm rounded clubs-filter-input focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue focus:border-transparent transition-colors duration-200"
               tabIndex={0}
               aria-label={`Minimum ${label.toLowerCase()} value`}
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Maximum</label>
+            <label className="block text-xs clubs-filter-label mb-1">
+              Maximum
+            </label>
             <input
               type="number"
               value={localMax}
@@ -143,7 +145,7 @@ export const NumericFilter: React.FC<NumericFilterProps> = ({
               placeholder="Max"
               min={min}
               max={max}
-              className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-300 rounded hover:border-gray-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 transition-colors duration-200"
+              className="w-full px-3 py-2 text-sm rounded clubs-filter-input focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue focus:border-transparent transition-colors duration-200"
               tabIndex={0}
               aria-label={`Maximum ${label.toLowerCase()} value`}
             />
@@ -152,14 +154,14 @@ export const NumericFilter: React.FC<NumericFilterProps> = ({
 
         {/* Error Message */}
         {error && (
-          <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-2 py-1">
+          <div className="text-xs clubs-filter-error rounded px-2 py-1">
             {error}
           </div>
         )}
 
         {/* Range Display */}
         {hasValue && !error && (
-          <div className="text-xs text-gray-500 bg-gray-50 rounded px-2 py-1">
+          <div className="text-xs clubs-filter-meta rounded px-2 py-1">
             {localMin !== '' && localMax !== ''
               ? `${localMin} - ${localMax}`
               : localMin !== ''
@@ -170,7 +172,7 @@ export const NumericFilter: React.FC<NumericFilterProps> = ({
 
         {/* Bounds Info */}
         {(min !== undefined || max !== undefined) && (
-          <div className="text-xs text-gray-600 pt-2 border-t border-gray-100">
+          <div className="text-xs clubs-filter-note pt-2 border-t clubs-filter-divider">
             {min !== undefined && max !== undefined
               ? `Valid range: ${min} - ${max}`
               : min !== undefined

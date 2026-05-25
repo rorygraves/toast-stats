@@ -849,6 +849,24 @@
     border-color: rgba(232, 135, 154, 0.35) !important;
 }
 
+/* ─── Clubs quick-filter "Clear all" chip (#670, epic #665 Sprint 4) ───
+   The chip text/border uses the brand --maroon-500 (#7b1828), which has NO
+   dark remap — on the dark --surface it lands at ~2:1. Scoped override to the
+   dark maroon #e8879a the theme already uses for --tm-true-maroon (lesson 096):
+   light mode is byte-identical, dark passes AA. The segmented / quick-chip /
+   filter-popover active states need no override here — they were re-skinned to
+   the --link token, which remaps itself (R10, lesson 093). */
+[data-theme='dark'] .clubs-quick-filter-chip__clear {
+    color: #e8879a;
+    border-color: rgba(232, 135, 154, 0.3);
+}
+
+[data-theme='dark'] .clubs-quick-filter-chip__clear:hover {
+    background-color: rgba(232, 135, 154, 0.1);
+    border-color: #e8879a;
+    color: #e8879a;
+}
+
 /* ─── Transition for Theme Switch ─── */
 
 html[data-theme] body {

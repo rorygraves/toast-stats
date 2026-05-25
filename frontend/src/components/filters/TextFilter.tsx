@@ -69,9 +69,7 @@ export const TextFilter: React.FC<TextFilterProps> = ({
   }
 
   return (
-    <div
-      className={`p-4 bg-white border border-gray-200 rounded-lg shadow-lg min-w-64 ${className}`}
-    >
+    <div className={`p-4 clubs-filter-popover shadow-lg min-w-64 ${className}`}>
       <div className="space-y-3">
         {/* Filter Type Selection */}
         <div className="flex gap-2">
@@ -84,10 +82,8 @@ export const TextFilter: React.FC<TextFilterProps> = ({
                 e.currentTarget.click()
               }
             }}
-            className={`px-3 py-1 text-xs font-medium rounded transition-all duration-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500 ${
-              operator === 'contains'
-                ? 'bg-blue-100 text-tm-loyal-blue border border-blue-300 hover:bg-blue-200'
-                : 'bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:border-gray-400'
+            className={`px-3 py-1 text-xs font-medium rounded border transition-all duration-200 focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue clubs-filter-btn${
+              operator === 'contains' ? ' clubs-filter-btn--active' : ''
             }`}
             tabIndex={0}
             aria-label="Filter by contains"
@@ -104,10 +100,8 @@ export const TextFilter: React.FC<TextFilterProps> = ({
                 e.currentTarget.click()
               }
             }}
-            className={`px-3 py-1 text-xs font-medium rounded transition-all duration-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500 ${
-              operator === 'startsWith'
-                ? 'bg-blue-100 text-tm-loyal-blue border border-blue-300 hover:bg-blue-200'
-                : 'bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:border-gray-400'
+            className={`px-3 py-1 text-xs font-medium rounded border transition-all duration-200 focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue clubs-filter-btn${
+              operator === 'startsWith' ? ' clubs-filter-btn--active' : ''
             }`}
             tabIndex={0}
             aria-label="Filter by starts with"
@@ -124,7 +118,7 @@ export const TextFilter: React.FC<TextFilterProps> = ({
             value={localValue}
             onChange={e => handleInputChange(e.target.value)}
             placeholder={placeholder}
-            className="w-full px-3 py-2 text-sm text-gray-900 bg-white border border-gray-300 rounded hover:border-gray-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 transition-colors duration-200"
+            className="w-full px-3 py-2 text-sm rounded clubs-filter-input focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue focus:border-transparent transition-colors duration-200"
             autoFocus
             tabIndex={0}
             aria-label={`Filter text input. Current operator: ${operator}`}
@@ -133,7 +127,7 @@ export const TextFilter: React.FC<TextFilterProps> = ({
             <button
               type="button"
               onClick={handleClear}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500 rounded p-1 transition-all duration-200"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 clubs-filter-x focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue rounded p-1 transition-all duration-200"
               aria-label="Clear filter"
               tabIndex={0}
             >
@@ -155,14 +149,14 @@ export const TextFilter: React.FC<TextFilterProps> = ({
         </div>
 
         {/* Actions */}
-        <div className="flex justify-between items-center pt-2 border-t border-gray-100">
-          <span className="text-xs text-gray-500">
+        <div className="flex justify-between items-center pt-2 border-t clubs-filter-divider">
+          <span className="text-xs clubs-filter-note">
             {operator === 'contains' ? 'Contains text' : 'Starts with text'}
           </span>
           <button
             type="button"
             onClick={handleClear}
-            className="text-xs text-tm-loyal-blue hover:text-tm-loyal-blue hover:underline font-medium focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue rounded transition-all duration-200"
+            className="text-xs clubs-filter-link font-medium focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue rounded transition-all duration-200"
             tabIndex={0}
             aria-label="Clear text filter"
           >

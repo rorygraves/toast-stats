@@ -292,18 +292,20 @@ export const ColumnHeader: React.FC<ColumnHeaderProps> = ({
         )}
       </button>
 
-      {/* Dropdown/Popover — the filter control surface. Its legacy gray
-          chrome is intentionally deferred to the controls re-skin (Sprint 4
-          #670); the resting header chrome (button + caret above) is the
-          #668 scope. The clubs-table re-skin guard only renders the resting
-          state, so these closed-popover gray classes are out of its frame. */}
+      {/* Dropdown/Popover — the filter control surface, re-skinned to redesign
+          tokens in Sprint 4 (#670). Token-driven (.clubs-filter-*) so dark mode
+          works via [data-theme='dark'] remaps (R10) — no legacy gray, no baked
+          opacity-variants (lesson 073). The active accent matches the
+          segmented/chip controls (--link on --loyal-50). */}
       {isDropdownOpen && (sortable || filterable) && (
-        <div className="absolute top-full left-0 z-50 mt-1 w-80 bg-white border border-gray-200 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-200">
+        <div className="absolute top-full left-0 z-50 mt-1 w-80 clubs-filter-popover shadow-lg hover:shadow-xl transition-shadow duration-200">
           <div className="p-4 space-y-4">
             {/* Sort Options */}
             {sortable && (
               <div className="space-y-2">
-                <h4 className="text-sm font-medium text-gray-900">Sort</h4>
+                <h4 className="text-sm font-medium clubs-filter-heading">
+                  Sort
+                </h4>
                 <div className="flex gap-2">
                   <button
                     onClick={() => {
@@ -322,11 +324,11 @@ export const ColumnHeader: React.FC<ColumnHeaderProps> = ({
                         e.currentTarget.click()
                       }
                     }}
-                    className={`px-3 py-1 text-sm rounded border focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue transition-all duration-200 ${
+                    className={`px-3 py-1 text-sm rounded border focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue transition-all duration-200 clubs-filter-btn${
                       currentSort.field === field &&
                       currentSort.direction === 'asc'
-                        ? 'bg-tm-loyal-blue-20 text-tm-loyal-blue border-tm-loyal-blue hover:bg-tm-loyal-blue-30'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400 hover:shadow-xs'
+                        ? ' clubs-filter-btn--active'
+                        : ''
                     }`}
                     tabIndex={0}
                     aria-label={`Sort ${label} ascending (A to Z)`}
@@ -354,11 +356,11 @@ export const ColumnHeader: React.FC<ColumnHeaderProps> = ({
                         e.currentTarget.click()
                       }
                     }}
-                    className={`px-3 py-1 text-sm rounded border focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue transition-all duration-200 ${
+                    className={`px-3 py-1 text-sm rounded border focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue transition-all duration-200 clubs-filter-btn${
                       currentSort.field === field &&
                       currentSort.direction === 'desc'
-                        ? 'bg-tm-loyal-blue-20 text-tm-loyal-blue border-tm-loyal-blue hover:bg-tm-loyal-blue-30'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400 hover:shadow-xs'
+                        ? ' clubs-filter-btn--active'
+                        : ''
                     }`}
                     tabIndex={0}
                     aria-label={`Sort ${label} descending (Z to A)`}
@@ -372,7 +374,9 @@ export const ColumnHeader: React.FC<ColumnHeaderProps> = ({
             {/* Filter Options */}
             {filterable && (
               <div className="space-y-2">
-                <h4 className="text-sm font-medium text-gray-900">Filter</h4>
+                <h4 className="text-sm font-medium clubs-filter-heading">
+                  Filter
+                </h4>
                 {renderFilterComponent()}
                 <div className="flex gap-2 pt-2">
                   <button
@@ -383,7 +387,7 @@ export const ColumnHeader: React.FC<ColumnHeaderProps> = ({
                         e.currentTarget.click()
                       }
                     }}
-                    className="px-3 py-1 text-sm bg-tm-loyal-blue text-tm-white rounded hover:bg-tm-loyal-blue-90 hover:shadow-md focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue transition-all duration-200"
+                    className="px-3 py-1 text-sm rounded border clubs-filter-btn--primary hover:shadow-md focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue transition-all duration-200"
                     tabIndex={0}
                     aria-label={`Apply ${label} filter`}
                   >
@@ -397,7 +401,7 @@ export const ColumnHeader: React.FC<ColumnHeaderProps> = ({
                         e.currentTarget.click()
                       }
                     }}
-                    className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 hover:text-gray-900 hover:shadow-xs focus:outline-hidden focus:ring-2 focus:ring-gray-500 transition-all duration-200"
+                    className="px-3 py-1 text-sm rounded border clubs-filter-btn--ghost hover:shadow-xs focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue transition-all duration-200"
                     tabIndex={0}
                     aria-label={`Clear ${label} filter`}
                   >
