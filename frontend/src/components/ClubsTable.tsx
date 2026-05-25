@@ -13,6 +13,31 @@ import { CLOSE_TO_DISTINGUISHED_MAX_MEMBERS } from '../utils/closeToDistinguishe
 import ClubCard from './ClubCard'
 import { useIsMobile } from '../hooks/useIsMobile'
 
+// DCP tier pill maps (#669). Confirmed tiers carry their HANDOFF §256 color
+// (Smedley maroon, President's loyal-500, Select loyal-400, Distinguished
+// green); a provisional tier shows the striped-yellow "projected" stripe
+// instead, since the membership isn't yet confirmed by April renewals.
+// NotDistinguished has no pill — a muted em-dash (neutral "not yet").
+// Module-scope: these are constant, so they don't re-allocate per render.
+type ConfirmedTier = Exclude<
+  ClubTrend['distinguishedLevel'],
+  'NotDistinguished'
+>
+
+const TIER_DISPLAY: Record<ConfirmedTier, string> = {
+  Distinguished: 'Distinguished',
+  Select: 'Select',
+  President: "President's",
+  Smedley: 'Smedley',
+}
+
+const TIER_MODIFIER: Record<ConfirmedTier, string> = {
+  Distinguished: 'clubs-tier-pill--distinguished',
+  Select: 'clubs-tier-pill--select',
+  President: 'clubs-tier-pill--presidents',
+  Smedley: 'clubs-tier-pill--smedley',
+}
+
 /**
  * Props for the ClubsTable component
  */
@@ -150,17 +175,19 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
   const isNeedsMembersActive =
     membersNeededValue?.[0] === 2 && membersNeededValue?.[1] === null
 
-  // Get status badge styling
-  const getStatusBadge = (
+  // Status-pill modifier class (#669). Token-driven via the CSS layer so
+  // dark mode "just works" (R10, lessons 093/096) — no Tailwind color
+  // utilities. The label text carries the meaning too (never color-alone).
+  const getStatusPillModifier = (
     status: 'thriving' | 'vulnerable' | 'intervention-required'
   ) => {
     switch (status) {
       case 'intervention-required':
-        return 'bg-red-100 text-red-800 border-red-300'
+        return 'clubs-status-pill--intervention'
       case 'vulnerable':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-300'
+        return 'clubs-status-pill--vulnerable'
       default:
-        return 'bg-green-100 text-green-800 border-green-300'
+        return 'clubs-status-pill--thriving'
     }
   }
 
@@ -773,6 +800,9 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
                   onClick={() => onClubClick?.(club)}
                   className={`${getRowColor(club.currentStatus)} cursor-pointer transition-colors`}
                 >
+                  {/* Cell order MUST match COLUMN_CONFIGS (filters/types.ts):
+                      Club, Div, Area, Status, Members, Needed, New, Oct Renew,
+                      Apr Renew, DCP, Tier, Club Status, Years (#669). */}
                   <td className="px-2 py-3 whitespace-nowrap">
                     <div className="font-medium text-sm">{club.clubName}</div>
                   </td>
@@ -782,11 +812,25 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
                   <td className="px-2 py-3 whitespace-nowrap text-sm clubs-cell-muted text-center">
                     {club.areaName}
                   </td>
-                  <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center">
-                    {club.latestMembership}
+                  <td className="px-2 py-3 whitespace-nowrap text-center">
+                    <span
+                      className={`clubs-status-pill ${getStatusPillModifier(club.currentStatus)}`}
+                    >
+                      {getStatusLabel(club.currentStatus)}
+                    </span>
                   </td>
-                  <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center">
-                    {club.latestDcpGoals}
+                  {/* Members — current / base (#669). Base omitted when the
+                      snapshot has no membershipBase (pre-merge data). */}
+                  <td className="px-2 py-3 whitespace-nowrap text-sm text-center clubs-members-cell">
+                    <span className="tabular-nums">
+                      {club.latestMembership}
+                    </span>
+                    {club.membershipBase !== undefined && (
+                      <span className="clubs-cell-muted tabular-nums">
+                        {' / '}
+                        {club.membershipBase}
+                      </span>
+                    )}
                   </td>
                   <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center font-medium">
                     {club.membersNeeded > 0 ? (
@@ -797,34 +841,15 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
                       <span className="clubs-cell-muted">—</span>
                     )}
                   </td>
-                  <td className="px-2 py-3 whitespace-nowrap text-center">
-                    {club.distinguishedLevel &&
-                    club.distinguishedLevel !== 'NotDistinguished' ? (
+                  <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center">
+                    {club.newMembers !== undefined ? (
                       <span
-                        className="px-1.5 py-0.5 text-xs font-medium bg-tm-happy-yellow-20 text-tm-true-maroon rounded-sm font-tm-body"
-                        title={
-                          isProvisionallyDistinguished(club)
-                            ? 'Provisional — membership not yet confirmed by April renewals'
-                            : 'Confirmed — April renewals recorded'
+                        className={
+                          club.newMembers === 0 ? 'clubs-cell-muted' : undefined
                         }
                       >
-                        {club.distinguishedLevel}
-                        {isProvisionallyDistinguished(club) ? '*' : ''}
+                        {club.newMembers}
                       </span>
-                    ) : (
-                      <span className="text-sm clubs-cell-muted">—</span>
-                    )}
-                  </td>
-                  <td className="px-2 py-3 whitespace-nowrap text-center">
-                    <span
-                      className={`px-1.5 py-0.5 text-xs font-medium rounded-full border ${getStatusBadge(club.currentStatus)}`}
-                    >
-                      {getStatusLabel(club.currentStatus)}
-                    </span>
-                  </td>
-                  <td className="px-2 py-3 whitespace-nowrap text-sm text-center">
-                    {club.clubStatus ? (
-                      <span>{club.clubStatus}</span>
                     ) : (
                       <span className="clubs-cell-muted">—</span>
                     )}
@@ -859,15 +884,69 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
                       <span className="clubs-cell-muted">—</span>
                     )}
                   </td>
-                  <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center">
-                    {club.newMembers !== undefined ? (
-                      <span
-                        className={
-                          club.newMembers === 0 ? 'clubs-cell-muted' : undefined
-                        }
-                      >
-                        {club.newMembers}
-                      </span>
+                  {/* DCP — inline progress bar over the canonical goals-achieved
+                      count (0–10). Reads latestDcpGoals from the analytics
+                      trend; no Goals-1-N inference (DCP-independence tripwire). */}
+                  <td className="px-2 py-3 whitespace-nowrap text-center">
+                    {(() => {
+                      const goals = Math.max(
+                        0,
+                        Math.min(10, club.latestDcpGoals)
+                      )
+                      const pct = (goals / 10) * 100
+                      return (
+                        <div className="clubs-dcp-cell">
+                          <span className="clubs-dcp-cell__val tabular-nums">
+                            {goals}/10
+                          </span>
+                          <div
+                            className="clubs-dcp-bar"
+                            role="progressbar"
+                            aria-valuenow={goals}
+                            aria-valuemin={0}
+                            aria-valuemax={10}
+                            aria-label="DCP goals achieved"
+                          >
+                            <div
+                              className="clubs-dcp-bar__fill"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </div>
+                      )
+                    })()}
+                  </td>
+                  {/* Tier — DCP recognition pill (#669). Color by tier; a
+                      provisional tier shows the striped-yellow "projected"
+                      treatment instead (membership unconfirmed pre-April). */}
+                  <td className="px-2 py-3 whitespace-nowrap text-center">
+                    {club.distinguishedLevel !== 'NotDistinguished' ? (
+                      (() => {
+                        const provisional = isProvisionallyDistinguished(club)
+                        const modifier = provisional
+                          ? 'clubs-tier-pill--projected'
+                          : TIER_MODIFIER[club.distinguishedLevel]
+                        return (
+                          <span
+                            className={`clubs-tier-pill ${modifier}`}
+                            title={
+                              provisional
+                                ? 'Provisional — membership not yet confirmed by April renewals'
+                                : 'Confirmed — April renewals recorded'
+                            }
+                          >
+                            {TIER_DISPLAY[club.distinguishedLevel]}
+                            {provisional ? '*' : ''}
+                          </span>
+                        )
+                      })()
+                    ) : (
+                      <span className="text-sm clubs-cell-muted">—</span>
+                    )}
+                  </td>
+                  <td className="px-2 py-3 whitespace-nowrap text-sm text-center">
+                    {club.clubStatus ? (
+                      <span>{club.clubStatus}</span>
                     ) : (
                       <span className="clubs-cell-muted">—</span>
                     )}

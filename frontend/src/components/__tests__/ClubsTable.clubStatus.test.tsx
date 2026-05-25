@@ -52,8 +52,10 @@ const getClubStatusColumnValues = (): (string | null)[] => {
   // Skip header row (index 0)
   return rows.slice(1).map(row => {
     const cells = row.querySelectorAll('td')
-    // Club Status is column index 8 (0-indexed)
-    const clubStatusCell = cells[8]
+    // Club Status is column index 11 (0-indexed) after the #669 column
+    // reconcile: Club, Div, Area, Status, Members, Needed, New, Oct Renew,
+    // Apr Renew, DCP, Tier, Club Status, Years.
+    const clubStatusCell = cells[11]
     const text = clubStatusCell?.textContent?.trim()
     // Return null for dash placeholder, otherwise return the text
     return text === '—' ? null : (text ?? null)
@@ -436,8 +438,8 @@ describe('ClubsTable Club Status Sorting', () => {
 
       const dataRow = screen.getAllByRole('row')[1]
       const cells = dataRow.querySelectorAll('td')
-      // Club Status is column index 8
-      expect(cells[8]).toHaveTextContent('—')
+      // Club Status is column index 11 after the #669 column reconcile.
+      expect(cells[11]).toHaveTextContent('—')
     })
   })
 })
