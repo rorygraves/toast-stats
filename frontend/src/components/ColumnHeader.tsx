@@ -327,7 +327,7 @@ export const ColumnHeader: React.FC<ColumnHeaderProps> = ({
                     className={`px-3 py-1 text-sm rounded border focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue transition-all duration-200 clubs-filter-btn${
                       currentSort.field === field &&
                       currentSort.direction === 'asc'
-                        ? '--active'
+                        ? ' clubs-filter-btn--active'
                         : ''
                     }`}
                     tabIndex={0}
@@ -359,7 +359,7 @@ export const ColumnHeader: React.FC<ColumnHeaderProps> = ({
                     className={`px-3 py-1 text-sm rounded border focus:outline-hidden focus:ring-2 focus:ring-tm-loyal-blue transition-all duration-200 clubs-filter-btn${
                       currentSort.field === field &&
                       currentSort.direction === 'desc'
-                        ? '--active'
+                        ? ' clubs-filter-btn--active'
                         : ''
                     }`}
                     tabIndex={0}
