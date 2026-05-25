@@ -64,3 +64,4 @@
 - **103** [analytics, dcp, data-pipeline] — A "remaining-to-threshold" countdown must be derived from the same gate it counts down to (#686, #683)
 - **104** [analytics, frontend, dcp, data-pipeline] — Derive a count from raw integer inputs, not a vendor's pre-rounded percentage (#688, #683)
 - **105** [frontend, css, responsive, accessibility, ux] — Match the mobile-table pattern to the data's purpose, not a sibling table's precedent (#689, #683)
+- **106** [automation, sprint-runner, prompts] — `Closes #N` in an auto-merged sprint PR defeats the tick-before-close ordering (#689, #626, #683)
