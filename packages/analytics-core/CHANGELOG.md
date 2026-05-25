@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.7.0](https://github.com/taverns-red/toast-stats/compare/analytics-core-v1.6.0...analytics-core-v1.7.0) (2026-05-25)
+
+
+### Features
+
+* **analytics:** district remaining-to-min-Distinguished as absolute counts ([#686](https://github.com/taverns-red/toast-stats/issues/686)) ([#697](https://github.com/taverns-red/toast-stats/issues/697)) ([3fcc23a](https://github.com/taverns-red/toast-stats/commit/3fcc23aaea5e2b287aaff5806fd82692156b35df))
+* **club:** [#621](https://github.com/taverns-red/toast-stats/issues/621) Sprint 4 — Goal Achievement Timeline ([#643](https://github.com/taverns-red/toast-stats/issues/643)) ([62f8309](https://github.com/taverns-red/toast-stats/commit/62f830986629796c63d194f246774c9acefe9597))
+
+
+### Bug Fixes
+
+* **region:** Net Club Growth shows signed net change, not distinguished-gap ([#684](https://github.com/taverns-red/toast-stats/issues/684)) ([#695](https://github.com/taverns-red/toast-stats/issues/695)) ([0f5e859](https://github.com/taverns-red/toast-stats/commit/0f5e859d688f83119d4c00906185684c65ba7fd1))
+
 ## [1.6.0](https://github.com/taverns-red/toast-stats/compare/analytics-core-v1.5.1...analytics-core-v1.6.0) (2026-05-23)
 
 
