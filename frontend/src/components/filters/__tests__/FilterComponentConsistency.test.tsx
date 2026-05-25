@@ -121,13 +121,14 @@ describe('Filter Component Consistency', () => {
       // Should have expected numeric columns. yearsChartered (#448) is
       // numeric but display-only — it carries filterable: false because
       // a years-since-charter range filter wasn't part of the epic.
+      // Order follows the #669 column reconcile (COLUMN_CONFIGS order).
       expect(numericColumns.map(c => c.field)).toEqual([
         'membership',
-        'dcpGoals',
         'membersNeeded',
+        'newMembers',
         'octoberRenewals',
         'aprilRenewals',
-        'newMembers',
+        'dcpGoals',
         'yearsChartered',
       ])
 
@@ -172,10 +173,11 @@ describe('Filter Component Consistency', () => {
         col => col.filterType === 'categorical'
       )
 
-      // Should have expected categorical columns
+      // Should have expected categorical columns (order follows the #669
+      // column reconcile: Status precedes Tier/Distinguished).
       expect(categoricalColumns.map(c => c.field)).toEqual([
-        'distinguished',
         'status',
+        'distinguished',
         'clubStatus',
       ])
 

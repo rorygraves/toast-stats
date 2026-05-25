@@ -145,12 +145,13 @@ describe('ClubsTable Integration Tests', () => {
         />
       )
 
-      // All column headers should be clickable buttons
+      // All column headers should be clickable buttons. Labels reconciled
+      // to the HANDOFF column set (#669): Club, Div, …, DCP, Tier.
       const clubNameHeader = screen.getByRole('button', {
-        name: /club name column header/i,
+        name: /^club column header/i,
       })
       const divisionHeader = screen.getByRole('button', {
-        name: /division column header/i,
+        name: /^div column header/i,
       })
       const areaHeader = screen.getByRole('button', {
         name: /area column header/i,
@@ -159,10 +160,10 @@ describe('ClubsTable Integration Tests', () => {
         name: /Members column header/i,
       })
       const dcpGoalsHeader = screen.getByRole('button', {
-        name: /dcp goals column header/i,
+        name: /^dcp column header/i,
       })
       const distinguishedHeader = screen.getByRole('button', {
-        name: /distinguished column header/i,
+        name: /tier column header/i,
       })
       // Use more specific regex to match "Status column header" but not "Club Status column header"
       const statusHeader = screen.getByRole('button', {
@@ -322,7 +323,7 @@ describe('ClubsTable Integration Tests', () => {
 
       // Click on different column headers to test interaction
       const clubNameHeader = screen.getByRole('button', {
-        name: /club name column header/i,
+        name: /^club column header/i,
       })
       const membersHeader = screen.getByRole('button', {
         name: /Members column header/i,
