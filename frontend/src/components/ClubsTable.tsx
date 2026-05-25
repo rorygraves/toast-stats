@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import { ClubTrend } from '../hooks/useDistrictAnalytics'
 import type { ClubHealthStatus } from '../hooks/useDistrictAnalytics'
 import { ExportButton } from './ExportButton'
@@ -6,8 +6,6 @@ import { exportClubPerformance } from '../utils/csvExport'
 import { LoadingSkeleton } from './LoadingSkeleton'
 import { isProvisionallyDistinguished } from '../utils/provisionalDistinguished'
 import { EmptyState } from './ErrorDisplay'
-import { usePagination } from '../hooks/usePagination'
-import { Pagination } from './Pagination'
 import { useColumnFilters } from '../hooks/useColumnFilters'
 import { ColumnHeader } from './ColumnHeader'
 import { SortField, SortDirection, COLUMN_CONFIGS } from './filters/types'
@@ -35,10 +33,6 @@ interface ClubsTableProps {
   onSortChange?:
     | ((field: SortField, direction: SortDirection) => void)
     | undefined
-  /** Initial page from URL params (#272) */
-  initialPage?: number | undefined
-  /** Callback when page changes — for URL param sync (#272) */
-  onPageChange?: ((page: number) => void) | undefined
   /** Initial filter state from URL params (#272) */
   initialFilterState?: import('./filters/types').FilterState | undefined
   /** Callback when filters change — for URL param sync (#272) */
@@ -60,7 +54,7 @@ interface ClubsTableProps {
  * - Individual column filtering with different filter types (text, numeric, categorical)
  * - Multi-column sorting with visual indicators
  * - Color-coded rows based on club health status
- * - Pagination for large club lists (25 clubs per page)
+ * - All clubs in one sticky-header scroll container (no pagination, #667)
  * - CSV export functionality
  * - Click-through to detailed club view
  * - Loading skeletons and empty states
@@ -69,7 +63,8 @@ interface ClubsTableProps {
  * Performance Optimizations:
  * - Debounced text filtering (300ms) to reduce re-renders
  * - Memoized filtering and sorting
- * - Pagination to limit DOM nodes
+ * - Render budget guarded by a perf test (#667); virtualization deferred
+ *   (epic #665) until a real district exceeds the budget
  *
  * @component
  * @example
@@ -90,8 +85,6 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
   initialSortField,
   initialSortDirection,
   onSortChange,
-  initialPage,
-  onPageChange,
   initialFilterState,
   onFilterChange,
   referenceDate,
@@ -303,46 +296,9 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
     return sorted
   }, [filteredClubs, sortField, sortDirection])
 
-  // Pagination for large club lists
-  const pagination = usePagination({
-    items: sortedClubs,
-    itemsPerPage: 25,
-  })
-
-  // Sync initial page from URL params (#272)
-  const initialPageApplied = React.useRef(false)
-  useEffect(() => {
-    if (initialPage && initialPage > 1 && !initialPageApplied.current) {
-      pagination.goToPage(initialPage)
-      initialPageApplied.current = true
-    }
-  }, [initialPage, pagination.goToPage]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Wrap goToPage to notify parent of page changes (#272)
-  const handleGoToPage = React.useCallback(
-    (page: number) => {
-      pagination.goToPage(page)
-      onPageChange?.(page)
-    },
-    [pagination.goToPage, onPageChange] // eslint-disable-line react-hooks/exhaustive-deps
-  )
-
-  // Reset pagination to page 1 when filtered results change
-  const isInitialLoad = React.useRef(true)
-  useEffect(() => {
-    // If going from 0 -> N clubs on initial load, don't reset pagination
-    // This allows URL sync (e.g. from Back button) to restore page correctly
-    if (isInitialLoad.current && filteredClubs.length > 0) {
-      isInitialLoad.current = false
-      return
-    }
-
-    if (!isInitialLoad.current) {
-      pagination.goToPage(1)
-      onPageChange?.(1)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredClubs.length, pagination.goToPage]) // Intentionally excluding 'pagination' to avoid infinite loop
+  // No pagination (#667): the full sorted+filtered set renders in a single
+  // sticky-header scroll container. Sort / filter / search span every row;
+  // the "Showing N of M clubs" count line is the only progress indicator.
 
   // Handle sort
   const handleSort = (field: SortField) => {
@@ -760,9 +716,9 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
               {sortDirection === 'asc' ? '↑' : '↓'}
             </button>
           </div>
-          {/* Card list */}
+          {/* Card list — all clubs, no pagination (#667) */}
           <div className="space-y-3">
-            {pagination.paginatedItems.map(club => (
+            {sortedClubs.map(club => (
               <ClubCard
                 key={club.clubId}
                 club={club}
@@ -770,27 +726,22 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
               />
             ))}
           </div>
-          {/* Mobile pagination */}
-          <div className="mt-4">
-            <Pagination
-              currentPage={pagination.currentPage}
-              totalPages={pagination.totalPages}
-              onPageChange={handleGoToPage}
-              startIndex={pagination.startIndex}
-              endIndex={pagination.endIndex}
-              totalItems={pagination.totalItems}
-              canGoNext={pagination.canGoNext}
-              canGoPrevious={pagination.canGoPrevious}
-            />
-          </div>
         </div>
       )}
 
-      {/* Desktop Table */}
+      {/* Desktop Table — all clubs in one capped-height scroll container
+          with a sticky header (#667). The container is keyboard-operable
+          (role/tabindex/aria-label) so keyboard-only users can scroll it
+          (WCAG 2.1.1; axe scrollable-region-focusable). */}
       {!isLoading && sortedClubs.length > 0 && !isMobile && (
-        <div className="overflow-x-auto">
+        <div
+          className="clubs-table-scroll overflow-x-auto"
+          role="region"
+          aria-label="All clubs table"
+          tabIndex={0}
+        >
           <table className="w-full table-auto">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="clubs-table-sticky-head bg-gray-50 border-b border-gray-200">
               <tr>
                 {COLUMN_CONFIGS.map(config => (
                   <th key={config.field} className="p-0">
@@ -816,7 +767,7 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {pagination.paginatedItems.map(club => (
+              {sortedClubs.map(club => (
                 <tr
                   key={club.clubId}
                   onClick={() => onClubClick?.(club)}
@@ -939,20 +890,6 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
             </tbody>
           </table>
         </div>
-      )}
-
-      {/* Pagination */}
-      {!isLoading && sortedClubs.length > 0 && (
-        <Pagination
-          currentPage={pagination.currentPage}
-          totalPages={pagination.totalPages}
-          onPageChange={handleGoToPage}
-          startIndex={pagination.startIndex}
-          endIndex={pagination.endIndex}
-          totalItems={pagination.totalItems}
-          canGoNext={pagination.canGoNext}
-          canGoPrevious={pagination.canGoPrevious}
-        />
       )}
     </div>
   )

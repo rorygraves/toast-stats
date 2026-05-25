@@ -323,12 +323,12 @@ describe('DistrictClubsPage (#570 — Phase 2)', () => {
     expect(dataRows[0]?.textContent).toMatch(/delta orators/i)
   })
 
-  it('honors ?page=2 on load', async () => {
+  it('ignores a legacy ?page= param and renders all clubs — #667', async () => {
+    // #667 (epic #665) — pagination removed. A stale ?page= in the URL
+    // (e.g. a bookmarked link) must not break the page; all clubs render.
     renderAt('/district/61/clubs?page=2')
-    // With 4 clubs and 25/page, page 2 is empty but the pagination
-    // control must still reflect the URL state. Page is single-page
-    // here; the test exercises that no crash occurs and clubs render.
     await screen.findByText(/alpha toastmasters/i)
+    expect(screen.getByText(/beta speakers/i)).toBeInTheDocument()
   })
 
   it('redirects /district/:id?tab=clubs to /district/:id/clubs', async () => {
@@ -360,7 +360,9 @@ describe('DistrictClubsPage (#570 — Phase 2)', () => {
     })
   })
 
-  it('preserves sort/dir/page during legacy redirect', async () => {
+  it('preserves sort/dir but strips legacy page during redirect — #667', async () => {
+    // #667 (epic #665) — pagination removed; the legacy redirect drops
+    // the obsolete ?page= param while keeping sort/dir.
     const { router } = renderAt(
       '/district/61?tab=clubs&sort=membership&dir=desc&page=2'
     )
@@ -370,7 +372,7 @@ describe('DistrictClubsPage (#570 — Phase 2)', () => {
       const params = new URLSearchParams(router.state.location.search)
       expect(params.get('sort')).toBe('membership')
       expect(params.get('dir')).toBe('desc')
-      expect(params.get('page')).toBe('2')
+      expect(params.get('page')).toBeNull()
     })
   })
 })

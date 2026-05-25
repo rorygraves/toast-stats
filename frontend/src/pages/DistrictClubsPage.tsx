@@ -32,7 +32,10 @@ import type {
      ?status=<thriving|vulnerable|intervention>
      ?search=<q>
      ?sort=<field>&dir=<asc|desc>
-     ?page=<n>
+   Pagination was removed in #667 (epic #665) — all clubs render in one
+   sticky-header scroll container, so there is no `?page=` param. A stale
+   legacy `?page=` is harmless (ignored on load; the legacy `?tab=clubs`
+   redirect strips it).
    Other column filters (Distinguished, Members range, etc.) stay
    in-session — they're discoverable through the table UI but no
    longer survive a reload. The router-level redirect from the legacy
@@ -105,15 +108,14 @@ const DistrictClubsPage: React.FC = () => {
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
 
-  // Sort / page URL state -- mirrors DistrictDetailPage's conventions so
-  // sort field names line up with ClubsTable's existing SortField union.
+  // Sort URL state -- mirrors DistrictDetailPage's conventions so sort
+  // field names line up with ClubsTable's existing SortField union.
+  // (No page state since #667 — pagination was removed.)
   const initialSortField = (searchParams.get('sort') ?? undefined) as
     | SortField
     | undefined
   const initialSortDir =
     (searchParams.get('dir') as SortDirection | null) || undefined
-  const initialPageRaw = searchParams.get('page')
-  const initialPage = initialPageRaw ? parseInt(initialPageRaw, 10) : undefined
 
   const initialFilterState = useMemo(
     () => buildFilterStateFromUrl(searchParams),
@@ -144,31 +146,6 @@ const DistrictClubsPage: React.FC = () => {
     [setSearchParams]
   )
 
-  const handlePageChange = useCallback(
-    (page: number) => {
-      // Bail when there's nothing to write: ClubsTable's auto-reset to
-      // page 1 on filter change fires onPageChange in the same React
-      // batch as the filter update. Both setSearchParams(prev => …)
-      // calls see the SAME stale `prev` snapshot, so the second call
-      // would clobber the first (status=vulnerable would disappear).
-      // Skipping the no-op write keeps the filter URL intact.
-      if (page === 1 && !searchParams.has('page')) return
-      setSearchParams(
-        prev => {
-          const next = new URLSearchParams(prev)
-          if (page === 1) {
-            next.delete('page')
-          } else {
-            next.set('page', page.toString())
-          }
-          return next
-        },
-        { replace: true }
-      )
-    },
-    [searchParams, setSearchParams]
-  )
-
   const handleFilterChange = useCallback(
     (state: FilterState) => {
       const patch = filterStateToUrlPatch(state)
@@ -185,8 +162,6 @@ const DistrictClubsPage: React.FC = () => {
           } else {
             next.delete('search')
           }
-          // Reset pagination when filters change.
-          next.delete('page')
           return next
         },
         { replace: true }
@@ -328,8 +303,6 @@ const DistrictClubsPage: React.FC = () => {
                   initialSortField={initialSortField}
                   initialSortDirection={initialSortDir}
                   onSortChange={handleSortChange}
-                  initialPage={initialPage}
-                  onPageChange={handlePageChange}
                   initialFilterState={initialFilterState}
                   onFilterChange={handleFilterChange}
                 />

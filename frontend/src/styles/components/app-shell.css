@@ -2485,6 +2485,29 @@
     color: var(--ink);
   }
 
+  /* Clubs table single-scroll container (#667, epic #665). Pagination was
+     removed; the full sorted+filtered set renders in one capped-height
+     container so the header stays in view while the body scrolls. The
+     container is keyboard-operable (role/tabindex/aria-label on the element)
+     per WCAG 2.1.1. Re-skin to redesign tokens lands in Sprint 2 (#668);
+     the legacy gray header chrome stays for now. */
+  .clubs-table-scroll {
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
+  /* Sticky header: pin the th cells (more robust than a sticky <thead>
+     under border-collapse) with an opaque background so scrolling rows
+     don't bleed through. bg-gray-50 (#f9fafb) is the current legacy
+     surface — Sprint 2 swaps it for a themed token; keeping a literal
+     here is deliberate until then so the header isn't transparent. */
+  .clubs-table-sticky-head th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: #f9fafb;
+  }
+
   /* History page year strip (#367) — chip row of archived years. */
   .history-page-year-strip {
     display: flex;
