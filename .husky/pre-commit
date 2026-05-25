@@ -1,4 +1,36 @@
+#!/usr/bin/env sh
+# Path-aware pre-commit gate (#720).
+#
+# Mirrors the CI/Deploy `paths-ignore` set from #704 (**/*.md, tasks/**,
+# docs/**, .gitignore, LICENSE): when EVERY staged file is non-code, skip the
+# expensive typecheck + lint. This is NOT a --no-verify bypass — the hook is
+# correctly determining there is nothing code-relevant to verify, exactly as
+# CI already skips the same changes. CI remains the gate of record.
+#
+# ALL-not-ANY: a mixed code+docs commit runs the full gate. The classifier is
+# scripts/lib/changedFilesGate.ts (unit-tested), invoked via the CLI bridge so
+# there is no parallel bash reimplementation to drift.
+#
+# POSIX sh only: husky runs this with `sh -e`, so no bashisms ([[ ]], $'\n',
+# pipefail). Pipeline exit status is the last command's (the classifier's),
+# which is exactly the signal we branch on.
+set -eu
+
+# Always format staged files (prettier on markdown, etc.).
 npx lint-staged
+
+staged=$(git diff --cached --name-only)
+
+if [ -n "$staged" ] &&
+  printf '%s\n' "$staged" | npx tsx scripts/changed-files-gate.ts is-docs-only; then
+  echo "pre-commit: docs/lessons-only commit — skipping typecheck + lint (CI is the gate of record)."
+  # Still lint YAML if a docs/ YAML file changed (lint:yaml covers .github/ + docs/).
+  if printf '%s\n' "$staged" | npx tsx scripts/changed-files-gate.ts needs-yaml-lint; then
+    npm run lint:yaml
+  fi
+  exit 0
+fi
+
 npm run typecheck
 npm run lint
 npm run lint:yaml
