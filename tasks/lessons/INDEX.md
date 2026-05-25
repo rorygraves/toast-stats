@@ -65,3 +65,4 @@
 - **104** [analytics, frontend, dcp, data-pipeline] — Derive a count from raw integer inputs, not a vendor's pre-rounded percentage (#688, #683)
 - **105** [frontend, css, responsive, accessibility, ux] — Match the mobile-table pattern to the data's purpose, not a sibling table's precedent (#689, #683)
 - **106** [automation, sprint-runner, prompts] — `Closes #N` in an auto-merged sprint PR defeats the tick-before-close ordering (#689, #626, #683)
+- **107** [dark-mode, css, accessibility, frontend, tailwind] — Tailwind's `dark:` is OS-keyed; under a manual theme toggle it MISFIRES in the OS-dark + app-light quadrant (#710, #683)

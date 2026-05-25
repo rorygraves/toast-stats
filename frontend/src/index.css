@@ -46,6 +46,24 @@
 @import './styles/dark-mode.css';
 @import './styles/print.css';
 
+/* Toggle-scoped dark variant (#710).
+ *
+ * Tailwind's built-in `dark:` variant compiles to
+ * `@media (prefers-color-scheme: dark)` — keyed off the OS, not the app.
+ * But this app's dark mode is a MANUAL toggle that sets
+ * `[data-theme='dark']` on <html> (DarkModeContext). The two are
+ * decoupled: when a user's OS prefers dark while the app shows light
+ * (white surface), every `dark:` utility fires anyway and paints light
+ * text on the light surface — the /regions leaderboard went invisible
+ * (Amy's bug, #710). It's lesson 073's inert-`dark:` trap in reverse.
+ *
+ * `theme-dark:` keys off the manual toggle instead, so dark styling
+ * tracks the app theme and never the OS. `:where()` keeps specificity at
+ * a single class so it composes like a normal utility. Region components
+ * use this; the broader codebase migration off raw `dark:` is tracked
+ * separately (#715). */
+@custom-variant theme-dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /* Tailwind v4 Theme Configuration - replaces tailwind.config.js */
 @theme {
   /* ========================================
