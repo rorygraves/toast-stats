@@ -154,6 +154,27 @@
     color: var(--ink);
   }
 
+  /* Theme toggle (#700). The icon previously hardcoded a near-white inline
+     colour, invisible against the light header surface (--surface = #fff).
+     Drive it from --ink-3 — the same theme-aware token the "?" help icon
+     above uses — so it clears WCAG AA in BOTH modes (R10): #5b6675 on white
+     ≈ 5.8:1 (light), #8a96a6 on --surface ≈ 6.4:1 (dark). */
+  .app-shell-theme-toggle {
+    color: var(--ink-3);
+  }
+
+  .app-shell-theme-toggle:hover {
+    background-color: var(--surface-3);
+    color: var(--ink);
+  }
+
+  .app-shell-theme-toggle:focus-visible {
+    /* --link (not --loyal-500): the ring must clear 3:1 on the dark surface
+       too (WCAG 1.4.11). --link remaps to #60a5d8 in dark (Lesson 093/096). */
+    outline: 2px solid var(--link);
+    outline-offset: 2px;
+  }
+
   .app-shell-avatar {
     width: 32px;
     height: 32px;
