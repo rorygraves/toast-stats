@@ -144,3 +144,22 @@ jobs:
 
             Updated on every push to this PR. Closed PRs are cleaned
             up automatically when the channel TTL elapses.
+
+      # Lightweight cross-engine smoke against the freshly-deployed preview
+      # (#713). #685 verified contrast in Chromium-at-rest only and missed a
+      # Safari-visible regression (#710); running the legibility smoke in BOTH
+      # the `smoke` (Chromium) and `webkit` (Safari) projects closes that blind
+      # spot for every frontend PR. A declared-but-uninstalled engine is inert,
+      # so install webkit explicitly before the run (cf. lesson 082).
+      - name: Install Playwright browsers (chromium + webkit)
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: Cross-engine legibility smoke against preview
+        working-directory: frontend
+        env:
+          # Drive the actual deployed preview, not staging's default.
+          BASE_URL: ${{ steps.deploy.outputs.url }}
+        # No --project filter → runs every project (Chromium + WebKit). A
+        # Safari-only rendering regression fails the webkit project while
+        # Chromium stays green — exactly the #710 class.
+        run: npx playwright test --config playwright.config.ts e2e/regions-legibility.smoke.ts
