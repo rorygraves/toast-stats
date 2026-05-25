@@ -292,7 +292,11 @@ export const ColumnHeader: React.FC<ColumnHeaderProps> = ({
         )}
       </button>
 
-      {/* Dropdown/Popover */}
+      {/* Dropdown/Popover — the filter control surface. Its legacy gray
+          chrome is intentionally deferred to the controls re-skin (Sprint 4
+          #670); the resting header chrome (button + caret above) is the
+          #668 scope. The clubs-table re-skin guard only renders the resting
+          state, so these closed-popover gray classes are out of its frame. */}
       {isDropdownOpen && (sortable || filterable) && (
         <div className="absolute top-full left-0 z-50 mt-1 w-80 bg-white border border-gray-200 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-200">
           <div className="p-4 space-y-4">
