@@ -51,7 +51,10 @@ function translateClubsParams(parsed: URL): URLSearchParams {
   const oldName = parsed.searchParams.get('f_name')
   if (oldName) next.set('search', oldName)
 
-  for (const key of ['sort', 'dir', 'page'] as const) {
+  // `page` is intentionally dropped (#667, epic #665): pagination was
+  // removed, so a legacy `?page=` no longer has meaning. Sort/dir carry
+  // through unchanged.
+  for (const key of ['sort', 'dir'] as const) {
     const v = parsed.searchParams.get(key)
     if (v) next.set(key, v)
   }
