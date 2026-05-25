@@ -359,6 +359,36 @@ describe('Region pages dark-mode contrast (#609)', () => {
     ).toBeGreaterThanOrEqual(4.5)
   })
 
+  // District-number chip on each ranking row (#699). The pill bg (--loyal-50)
+  // remaps to #112432 in dark, but its text (--loyal-600 #003352) has NO dark
+  // remap → navy-on-navy ~1.2:1, illegible (lessons 093/096 trap). Fix is a
+  // scoped [data-theme='dark'] override to the dark-safe --link blue (#60a5d8).
+  it('district-number chip text clears AA on the dark pill (#699)', () => {
+    const bg = resolveVar(
+      ruleValue(
+        appShellCss,
+        '.districts-rankings-table__district-chip',
+        'background-color'
+      ) ?? ''
+    )
+    const override = darkRuleValue(
+      appShellCss,
+      '.districts-rankings-table__district-chip',
+      'color'
+    )
+    const base = ruleValue(
+      appShellCss,
+      '.districts-rankings-table__district-chip',
+      'color'
+    )
+    const fg = resolveVar(override ?? base ?? '')
+    const ratio = calculateContrastRatio(fg, bg)
+    expect(
+      ratio,
+      `district chip text ${fg} on ${bg} = ${ratio.toFixed(2)}:1`
+    ).toBeGreaterThanOrEqual(4.5)
+  })
+
   it('scroll-cue overlay is themed, not a hardcoded colour (lesson 092)', () => {
     const bg = ruleValue(
       appShellCss,
