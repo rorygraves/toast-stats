@@ -173,10 +173,12 @@ const DistrictsPage: React.FC = () => {
     placeholderData: prev => prev,
   })
 
-  // Fetch competitive award standings for the same snapshot (#331)
-  const { data: competitiveAwards } = useCompetitiveAwards(
-    effectiveRankingsDate
-  )
+  // Fetch competitive award standings for the same snapshot (#331).
+  // isLoading reserves the AwardsRaceSection slot so its late arrival (this
+  // query resolves separately from the rankings query above) doesn't shove
+  // the toolbar + table down ~286px → CLS (#750).
+  const { data: competitiveAwards, isLoading: isLoadingAwards } =
+    useCompetitiveAwards(effectiveRankingsDate)
 
   const rankings: DistrictRanking[] = React.useMemo(
     () => data?.rankings || [],
@@ -758,7 +760,10 @@ const DistrictsPage: React.FC = () => {
         </div>
 
         {/* Awards Race — competitive district awards (#331) */}
-        <AwardsRaceSection standings={competitiveAwards ?? null} />
+        <AwardsRaceSection
+          standings={competitiveAwards ?? null}
+          isLoading={isLoadingAwards}
+        />
 
         {/* Sort Controls + Region Filter Toolbar — compact (#83) */}
         <div className="districts-toolbar">

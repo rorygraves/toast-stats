@@ -2525,6 +2525,54 @@
     font-style: italic;
   }
 
+  /* Loading skeleton (#750). Themed via --surface-3 so it dark-remaps like
+     the progress track it sits beside (R10 — no literal greys). Bar heights
+     match the fixed-height data rows of a loaded card; the variable header
+     rows reuse the real title/threshold markup, so the reserved slot height
+     tracks the loaded section and the fill is shift-free. */
+  .awards-race-skeleton__bar {
+    display: inline-block;
+    border-radius: 4px;
+    background-color: var(--surface-3);
+    animation: awards-race-skeleton-pulse 1.4s ease-in-out infinite;
+  }
+
+  .awards-race-skeleton__bar--heading {
+    height: 16px;
+    border-radius: 6px;
+  }
+
+  .awards-race-skeleton__bar--leader {
+    width: 36px;
+    height: 16px;
+  }
+
+  .awards-race-skeleton__bar--value {
+    width: 48px;
+    height: 22px;
+  }
+
+  .awards-race-skeleton__bar--status {
+    width: 60%;
+    height: 11px;
+  }
+
+  @keyframes awards-race-skeleton-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .awards-race-skeleton__bar {
+      animation: none;
+    }
+  }
+
   /* District detail page redesign chrome (#358). Same Lesson 49/50 caveat
      as .districts-page-root: NO min-height: 100vh — AppShell already owns
      the viewport wrapper. */
