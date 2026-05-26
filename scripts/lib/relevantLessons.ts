@@ -153,6 +153,10 @@ export function expandDepth1Neighbours(
 
   for (const seed of seedPaths) {
     for (const slug of parseWikilinks(readBody(seed))) {
+      // A lesson slug is a bare filename — never a path. Reject any slug with a
+      // separator (`[[sub/dir]]`) so it can't address a nested file even if one
+      // happened to exist; the `..` case is also caught by isSafeLessonPath.
+      if (slug.includes('/')) continue
       const path = `tasks/lessons/${slug}.md`
       if (!isSafeLessonPath(path)) continue
       if (seedSet.has(path) || added.has(path)) continue

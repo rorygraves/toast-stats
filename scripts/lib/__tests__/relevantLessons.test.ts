@@ -274,6 +274,17 @@ describe('expandDepth1Neighbours', () => {
     expect(neighbours).toEqual([])
   })
 
+  it('rejects a slug that addresses a nested path, even if it exists', () => {
+    const body = { 'tasks/lessons/s.md': 'see [[sub/nested]]' }
+    const { neighbours } = expandDepth1Neighbours(
+      ['tasks/lessons/s.md'],
+      p => (body as Record<string, string>)[p] ?? '',
+      () => true, // a slug is a bare filename, never a path
+      10
+    )
+    expect(neighbours).toEqual([])
+  })
+
   it('defaults to DEPTH1_NEIGHBOUR_CAP when no cap is passed', () => {
     expect(DEPTH1_NEIGHBOUR_CAP).toBeGreaterThan(0)
     const manySeeds = Array.from(
