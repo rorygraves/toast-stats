@@ -20,6 +20,8 @@ import { fileURLToPath } from 'node:url'
 import {
   parseRelevantLessons,
   resolveRelevantLessons,
+  expandDepth1Neighbours,
+  DEPTH1_NEIGHBOUR_CAP,
 } from './lib/relevantLessons'
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -62,8 +64,27 @@ function main(): void {
     console.error(`  ✗ MISSING: ${r.path}`)
   }
 
-  // Structured output: the resolved paths a session should read, one per line.
+  // Depth-1 graph traversal (#772): a chosen lesson drags in the context it
+  // explicitly references via `[[…]]`, capped so it can't blow the window.
+  const { neighbours, capped } = expandDepth1Neighbours(
+    found.map(r => r.path),
+    p => readFileSync(join(REPO_ROOT, p), 'utf8'),
+    p => existsSync(join(REPO_ROOT, p)),
+    DEPTH1_NEIGHBOUR_CAP
+  )
+  if (neighbours.length > 0) {
+    console.error(
+      `\nDepth-1 [[…]] neighbours (${neighbours.length}${
+        capped ? `, capped at ${DEPTH1_NEIGHBOUR_CAP}` : ''
+      }):`
+    )
+    for (const p of neighbours) console.error(`  + ${p}`)
+  }
+
+  // Structured output: the resolved paths a session should read, one per line —
+  // manifest lessons first, then their depth-1 neighbours.
   for (const r of found) console.log(r.path)
+  for (const p of neighbours) console.log(p)
 
   if (missing.length > 0) {
     console.error(`\n${missing.length} listed lesson(s) not found on disk.`)

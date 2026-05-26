@@ -66,6 +66,17 @@ export function parseRelevantLessons(body: string): RelevantLessonRef[] {
 }
 
 /**
+ * Path-traversal guard: a resolvable lesson path must live under
+ * `tasks/lessons/` and never contain `..`. Single-sourced here so every
+ * "external input → file path" caller (manifest resolve, wikilink expansion)
+ * applies the same rule (per the `Path.join` tripwire in rules.md, and the
+ * note in Lesson 098 that future IO callers must re-apply the guard).
+ */
+function isSafeLessonPath(path: string): boolean {
+  return path.startsWith('tasks/lessons/') && !path.includes('..')
+}
+
+/**
  * Partition refs into those whose files exist and those that don't, using the
  * supplied existence predicate (injected so this stays pure / testable). A ref
  * whose path escapes `tasks/lessons/` is always treated as missing — a manifest
@@ -79,10 +90,85 @@ export function resolveRelevantLessons(
   const found: RelevantLessonRef[] = []
   const missing: RelevantLessonRef[] = []
   for (const ref of refs) {
-    const safe =
-      ref.path.startsWith('tasks/lessons/') && !ref.path.includes('..')
-    if (safe && exists(ref.path)) found.push(ref)
+    if (isSafeLessonPath(ref.path) && exists(ref.path)) found.push(ref)
     else missing.push(ref)
   }
   return { found, missing }
+}
+
+/**
+ * Default cap on the total number of depth-1 `[[…]]` neighbours pulled in
+ * across all seeds. Bounds the extra context a session loads so traversal can't
+ * blow the window (epic #659: "within a documented context budget"). Five keeps
+ * the neighbour set well under the always-loaded budget alongside the manifest,
+ * tag-matched, and 2-newest lessons.
+ */
+export const DEPTH1_NEIGHBOUR_CAP = 5
+
+/** Matches an Obsidian-style `[[target]]` wikilink; group 1 is the raw inner text. */
+const WIKILINK_RE = /\[\[([^\]]+)\]\]/g
+
+/**
+ * Extract the `[[slug]]` wikilink targets from a lesson body, in first-seen
+ * document order, deduplicated. An Obsidian `|alias` or `#heading` suffix is
+ * stripped so `[[090-guard#how-to-apply]]` → `090-guard`. Empty/whitespace-only
+ * brackets are ignored. Pure (no IO): resolution to a file path is the caller's
+ * job. The slug is a lesson filename without its `.md` extension.
+ */
+export function parseWikilinks(body: string): string[] {
+  const seen = new Set<string>()
+  const slugs: string[] = []
+  for (const m of body.matchAll(WIKILINK_RE)) {
+    // Drop an Obsidian alias (`|…`) or heading anchor (`#…`); keep the target.
+    const slug = m[1].split('|')[0].split('#')[0].trim()
+    if (slug && !seen.has(slug)) {
+      seen.add(slug)
+      slugs.push(slug)
+    }
+  }
+  return slugs
+}
+
+/**
+ * Pull in the direct (depth-1) `[[…]]` neighbours of a set of seed lesson
+ * paths. Reads ONLY the seed bodies — it never recurses into a neighbour's own
+ * wikilinks, so this is strictly depth-1. Each wikilink slug resolves to
+ * `tasks/lessons/<slug>.md`; a neighbour is kept only when it (a) passes the
+ * path-traversal guard, (b) exists on disk, and (c) isn't already a seed.
+ * Neighbours are deduplicated across seeds and accumulated in encounter order
+ * up to `cap`; `capped` is true when the cap truncated the set (so the caller
+ * can warn rather than silently drop). Pure: `readBody` and `exists` are
+ * injected, keeping this unit-testable without filesystem IO.
+ */
+export function expandDepth1Neighbours(
+  seedPaths: string[],
+  readBody: (path: string) => string,
+  exists: (path: string) => boolean,
+  cap: number = DEPTH1_NEIGHBOUR_CAP
+): { neighbours: string[]; capped: boolean } {
+  const seedSet = new Set(seedPaths)
+  const added = new Set<string>()
+  const neighbours: string[] = []
+  let capped = false
+
+  for (const seed of seedPaths) {
+    for (const slug of parseWikilinks(readBody(seed))) {
+      // A lesson slug is a bare filename — never a path. Reject any slug with a
+      // separator (`[[sub/dir]]`) so it can't address a nested file even if one
+      // happened to exist; the `..` case is also caught by isSafeLessonPath.
+      if (slug.includes('/')) continue
+      const path = `tasks/lessons/${slug}.md`
+      if (!isSafeLessonPath(path)) continue
+      if (seedSet.has(path) || added.has(path)) continue
+      if (!exists(path)) continue
+      if (neighbours.length >= cap) {
+        capped = true
+        continue
+      }
+      added.add(path)
+      neighbours.push(path)
+    }
+  }
+
+  return { neighbours, capped }
 }
