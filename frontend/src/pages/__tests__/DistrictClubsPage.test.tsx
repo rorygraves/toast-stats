@@ -240,6 +240,17 @@ describe('DistrictClubsPage (#570 — Phase 2)', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('renders the District section subnav with Clubs active (#678)', async () => {
+    renderAt('/district/61/clubs')
+    await screen.findByText(/alpha toastmasters/i)
+
+    const subnav = screen.getByRole('navigation', { name: 'District sections' })
+    expect(within(subnav).getByRole('link', { name: 'Clubs' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    )
+  })
+
   it('round-trips the current filter into club navigation state (#577)', async () => {
     const user = userEvent.setup()
     const { router } = renderAt('/district/61/clubs?status=vulnerable')

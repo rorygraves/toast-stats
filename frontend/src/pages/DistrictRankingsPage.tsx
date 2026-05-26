@@ -11,6 +11,7 @@ import {
 } from '../utils/programYear'
 import { DistrictDetailHeader } from '../components/DistrictDetailHeader'
 import { SubpageBreadcrumb } from '../components/SubpageBreadcrumb'
+import { DistrictSubnav } from '../components/DistrictSubnav'
 import GlobalRankingsTab from '../components/GlobalRankingsTab'
 import ErrorBoundary from '../components/ErrorBoundary'
 
@@ -121,6 +122,8 @@ const DistrictRankingsPage: React.FC = () => {
           <SubpageBreadcrumb
             crumbs={[{ label: districtName, to: `/district/${districtId}` }]}
           />
+
+          <DistrictSubnav districtId={districtId} />
 
           <div className="space-y-4 sm:space-y-6">
             <GlobalRankingsTab

@@ -169,6 +169,18 @@ describe('DistrictDivisionsPage (#571 — Phase 3)', () => {
     ).toBeInTheDocument()
   })
 
+  it('renders the District section subnav with Divisions active (#678)', async () => {
+    renderAt('/district/61/divisions')
+    await screen.findByTestId('division-performance-cards')
+
+    expect(
+      screen.getByRole('navigation', { name: 'District sections' })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'Divisions', current: 'page' })
+    ).toBeInTheDocument()
+  })
+
   it('shows a back-to-district breadcrumb, not the old back button (#577)', async () => {
     renderAt('/district/61/divisions')
     await screen.findByTestId('division-performance-cards')

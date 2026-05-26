@@ -20,7 +20,7 @@
 // full WCAG rule set on the dark DOM tree, not just the light one.
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, cleanup } from '@testing-library/react'
+import { render, cleanup, screen } from '@testing-library/react'
 import { axe, toHaveNoViolations } from 'jest-axe'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -173,5 +173,22 @@ describe('DistrictDetailPage — axe-core scan in light and dark mode (#564 Phas
     const { container } = renderPage()
     const results = await axe(container)
     expect(results).toHaveNoViolations()
+  })
+})
+
+// Reuses the routed hub mount (renderPage at /district/57) to prove the
+// hub wires the lateral subnav with Overview active (#678, ADR-005 §3).
+describe('DistrictDetailPage — section subnav wiring (#678)', () => {
+  afterEach(() => cleanup())
+
+  it('renders the subnav with Overview marked active on the hub', () => {
+    renderPage()
+    const subnav = screen.getByRole('navigation', { name: 'District sections' })
+    expect(subnav).toBeInTheDocument()
+    const overview = screen.getByRole('link', {
+      name: 'Overview',
+      current: 'page',
+    })
+    expect(overview).toHaveAttribute('href', '/district/57')
   })
 })

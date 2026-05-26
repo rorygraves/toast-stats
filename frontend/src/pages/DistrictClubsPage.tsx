@@ -17,6 +17,7 @@ import {
 } from '../utils/programYear'
 import { DistrictDetailHeader } from '../components/DistrictDetailHeader'
 import { SubpageBreadcrumb } from '../components/SubpageBreadcrumb'
+import { DistrictSubnav } from '../components/DistrictSubnav'
 import { ClubsTable } from '../components/ClubsTable'
 import { ProspectiveClubsPanel } from '../components/ProspectiveClubsPanel'
 import ErrorBoundary from '../components/ErrorBoundary'
@@ -289,6 +290,8 @@ const DistrictClubsPage: React.FC = () => {
           <SubpageBreadcrumb
             crumbs={[{ label: districtName, to: `/district/${districtId}` }]}
           />
+
+          <DistrictSubnav districtId={districtId} />
 
           <div className="space-y-4 sm:space-y-6">
             {isLoading && allClubs.length === 0 ? (
