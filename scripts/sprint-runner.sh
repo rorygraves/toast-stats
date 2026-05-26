@@ -37,6 +37,9 @@
 #                         At least one of META_EPIC or EPIC must be set.
 #   STRICT_GATE=0|1       Require `sprint-verified` label on predecessor (default 0)
 #   SPRINT_RUNNER_LOG     Path to append-log; used for size-based rotation
+#   SPRINT_RUNNER_LOCK_DIR  Override the mkdir-lock path (default
+#                         /tmp/toast-stats-sprint.lock). Used by the regression
+#                         test so it can't collide with a live tick.
 #   WORKTREE_BASE         Parent dir for per-sprint git worktrees
 #                         (default: ~/sprint-worktrees). Each sprint gets
 #                         <WORKTREE_BASE>/sprint-<N>. Isolates the spawned
@@ -44,12 +47,13 @@
 #                         operator's primary checkout. See #625.
 #
 # Scheduling: this script is invoked by a launchd LaunchAgent — NOT crontab —
-# at minutes :02, :17, :32, :47 of every hour (15-min cadence). Plist lives at:
+# every 5 minutes (StartInterval 300). Plist lives at:
 #   ~/Library/LaunchAgents/red.taverns.toast-stats.sprint-runner.plist
 # Environment overrides (EPIC, STRICT_GATE, etc.) are set in that plist's
 # <key>EnvironmentVariables</key> dict. To apply changes:
-#   launchctl unload <plist> && launchctl load <plist>
-#   launchctl list | grep sprint-runner    # verify registered (PID '-' = idle, OK)
+#   launchctl bootout gui/$(id -u)/red.taverns.toast-stats.sprint-runner
+#   launchctl bootstrap gui/$(id -u) <plist>
+#   launchctl print gui/$(id -u)/red.taverns.toast-stats.sprint-runner  # verify run interval
 
 set -euo pipefail
 
@@ -58,7 +62,7 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 META_EPIC="${META_EPIC:-}"
 EPIC="${EPIC:-}"
 STRICT_GATE="${STRICT_GATE:-0}"
-LOCK_DIR="/tmp/toast-stats-sprint.lock"
+LOCK_DIR="${SPRINT_RUNNER_LOCK_DIR:-/tmp/toast-stats-sprint.lock}"
 BOOTSTRAP_PROMPT="$REPO_DIR/scripts/sprint-bootstrap.prompt"
 LOG_FILE="${SPRINT_RUNNER_LOG:-$HOME/.toast-stats-sprint-runner.log}"
 LOG_ROTATE_BYTES=$((1024 * 1024))
@@ -69,7 +73,11 @@ WORKTREE_BASE="${WORKTREE_BASE:-$HOME/sprint-worktrees}"
 EPIC_SOURCE=""
 META_PAUSED=0
 
-export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+# Append (not prepend) the standard dirs so launchd's minimal PATH can still
+# find gh/screen/git, while leaving any caller-supplied PATH entries ahead of
+# them. Prepending would shadow a test's mock bin dir and block operator
+# overrides; appending keeps the fallback without clobbering. (#694)
+export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
 
 # === Mode parsing ===
 MODE=run
@@ -619,6 +627,13 @@ mode_run() {
     log "Epic #$EPIC has no unchecked sprints — complete."
     # Auto-advance ONLY when EPIC was resolved from META_EPIC (not pinned).
     if [[ "$EPIC_SOURCE" == "resolved via"* ]]; then
+      # --dry-run must not mutate the META_EPIC (#694): advance_meta_epic
+      # auto-ticks the epic line. Report the would-be tick and stop — without
+      # an actual tick the cascade would re-resolve the same epic and loop.
+      if [[ "$MODE" == "dry-run" ]]; then
+        log "DRY RUN — would auto-tick Epic #$EPIC in META_EPIC #$META_EPIC and advance to the next epic."
+        exit 0
+      fi
       if advance_meta_epic "$EPIC"; then
         continue  # cascade: re-resolve next epic in same tick (#627)
       fi
