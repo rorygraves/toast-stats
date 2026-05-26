@@ -79,3 +79,4 @@
 - **115** [frontend, analytics, data-pipeline, dcp, verification] — A field's name (and comment) can lie about whether it's populated in _your_ surface (#681, #674)
 - **116** [dark-mode, css, frontend, responsive] — `bg-white` themes to a LIGHTER dark scale than its `.redesign-panel` neighbours (#682, #674)
 - **117** [monorepo, analytics, refactor, tdd, data-pipeline] — A "delegate to X" refactor ticket is a trap when the two impls have diverged in output (#306, #757)
+- **118** [data-pipeline, analytics, collector-cli, find-a-club] — "Missing from Find-A-Club" is a registry-visibility signal, not a data gap (#490, #757)
