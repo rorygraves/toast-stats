@@ -66,6 +66,7 @@
 - **105** [frontend, css, responsive, accessibility, ux] — Match the mobile-table pattern to the data's purpose, not a sibling table's precedent (#689, #683)
 - **106** [automation, sprint-runner, prompts] — `Closes #N` in an auto-merged sprint PR defeats the tick-before-close ordering (#689, #626, #683)
 - **107** [dark-mode, css, accessibility, tests, vitest] — A CSS-parsing audit's selector matcher must exclude pseudo-class rules, or `:hover`/`:focus` shadows the resting state (#700, #701)
+- **107** [ci, automation, data-pipeline, monitoring] — Monitor the output's freshness, not the best-effort scheduler (#753, #757)
 - **107** [process, frontend, router, tdd, sprint-runner] — Reserve a future seam with a tripwire test, not just a comment (#680, #678, #674)
 - **107** [dark-mode, css, accessibility, frontend, tailwind] — Tailwind's `dark:` is OS-keyed; under a manual theme toggle it MISFIRES in the OS-dark + app-light quadrant (#710, #683)
 - **108** [tests, playwright, css, frontend, accessibility] — Verify a sticky header by measuring the sticky cell, not the `<thead>` wrapper (#667, #665)
