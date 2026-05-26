@@ -1,6 +1,6 @@
-import React, { useState, useCallback } from 'react'
+import React from 'react'
 import { DataControlsBar } from './DataControlsBar'
-import { DistrictExportButton } from './DistrictExportButton'
+import { HeaderActionsMenu } from './HeaderActionsMenu'
 import type { ProgramYear } from '../utils/programYear'
 
 /* District detail page header (#358). Extracted from DistrictDetailPage so
@@ -67,39 +67,9 @@ export const DistrictDetailHeader: React.FC<DistrictDetailHeaderProps> = ({
             selectedDate={selectedDate}
             onDateChange={onDateChange}
           />
-          <DistrictExportButton districtId={districtId} />
-          <DistrictShareButton />
+          <HeaderActionsMenu districtId={districtId} />
         </div>
       </div>
     </>
-  )
-}
-
-const DistrictShareButton: React.FC = () => {
-  const [copied, setCopied] = useState(false)
-
-  const handleClick = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1800)
-    } catch {
-      // Clipboard API rejects on insecure contexts; swallow silently for v1.
-    }
-  }, [])
-
-  return (
-    <button
-      type="button"
-      onClick={handleClick}
-      className="district-detail-share-button"
-    >
-      Share
-      {copied && (
-        <span className="district-detail-share-button__feedback" role="status">
-          ✓ link copied
-        </span>
-      )}
-    </button>
   )
 }

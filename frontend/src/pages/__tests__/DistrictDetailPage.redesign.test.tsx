@@ -9,6 +9,7 @@
 import React from 'react'
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import { MemoryRouter } from 'react-router-dom'
@@ -81,16 +82,25 @@ describe('DistrictDetailHeader (#358)', () => {
       ).toBeInTheDocument()
     })
 
-    it('renders an Export button', () => {
+    // #676: Export + Share were consolidated into an overflow "⋯" menu so
+    // the header action cluster stays uncrowded at 375px. They are now
+    // menuitems revealed on open, not standalone inline buttons.
+    it('exposes Export CSV via the overflow menu', async () => {
+      const user = userEvent.setup()
       renderHeader()
+      await user.click(screen.getByRole('button', { name: /more actions/i }))
       expect(
-        screen.getByRole('button', { name: /export/i })
+        screen.getByRole('menuitem', { name: /export csv/i })
       ).toBeInTheDocument()
     })
 
-    it('renders a Share button', () => {
+    it('exposes Copy link (Share) via the overflow menu', async () => {
+      const user = userEvent.setup()
       renderHeader()
-      expect(screen.getByRole('button', { name: /share/i })).toBeInTheDocument()
+      await user.click(screen.getByRole('button', { name: /more actions/i }))
+      expect(
+        screen.getByRole('menuitem', { name: /copy link/i })
+      ).toBeInTheDocument()
     })
   })
 
