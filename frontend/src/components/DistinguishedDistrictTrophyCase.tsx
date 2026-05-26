@@ -113,17 +113,19 @@ const GapTile: React.FC<GapTileSpec> = ({
   const closed = gap === 0
   const showConcrete = !closed && concreteCount != null && concreteCount > 0
   return (
-    <div className="rounded-md border border-gray-200 dark:border-gray-700 px-3 py-2">
+    <div className="rounded-md border border-gray-200 theme-dark:border-gray-700 px-3 py-2">
       <div
         data-testid="gap-tile-label"
-        className="text-[11px] uppercase tracking-wide text-gray-600 dark:text-gray-400 font-tm-body"
+        className="text-[11px] uppercase tracking-wide text-gray-600 theme-dark:text-gray-400 font-tm-body"
       >
         {label}
       </div>
       <div
         data-testid="gap-tile-value"
         className={`mt-0.5 text-base font-semibold tabular-nums ${
-          closed ? 'text-tm-loyal-blue' : 'text-gray-900 dark:text-gray-100'
+          closed
+            ? 'text-tm-loyal-blue'
+            : 'text-gray-900 theme-dark:text-gray-100'
         }`}
       >
         {closed ? '✓' : `+${gap.toFixed(1)}%`}
@@ -131,7 +133,7 @@ const GapTile: React.FC<GapTileSpec> = ({
       {showConcrete && (
         <div
           data-testid="gap-tile-units"
-          className="mt-0.5 text-[11px] text-gray-600 dark:text-gray-400 font-tm-body tabular-nums"
+          className="mt-0.5 text-[11px] text-gray-600 theme-dark:text-gray-400 font-tm-body tabular-nums"
         >
           ~{concreteCount} {concreteCount === 1 ? unitSingular : unitPlural}
         </div>

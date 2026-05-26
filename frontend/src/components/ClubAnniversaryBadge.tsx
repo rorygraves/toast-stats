@@ -41,8 +41,8 @@ export const ClubAnniversaryBadge: React.FC<ClubAnniversaryBadgeProps> = ({
         className={
           'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ' +
           (isMilestone
-            ? 'bg-yellow-100 text-yellow-900 ring-1 ring-yellow-400 dark:bg-yellow-900/40 dark:text-yellow-100 dark:ring-yellow-500'
-            : 'bg-blue-50 text-blue-900 dark:bg-blue-900/40 dark:text-blue-100')
+            ? 'bg-yellow-100 text-yellow-900 ring-1 ring-yellow-400 theme-dark:bg-yellow-900/40 theme-dark:text-yellow-100 theme-dark:ring-yellow-500'
+            : 'bg-blue-50 text-blue-900 theme-dark:bg-blue-900/40 theme-dark:text-blue-100')
         }
       >
         🎉 {copy}
@@ -59,7 +59,7 @@ export const ClubAnniversaryBadge: React.FC<ClubAnniversaryBadgeProps> = ({
       <span
         data-milestone="true"
         title={charterDateLabel}
-        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-900 ring-1 ring-yellow-400 dark:bg-yellow-900/40 dark:text-yellow-100 dark:ring-yellow-500"
+        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-900 ring-1 ring-yellow-400 theme-dark:bg-yellow-900/40 theme-dark:text-yellow-100 theme-dark:ring-yellow-500"
       >
         🥇 {years} Years
         {charterDateLabel && (
@@ -74,7 +74,7 @@ export const ClubAnniversaryBadge: React.FC<ClubAnniversaryBadgeProps> = ({
     <span
       data-milestone="false"
       title={charterDateLabel}
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs text-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-gray-300"
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs text-gray-600 bg-gray-100 theme-dark:bg-gray-700 theme-dark:text-gray-300"
     >
       {years} years
       {charterDateLabel && (

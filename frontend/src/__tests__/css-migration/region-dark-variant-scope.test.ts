@@ -14,34 +14,60 @@
 // This guard fails if a region component reintroduces a raw `dark:` utility.
 
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'fs'
-import { resolve } from 'path'
+import { readFileSync, readdirSync, statSync } from 'fs'
+import { join, relative, resolve } from 'path'
 
 const FRONTEND_SRC = resolve(__dirname, '../..')
 
-// The two components that render the /regions page surface (#710 scope).
-const REGION_COMPONENTS = [
-  'components/RegionsLeaderboard.tsx',
-  'components/RegionGrid.tsx',
-]
+// Match any Tailwind variant token that compiles to
+// @media(prefers-color-scheme:dark): bare `dark:`, stacked `dark:hover:`,
+// AND the `group-dark:` / `peer-dark:` parent-state forms. The only
+// sanctioned form is our toggle-scoped `theme-dark:`, so flag every
+// `dark:` whose word-boundary start is NOT preceded by `theme-`.
+// `\b` avoids matching inside an unrelated identifier; the lookbehind
+// keeps `theme-dark:` (and stacks like `theme-dark:hover:`) clean while
+// still catching `group-dark:` / `peer-dark:`.
+const RAW_DARK_VARIANT = /(?<!theme-)\bdark:/g
 
-// Match a Tailwind `dark:` variant token (incl. stacked like
-// `dark:hover:`), but NOT our toggle-scoped `theme-dark:`. A `dark:`
-// token is bounded on the left by start/whitespace/quote and is not
-// preceded by `theme-`.
-const RAW_DARK_VARIANT = /(?<![\w-])dark:/g
+// Recursive .tsx/.jsx walker, skipping tests so a guard-fixture string
+// can't trip this assertion (mirrors unmitigated-color-utilities.test.ts).
+function collectComponentFiles(dir: string): string[] {
+  const out: string[] = []
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry)
+    if (statSync(full).isDirectory()) {
+      if (entry === '__tests__' || entry === 'node_modules') continue
+      out.push(...collectComponentFiles(full))
+    } else if (/\.(tsx|jsx)$/.test(entry) && !/\.test\.|\.spec\./.test(entry)) {
+      out.push(full)
+    }
+  }
+  return out
+}
 
-describe('region components scope dark styling to [data-theme], not the OS', () => {
-  it.each(REGION_COMPONENTS)(
-    '%s uses no raw prefers-color-scheme `dark:` utilities',
-    file => {
-      const src = readFileSync(resolve(FRONTEND_SRC, file), 'utf-8')
+// Repo-wide guard (#715): the migration off raw `dark:` covers the WHOLE
+// component tree, not just the two #710 region components. A raw `dark:`
+// utility fires via @media(prefers-color-scheme:dark) and misfires when the
+// OS prefers dark but the app shows light mode — light text on a light
+// surface. Every dark style must scope to the manual `[data-theme='dark']`
+// toggle via the `theme-dark:` custom variant instead.
+describe('no component uses raw prefers-color-scheme `dark:` utilities (#715)', () => {
+  const files = collectComponentFiles(FRONTEND_SRC)
+
+  it('finds component files to scan', () => {
+    expect(files.length).toBeGreaterThan(0)
+  })
+
+  it.each(files.map(f => relative(FRONTEND_SRC, f)))(
+    '%s uses `theme-dark:`, never raw `dark:`',
+    rel => {
+      const src = readFileSync(resolve(FRONTEND_SRC, rel), 'utf-8')
       const matches = src.match(RAW_DARK_VARIANT) ?? []
       expect(
         matches.length,
-        `${file} contains ${matches.length} raw \`dark:\` utility(ies). ` +
+        `${rel} contains ${matches.length} raw \`dark:\` utility(ies). ` +
           'These fire via @media(prefers-color-scheme:dark) and misfire when ' +
-          'the OS is dark but the app shows light mode (#710). Use the ' +
+          'the OS is dark but the app shows light mode (#710/#715). Use the ' +
           'toggle-scoped `theme-dark:` variant instead.'
       ).toBe(0)
     }
