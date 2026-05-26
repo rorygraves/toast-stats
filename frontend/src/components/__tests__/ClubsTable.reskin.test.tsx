@@ -118,4 +118,24 @@ describe('ClubsTable re-skin (#668) — no legacy gray chrome', () => {
     // The mobile card list is re-skinned in Sprint 5 (#671) — no exclusion.
     expect(grayClassesIn(container)).toEqual([])
   })
+
+  // Sprint 6 (#672): the populated renders above never mount the no-data
+  // empty state, so its chrome fell outside the original guard's render
+  // boundary (lesson 109 — the render boundary is the scope boundary). It
+  // was still delegating to the shared <EmptyState>, which ships legacy
+  // gray. The clubs-table re-skin owns its OWN no-data state; re-skin it
+  // to redesign tokens so the table is gray-free in every state it renders.
+  it('renders the no-data empty state with zero `*-gray-*` utility classes', () => {
+    const { container } = render(
+      <ClubsTable clubs={[]} districtId="61" isLoading={false} />
+    )
+    expect(grayClassesIn(container)).toEqual([])
+  })
+
+  // The loading state delegates to the shared <LoadingSkeleton variant=table>
+  // (~25 consumers, dark-safe via dark-mode.css remaps). Re-skinning that
+  // shared primitive is a cross-cutting migration, out of scope for the
+  // clubs a11y pass (UX ruling, #672) — so the loading branch is
+  // deliberately NOT asserted here, the same way the closed filter popover
+  // (Sprint 4 surface) sits outside the desktop render above.
 })
