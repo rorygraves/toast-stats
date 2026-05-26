@@ -19,11 +19,15 @@ import { join, relative, resolve } from 'path'
 
 const FRONTEND_SRC = resolve(__dirname, '../..')
 
-// Match a Tailwind `dark:` variant token (incl. stacked like
-// `dark:hover:`), but NOT our toggle-scoped `theme-dark:`. A `dark:`
-// token is bounded on the left by start/whitespace/quote and is not
-// preceded by `theme-` (the `[\w-]` lookbehind excludes `theme-dark:`).
-const RAW_DARK_VARIANT = /(?<![\w-])dark:/g
+// Match any Tailwind variant token that compiles to
+// @media(prefers-color-scheme:dark): bare `dark:`, stacked `dark:hover:`,
+// AND the `group-dark:` / `peer-dark:` parent-state forms. The only
+// sanctioned form is our toggle-scoped `theme-dark:`, so flag every
+// `dark:` whose word-boundary start is NOT preceded by `theme-`.
+// `\b` avoids matching inside an unrelated identifier; the lookbehind
+// keeps `theme-dark:` (and stacks like `theme-dark:hover:`) clean while
+// still catching `group-dark:` / `peer-dark:`.
+const RAW_DARK_VARIANT = /(?<!theme-)\bdark:/g
 
 // Recursive .tsx/.jsx walker, skipping tests so a guard-fixture string
 // can't trip this assertion (mirrors unmitigated-color-utilities.test.ts).
