@@ -1,5 +1,27 @@
 # Changelog
 
+## [2.16.0](https://github.com/taverns-red/toast-stats/compare/toast-stats-v2.15.0...toast-stats-v2.16.0) (2026-05-26)
+
+
+### Features
+
+* **district:** KPI strip to spec — 4th card + tier legend (epic [#674](https://github.com/taverns-red/toast-stats/issues/674) Sprint 7) ([#681](https://github.com/taverns-red/toast-stats/issues/681)) ([#747](https://github.com/taverns-red/toast-stats/issues/747)) ([03c2cb9](https://github.com/taverns-red/toast-stats/commit/03c2cb943c8b2af18ff6d7fc965ccc2d24b970ac))
+* **district:** lean Overview hub + delete On-this-page rail (epic [#674](https://github.com/taverns-red/toast-stats/issues/674), Sprint 5) ([#745](https://github.com/taverns-red/toast-stats/issues/745)) ([3a058fe](https://github.com/taverns-red/toast-stats/commit/3a058fe75b904b9923bf63793dcba492c69eb63e))
+* **district:** promote Trends + Analytics to own routes (epic [#674](https://github.com/taverns-red/toast-stats/issues/674) Sprint 6) ([#746](https://github.com/taverns-red/toast-stats/issues/746)) ([6074f16](https://github.com/taverns-red/toast-stats/commit/6074f16ce9684484ca93ea333ab7038d9247be7d))
+* **district:** secondary route-nav primitive (epic [#674](https://github.com/taverns-red/toast-stats/issues/674), Sprint 4) ([#678](https://github.com/taverns-red/toast-stats/issues/678)) ([#744](https://github.com/taverns-red/toast-stats/issues/744)) ([0746fc5](https://github.com/taverns-red/toast-stats/commit/0746fc575cbbcbc661e012dc9431e5e94497d6a2))
+
+
+### Bug Fixes
+
+* **district:** consolidate header action cluster into an overflow menu (epic [#674](https://github.com/taverns-red/toast-stats/issues/674) Sprint 2) ([#742](https://github.com/taverns-red/toast-stats/issues/742)) ([4b6e31e](https://github.com/taverns-red/toast-stats/commit/4b6e31edba13bf885e1df659fcb08e6b45be90ba))
+* **district:** un-gate trend charts from viewport + theme-aware skeleton (epic [#674](https://github.com/taverns-red/toast-stats/issues/674) Sprint 1) ([#739](https://github.com/taverns-red/toast-stats/issues/739)) ([86c390c](https://github.com/taverns-red/toast-stats/commit/86c390cf80ca5952a4f1638a320f4b3c633edae8))
+
+
+### Documentation
+
+* **adr:** 005 — district subpage IA map + secondary route-nav (epic [#674](https://github.com/taverns-red/toast-stats/issues/674) Sprint 3) ([#743](https://github.com/taverns-red/toast-stats/issues/743)) ([8bc0a7b](https://github.com/taverns-red/toast-stats/commit/8bc0a7b808dfe54dd9d7e684196fdd7fa7aa64dc))
+* **lessons:** 115 — a field's name can lie about whether it's populated in your surface ([#681](https://github.com/taverns-red/toast-stats/issues/681), [#674](https://github.com/taverns-red/toast-stats/issues/674)) ([#748](https://github.com/taverns-red/toast-stats/issues/748)) ([1239e93](https://github.com/taverns-red/toast-stats/commit/1239e93fdef6bc587714de088348c267dc8abb89))
+
 ## [2.15.0](https://github.com/taverns-red/toast-stats/compare/toast-stats-v2.14.0...toast-stats-v2.15.0) (2026-05-26)
 
 
