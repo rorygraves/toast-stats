@@ -1,8 +1,14 @@
 /* #678 (epic #674 Sprint 4) — District secondary route-nav (ADR-005 §3).
-   Mirrors the app-shell primary-nav convention (redesign tokens, dark-aware
-   via [data-theme='dark'] remaps; active state keyed off NavLink's
-   aria-current="page"). Active is signalled by BOTH colour AND a bottom rule
-   (never colour alone — WCAG 1.4.1). */
+   Mirrors the app-shell primary-nav convention (redesign tokens; active state
+   keyed off NavLink's aria-current="page"). Active is signalled by BOTH colour
+   AND a bottom rule (never colour alone — WCAG 1.4.1).
+
+   The accent is `--link`, NOT `--loyal-500`: this subnav has a transparent
+   background, so its active text/border and focus ring are read directly
+   against the dark `--surface`. `--loyal-500` (#004165) has no dark remap and
+   lands at ~1.6:1 there; `--link` equals `--loyal-500` in light but remaps to a
+   dark-safe #60a5d8 (R10, lessons 093/096). The app-shell nav can use raw
+   `--loyal-500` only because it pairs it with a `--loyal-50` background fill. */
 
 @layer components {
   .district-subnav {
@@ -47,18 +53,18 @@
   }
 
   .district-subnav__link:hover {
-    color: var(--loyal-500);
+    color: var(--link);
     text-decoration: none;
   }
 
   .district-subnav__link[aria-current='page'] {
-    color: var(--loyal-500);
-    border-bottom-color: var(--loyal-500);
+    color: var(--link);
+    border-bottom-color: var(--link);
     font-weight: 600;
   }
 
   .district-subnav__link:focus-visible {
-    outline: 2px solid var(--loyal-500);
+    outline: 2px solid var(--link);
     outline-offset: -2px;
     border-radius: var(--rds-radius-sm);
   }
