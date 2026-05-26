@@ -137,7 +137,7 @@ jobs:
           echo "Expires: $EXPIRES"
 
       - name: Post sticky PR comment with preview URL
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@v3
         with:
           header: pr-preview
           message: |
