@@ -154,6 +154,30 @@ describe('AwardsRaceSection — 3-card redesign (#357)', () => {
     expect(container.querySelector('.awards-race-card')).toBeNull()
   })
 
+  it('reserves the slot with an aria-hidden skeleton while the awards query is in flight (#750 CLS)', () => {
+    // The competitive-awards query resolves separately from (and later than)
+    // the rankings query. If this section renders null until it arrives and
+    // then expands, the toolbar + rankings table below it shift down ~286px
+    // → CLS 0.198 (Lesson 079's deferred secondary source). Reserve the space.
+    const { container } = renderWithRouter(
+      <AwardsRaceSection standings={null} isLoading />
+    )
+    const section = container.querySelector('.awards-race')
+    expect(section).not.toBeNull()
+    expect(section).toHaveAttribute('aria-hidden', 'true')
+    // Same 3-card grid geometry as the loaded state, so the fill is shift-free.
+    expect(container.querySelectorAll('.awards-race-card').length).toBe(3)
+    // ...but no live data yet (no leader links / progress values).
+    expect(container.querySelector('.awards-race-card__leader-link')).toBeNull()
+  })
+
+  it('still renders nothing once the query settles with no data (not loading)', () => {
+    const { container } = renderWithRouter(
+      <AwardsRaceSection standings={null} isLoading={false} />
+    )
+    expect(container.querySelector('.awards-race')).toBeNull()
+  })
+
   it('does not render when all award arrays are empty', () => {
     const empty: CompetitiveAwardStandings = {
       ...mockStandings,
