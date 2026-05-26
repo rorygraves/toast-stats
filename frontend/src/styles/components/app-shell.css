@@ -16,18 +16,20 @@
   }
 
   /* Top bar: 3-column flex (brand | nav with flex:1 | tools) per design.
-     The bar spans the viewport edge-to-edge with 24px gutter padding;
-     the .app-shell__page wrapper handles content max-width below. */
+     The bar spans the viewport edge-to-edge; the .app-shell__page wrapper
+     handles content max-width below. Mobile-first: tighter 16px gutters and
+     12px gaps so brand + hamburger + tools clear 375px with no horizontal
+     scroll (#735); the desktop breakpoint restores the 24px design gutters. */
   .app-shell-top-bar {
     position: sticky;
     top: 0;
     z-index: 40;
     height: 56px;
     border-bottom: 1px solid var(--line);
-    padding: 0 24px;
+    padding: 0 16px;
     display: flex;
     align-items: center;
-    gap: 24px;
+    gap: 12px;
     background-color: var(--surface);
     -webkit-backdrop-filter: saturate(140%) blur(8px);
     backdrop-filter: saturate(140%) blur(8px);
@@ -78,22 +80,69 @@
     letter-spacing: -0.005em;
   }
 
-  .app-shell-nav {
-    display: flex;
+  /* Hamburger toggle for the mobile (<768px) primary-nav disclosure
+     (#735). Mobile-first: visible by default as a 44×44 touch target;
+     the desktop breakpoint below hides it. */
+  .app-shell-nav-toggle {
+    display: inline-flex;
     align-items: center;
-    gap: 4px;
-    flex: 1;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    margin-left: -10px; /* optical: pull the icon toward the gutter edge */
+    border: none;
+    border-radius: var(--rds-radius-sm);
+    background-color: transparent;
+    color: var(--ink-2);
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .app-shell-nav-toggle:hover {
+    background-color: var(--surface-3);
+    color: var(--ink);
+  }
+
+  .app-shell-nav-toggle:focus-visible {
+    outline: 2px solid var(--link);
+    outline-offset: 2px;
+  }
+
+  /* Mobile-first: the nav is a dropdown panel anchored below the 56px bar
+     (the sticky top-bar is its containing block), hidden until the toggle
+     opens it. The desktop breakpoint below restores the inline row. */
+  .app-shell-nav {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 39;
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    padding: 8px;
+    background-color: var(--surface);
+    border-bottom: 1px solid var(--line);
+    box-shadow: var(--rds-shadow-lg);
+  }
+
+  .app-shell-nav[data-open='true'] {
+    display: flex;
   }
 
   .app-shell-nav__link {
-    padding: 8px 12px;
+    /* ≥44px touch target in the mobile panel (WCAG 2.5.5); the desktop
+       breakpoint trims this back to the compact inline height. */
+    padding: 12px;
     border-radius: var(--rds-radius-sm);
     text-decoration: none;
     color: var(--ink-2);
     background-color: transparent;
     font-family: var(--sans);
     font-weight: 500;
-    font-size: 13.5px;
+    font-size: 15px;
     transition: background-color 150ms ease, color 150ms ease;
   }
 
@@ -105,6 +154,17 @@
   .app-shell-nav__link[aria-current='page'] {
     color: var(--loyal-500);
     background-color: var(--loyal-50);
+  }
+
+  /* #735: --loyal-500 (#004165) has no dark remap and --loyal-50 → #112432 in
+     dark, so the active link is navy-on-navy (~1.1:1) on the dark surface. The
+     mobile disclosure panel turns this into a full-width 12px block on every
+     page, so the long-latent contrast miss is now prominent. --link is the
+     dark-safe blue the theme already remaps (#60a5d8), clearing AA on the dark
+     --loyal-50 pill. Scoped so light mode is untouched (Lesson 093/096, mirrors
+     the #609/#611 fixes above). */
+  [data-theme='dark'] .app-shell-nav__link[aria-current='page'] {
+    color: var(--link);
   }
 
   .app-shell-nav__link--soon {
@@ -133,6 +193,42 @@
     align-items: center;
     gap: 12px;
     flex-shrink: 0;
+    /* Right-align the cluster on mobile, where the nav is an absolute
+       dropdown and no longer the flex:1 spacer that pushed it right (#735).
+       Inert on desktop — the flex:1 nav already consumes the free space. */
+    margin-left: auto;
+  }
+
+  /* Desktop (≥768px): no hamburger; the nav is the inline middle column
+     it has always been. Overrides the mobile-first dropdown above (#735). */
+  @media (min-width: 768px) {
+    .app-shell-top-bar {
+      padding: 0 24px;
+      gap: 24px;
+    }
+
+    .app-shell-nav-toggle {
+      display: none;
+    }
+
+    .app-shell-nav {
+      position: static;
+      z-index: auto;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 4px;
+      flex: 1;
+      padding: 0;
+      background-color: transparent;
+      border-bottom: none;
+      box-shadow: none;
+    }
+
+    .app-shell-nav__link {
+      padding: 8px 12px;
+      font-size: 13.5px;
+    }
   }
 
   .app-shell-icon-btn {
