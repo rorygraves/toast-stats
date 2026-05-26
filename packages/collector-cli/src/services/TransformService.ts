@@ -27,6 +27,10 @@ import {
   LeadershipExcellenceCalculator,
   OfficerAwardsCalculator,
   calculateDistinguishedPercent,
+  calculateCategoryRanking,
+  calculateAggregateRankings,
+  getProgramYearStartDate,
+  parseCharterDateFromStatusField,
   type Logger,
   type RawCSVData,
 } from '@toastmasters/analytics-core'
@@ -59,71 +63,6 @@ import {
   getPriorProgramYear,
 } from '../utils/CachePaths.js'
 import { DistrictAwardsHistoryStore } from './DistrictAwardsHistoryStore.js'
-
-/**
- * Parse a date string in ISO (YYYY-MM-DD), US 4-digit (M/D/YYYY), or US
- * 2-digit (M/D/YY) format and return a UTC-normalized Date. Returns null on
- * failure. Two-digit years are interpreted as 20YY — Toastmasters' district
- * performance CSVs use this for charter/suspend dates (#336).
- */
-function parseDateFlexible(value: string): Date | null {
-  const trimmed = value.trim()
-  if (!trimmed) return null
-
-  const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/)
-  if (isoMatch) {
-    const y = Number(isoMatch[1])
-    const m = Number(isoMatch[2])
-    const d = Number(isoMatch[3])
-    if (Number.isFinite(y) && Number.isFinite(m) && Number.isFinite(d)) {
-      return new Date(Date.UTC(y, m - 1, d))
-    }
-  }
-
-  const usMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/)
-  if (usMatch) {
-    const m = Number(usMatch[1])
-    const d = Number(usMatch[2])
-    const yRaw = Number(usMatch[3])
-    const y = usMatch[3]!.length === 2 ? 2000 + yRaw : yRaw
-    if (Number.isFinite(y) && Number.isFinite(m) && Number.isFinite(d)) {
-      return new Date(Date.UTC(y, m - 1, d))
-    }
-  }
-
-  return null
-}
-
-/**
- * Extract a charter date from a `Charter Date/Suspend Date` field value (#336).
- *
- * Toastmasters district-performance.csv encodes club status changes as a
- * single string with a prefix and date: `Charter MM/DD/YY` for newly
- * chartered clubs, `Susp MM/DD/YY` for suspensions. Returns null if the
- * field is empty, prefixed `Susp`, or unparseable.
- */
-function parseCharterDateFromStatusField(value: unknown): Date | null {
-  if (typeof value !== 'string') return null
-  const trimmed = value.trim()
-  if (trimmed === '') return null
-  const match = trimmed.match(/^Charter\s+(.+)$/i)
-  if (!match) return null
-  return parseDateFlexible(match[1]!)
-}
-
-/**
- * Return the start-of-program-year date (July 1) preceding the given
- * snapshot date, or null if unparseable. Toastmasters program years run
- * July 1 → June 30. (#336)
- */
-function getProgramYearStartDate(snapshotDate: string): Date | null {
-  const parsed = parseDateFlexible(snapshotDate)
-  if (!parsed) return null
-  const year = parsed.getUTCFullYear()
-  const month = parsed.getUTCMonth() + 1
-  const pyStartYear = month >= 7 ? year : year - 1
-  return new Date(Date.UTC(pyStartYear, 6, 1))
-}
 
 /**
  * Internal structure for ranking metrics extraction
@@ -162,27 +101,6 @@ interface RankingMetrics {
   octoberPayments: number
   latePayments: number
   charterPayments: number
-}
-
-/**
- * Category ranking result
- */
-interface CategoryRanking {
-  districtId: string
-  rank: number
-  bordaPoints: number
-  value: number
-}
-
-/**
- * Aggregate ranking result
- */
-interface AggregateRanking {
-  districtId: string
-  clubsRank: number
-  paymentsRank: number
-  distinguishedRank: number
-  aggregateScore: number
 }
 
 /**
@@ -822,127 +740,6 @@ export class TransformService {
   }
 
   /**
-   * Calculate ranking for a single category using Borda count
-   *
-   * Borda count scoring:
-   * - Ranks districts by value (highest first)
-   * - Handles ties by assigning the same rank
-   * - Borda points = total districts - rank + 1
-   */
-  private calculateCategoryRanking(
-    metrics: RankingMetrics[],
-    valueField: keyof RankingMetrics,
-    category: string
-  ): CategoryRanking[] {
-    // Tie-neutralization (#198): if all values are identical, award 0 points
-    const uniqueValues = new Set(metrics.map(m => m[valueField] as number))
-    if (uniqueValues.size === 1) {
-      this.logger.debug('All districts tied — neutralizing category', {
-        category,
-        totalDistricts: metrics.length,
-        value: [...uniqueValues][0],
-      })
-      return metrics.map(m => ({
-        districtId: m.districtId,
-        rank: 1,
-        bordaPoints: 0,
-        value: m[valueField] as number,
-      }))
-    }
-
-    // Sort districts by value (highest first)
-    const sortedMetrics = [...metrics].sort((a, b) => {
-      const aValue = a[valueField] as number
-      const bValue = b[valueField] as number
-      return bValue - aValue
-    })
-
-    const rankings: CategoryRanking[] = []
-    let currentRank = 1
-
-    for (let i = 0; i < sortedMetrics.length; i++) {
-      const metric = sortedMetrics[i]
-      if (!metric) continue
-
-      const value = metric[valueField] as number
-
-      // Handle ties: if current value equals previous value, use same rank
-      if (i > 0) {
-        const previousMetric = sortedMetrics[i - 1]
-        if (previousMetric) {
-          const previousValue = previousMetric[valueField] as number
-          if (value !== previousValue) {
-            currentRank = i + 1
-          }
-        }
-      }
-
-      // Calculate Borda points: total districts - rank + 1
-      const bordaPoints = metrics.length - currentRank + 1
-
-      rankings.push({
-        districtId: metric.districtId,
-        rank: currentRank,
-        bordaPoints,
-        value,
-      })
-    }
-
-    this.logger.debug('Calculated category ranking', {
-      category,
-      totalDistricts: metrics.length,
-      uniqueRanks: new Set(rankings.map(r => r.rank)).size,
-    })
-
-    return rankings
-  }
-
-  /**
-   * Calculate aggregate rankings by summing Borda points across categories
-   */
-  private calculateAggregateRankings(
-    clubRankings: CategoryRanking[],
-    paymentRankings: CategoryRanking[],
-    distinguishedRankings: CategoryRanking[]
-  ): AggregateRanking[] {
-    const aggregateMap = new Map<string, AggregateRanking>()
-
-    // Initialize aggregate rankings from club rankings
-    for (const ranking of clubRankings) {
-      aggregateMap.set(ranking.districtId, {
-        districtId: ranking.districtId,
-        clubsRank: ranking.rank,
-        paymentsRank: 0,
-        distinguishedRank: 0,
-        aggregateScore: ranking.bordaPoints,
-      })
-    }
-
-    // Add payment rankings
-    for (const ranking of paymentRankings) {
-      const aggregate = aggregateMap.get(ranking.districtId)
-      if (aggregate) {
-        aggregate.paymentsRank = ranking.rank
-        aggregate.aggregateScore += ranking.bordaPoints
-      }
-    }
-
-    // Add distinguished rankings
-    for (const ranking of distinguishedRankings) {
-      const aggregate = aggregateMap.get(ranking.districtId)
-      if (aggregate) {
-        aggregate.distinguishedRank = ranking.rank
-        aggregate.aggregateScore += ranking.bordaPoints
-      }
-    }
-
-    // Sort by aggregate score (highest first)
-    return Array.from(aggregateMap.values()).sort(
-      (a, b) => b.aggregateScore - a.aggregateScore
-    )
-  }
-
-  /**
    * Calculate all-districts rankings using Borda count algorithm
    *
    * Requirements:
@@ -1053,24 +850,27 @@ export class TransformService {
     })
 
     // Calculate category rankings
-    const clubRankings = this.calculateCategoryRanking(
+    const clubRankings = calculateCategoryRanking(
       metrics,
       'clubGrowthPercent',
-      'clubs'
+      'clubs',
+      this.logger
     )
-    const paymentRankings = this.calculateCategoryRanking(
+    const paymentRankings = calculateCategoryRanking(
       metrics,
       'paymentGrowthPercent',
-      'payments'
+      'payments',
+      this.logger
     )
-    const distinguishedRankings = this.calculateCategoryRanking(
+    const distinguishedRankings = calculateCategoryRanking(
       metrics,
       'distinguishedPercent',
-      'distinguished'
+      'distinguished',
+      this.logger
     )
 
     // Calculate aggregate rankings
-    const aggregateRankings = this.calculateAggregateRankings(
+    const aggregateRankings = calculateAggregateRankings(
       clubRankings,
       paymentRankings,
       distinguishedRankings
