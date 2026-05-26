@@ -12,6 +12,7 @@ import {
   parseManifest,
   evaluateFreshness,
   buildAlertIssueBody,
+  resolveThresholdHours,
   STALE_THRESHOLD_HOURS,
   type LatestManifest,
 } from '../pipelineFreshness'
@@ -94,6 +95,28 @@ describe('evaluateFreshness', () => {
     }
     expect(evaluateFreshness(manifest, NOW, 4).stale).toBe(true)
     expect(evaluateFreshness(manifest, NOW, 8).stale).toBe(false)
+  })
+})
+
+// ── resolveThresholdHours ──────────────────────────────────────────────────
+
+describe('resolveThresholdHours', () => {
+  it('uses the default when the value is undefined or empty', () => {
+    expect(resolveThresholdHours(undefined)).toBe(STALE_THRESHOLD_HOURS)
+    expect(resolveThresholdHours('')).toBe(STALE_THRESHOLD_HOURS)
+  })
+
+  it('parses a valid positive number', () => {
+    expect(resolveThresholdHours('12')).toBe(12)
+    expect(resolveThresholdHours('4.5')).toBe(4.5)
+  })
+
+  it('falls back to the default for non-numeric or non-positive input', () => {
+    // A typo'd manual threshold must NOT silently disable the alert by
+    // making `ageHours > NaN` always false.
+    expect(resolveThresholdHours('abc')).toBe(STALE_THRESHOLD_HOURS)
+    expect(resolveThresholdHours('0')).toBe(STALE_THRESHOLD_HOURS)
+    expect(resolveThresholdHours('-5')).toBe(STALE_THRESHOLD_HOURS)
   })
 })
 

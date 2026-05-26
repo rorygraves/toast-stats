@@ -47,6 +47,21 @@ export const STALE_THRESHOLD_HOURS = 26
 
 const MS_PER_HOUR = 1000 * 60 * 60
 
+/**
+ * Resolve a threshold from an env/dispatch value, defaulting on anything
+ * unusable. A non-numeric or non-positive value (e.g. a typo'd manual
+ * dispatch input) must NOT silently disable the monitor — `ageHours > NaN`
+ * is always false, which would make every run look fresh.
+ */
+export function resolveThresholdHours(
+  raw: string | undefined,
+  fallback: number = STALE_THRESHOLD_HOURS
+): number {
+  if (!raw) return fallback
+  const parsed = Number(raw)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
+}
+
 /** Parse the manifest body, throwing on invalid JSON. */
 export function parseManifest(raw: string): LatestManifest {
   const parsed = JSON.parse(raw) as unknown

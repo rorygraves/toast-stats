@@ -24,12 +24,14 @@ import {
   parseManifest,
   evaluateFreshness,
   buildAlertIssueBody,
-  STALE_THRESHOLD_HOURS,
+  resolveThresholdHours,
   type FreshnessResult,
 } from './lib/pipelineFreshness.js'
 
 const DEFAULT_MANIFEST_URL =
   'https://storage.googleapis.com/toast-stats-data-ca/v1/latest.json'
+
+const BODY_FILE = '/tmp/pipeline-freshness-body.md'
 
 function log(msg: string): void {
   process.stderr.write(`${msg}\n`)
@@ -40,11 +42,35 @@ function emitOutput(key: string, value: string): void {
   if (out) appendFileSync(out, `${key}=${value}\n`)
 }
 
+/**
+ * Emit the stale/fresh decision for the workflow. When stale, ALWAYS write
+ * the alert body and emit `body_file` so the issue-create step never runs
+ * with an empty `--body-file` — including the crash path.
+ */
+function emitDecision(
+  result: FreshnessResult,
+  manifestUrl: string,
+  now: Date
+): void {
+  emitOutput('stale', String(result.stale))
+  emitOutput(
+    'title',
+    result.stale
+      ? `🚨 Daily data pipeline stale — ${result.latestSnapshotDate ?? 'no snapshot date'}`
+      : 'pipeline fresh'
+  )
+  if (result.stale) {
+    writeFileSync(BODY_FILE, buildAlertIssueBody(result, { manifestUrl, now }))
+    emitOutput('body_file', BODY_FILE)
+    log('Manifest is STALE — alert body written.')
+  } else {
+    log('Manifest is fresh — no alert.')
+  }
+}
+
 async function main(): Promise<void> {
   const manifestUrl = process.env.MANIFEST_URL || DEFAULT_MANIFEST_URL
-  const thresholdHours = process.env.THRESHOLD_HOURS
-    ? Number(process.env.THRESHOLD_HOURS)
-    : STALE_THRESHOLD_HOURS
+  const thresholdHours = resolveThresholdHours(process.env.THRESHOLD_HOURS)
   const now = new Date()
 
   log(`Checking pipeline freshness: ${manifestUrl}`)
@@ -78,30 +104,26 @@ async function main(): Promise<void> {
   }
 
   log(`Result: ${result.reason}`)
-
-  emitOutput('stale', String(result.stale))
-  emitOutput(
-    'title',
-    result.stale
-      ? `🚨 Daily data pipeline stale — ${result.latestSnapshotDate ?? 'no snapshot date'}`
-      : 'pipeline fresh'
-  )
-
-  if (result.stale) {
-    const body = buildAlertIssueBody(result, { manifestUrl, now })
-    const bodyFile = '/tmp/pipeline-freshness-body.md'
-    writeFileSync(bodyFile, body)
-    emitOutput('body_file', bodyFile)
-    log('Manifest is STALE — alert body written.')
-  } else {
-    log('Manifest is fresh — no alert.')
-  }
+  emitDecision(result, manifestUrl, now)
 }
 
 main().catch(err => {
-  log(`Unexpected error: ${err instanceof Error ? err.stack : String(err)}`)
-  // Surface as stale so the monitor still alerts rather than passing silently.
-  emitOutput('stale', 'true')
-  emitOutput('title', '🚨 Pipeline freshness monitor crashed')
+  const message =
+    err instanceof Error ? (err.stack ?? err.message) : String(err)
+  log(`Unexpected error: ${message}`)
+  // Surface as stale — with a real body — so the monitor still alerts rather
+  // than passing silently, and the issue-create step always has a body file.
+  emitDecision(
+    {
+      stale: true,
+      reason: `pipeline freshness monitor crashed: ${message}`,
+      ageHours: null,
+      generatedAt: null,
+      latestSnapshotDate: null,
+      thresholdHours: resolveThresholdHours(process.env.THRESHOLD_HOURS),
+    },
+    process.env.MANIFEST_URL || DEFAULT_MANIFEST_URL,
+    new Date()
+  )
   process.exit(0)
 })
