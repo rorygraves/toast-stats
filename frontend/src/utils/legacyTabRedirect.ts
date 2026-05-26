@@ -32,6 +32,11 @@ const TAB_ROUTE_SLUG: Record<string, string> = {
   clubs: 'clubs',
   divisions: 'divisions',
   globalRankings: 'rankings',
+  // #680 (epic #674 Sprint 6): the Trends and Analytics sections moved off
+  // the hub onto their own routes, so their legacy `?tab=` deep links now
+  // redirect like the other subviews.
+  trends: 'trends',
+  analytics: 'analytics',
 }
 
 function translateClubsParams(parsed: URL): URLSearchParams {
