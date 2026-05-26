@@ -147,6 +147,7 @@ export const HeaderActionsMenu: React.FC<HeaderActionsMenuProps> = ({
         className="header-actions-menu__trigger"
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-controls="header-actions-menu-panel"
         aria-label="More actions"
         onClick={() => setOpen(o => !o)}
         onKeyDown={handleTriggerKeyDown}
@@ -156,6 +157,7 @@ export const HeaderActionsMenu: React.FC<HeaderActionsMenuProps> = ({
 
       {open && (
         <div
+          id="header-actions-menu-panel"
           role="menu"
           aria-label="More actions"
           className="header-actions-menu__panel"
@@ -198,7 +200,15 @@ export const HeaderActionsMenu: React.FC<HeaderActionsMenuProps> = ({
         aria-live="polite"
         className="header-actions-menu__status"
       >
-        {isExporting ? 'Exporting…' : copied ? '✓ Link copied' : ''}
+        {isExporting ? (
+          'Exporting…'
+        ) : copied ? (
+          <>
+            <span aria-hidden="true">✓ </span>Link copied
+          </>
+        ) : (
+          ''
+        )}
       </span>
       {error && (
         <span role="alert" className="header-actions-menu__error">
