@@ -42,23 +42,54 @@
     }
   }
 
-  .district-kpi-strip__cards {
+  .district-kpi-strip__expanded {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .district-kpi-strip__cards {
     display: grid;
     grid-template-columns: 1fr;
     gap: 12px;
   }
 
+  /* 4 cards (#681): 1-col → 2-col (640) → 4-col (1024). A 3-col rule would
+     orphan the 4th card on a second row; 2×2 then 4-across reads cleanly. */
   @media (min-width: 640px) {
     .district-kpi-strip__cards {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     .district-kpi-strip__cards {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
+  }
+
+  /* Tier-marker legend (#681) — expands the D/S/P/Sm bullet-bar ticks. */
+  .district-kpi-strip__legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 6px;
+    margin: 0;
+    font-family: var(--sans);
+    font-size: 12px;
+    color: var(--ink-3);
+  }
+
+  .district-kpi-strip__legend-label {
+    font-weight: 600;
+    color: var(--ink-2);
+  }
+
+  .district-kpi-strip__legend-item strong {
+    font-weight: 700;
+    color: var(--ink-2);
   }
 
   .district-kpi-strip__summary {
