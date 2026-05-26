@@ -225,4 +225,12 @@ export {
   type OfficerAwardResult,
   type OfficerAwardStandings,
   calculateDistinguishedPercent,
+  calculateCategoryRanking,
+  calculateAggregateRankings,
+  type CategoryRanking,
+  type AggregateRanking,
+  type CategoryRankingLogger,
+  parseDateFlexible,
+  getProgramYearStartDate,
+  parseCharterDateFromStatusField,
 } from './rankings/index.js'

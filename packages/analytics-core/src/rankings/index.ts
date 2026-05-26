@@ -58,3 +58,17 @@ export {
 } from './OfficerAwardsCalculator.js'
 
 export { calculateDistinguishedPercent } from './distinguishedPercent.js'
+
+export {
+  calculateCategoryRanking,
+  calculateAggregateRankings,
+  type CategoryRanking,
+  type AggregateRanking,
+  type CategoryRankingLogger,
+} from './bordaCount.js'
+
+export {
+  parseDateFlexible,
+  getProgramYearStartDate,
+  parseCharterDateFromStatusField,
+} from './programYearDates.js'
