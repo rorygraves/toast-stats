@@ -195,6 +195,9 @@ jobs:
       - name: Run frontend tests
         run: npm run test --workspace=frontend -- --coverage
 
+      - name: Run scripts/lib tests
+        run: npm run test:scripts
+
   # Build Applications
   build:
     name: Build Applications
