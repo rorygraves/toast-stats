@@ -42,9 +42,13 @@ jobs:
       && github.actor != 'dependabot[bot]'
 
     steps:
-      # No checkout: channel:delete needs only the explicit --site/--project,
-      # not .firebaserc/firebase.json — and skipping it avoids running any
-      # closed-PR code here.
+      # Checkout is required: `firebase hosting:channel:delete` aborts with
+      # "Not in a Firebase app directory (could not locate firebase.json)"
+      # before it makes any API call, even with explicit --site/--project (#776).
+      # This only places files; the job runs no repo code, just the firebase CLI.
+      - name: Checkout code
+        uses: actions/checkout@v6
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
@@ -66,20 +70,20 @@ jobs:
           CHANNEL_ID="pr-${{ github.event.pull_request.number }}"
 
           # An already-absent channel (TTL-expired, or never created because the
-          # preview job was skipped for a non-frontend PR) returns HTTP 404 and
-          # exits non-zero. That is a successful no-op for our purpose, so we
-          # tolerate ONLY the 404 — any other failure (auth, network, quota)
-          # still fails the job so it surfaces.
+          # preview job was skipped for a non-frontend PR) returns HTTP 404,
+          # which is a successful no-op for us. firebase prints that error to
+          # STDOUT (not stderr), so capture BOTH streams and tolerate ONLY the
+          # 404 — any other failure (auth, network, quota) still fails the job.
           if firebase hosting:channel:delete "$CHANNEL_ID" \
               --site staging-toast-stats \
               --project "${{ secrets.GCP_PROJECT_ID }}" \
-              --force 2> /tmp/del-err.log; then
+              --force > /tmp/del.log 2>&1; then
             echo "Deleted preview channel $CHANNEL_ID"
-          elif grep -qiE 'HTTP Error: 404|Not Found' /tmp/del-err.log; then
+          elif grep -qiE 'HTTP Error: 404|Not Found' /tmp/del.log; then
             echo "::notice::Channel $CHANNEL_ID already absent (expired or never created) — no-op"
           else
-            echo "::group::firebase stderr"
-            cat /tmp/del-err.log || true
+            echo "::group::firebase output"
+            cat /tmp/del.log || true
             echo "::endgroup::"
             echo "::error::channel:delete failed for $CHANNEL_ID"
             exit 1
