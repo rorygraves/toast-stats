@@ -507,7 +507,7 @@ const DistrictDetailPageInner: React.FC = () => {
               that link out to the dedicated routes. */}
           <div className="space-y-4 sm:space-y-6">
             {districtId && hasOverviewData && (
-              <section id="overview" aria-label="District overview">
+              <section aria-label="District overview">
                 {/* District Overview - Now uses global date selector */}
                 {hasValidDates && effectiveProgramYear && (
                   <DistrictOverview
@@ -557,7 +557,7 @@ const DistrictDetailPageInner: React.FC = () => {
             )}
 
             {/* Trends */}
-            <section id="trends" aria-label="Membership and payment trends">
+            <section aria-label="Membership and payment trends">
               {/* Membership Trend Chart */}
               {aggregatedAnalytics ? (
                 // #675: charts are already React.lazy code-split; reserve
@@ -708,7 +708,7 @@ const DistrictDetailPageInner: React.FC = () => {
             </section>
 
             {/* Top clubs */}
-            <section id="top-clubs" aria-label="Top clubs">
+            <section aria-label="Top clubs">
               {/* Top Growth Clubs */}
               {analytics && (
                 <TopGrowthClubs
@@ -743,7 +743,7 @@ const DistrictDetailPageInner: React.FC = () => {
             </section>
 
             {/* Analytics */}
-            <section id="analytics" aria-label="District analytics">
+            <section aria-label="District analytics">
               {/* Education Levels rollup (#426) */}
               {districtStatistics && (
                 <EducationLevelsCard
