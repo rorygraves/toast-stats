@@ -12,15 +12,7 @@ import { DistrictDetailHeader } from '../components/DistrictDetailHeader'
 import { DistrictSubnav } from '../components/DistrictSubnav'
 import { useDistrictAnalytics } from '../hooks/useDistrictAnalytics'
 import { useAggregatedAnalytics } from '../hooks/useAggregatedAnalytics'
-import { useDistrictStatistics } from '../hooks/useMembershipData'
 import { usePerformanceTargets } from '../hooks/usePerformanceTargets'
-import { usePaymentsTrend } from '../hooks/usePaymentsTrend'
-import { useTimeSeries } from '../hooks/useTimeSeries'
-import {
-  computeYearOverYear,
-  computePaymentYoYFromTimeSeries,
-  getLatestPayments,
-} from '../hooks/useTimeSeriesYoY'
 import { useDistrictCachedDates } from '../hooks/useDistrictData'
 import { useUrlProgramYear } from '../hooks/useUrlProgramYear'
 import {
@@ -28,23 +20,13 @@ import {
   filterDatesByProgramYear,
   getMostRecentDateInProgramYear,
   isDateInProgramYear,
-  calculateProgramYearDay,
 } from '../utils/programYear'
-import type { MultiYearPaymentData } from '../hooks/usePaymentsTrend'
 import { DistrictOverview } from '../components/DistrictOverview'
 import { NotableDatesSection } from '../components/NotableDatesSection'
 import { LongestServingClubsLeaderboard } from '../components/LongestServingClubsLeaderboard'
 import { DistinguishedDistrictTrophyCase } from '../components/DistinguishedDistrictTrophyCase'
 import { useCompetitiveAwards } from '../hooks/useCompetitiveAwards'
 
-import {
-  LazyMembershipTrendChart as MembershipTrendChart,
-  LazyMembershipPaymentsChart as MembershipPaymentsChart,
-  LazyYearOverYearComparison as YearOverYearComparison,
-} from '../components/LazyCharts'
-import { TopGrowthClubs } from '../components/TopGrowthClubs'
-import { EducationLevelsCard } from '../components/EducationLevelsCard'
-import { extractEducationLevels } from '../utils/extractEducationLevels'
 import {
   DistrictKpiStrip,
   type DistrictKpiStripData,
@@ -64,7 +46,6 @@ const NULL_RANKINGS = {
 
 import ErrorBoundary from '../components/ErrorBoundary'
 import { ErrorDisplay, EmptyState } from '../components/ErrorDisplay'
-import { LoadingSkeleton } from '../components/LoadingSkeleton'
 
 import GlobalRankingsTab from '../components/GlobalRankingsTab'
 
@@ -207,13 +188,11 @@ const DistrictDetailPageInner: React.FC = () => {
     effectiveEndDate ?? undefined
   )
 
-  // Fetch time-series data for multi-point trends + base membership (#170)
-  const { data: timeSeries } = useTimeSeries(
-    hasValidDates ? districtId || null : null
-  )
-
-  // Fetch full analytics for detailed views (clubs, divisions, analytics tabs)
-  // This provides full club arrays needed for tables and detailed panels
+  // Fetch full analytics for the hub's overview surfaces (KPI strip, notable
+  // dates, longest-serving leaderboard). The trend charts and Top-Growth /
+  // Top-DCP / education-levels analytics moved to /trends and /analytics
+  // (#680), so the hub no longer needs time-series, payments-trend, or
+  // district-statistics data.
   const {
     data: analytics,
     isLoading: isLoadingAnalytics,
@@ -225,28 +204,11 @@ const DistrictDetailPageInner: React.FC = () => {
     effectiveEndDate ?? undefined
   )
 
-  // Fetch district statistics for division/area performance cards
-  const { data: districtStatistics } = useDistrictStatistics(
-    hasValidDates ? districtId || null : null,
-    effectiveEndDate ?? undefined,
-    'divisions'
-  )
-
   // Fetch performance targets and rankings for overview cards (#183)
   const { data: performanceTargets } = usePerformanceTargets(
     hasValidDates ? districtId || null : null,
     effectiveEndDate ?? undefined
   )
-
-  // Fetch payment trend data for trends tab - fetch 3 years for multi-year comparison
-  const { data: paymentsTrendData, isLoading: isLoadingPaymentsTrend } =
-    usePaymentsTrend(
-      hasValidDates ? districtId || null : null,
-      undefined, // Let hook fetch 3 years automatically for comparison
-      effectiveEndDate ?? undefined,
-      effectiveProgramYear ?? undefined, // Pass selected program year
-      performanceTargets ?? null // Pass CDN performance-targets for currentPayments (#183)
-    )
 
   const rawName = selectedDistrict?.name || districtId || ''
   const districtName = /^\d+$/.test(rawName) ? `District ${rawName}` : rawName
@@ -556,205 +518,15 @@ const DistrictDetailPageInner: React.FC = () => {
               </section>
             )}
 
-            {/* Trends */}
-            <section aria-label="Membership and payment trends">
-              {/* Membership Trend Chart */}
-              {aggregatedAnalytics ? (
-                // #675: charts are already React.lazy code-split; reserve
-                // space with a fixed-height div but do NOT gate rendering on
-                // viewport intersection (that left below-fold charts stuck on
-                // the skeleton in any non-scroll context — see #675).
-                <div style={{ minHeight: '400px' }}>
-                  <MembershipTrendChart
-                    membershipTrend={
-                      // #170: prefer time-series monthly data over inline 1-point trend
-                      timeSeries?.years[
-                        timeSeries.currentProgramYear
-                      ]?.dataPoints.map(dp => ({
-                        date: dp.date,
-                        count: dp.membership,
-                      })) ?? aggregatedAnalytics.trends.membership
-                    }
-                    isLoading={isLoadingAggregated}
-                    priorYearTrends={
-                      // #238: overlay prior years for YoY comparison
-                      timeSeries
-                        ? timeSeries.availableYears
-                            .filter(y => y !== timeSeries.currentProgramYear)
-                            .map(y => ({
-                              label: y,
-                              data:
-                                timeSeries.years[y]?.dataPoints.map(dp => ({
-                                  date: dp.date,
-                                  count: dp.membership,
-                                })) ?? [],
-                            }))
-                            .filter(yt => yt.data.length > 0)
-                        : undefined
-                    }
-                  />
-                </div>
-              ) : (
-                isLoadingAggregated && (
-                  <LoadingSkeleton variant="chart" height="400px" />
-                )
-              )}
-
-              {/* Membership Payments Chart (#243) */}
-              {paymentsTrendData ? (
-                <div style={{ minHeight: '450px' }}>
-                  <MembershipPaymentsChart
-                    paymentsTrend={paymentsTrendData.currentYearTrend}
-                    multiYearData={
-                      // #243: Build multi-year payment data from time-series CDN
-                      // (analytics CDN only has current year payments)
-                      timeSeries
-                        ? ((): MultiYearPaymentData => {
-                            const currentPY = timeSeries.currentProgramYear
-                            const currentData =
-                              timeSeries.years[currentPY]?.dataPoints.map(
-                                dp => ({
-                                  date: dp.date,
-                                  payments: dp.payments,
-                                  programYearDay: calculateProgramYearDay(
-                                    dp.date
-                                  ),
-                                })
-                              ) ?? []
-                            const previousYears = timeSeries.availableYears
-                              .filter(y => y !== currentPY)
-                              .map(y => ({
-                                label: y,
-                                data:
-                                  timeSeries.years[y]?.dataPoints.map(dp => ({
-                                    date: dp.date,
-                                    payments: dp.payments,
-                                    programYearDay: calculateProgramYearDay(
-                                      dp.date
-                                    ),
-                                  })) ?? [],
-                              }))
-                              .filter(yt => yt.data.length > 0)
-                            return {
-                              currentYear: {
-                                label: currentPY,
-                                data: currentData,
-                              },
-                              previousYears,
-                            }
-                          })()
-                        : paymentsTrendData.multiYearData
-                    }
-                    statistics={
-                      // #269: Override YoY when time-series data provides
-                      // multi-year payment history (analytics CDN is current-year-only)
-                      (() => {
-                        const tsYoY = computePaymentYoYFromTimeSeries(
-                          timeSeries ?? null
-                        )
-                        if (tsYoY) {
-                          // Use time-series payments for consistency (#319)
-                          const tsPayments = getLatestPayments(
-                            timeSeries ?? null
-                          )
-                          return {
-                            ...paymentsTrendData.statistics,
-                            ...(tsPayments !== null && {
-                              currentPayments: tsPayments,
-                            }),
-                            yearOverYearChange: tsYoY.yearOverYearChange,
-                            trendDirection: tsYoY.trendDirection,
-                          }
-                        }
-                        return paymentsTrendData.statistics
-                      })()
-                    }
-                    isLoading={isLoadingPaymentsTrend}
-                  />
-                </div>
-              ) : (
-                isLoadingPaymentsTrend && (
-                  <LoadingSkeleton variant="chart" height="450px" />
-                )
-              )}
-
-              {/* Year-Over-Year Comparison */}
-              {aggregatedAnalytics ? (
-                <div style={{ minHeight: '300px' }}>
-                  <YearOverYearComparison
-                    {...(computeYearOverYear(timeSeries ?? null) && {
-                      yearOverYear: computeYearOverYear(timeSeries ?? null)!,
-                    })}
-                    currentYear={{
-                      // Use time-series membership when available (#319)
-                      // to match the membership chart above
-                      totalMembership:
-                        timeSeries?.currentMembership ??
-                        aggregatedAnalytics.summary.totalMembership,
-                      distinguishedClubs:
-                        aggregatedAnalytics.summary.distinguishedClubs.total,
-                      thrivingClubs:
-                        aggregatedAnalytics.summary.clubCounts.thriving,
-                      totalClubs: aggregatedAnalytics.summary.clubCounts.total,
-                    }}
-                    isLoading={isLoadingAggregated}
-                  />
-                </div>
-              ) : (
-                isLoadingAggregated && (
-                  <LoadingSkeleton variant="chart" height="300px" />
-                )
-              )}
-            </section>
-
-            {/* Top clubs */}
-            <section aria-label="Top clubs">
-              {/* Top Growth Clubs */}
-              {analytics && (
-                <TopGrowthClubs
-                  topGrowthClubs={analytics.topGrowthClubs}
-                  topDCPClubs={analytics.allClubs
-                    .filter(club => club.dcpGoalsTrend.length > 0)
-                    .map(club => ({
-                      clubId: club.clubId,
-                      clubName: club.clubName,
-                      goalsAchieved:
-                        club.dcpGoalsTrend[club.dcpGoalsTrend.length - 1]
-                          ?.goalsAchieved || 0,
-                      ...(club.distinguishedLevel &&
-                        [
-                          'Smedley',
-                          'President',
-                          'Select',
-                          'Distinguished',
-                        ].includes(club.distinguishedLevel) && {
-                          distinguishedLevel: club.distinguishedLevel as
-                            | 'Smedley'
-                            | 'President'
-                            | 'Select'
-                            | 'Distinguished',
-                        }),
-                    }))
-                    .sort((a, b) => b.goalsAchieved - a.goalsAchieved)
-                    .slice(0, 10)}
-                  isLoading={isLoadingAnalytics}
-                />
-              )}
-            </section>
-
-            {/* Analytics */}
-            <section aria-label="District analytics">
-              {/* Education Levels rollup (#426) */}
-              {districtStatistics && (
-                <EducationLevelsCard
-                  totals={extractEducationLevels(districtStatistics)}
-                />
-              )}
-            </section>
+            {/* #680 (ADR-005 §1): the membership/payment trend charts and the
+                Top-Growth / Top-DCP / education-levels analytics moved off the
+                lean hub onto /trends and /analytics. The DistrictSubnav above
+                and the CTAs below are the entry points. */}
 
             {/* Subview CTAs — replace the retired tab strip. The inline
-                Divisions and Vs-world previews moved to their own routes
-                (#679, ADR-005); these CTAs are now the only path to them. */}
+                Trends/Analytics/Divisions/Vs-world content moved to its own
+                routes (#679, #680, ADR-005); these CTAs are a secondary path
+                alongside the subnav. */}
             {districtId && (
               <nav
                 aria-label="District subviews"
@@ -771,6 +543,18 @@ const DistrictDetailPageInner: React.FC = () => {
                   className="inline-flex items-center px-4 py-2 min-h-[44px] rounded-md border border-tm-loyal-blue text-tm-loyal-blue font-tm-headline font-medium hover:bg-tm-loyal-blue-10"
                 >
                   Divisions &amp; areas →
+                </Link>
+                <Link
+                  to={`/district/${districtId}/trends`}
+                  className="inline-flex items-center px-4 py-2 min-h-[44px] rounded-md border border-tm-loyal-blue text-tm-loyal-blue font-tm-headline font-medium hover:bg-tm-loyal-blue-10"
+                >
+                  Membership &amp; payment trends →
+                </Link>
+                <Link
+                  to={`/district/${districtId}/analytics`}
+                  className="inline-flex items-center px-4 py-2 min-h-[44px] rounded-md border border-tm-loyal-blue text-tm-loyal-blue font-tm-headline font-medium hover:bg-tm-loyal-blue-10"
+                >
+                  Top clubs &amp; analytics →
                 </Link>
                 <Link
                   to={`/district/${districtId}/rankings`}

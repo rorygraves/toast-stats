@@ -33,12 +33,15 @@ export interface DistrictSection {
 /* The canonical, ordered section list. ADR-005 §2 + the epic's AC1 require
    every item to be a REAL route — a destination-less nav item is the exact
    tab-like fiction the no-tabs decision rejects. `/trends` and `/analytics`
-   are created in Sprint 6 (#680); they join this array THEN, not before. This
-   const is the single extension point. */
+   joined in Sprint 6 (#680); order follows ADR-005 §3
+   (Overview · Clubs · Divisions · Trends · Analytics · Rankings). This const
+   is the single extension point. */
 export const DISTRICT_SECTIONS: readonly DistrictSection[] = [
   { label: 'Overview', segment: '' },
   { label: 'Clubs', segment: 'clubs' },
   { label: 'Divisions', segment: 'divisions' },
+  { label: 'Trends', segment: 'trends' },
+  { label: 'Analytics', segment: 'analytics' },
   { label: 'Rankings', segment: 'rankings' },
 ]
 

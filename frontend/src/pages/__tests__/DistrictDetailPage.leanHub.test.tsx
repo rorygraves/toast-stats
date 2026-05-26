@@ -226,4 +226,34 @@ describe('DistrictDetailPage — lean Overview hub (#679)', () => {
       screen.getByRole('link', { name: /global rankings/i })
     ).toHaveAttribute('href', '/district/D42/rankings')
   })
+
+  it('no longer renders the trend charts on the hub — they moved to /trends (#680)', async () => {
+    renderHub()
+    await waitFor(() => {
+      expect(
+        screen.getByRole('navigation', { name: /district subviews/i })
+      ).toBeInTheDocument()
+    })
+    expect(
+      screen.queryByTestId('membership-trend-chart')
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByTestId('year-over-year-comparison')
+    ).not.toBeInTheDocument()
+  })
+
+  it('exposes CTAs to the new /trends and /analytics routes (#680)', async () => {
+    renderHub()
+    await waitFor(() => {
+      expect(
+        screen.getByRole('link', { name: /membership & payment trends/i })
+      ).toBeInTheDocument()
+    })
+    expect(
+      screen.getByRole('link', { name: /membership & payment trends/i })
+    ).toHaveAttribute('href', '/district/D42/trends')
+    expect(
+      screen.getByRole('link', { name: /top clubs & analytics/i })
+    ).toHaveAttribute('href', '/district/D42/analytics')
+  })
 })

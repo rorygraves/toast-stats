@@ -31,6 +31,8 @@ describe('DistrictSubnav (#678, ADR-005 §3)', () => {
       Overview: '/district/61',
       Clubs: '/district/61/clubs',
       Divisions: '/district/61/divisions',
+      Trends: '/district/61/trends',
+      Analytics: '/district/61/analytics',
       Rankings: '/district/61/rankings',
     }
     for (const [label, href] of Object.entries(expected)) {
@@ -41,17 +43,34 @@ describe('DistrictSubnav (#678, ADR-005 §3)', () => {
     }
   })
 
-  it('does not list Trends or Analytics yet — their routes land in #680', () => {
+  it('lists Trends and Analytics now that their routes exist (#680)', () => {
     renderAt('/district/61')
-    expect(screen.queryByRole('link', { name: 'Trends' })).toBeNull()
-    expect(screen.queryByRole('link', { name: 'Analytics' })).toBeNull()
-    // The canonical list is the single extension point for #680.
+    expect(screen.getByRole('link', { name: 'Trends' })).toHaveAttribute(
+      'href',
+      '/district/61/trends'
+    )
+    expect(screen.getByRole('link', { name: 'Analytics' })).toHaveAttribute(
+      'href',
+      '/district/61/analytics'
+    )
+    // ADR-005 §3 order: lateral views read Overview · Clubs · Divisions ·
+    // Trends · Analytics · Rankings.
     expect(DISTRICT_SECTIONS.map(s => s.label)).toEqual([
       'Overview',
       'Clubs',
       'Divisions',
+      'Trends',
+      'Analytics',
       'Rankings',
     ])
+  })
+
+  it('marks Trends active on the trends route (#680)', () => {
+    renderAt('/district/61/trends')
+    expect(screen.getByRole('link', { name: 'Trends' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    )
   })
 
   it('marks the active route with aria-current="page" (Clubs)', () => {
