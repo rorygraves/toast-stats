@@ -70,4 +70,50 @@ describe('ClubCard (#217)', () => {
       'Test Speakers — Thriving, 20 members'
     )
   })
+
+  // ── Re-skin to redesign tokens (#671, epic #665 Sprint 5) ──
+  // The card was on legacy gray Tailwind + inline hex status colors; it now
+  // rides the same token classes as the desktop table so dark mode "just
+  // works" (R10, lessons 092/093/096) and the same datum reads identically
+  // on both surfaces (lesson 052 — one definition, not two).
+  describe('re-skin (#671)', () => {
+    it('uses the shared clubs-status-pill class, not an inline hex style', () => {
+      render(<ClubCard club={mockClub} />)
+      const badge = screen.getByText('Thriving')
+      expect(badge.className).toContain('clubs-status-pill')
+      expect(badge.getAttribute('style') ?? '').not.toMatch(/background/i)
+    })
+
+    it('maps each health status to its status-pill modifier', () => {
+      const cases: Array<[ClubHealthStatus, string]> = [
+        ['thriving', 'clubs-status-pill--thriving'],
+        ['vulnerable', 'clubs-status-pill--vulnerable'],
+        ['intervention-required', 'clubs-status-pill--intervention'],
+      ]
+      for (const [status, modifier] of cases) {
+        const { unmount } = render(
+          <ClubCard club={{ ...mockClub, currentStatus: status }} />
+        )
+        expect(
+          document.querySelector(`.${modifier}`),
+          `expected a .${modifier} pill for status "${status}"`
+        ).not.toBeNull()
+        unmount()
+      }
+    })
+
+    it('carries the token-driven card class and no legacy gray/white chrome', () => {
+      render(<ClubCard club={mockClub} />)
+      const card = screen.getByTestId('club-card')
+      expect(card.className).toContain('clubs-card')
+      // No legacy gray utilities anywhere in the card subtree, and no bg-white.
+      const GRAY =
+        /(?:^|[\s:])(?:text|bg|border|divide|from|to|ring|fill|stroke)-gray-\d/
+      card.querySelectorAll<HTMLElement>('*').forEach(el => {
+        const cls = el.getAttribute('class') ?? ''
+        expect(cls, `gray class on ${el.tagName}: "${cls}"`).not.toMatch(GRAY)
+        expect(cls).not.toMatch(/(?:^|\s)bg-white(?:\s|$)/)
+      })
+    })
+  })
 })

@@ -71,17 +71,12 @@ const CLUBS: ClubTrend[] = [
 const GRAY_CLASS =
   /(?:^|[\s:])(?:text|bg|border|divide|from|to|ring|fill|stroke)-gray-\d/
 
-// `excludeSelector` skips elements inside a matching subtree. The mobile view
-// embeds <ClubCard>, whose own re-skin is Sprint 5 (#671) — out of scope here,
-// so the mobile assertion excludes the card list (`.space-y-3`) and only covers
-// ClubsTable's own sort-control chrome.
-function grayClassesIn(
-  container: HTMLElement,
-  excludeSelector?: string
-): string[] {
+// As of Sprint 5 (#671) the mobile <ClubCard> is re-skinned to redesign
+// tokens, so the mobile assertion no longer excludes the card list — the
+// whole mobile view (sort controls AND cards) must be gray-free.
+function grayClassesIn(container: HTMLElement): string[] {
   const offenders: string[] = []
   container.querySelectorAll<HTMLElement>('*').forEach(el => {
-    if (excludeSelector && el.closest(excludeSelector)) return
     const cls = el.getAttribute('class')
     if (cls && GRAY_CLASS.test(cls)) {
       offenders.push(cls)
@@ -120,7 +115,7 @@ describe('ClubsTable re-skin (#668) — no legacy gray chrome', () => {
     const { container } = render(
       <ClubsTable clubs={CLUBS} districtId="61" isLoading={false} />
     )
-    // Exclude the ClubCard list (`.space-y-3`) — its re-skin is Sprint 5 (#671).
-    expect(grayClassesIn(container, '.space-y-3')).toEqual([])
+    // The mobile card list is re-skinned in Sprint 5 (#671) — no exclusion.
+    expect(grayClassesIn(container)).toEqual([])
   })
 })
