@@ -165,6 +165,14 @@ find_first_unchecked_sprint() {
   printf '%s %s\n' "$n" "$issue"
 }
 
+# Count epic-body lines matching the runner's sprint format, ANY checkbox state.
+# Lets mode_run tell a genuinely-complete epic (>=1 such line, none unchecked)
+# from a malformed/ungroomed one (0 such lines) so it won't silently
+# auto-complete an epic whose checklist the runner can't parse (#771).
+count_sprint_lines() {
+  printf '%s\n' "$1" | grep -cE '^- \[.\] \*\*Sprint [0-9]+\*\* — #[0-9]+' || true
+}
+
 # Find a sprint line in the epic body by its issue number (#630).
 # Echoes the full line (incl. checkbox state) or empty if no match.
 # Boundary (`#N([^0-9]|$)`) so #1 doesn't match #10/#100.
@@ -634,6 +642,18 @@ mode_run() {
   local pair
   pair=$(find_first_unchecked_sprint "$body")
   if [[ -z "$pair" ]]; then
+    # Malformed-epic guard (#771): "no unchecked sprint" is ambiguous — it also
+    # happens when the checklist has checkbox lines that don't match the
+    # `- [ ] **Sprint N** — #issue` format (prose bullets, missing #ref, etc.).
+    # Auto-ticking that silently skips real work (observed on #659). Only treat
+    # the epic as complete with positive evidence: >=1 parseable sprint line.
+    if (( $(count_sprint_lines "$body") == 0 )); then
+      local cbx
+      cbx=$(printf '%s\n' "$body" | grep -cE '^- \[.\]' || true)
+      log "Epic #$EPIC has $cbx checkbox line(s) but ZERO parseable '- [ ] **Sprint N** — #issue' sprints — refusing to auto-complete (malformed/ungroomed). Convert items to sprint sub-issues. NOT advancing."
+      notify "sprint-runner" "Epic #$EPIC: 0 parseable sprints — not auto-completing (malformed)"
+      exit 0
+    fi
     log "Epic #$EPIC has no unchecked sprints — complete."
     # Auto-advance ONLY when EPIC was resolved from META_EPIC (not pinned).
     if [[ "$EPIC_SOURCE" == "resolved via"* ]]; then

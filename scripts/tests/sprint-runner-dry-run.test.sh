@@ -23,8 +23,10 @@ trap 'rm -rf "$TMP"' EXIT
 BIN="$TMP/bin"; mkdir -p "$BIN"
 EDIT_LOG="$TMP/gh-edit.log"
 
-# Mock gh: serve META_EPIC #900 with one unchecked epic (#901) whose body has
-# zero unchecked sprints → drives mode_run into the auto-advance branch.
+# Mock gh: serve META_EPIC #900 with one unchecked epic (#901) whose body is a
+# genuinely-complete sprint list (one ticked sprint, none unchecked) → drives
+# mode_run into the auto-advance branch. (A zero-sprint body would now hit the
+# #771 malformed-epic guard instead of auto-advancing.)
 # Record any `gh issue edit` invocation (the mutation) to $EDIT_LOG.
 cat > "$BIN/gh" <<EOF
 #!/usr/bin/env bash
@@ -42,7 +44,7 @@ if [[ "\$sub" == "issue" && "\$verb" == "view" ]]; then
   case "\$num:\$field" in
     900:labels) ;;                                       # no labels → not paused
     900:body)   printf '%s' '- [ ] **Epic Test** — #901' ;;
-    901:body)   printf '%s' 'This epic has no sprint lines.' ;;
+    901:body)   printf '%s' '- [x] **Sprint 1** — #902' ;;  # complete: 1 sprint, all ticked (#771 guard needs >=1 parseable sprint to auto-advance)
     *) ;;
   esac
   exit 0
