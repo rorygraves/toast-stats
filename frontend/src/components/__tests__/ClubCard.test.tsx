@@ -84,20 +84,28 @@ describe('ClubCard (#217)', () => {
       expect(badge.getAttribute('style') ?? '').not.toMatch(/background/i)
     })
 
-    it('maps each health status to its status-pill modifier', () => {
-      const cases: Array<[ClubHealthStatus, string]> = [
-        ['thriving', 'clubs-status-pill--thriving'],
-        ['vulnerable', 'clubs-status-pill--vulnerable'],
-        ['intervention-required', 'clubs-status-pill--intervention'],
+    it('maps each health status to its pill modifier + the desktop label', () => {
+      // Labels MUST match ClubsTable's getStatusLabel (lesson 052 — one
+      // definition across surfaces; both now share clubHealthStatus helpers).
+      const cases: Array<[ClubHealthStatus, string, string]> = [
+        ['thriving', 'clubs-status-pill--thriving', 'Thriving'],
+        ['vulnerable', 'clubs-status-pill--vulnerable', 'Vulnerable'],
+        [
+          'intervention-required',
+          'clubs-status-pill--intervention',
+          'Intervention Required',
+        ],
       ]
-      for (const [status, modifier] of cases) {
+      for (const [status, modifier, label] of cases) {
         const { unmount } = render(
           <ClubCard club={{ ...mockClub, currentStatus: status }} />
         )
+        const pill = document.querySelector(`.${modifier}`)
         expect(
-          document.querySelector(`.${modifier}`),
+          pill,
           `expected a .${modifier} pill for status "${status}"`
         ).not.toBeNull()
+        expect(pill?.textContent).toBe(label)
         unmount()
       }
     })

@@ -1,5 +1,9 @@
 import React from 'react'
 import type { ProcessedClubTrend } from './filters/types'
+import {
+  getClubHealthStatusLabel,
+  getClubHealthStatusPillModifier,
+} from '../utils/clubHealthStatus'
 
 /**
  * ClubCard (#217) — Mobile card layout for clubs.
@@ -8,8 +12,8 @@ import type { ProcessedClubTrend } from './filters/types'
  * Re-skinned to redesign tokens (#671): the card chrome rides --surface /
  * --ink / --line via the `.clubs-card` CSS layer (dark mode "just works" — R10,
  * lessons 092/093/096), and the health badge reuses the desktop table's
- * `.clubs-status-pill` classes so the same datum reads identically on both
- * surfaces (lesson 052 — one definition, not two).
+ * `.clubs-status-pill` classes + shared label/modifier helpers so the same
+ * datum reads identically on both surfaces (lesson 052 — one definition).
  */
 
 interface ClubCardProps {
@@ -17,27 +21,9 @@ interface ClubCardProps {
   onClick?: ((club: ProcessedClubTrend) => void) | undefined
 }
 
-/**
- * Health-status → shared status-pill modifier + display label. Mirrors
- * ClubsTable's getStatusPillModifier / getStatusLabel so the mobile card and
- * the desktop row render the same status identically.
- */
-function statusPill(status: string): { modifier: string; label: string } {
-  switch (status) {
-    case 'vulnerable':
-      return { modifier: 'clubs-status-pill--vulnerable', label: 'Vulnerable' }
-    case 'intervention-required':
-      return {
-        modifier: 'clubs-status-pill--intervention',
-        label: 'Needs Attention',
-      }
-    default:
-      return { modifier: 'clubs-status-pill--thriving', label: 'Thriving' }
-  }
-}
-
 const ClubCard: React.FC<ClubCardProps> = ({ club, onClick }) => {
-  const { modifier, label } = statusPill(club.currentStatus)
+  const label = getClubHealthStatusLabel(club.currentStatus)
+  const modifier = getClubHealthStatusPillModifier(club.currentStatus)
   const memberChange =
     club.latestMembership - (club.membershipBase ?? club.latestMembership)
 

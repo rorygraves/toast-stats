@@ -5,6 +5,10 @@ import { ExportButton } from './ExportButton'
 import { exportClubPerformance } from '../utils/csvExport'
 import { LoadingSkeleton } from './LoadingSkeleton'
 import { isProvisionallyDistinguished } from '../utils/provisionalDistinguished'
+import {
+  getClubHealthStatusLabel,
+  getClubHealthStatusPillModifier,
+} from '../utils/clubHealthStatus'
 import { EmptyState } from './ErrorDisplay'
 import { useColumnFilters } from '../hooks/useColumnFilters'
 import { ColumnHeader } from './ColumnHeader'
@@ -179,21 +183,12 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
   const isNeedsMembersActive =
     membersNeededValue?.[0] === 2 && membersNeededValue?.[1] === null
 
-  // Status-pill modifier class (#669). Token-driven via the CSS layer so
-  // dark mode "just works" (R10, lessons 093/096) — no Tailwind color
-  // utilities. The label text carries the meaning too (never color-alone).
-  const getStatusPillModifier = (
-    status: 'thriving' | 'vulnerable' | 'intervention-required'
-  ) => {
-    switch (status) {
-      case 'intervention-required':
-        return 'clubs-status-pill--intervention'
-      case 'vulnerable':
-        return 'clubs-status-pill--vulnerable'
-      default:
-        return 'clubs-status-pill--thriving'
-    }
-  }
+  // Status-pill modifier + label come from the shared clubHealthStatus helpers
+  // so the desktop row and the mobile ClubCard render the same datum
+  // identically (lesson 052). Token-driven via the CSS layer so dark mode
+  // "just works" (R10); the label carries meaning too (never color-alone).
+  const getStatusPillModifier = getClubHealthStatusPillModifier
+  const getStatusLabel = getClubHealthStatusLabel
 
   // Get row background color based on status
   const getRowColor = (
@@ -208,20 +203,6 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
         // Default (non-status) row — token-driven surface + hover (#668).
         // Status rows above keep their semantic red/yellow bg (Sprint 3 #669).
         return 'clubs-table-row'
-    }
-  }
-
-  // Get display label for status
-  const getStatusLabel = (
-    status: 'thriving' | 'vulnerable' | 'intervention-required'
-  ) => {
-    switch (status) {
-      case 'intervention-required':
-        return 'Intervention Required'
-      case 'vulnerable':
-        return 'Vulnerable'
-      default:
-        return 'Thriving'
     }
   }
 
