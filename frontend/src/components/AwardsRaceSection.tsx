@@ -88,6 +88,11 @@ export const AwardsRaceSection: React.FC<AwardsRaceSectionProps> = ({
     return { spec, entries }
   })
 
+  // Settled with data but every award array empty → collapse (same rare path
+  // as the null/legacy-snapshot case above; on populated snapshots all three
+  // arrays carry contenders, so the reserved skeleton fills in place). The
+  // minor collapse shift here is bounded to snapshots that genuinely have no
+  // competitive-award standings.
   const allEmpty = cardData.every(({ entries }) => entries.length === 0)
   if (allEmpty) return null
 
@@ -138,10 +143,7 @@ const AwardsRaceSkeleton: React.FC = () => (
     data-testid="awards-race-skeleton"
   >
     <header className="awards-race__header">
-      <span
-        className="awards-race-skeleton__bar awards-race-skeleton__bar--heading"
-        style={{ width: 200 }}
-      />
+      <span className="awards-race-skeleton__bar awards-race-skeleton__bar--heading" />
     </header>
     <div className="awards-race__grid">
       {AWARD_CARDS.map(({ key, spec }) => (
