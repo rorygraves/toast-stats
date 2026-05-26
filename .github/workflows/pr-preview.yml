@@ -45,7 +45,12 @@ jobs:
     # Skip PRs from forks — WIF tokens are not issued to fork branches,
     # and we don't want to leak credentials to untrusted code anyway.
     # Fork contributors fall back to local-checkout for visual review.
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    # Also skip Dependabot: its branches are intra-repo (so the fork guard
+    # passes) but its runs get no access to the Actions secret store, so the
+    # GCP auth step would fail. Dependency bumps have no UI to preview (#733).
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository
+      && github.actor != 'dependabot[bot]'
 
     steps:
       - name: Checkout code
