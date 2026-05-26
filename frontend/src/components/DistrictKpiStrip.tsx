@@ -6,7 +6,9 @@ import type { MetricRankings, RecognitionTargets } from '../types/districts'
 /* #572 — sticky KPI strip extracted from DistrictOverview.
 
    Presentational: takes already-loaded KPI values + targets and
-   renders three KpiBulletCards inside a sticky-positioned region.
+   renders three tier-progress KpiBulletCards plus a signed-delta
+   KpiDeltaCard (Net Member Change, #681) inside a sticky region,
+   with a legend expanding the bullet-bar D/S/P/Sm tier markers.
    Mobile gets a chevron that collapses the strip into a single
    compact summary row; the collapsed state persists in
    sessionStorage for the rest of the tab session. */
