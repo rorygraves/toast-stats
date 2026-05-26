@@ -126,7 +126,9 @@ describe('resolveRelevantLessons', () => {
 describe('parseWikilinks', () => {
   it('returns [] when the body has no wikilinks', () => {
     // A markdown [link](x) is not a [[wikilink]] — only [[…]] tokens count.
-    expect(parseWikilinks('Just prose, a [link](x), and some code.')).toEqual([])
+    expect(parseWikilinks('Just prose, a [link](x), and some code.')).toEqual(
+      []
+    )
   })
 
   it('extracts each [[slug]] target in document order', () => {
