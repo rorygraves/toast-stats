@@ -52,7 +52,7 @@ export const SubpageBreadcrumb: React.FC<SubpageBreadcrumbProps> = ({
                 </Link>
               ) : (
                 <span
-                  className="font-medium text-gray-900 dark:text-gray-100"
+                  className="font-medium text-gray-900 theme-dark:text-gray-100"
                   aria-current="page"
                 >
                   {crumb.label}

@@ -98,9 +98,9 @@ export const UpcomingAnniversariesPanel: React.FC<
           Upcoming anniversaries
         </h3>
         {nextBeyondWindow ? (
-          <p className="text-xs text-gray-500 dark:text-gray-400 font-tm-body">
+          <p className="text-xs text-gray-500 theme-dark:text-gray-400 font-tm-body">
             All quiet — next in{' '}
-            <strong className="font-semibold text-gray-700 dark:text-gray-200">
+            <strong className="font-semibold text-gray-700 theme-dark:text-gray-200">
               {nextBeyondWindow.anniversary.daysUntilNext}d
             </strong>{' '}
             at{' '}
@@ -112,7 +112,7 @@ export const UpcomingAnniversariesPanel: React.FC<
             </Link>
           </p>
         ) : (
-          <p className="text-xs text-gray-500 dark:text-gray-400 font-tm-body">
+          <p className="text-xs text-gray-500 theme-dark:text-gray-400 font-tm-body">
             All quiet — no charter dates available.
           </p>
         )}
@@ -135,11 +135,11 @@ export const UpcomingAnniversariesPanel: React.FC<
         >
           Upcoming anniversaries
         </h3>
-        <span className="text-[11px] uppercase tracking-wider text-gray-600 dark:text-gray-400 font-tm-body">
+        <span className="text-[11px] uppercase tracking-wider text-gray-600 theme-dark:text-gray-400 font-tm-body">
           Next {UPCOMING_WINDOW_DAYS}d · {upcoming.length}
         </span>
       </div>
-      <ul className="divide-y divide-gray-100 dark:divide-gray-800 -mx-1">
+      <ul className="divide-y divide-gray-100 theme-dark:divide-gray-800 -mx-1">
         {visible.map(row => {
           const { club, anniversary } = row
           // Milestone for this row = milestone on the UPCOMING year count.
@@ -170,7 +170,7 @@ export const UpcomingAnniversariesPanel: React.FC<
                   'w-10 shrink-0 text-right tabular-nums text-xs font-semibold ' +
                   (anniversary.daysUntilNext <= 7
                     ? 'text-tm-true-maroon'
-                    : 'text-gray-700 dark:text-gray-300')
+                    : 'text-gray-700 theme-dark:text-gray-300')
                 }
               >
                 {dayCopy}
@@ -181,7 +181,7 @@ export const UpcomingAnniversariesPanel: React.FC<
               >
                 {club.clubName}
               </Link>
-              <span className="hidden sm:inline text-xs text-gray-500 dark:text-gray-400 truncate max-w-[8rem]">
+              <span className="hidden sm:inline text-xs text-gray-500 theme-dark:text-gray-400 truncate max-w-[8rem]">
                 {club.areaName}
               </span>
               <span
@@ -189,7 +189,7 @@ export const UpcomingAnniversariesPanel: React.FC<
                   'shrink-0 tabular-nums text-xs font-semibold ' +
                   (isUpcomingMilestone
                     ? 'text-tm-true-maroon'
-                    : 'text-gray-600 dark:text-gray-300')
+                    : 'text-gray-600 theme-dark:text-gray-300')
                 }
               >
                 {ord}

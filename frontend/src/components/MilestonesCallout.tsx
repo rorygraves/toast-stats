@@ -193,7 +193,7 @@ export const MilestonesCallout: React.FC<MilestonesCalloutProps> = ({
           Milestones · PY {pyLabel}
         </h3>
         {nextUpcoming ? (
-          <p className="text-xs text-gray-500 dark:text-gray-400 font-tm-body">
+          <p className="text-xs text-gray-500 theme-dark:text-gray-400 font-tm-body">
             None this PY — next is{' '}
             <Link
               to={clubHref(nextUpcoming.club.clubId)}
@@ -202,13 +202,13 @@ export const MilestonesCallout: React.FC<MilestonesCalloutProps> = ({
               {nextUpcoming.club.clubName}
             </Link>{' '}
             at{' '}
-            <strong className="font-semibold text-gray-700 dark:text-gray-200">
+            <strong className="font-semibold text-gray-700 theme-dark:text-gray-200">
               {nextUpcoming.milestoneYears}y
             </strong>{' '}
             in {formatShortDate(nextUpcoming.anniversaryDate)}.
           </p>
         ) : (
-          <p className="text-xs text-gray-500 dark:text-gray-400 font-tm-body">
+          <p className="text-xs text-gray-500 theme-dark:text-gray-400 font-tm-body">
             None this PY.
           </p>
         )}
@@ -222,11 +222,11 @@ export const MilestonesCallout: React.FC<MilestonesCalloutProps> = ({
         <h3 id="milestones-heading" className="redesign-panel__header !mb-0">
           Milestones · PY {pyLabel}
         </h3>
-        <span className="text-[11px] uppercase tracking-wider text-gray-600 dark:text-gray-400 font-tm-body">
+        <span className="text-[11px] uppercase tracking-wider text-gray-600 theme-dark:text-gray-400 font-tm-body">
           {totalCount} club{totalCount === 1 ? '' : 's'}
         </span>
       </div>
-      <ul className="divide-y divide-gray-100 dark:divide-gray-800 -mx-1">
+      <ul className="divide-y divide-gray-100 theme-dark:divide-gray-800 -mx-1">
         {groups.map(group => (
           <li
             key={group.years}
@@ -249,7 +249,7 @@ export const MilestonesCallout: React.FC<MilestonesCalloutProps> = ({
                   >
                     {entry.club.clubName}
                   </Link>
-                  <span className="text-[11px] text-gray-600 dark:text-gray-400 tabular-nums">
+                  <span className="text-[11px] text-gray-600 theme-dark:text-gray-400 tabular-nums">
                     {formatShortDate(entry.anniversaryDate)}
                   </span>
                   {i < group.entries.length - 1 && (

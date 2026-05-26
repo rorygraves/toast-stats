@@ -63,7 +63,7 @@ export const NotableDatesSection: React.FC<NotableDatesSectionProps> = ({
         className="redesign-panel py-2"
         aria-label="No upcoming anniversaries or milestones"
       >
-        <p className="text-xs text-gray-500 dark:text-gray-400 font-tm-body">
+        <p className="text-xs text-gray-500 theme-dark:text-gray-400 font-tm-body">
           <span aria-hidden="true" className="mr-1">
             ○
           </span>

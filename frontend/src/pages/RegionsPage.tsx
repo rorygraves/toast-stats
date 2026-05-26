@@ -110,7 +110,7 @@ const RegionsPage: React.FC = () => {
       <section className="my-8" aria-labelledby="regions-grid-heading">
         <h2
           id="regions-grid-heading"
-          className="text-lg font-tm-headline text-gray-900 dark:text-gray-50 mb-3"
+          className="text-lg font-tm-headline text-gray-900 theme-dark:text-gray-50 mb-3"
         >
           Region cards
         </h2>
@@ -118,7 +118,7 @@ const RegionsPage: React.FC = () => {
       </section>
 
       {dnarCount > 0 && (
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-6 italic">
+        <p className="text-xs text-gray-500 theme-dark:text-gray-400 mt-6 italic">
           {dnarCount} district{dnarCount === 1 ? '' : 's'} not yet assigned to a
           region — not shown above.
         </p>

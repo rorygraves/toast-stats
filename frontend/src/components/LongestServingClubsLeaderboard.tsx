@@ -89,7 +89,7 @@ export const LongestServingClubsLeaderboard: React.FC<
         <h3 id="longest-serving-heading" className="redesign-panel__header">
           Longest-serving clubs
         </h3>
-        <p className="text-xs text-gray-500 dark:text-gray-400 font-tm-body">
+        <p className="text-xs text-gray-500 theme-dark:text-gray-400 font-tm-body">
           No charter data yet for this district.
         </p>
       </section>
@@ -111,11 +111,11 @@ export const LongestServingClubsLeaderboard: React.FC<
         >
           Longest-serving clubs
         </h3>
-        <span className="text-[11px] uppercase tracking-wider text-gray-600 dark:text-gray-400 font-tm-body">
+        <span className="text-[11px] uppercase tracking-wider text-gray-600 theme-dark:text-gray-400 font-tm-body">
           Top {rows.length}
         </span>
       </div>
-      <ol className="divide-y divide-gray-100 dark:divide-gray-800 -mx-1">
+      <ol className="divide-y divide-gray-100 theme-dark:divide-gray-800 -mx-1">
         {rows.map((row, i) => (
           <li
             key={row.club.clubId}
@@ -131,10 +131,10 @@ export const LongestServingClubsLeaderboard: React.FC<
             >
               {row.club.clubName}
             </Link>
-            <span className="shrink-0 tabular-nums text-xs font-semibold text-gray-700 dark:text-gray-200">
+            <span className="shrink-0 tabular-nums text-xs font-semibold text-gray-700 theme-dark:text-gray-200">
               {row.years}y
             </span>
-            <span className="shrink-0 tabular-nums text-[11px] text-gray-600 dark:text-gray-400">
+            <span className="shrink-0 tabular-nums text-[11px] text-gray-600 theme-dark:text-gray-400">
               {row.charterLabel}
             </span>
           </li>
