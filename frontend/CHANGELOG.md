@@ -1,5 +1,27 @@
 # Changelog
 
+## [3.1.0](https://github.com/taverns-red/toast-stats/compare/frontend-v3.0.0...frontend-v3.1.0) (2026-05-26)
+
+
+### Features
+
+* **cd:** release-gated production deploy (ADR-004) ([#707](https://github.com/taverns-red/toast-stats/issues/707)) ([#722](https://github.com/taverns-red/toast-stats/issues/722)) ([b20f426](https://github.com/taverns-red/toast-stats/commit/b20f426efd55762c0d9bdd42ea68c7db1fdd98cb))
+* **clubs-table:** column model to handoff — DCP bar, cur/base, status & tier pills (epic [#665](https://github.com/taverns-red/toast-stats/issues/665), Sprint 3) ([#729](https://github.com/taverns-red/toast-stats/issues/729)) ([3e2fb7e](https://github.com/taverns-red/toast-stats/commit/3e2fb7e13c819dabb2dba09d00ffee701553fff7))
+* **clubs-table:** re-skin controls row — search, segmented filter, quick chips (epic [#665](https://github.com/taverns-red/toast-stats/issues/665) Sprint 4) ([#731](https://github.com/taverns-red/toast-stats/issues/731)) ([e928449](https://github.com/taverns-red/toast-stats/commit/e928449227862b11ee7b17e9565ab8b4c1def2d8))
+* **clubs-table:** re-skin table chrome to redesign tokens (epic [#665](https://github.com/taverns-red/toast-stats/issues/665), Sprint 2) ([#727](https://github.com/taverns-red/toast-stats/issues/727)) ([5ecdce3](https://github.com/taverns-red/toast-stats/commit/5ecdce3df15e6b87d9ac396829770b757d9dba48))
+* **clubs-table:** remove pagination — single sticky-header table (epic [#665](https://github.com/taverns-red/toast-stats/issues/665), Sprint 1) ([#725](https://github.com/taverns-red/toast-stats/issues/725)) ([36b68a3](https://github.com/taverns-red/toast-stats/commit/36b68a3f5a5f6adb44834a750998d982c3779848))
+* **clubs-table:** responsive — 640px card collapse + re-skinned cards (epic [#665](https://github.com/taverns-red/toast-stats/issues/665), Sprint 5) ([#732](https://github.com/taverns-red/toast-stats/issues/732)) ([859d7a2](https://github.com/taverns-red/toast-stats/commit/859d7a296c5feca48266e21ff07fcd7b71a072dd))
+
+
+### Bug Fixes
+
+* **chrome:** theme-toggle icon invisible in light mode ([#700](https://github.com/taverns-red/toast-stats/issues/700)) ([#717](https://github.com/taverns-red/toast-stats/issues/717)) ([120b13f](https://github.com/taverns-red/toast-stats/commit/120b13f6bef91f4bd5f3d235a4a959940b87b0be))
+
+
+### Tests
+
+* **clubs-table:** a11y + verification pass (epic [#665](https://github.com/taverns-red/toast-stats/issues/665) Sprint 6) ([#672](https://github.com/taverns-red/toast-stats/issues/672)) ([#737](https://github.com/taverns-red/toast-stats/issues/737)) ([259f734](https://github.com/taverns-red/toast-stats/commit/259f734d4ebad19c84d7edfed39ced9ef14fa2d7))
+
 ## [3.0.0](https://github.com/taverns-red/toast-stats/compare/frontend-v2.13.0...frontend-v3.0.0) (2026-05-25)
 
 
