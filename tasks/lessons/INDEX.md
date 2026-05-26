@@ -70,3 +70,4 @@
 - **108** [tests, playwright, css, frontend, accessibility] — Verify a sticky header by measuring the sticky cell, not the `<thead>` wrapper (#667, #665)
 - **109** [frontend, css, tests, scope, dark-mode] — A render-time class guard scopes to the resting state; let that be the deferral boundary, but don't mistake it for a contrast audit (#668, #665)
 - **110** [tests, e2e, css, frontend, verification] — jsdom `textContent` ignores CSS `text-transform`; a live `innerText` assertion doesn't (#669, #665)
+- **111** [css, accessibility, frontend, tests, playwright, dark-mode] — A native `<select>` ignores `min-height` in WebKit; the 44px touch target needs `appearance:none` (#671, #665)
