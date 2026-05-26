@@ -17,8 +17,13 @@ name: Data Pipeline
 
 on:
   schedule:
-    # Run daily at 10:00 UTC (5 AM EST / 6 AM EDT)
+    # Primary daily run at 08:00 UTC (4 AM EST / 5 AM EDT).
     - cron: '0 8 * * *'
+    # Backup run at 11:00 UTC to absorb dropped scheduled events (#753).
+    # The daily flow is idempotent (same snapshot date is re-scraped and
+    # re-uploaded) and the `data-pipeline` concurrency group already
+    # serializes runs, so a backup that overlaps a slow primary is safe.
+    - cron: '0 11 * * *'
   workflow_dispatch:
     inputs:
       mode:
