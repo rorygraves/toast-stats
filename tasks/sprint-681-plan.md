@@ -9,10 +9,17 @@ the gauge legible (rather than removing it — the bullet bar is a deliberate #5
 design win per lessons 063/065; the only real defect is the undefined D/S/P/Sm
 abbreviations).
 
-### Net Member Change = `analytics.memberCountChange`
+### Net Member Change = `analytics.membershipChange`
 
-Traced in `AnalyticsComputer.ts:183` — the **actual member-count delta** (last − first
-snapshot). Distinct from `membershipChange` (payment-based, drives the Payments card).
+**Verification correction:** initially wired to `memberCountChange`, but the staging
+CDN proved that field is `0` for every district — the frontend's `district_<id>_analytics.json`
+is a **single-snapshot** file (`dateRange` start == end), so `last − first` is always 0
+(#185). The real, populated signed delta is `membershipChange` = `currentPayments −
+paymentBase` (`AnalyticsComputer.ts:387`), derived from the dense rankings `paymentBase`,
+not snapshots. TI membership is payment-based, so this payment-vs-base delta **is** the
+net member change (district 93 = `+292`). The Payments card shows a different figure
+(cumulative payment events, 2,859) — no duplication.
+
 It is a **signed delta with no Distinguished tiers**, so it must NOT reuse the bullet
 bar (lesson 102/063: render the metric by its question). New `KpiDeltaCard` renders:
 

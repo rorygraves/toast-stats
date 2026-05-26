@@ -321,11 +321,15 @@ const DistrictDetailPageInner: React.FC = () => {
         targets: pt?.distinguishedClubs.targets ?? null,
         rankings: pt?.distinguishedClubs.rankings ?? NULL_RANKINGS,
       },
-      // #681 — Net Member Change = actual member-count delta since the
-      // program-year base (AnalyticsComputer.memberCountChange), distinct
-      // from the payment-based membershipChange that drives the Payments card.
+      // #681 — Net Member Change = net change in district membership since
+      // the program-year base. Sourced from `membershipChange`
+      // (currentPayments − paymentBase, AnalyticsComputer.ts:387), which is
+      // derived from the dense rankings paymentBase — NOT `memberCountChange`,
+      // which is a last−first snapshot diff and resolves to 0 on the frontend's
+      // single-snapshot analytics file (#185). TI membership is payment-based,
+      // so this payment-vs-base delta IS the net member change.
       netMemberChange: {
-        current: analytics.memberCountChange ?? 0,
+        current: analytics.membershipChange ?? 0,
       },
     }
   }, [analytics, performanceTargets])
