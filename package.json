@@ -51,12 +51,12 @@
     "lessons:index:check": "npx tsx scripts/regenerate-lessons-index.ts --check"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^4.1.3",
+    "@vitest/coverage-v8": "^4.1.7",
     "husky": "^9.1.7",
-    "jsdom": "^29.0.2",
-    "lint-staged": "^16.4.0",
-    "prettier": "^3.8.1",
-    "tsx": "^4.21.0"
+    "jsdom": "^29.1.1",
+    "lint-staged": "^17.0.5",
+    "prettier": "^3.8.3",
+    "tsx": "^4.22.3"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,md}": "prettier --write"
