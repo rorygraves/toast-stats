@@ -9,8 +9,13 @@
  *     look up the FAC record by \`Club Number\` (8-char zero-padded).
  *   - Matched: copy charterDate / coordinates / address / email / etc.
  *   - Snapshot-only: leave as-is. The FAC fields are all optional, so
- *     a missing match is a no-op. Most of the 410 'missing from FAC'
- *     clubs land here — see #490 for the pattern investigation.
+ *     a missing match is a no-op. The ~410-1000 'missing from FAC'
+ *     clubs land here — and leaving them untouched is CORRECT, not a
+ *     gap. #490 resolved the pattern: 100% of Suspended clubs (TI hides
+ *     suspended clubs from the public registry) plus corporate/private
+ *     clubs closed to public members (Apple, Synopsys, TCS, …). Both
+ *     are real performance entities that must stay in the analytics
+ *     aggregates. See docs/investigations/490-*.md.
  *   - FAC-only (ATOs / prospective): NOT merged into clubPerformance —
  *     they have no membership / DCP / status, would break analytics.
  *     Captured separately in the merge result so callers can decide
