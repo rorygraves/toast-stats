@@ -125,9 +125,8 @@ describe('resolveRelevantLessons', () => {
 
 describe('parseWikilinks', () => {
   it('returns [] when the body has no wikilinks', () => {
-    expect(parseWikilinks('Just prose, a [link](x), and `[[not in code]]`.')).to
-      // backticks don't exempt — but there are no actual [[ ]] tokens above
-      .toEqual([])
+    // A markdown [link](x) is not a [[wikilink]] — only [[…]] tokens count.
+    expect(parseWikilinks('Just prose, a [link](x), and some code.')).toEqual([])
   })
 
   it('extracts each [[slug]] target in document order', () => {
@@ -170,6 +169,8 @@ describe('expandDepth1Neighbours', () => {
   const exists = (p: string): boolean => p in bodies
 
   it('pulls in a seed’s direct [[…]] neighbours, resolved under tasks/lessons/', () => {
+    // Only seed-a is a seed, so its link to seed-b counts as a neighbour here;
+    // the seed-vs-neighbour exclusion is covered by its own test below.
     const { neighbours } = expandDepth1Neighbours(
       ['tasks/lessons/seed-a.md'],
       readBody,
@@ -179,6 +180,7 @@ describe('expandDepth1Neighbours', () => {
     expect(neighbours).toEqual([
       'tasks/lessons/n-one.md',
       'tasks/lessons/n-two.md',
+      'tasks/lessons/seed-b.md',
     ])
   })
 
