@@ -652,4 +652,59 @@ describe('DistrictDetailPage - Trends Tab Data Source Wiring', () => {
       ).not.toBeInTheDocument()
     })
   })
+
+  // =========================================================================
+  // #675 — trend charts must render in non-scroll contexts
+  // =========================================================================
+  describe('#675: trend charts are not gated behind viewport intersection', () => {
+    /**
+     * Reproduce the below-fold / non-scroll context (full-page screenshot,
+     * print, screen-reader full-page navigation, the UX audit capture) where
+     * the IntersectionObserver never fires `isIntersecting`. The trend charts
+     * are already `React.lazy` code-split, so they must not ALSO depend on a
+     * viewport intersection to render. Before the fix, the <LazyChart>
+     * IntersectionObserver wrapper gated rendering on intersection, so the
+     * charts sat on the skeleton forever — the #675 stuck-loading white block.
+     */
+    it('renders trend charts even when IntersectionObserver never reports intersection', async () => {
+      const realIO = global.IntersectionObserver
+      class NeverIntersectingObserver implements IntersectionObserver {
+        readonly root: Element | null = null
+        readonly rootMargin = ''
+        readonly thresholds: ReadonlyArray<number> = []
+        observe(): void {}
+        unobserve(): void {}
+        disconnect(): void {}
+        takeRecords(): IntersectionObserverEntry[] {
+          return []
+        }
+      }
+      global.IntersectionObserver =
+        NeverIntersectingObserver as unknown as typeof IntersectionObserver
+
+      try {
+        mockUseAggregatedAnalytics.mockReturnValue({
+          data: createMockAggregatedAnalytics(),
+          isLoading: false,
+          isError: false,
+          error: null,
+          refetch: vi.fn(),
+          usedFallback: false,
+        })
+
+        renderDistrictDetailPage()
+
+        await waitFor(() => {
+          expect(
+            screen.getByTestId('membership-trend-chart')
+          ).toBeInTheDocument()
+        })
+        expect(
+          screen.getByTestId('year-over-year-comparison')
+        ).toBeInTheDocument()
+      } finally {
+        global.IntersectionObserver = realIO
+      }
+    })
+  })
 })
