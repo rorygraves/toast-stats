@@ -9,6 +9,7 @@ import {
 import { redirectLegacyDistrictTab } from '../utils/legacyTabRedirect'
 import { useDistricts } from '../hooks/useDistricts'
 import { DistrictDetailHeader } from '../components/DistrictDetailHeader'
+import { DistrictSubnav } from '../components/DistrictSubnav'
 import { useDistrictAnalytics } from '../hooks/useDistrictAnalytics'
 import { useAggregatedAnalytics } from '../hooks/useAggregatedAnalytics'
 import { useDistrictStatistics } from '../hooks/useMembershipData'
@@ -479,6 +480,10 @@ const DistrictDetailPageInner: React.FC = () => {
               }
             />
           )}
+
+          {/* Lateral section nav (#678, ADR-005 §3). Landing-opt-IN — renders
+              on the hub and every flat sub-page (unlike the breadcrumb). */}
+          {districtId && <DistrictSubnav districtId={districtId} />}
 
           {/* Global Error State */}
           {overviewError && (

@@ -1,0 +1,71 @@
+/* #678 (epic #674 Sprint 4) — District secondary route-nav (ADR-005 §3).
+   Mirrors the app-shell primary-nav convention (redesign tokens; active state
+   keyed off NavLink's aria-current="page"). Active is signalled by BOTH colour
+   AND a bottom rule (never colour alone — WCAG 1.4.1).
+
+   The accent is `--link`, NOT `--loyal-500`: this subnav has a transparent
+   background, so its active text/border and focus ring are read directly
+   against the dark `--surface`. `--loyal-500` (#004165) has no dark remap and
+   lands at ~1.6:1 there; `--link` equals `--loyal-500` in light but remaps to a
+   dark-safe #60a5d8 (R10, lessons 093/096). The app-shell nav can use raw
+   `--loyal-500` only because it pairs it with a `--loyal-50` background fill. */
+
+@layer components {
+  .district-subnav {
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--surface-3);
+    /* Horizontal-scroll link row at all widths (ADR §3 — not a <select>). */
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .district-subnav__list {
+    display: flex;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    /* Keep items on one row so the container scrolls instead of wrapping. */
+    min-width: max-content;
+  }
+
+  .district-subnav__item {
+    margin: 0;
+  }
+
+  .district-subnav__link {
+    display: flex;
+    align-items: center;
+    /* WCAG 2.5.5 touch target. */
+    min-height: 44px;
+    padding: 0 14px;
+    white-space: nowrap;
+    text-decoration: none;
+    color: var(--ink-2);
+    font-family: var(--sans);
+    font-weight: 500;
+    font-size: 14px;
+    border-bottom: 2px solid transparent;
+    transition:
+      color 150ms ease,
+      border-color 150ms ease;
+  }
+
+  .district-subnav__link:hover {
+    color: var(--link);
+    text-decoration: none;
+  }
+
+  .district-subnav__link[aria-current='page'] {
+    color: var(--link);
+    border-bottom-color: var(--link);
+    font-weight: 600;
+  }
+
+  .district-subnav__link:focus-visible {
+    outline: 2px solid var(--link);
+    outline-offset: -2px;
+    border-radius: var(--rds-radius-sm);
+  }
+}

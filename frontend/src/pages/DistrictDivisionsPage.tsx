@@ -13,6 +13,7 @@ import {
 import { extractDivisionPerformance } from '../utils/extractDivisionPerformance'
 import { DistrictDetailHeader } from '../components/DistrictDetailHeader'
 import { SubpageBreadcrumb } from '../components/SubpageBreadcrumb'
+import { DistrictSubnav } from '../components/DistrictSubnav'
 import { DivisionPerformanceCards } from '../components/DivisionPerformanceCards'
 import DistinguishedProgramCriteriaExplainer from '../components/DistinguishedProgramCriteriaExplainer'
 import { DivisionAreaRecognitionPanel } from '../components/DivisionAreaRecognitionPanel'
@@ -132,6 +133,8 @@ const DistrictDivisionsPage: React.FC = () => {
           <SubpageBreadcrumb
             crumbs={[{ label: districtName, to: `/district/${districtId}` }]}
           />
+
+          <DistrictSubnav districtId={districtId} />
 
           <div className="space-y-4 sm:space-y-6">
             {districtStatistics ? (
