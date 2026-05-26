@@ -77,3 +77,4 @@
 - **114** [dark-mode, css, accessibility, frontend] — A raw non-remapping token that "passes" in a sibling component may be leaning on that sibling's background fill (#678, #674)
 - **115** [frontend, analytics, data-pipeline, dcp, verification] — A field's name (and comment) can lie about whether it's populated in _your_ surface (#681, #674)
 - **116** [dark-mode, css, frontend, responsive] — `bg-white` themes to a LIGHTER dark scale than its `.redesign-panel` neighbours (#682, #674)
+- **117** [monorepo, analytics, refactor, tdd, data-pipeline] — A "delegate to X" refactor ticket is a trap when the two impls have diverged in output (#306, #757)
