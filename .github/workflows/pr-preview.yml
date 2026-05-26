@@ -4,8 +4,9 @@
 # Firebase Hosting preview channel under the `staging` site. Posts (or
 # updates) a sticky PR comment with the live URL.
 #
-# Channels auto-expire after 7 days; closed/merged PRs are cleaned up
-# by Firebase TTL, not by an explicit teardown step.
+# Channels auto-expire after 7 days. Closed/merged PRs are also reaped
+# explicitly on close by pr-preview-cleanup.yml (#741), so the staging
+# site's ~50-channel quota frees immediately rather than waiting on TTL.
 #
 # Re-uses the same Workload Identity Federation credentials that
 # .github/workflows/deploy.yml uses for production deploys, so no
@@ -147,8 +148,8 @@ jobs:
 
             _Channel expires: ${{ steps.deploy.outputs.expires }}_
 
-            Updated on every push to this PR. Closed PRs are cleaned
-            up automatically when the channel TTL elapses.
+            Updated on every push to this PR. The channel is removed
+            automatically when this PR closes.
 
       # Lightweight cross-engine smoke against the freshly-deployed preview
       # (#713). #685 verified contrast in Chromium-at-rest only and missed a
