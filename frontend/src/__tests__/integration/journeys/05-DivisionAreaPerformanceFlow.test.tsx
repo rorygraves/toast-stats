@@ -21,11 +21,6 @@ import { setupCdnFetchMock } from '../utils/mockCdnData'
 // tests still inherit the 5s cap from vitest.config.ts (#473).
 vi.setConfig({ testTimeout: 15000 })
 
-// Mock LazyChart to immediately render its children in integration tests
-vi.mock('../../../components/LazyChart', () => ({
-  LazyChart: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}))
-
 // Setup Responsive defaults for jsdom
 beforeAll(() => {
   Object.defineProperty(window, 'matchMedia', {

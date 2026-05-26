@@ -81,7 +81,6 @@ import ErrorBoundary from '../components/ErrorBoundary'
 import { ErrorDisplay, EmptyState } from '../components/ErrorDisplay'
 import { LoadingSkeleton } from '../components/LoadingSkeleton'
 
-import { LazyChart } from '../components/LazyChart'
 import GlobalRankingsTab from '../components/GlobalRankingsTab'
 
 const DistrictDetailPageInner: React.FC = () => {
@@ -586,7 +585,11 @@ const DistrictDetailPageInner: React.FC = () => {
               <section id="trends" aria-label="Membership and payment trends">
                 {/* Membership Trend Chart */}
                 {aggregatedAnalytics ? (
-                  <LazyChart height="400px">
+                  // #675: charts are already React.lazy code-split; reserve
+                  // space with a fixed-height div but do NOT gate rendering on
+                  // viewport intersection (that left below-fold charts stuck on
+                  // the skeleton in any non-scroll context — see #675).
+                  <div style={{ minHeight: '400px' }}>
                     <MembershipTrendChart
                       membershipTrend={
                         // #170: prefer time-series monthly data over inline 1-point trend
@@ -615,7 +618,7 @@ const DistrictDetailPageInner: React.FC = () => {
                           : undefined
                       }
                     />
-                  </LazyChart>
+                  </div>
                 ) : (
                   isLoadingAggregated && (
                     <LoadingSkeleton variant="chart" height="400px" />
@@ -624,7 +627,7 @@ const DistrictDetailPageInner: React.FC = () => {
 
                 {/* Membership Payments Chart (#243) */}
                 {paymentsTrendData ? (
-                  <LazyChart height="450px">
+                  <div style={{ minHeight: '450px' }}>
                     <MembershipPaymentsChart
                       paymentsTrend={paymentsTrendData.currentYearTrend}
                       multiYearData={
@@ -693,7 +696,7 @@ const DistrictDetailPageInner: React.FC = () => {
                       }
                       isLoading={isLoadingPaymentsTrend}
                     />
-                  </LazyChart>
+                  </div>
                 ) : (
                   isLoadingPaymentsTrend && (
                     <LoadingSkeleton variant="chart" height="450px" />
@@ -702,7 +705,7 @@ const DistrictDetailPageInner: React.FC = () => {
 
                 {/* Year-Over-Year Comparison */}
                 {aggregatedAnalytics ? (
-                  <LazyChart height="300px">
+                  <div style={{ minHeight: '300px' }}>
                     <YearOverYearComparison
                       {...(computeYearOverYear(timeSeries ?? null) && {
                         yearOverYear: computeYearOverYear(timeSeries ?? null)!,
@@ -722,7 +725,7 @@ const DistrictDetailPageInner: React.FC = () => {
                       }}
                       isLoading={isLoadingAggregated}
                     />
-                  </LazyChart>
+                  </div>
                 ) : (
                   isLoadingAggregated && (
                     <LoadingSkeleton variant="chart" height="300px" />

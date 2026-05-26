@@ -72,3 +72,4 @@
 - **110** [tests, e2e, css, frontend, verification] — jsdom `textContent` ignores CSS `text-transform`; a live `innerText` assertion doesn't (#669, #665)
 - **111** [css, accessibility, frontend, tests, playwright, dark-mode] — A native `<select>` ignores `min-height` in WebKit; the 44px touch target needs `appearance:none` (#671, #665)
 - **112** [accessibility, css, dark-mode, tests, frontend] — A "verification pass" contrast guard earns its keep on the marginals the eye and hand-math miss (#672, #665)
+- **113** [frontend, react, charts, performance, cls] — An IntersectionObserver visibility gate on already-code-split content is invisible to every non-scroll context (#675, #674)

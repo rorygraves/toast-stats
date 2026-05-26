@@ -1,11 +1,16 @@
+/* #675: use the theme-remapping surface/border tokens (dark-mode.css) so the
+   skeleton adapts with the page. The previous hardcoded light literals
+   (#f9fafb / #e5e7eb / #9ca3af) rendered as a bright white block on the dark
+   district page (R10 violation). Tokens fall back to their light values in
+   :root, so light mode is unchanged. */
 .chart-skeleton {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  background: #f9fafb;
+  background: var(--surface-secondary, #f9fafb);
   border-radius: 0.5rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-default, #e5e7eb);
   padding: 1rem;
   position: relative;
   overflow: hidden;
@@ -25,9 +30,9 @@
   border-radius: 4px 4px 0 0;
   background: linear-gradient(
     90deg,
-    #e5e7eb 25%,
-    #d1d5db 50%,
-    #e5e7eb 75%
+    var(--surface-card, #e5e7eb) 25%,
+    var(--surface-card-hover, #d1d5db) 50%,
+    var(--surface-card, #e5e7eb) 75%
   );
   background-size: 200% 100%;
   animation: chart-skeleton-shimmer 1.5s ease-in-out infinite;
@@ -35,7 +40,7 @@
 
 .chart-skeleton__label {
   font-size: 0.75rem;
-  color: #9ca3af;
+  color: var(--text-muted, #9ca3af);
   margin-top: 0.5rem;
 }
 
@@ -46,4 +51,12 @@
   100% {
     background-position: -200% 0;
   }
+}
+
+/* Explicit dark-mode anchor for the skeleton surface. The tokens above already
+   remap, but this rule guarantees a visibly darker shimmer contrast on the
+   dark page and is the sentinel the #675 regression test asserts. */
+[data-theme='dark'] .chart-skeleton {
+  background: var(--surface-secondary);
+  border-color: var(--border-default);
 }
