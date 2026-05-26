@@ -4,13 +4,18 @@ import userEvent from '@testing-library/user-event'
 import { HeaderActionsMenu } from '../HeaderActionsMenu'
 
 // Mock the export hook so the menu's "Export CSV" item can be asserted
-// without exercising the real GCS/CSV pipeline.
+// without exercising the real GCS/CSV pipeline. The returned state is
+// mutable so individual tests can simulate in-progress / error states.
 const exportToCSV = vi.fn()
 const clearError = vi.fn()
+const exportState: { isExporting: boolean; error: Error | null } = {
+  isExporting: false,
+  error: null,
+}
 vi.mock('../../hooks/useDistrictExport', () => ({
   useDistrictExport: () => ({
-    isExporting: false,
-    error: null,
+    isExporting: exportState.isExporting,
+    error: exportState.error,
     exportToCSV,
     clearError,
   }),
@@ -19,6 +24,8 @@ vi.mock('../../hooks/useDistrictExport', () => ({
 beforeEach(() => {
   exportToCSV.mockClear()
   clearError.mockClear()
+  exportState.isExporting = false
+  exportState.error = null
 })
 
 afterEach(() => cleanup())
@@ -91,6 +98,28 @@ describe('HeaderActionsMenu (#676 — overflow action cluster)', () => {
     await waitFor(() =>
       expect(screen.getByRole('status')).toHaveTextContent(/link copied/i)
     )
+  })
+
+  it('surfaces export progress in the persistent status region', () => {
+    exportState.isExporting = true
+    render(<HeaderActionsMenu districtId="61" />)
+    // Menu is closed, yet the in-progress feedback is still announced.
+    expect(screen.queryByRole('menu')).toBeNull()
+    expect(screen.getByRole('status')).toHaveTextContent(/exporting/i)
+  })
+
+  it('surfaces an export error as an assertive alert', () => {
+    exportState.error = new Error('Export failed: network')
+    render(<HeaderActionsMenu districtId="61" />)
+    expect(screen.getByRole('alert')).toHaveTextContent(/export failed/i)
+  })
+
+  it('clears a stale export error when the menu is reopened', async () => {
+    exportState.error = new Error('Export failed: network')
+    const user = userEvent.setup()
+    render(<HeaderActionsMenu districtId="61" />)
+    await user.click(screen.getByRole('button', { name: /more actions/i }))
+    expect(clearError).toHaveBeenCalled()
   })
 
   it('ArrowDown opens the menu and moves focus into it', async () => {

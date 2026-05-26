@@ -44,10 +44,14 @@ export const HeaderActionsMenu: React.FC<HeaderActionsMenuProps> = ({
     if (returnFocus) triggerRef.current?.focus()
   }, [])
 
-  // Focus the first menuitem when the menu opens.
+  // Focus the first menuitem when the menu opens, and clear any stale
+  // export error so a reopened menu reflects the current state.
   useEffect(() => {
-    if (open) itemRefs.current[0]?.focus()
-  }, [open])
+    if (open) {
+      clearError()
+      itemRefs.current[0]?.focus()
+    }
+  }, [open, clearError])
 
   // Close on outside click / Escape while open.
   useEffect(() => {
@@ -74,9 +78,6 @@ export const HeaderActionsMenu: React.FC<HeaderActionsMenuProps> = ({
 
   const handleTriggerKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      setOpen(true)
-    } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       setOpen(true)
     }
@@ -108,7 +109,9 @@ export const HeaderActionsMenu: React.FC<HeaderActionsMenuProps> = ({
         focusItem(itemRefs.current.length - 1)
         break
       case 'Tab':
-        close(false)
+        // Close and return focus to the trigger so the natural tab order
+        // continues from there — never drop focus to <body> on unmount.
+        close()
         break
       default:
         break
@@ -121,17 +124,19 @@ export const HeaderActionsMenu: React.FC<HeaderActionsMenuProps> = ({
     close()
   }
 
-  const handleCopyLink = () => {
+  const handleCopyLink = async () => {
     close()
-    navigator.clipboard
-      .writeText(window.location.href)
-      .then(() => {
-        setCopied(true)
-        setTimeout(() => setCopied(false), 1800)
-      })
-      .catch(() => {
-        // Clipboard API rejects on insecure contexts; swallow silently for v1.
-      })
+    try {
+      // navigator.clipboard is undefined on insecure (HTTP) contexts — the
+      // property access throws synchronously, which the try/catch absorbs
+      // (a .then().catch() chain would not). Guard explicitly too.
+      if (!navigator.clipboard) return
+      await navigator.clipboard.writeText(window.location.href)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    } catch {
+      // Clipboard unavailable or write rejected; swallow silently for v1.
+    }
   }
 
   return (
@@ -162,12 +167,11 @@ export const HeaderActionsMenu: React.FC<HeaderActionsMenuProps> = ({
             type="button"
             role="menuitem"
             tabIndex={-1}
-            disabled={isExporting}
             className="header-actions-menu__item"
             onClick={handleExport}
             onKeyDown={e => handleMenuKeyDown(e, 0)}
           >
-            {isExporting ? 'Exporting…' : 'Export CSV'}
+            Export CSV
           </button>
           <button
             ref={el => {
@@ -185,14 +189,16 @@ export const HeaderActionsMenu: React.FC<HeaderActionsMenuProps> = ({
         </div>
       )}
 
-      {/* Feedback region — survives the menu closing so keyboard / SR users
-          still get confirmation. Polite for success, assertive for errors. */}
+      {/* Feedback region — anchored outside the panel so progress / success
+          survive the menu closing (the menu closes on every action). Export
+          progress and the copied confirmation are polite; export errors are
+          assertive (role="alert"). */}
       <span
         role="status"
         aria-live="polite"
         className="header-actions-menu__status"
       >
-        {copied ? '✓ Link copied' : ''}
+        {isExporting ? 'Exporting…' : copied ? '✓ Link copied' : ''}
       </span>
       {error && (
         <span role="alert" className="header-actions-menu__error">
