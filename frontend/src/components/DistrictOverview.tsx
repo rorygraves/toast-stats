@@ -97,7 +97,7 @@ export const DistrictOverview: React.FC<DistrictOverviewProps> = ({
 
       {/* Distinguished Composition stack-bar + Payment Composition donut */}
       {!isLoading && !error && analytics && analytics.allClubs.length > 0 && (
-        <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="mt-4 grid grid-cols-1 min-[980px]:grid-cols-2 gap-4">
           <DistinguishedCompositionBar
             smedley={analytics.distinguishedClubs.smedley}
             presidents={analytics.distinguishedClubs.presidents}

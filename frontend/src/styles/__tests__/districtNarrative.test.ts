@@ -39,9 +39,12 @@ describe('district-narrative.css (#572)', () => {
     expect(css).toMatch(/\.district-kpi-strip\s*\{[^}]*top:\s*56px/)
   })
 
-  it('hides the strip toggle chevron at tablet+', () => {
+  it('hides the strip toggle chevron at the 980px desktop threshold (#682)', () => {
+    // #682 reconciled the strip's desktop threshold from 768 to the handoff's
+    // 980px 2-col-collapse point so the whole district surface shares one
+    // breakpoint system. Below 980 the collapse chevron is available.
     expect(css).toMatch(
-      /@media\s*\(min-width:\s*768px\)[\s\S]*\.district-kpi-strip__toggle[\s\S]*?display:\s*none/
+      /@media\s*\(min-width:\s*980px\)[\s\S]*\.district-kpi-strip__toggle[\s\S]*?display:\s*none/
     )
   })
 

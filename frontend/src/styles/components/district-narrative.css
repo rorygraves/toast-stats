@@ -56,15 +56,19 @@
     gap: 12px;
   }
 
-  /* 4 cards (#681): 1-col → 2-col (640) → 4-col (1024). A 3-col rule would
-     orphan the 4th card on a second row; 2×2 then 4-across reads cleanly. */
+  /* 4 cards (#681): 1-col → 2-col (640) → 4-col (980). A 3-col rule would
+     orphan the 4th card on a second row; 2×2 then 4-across reads cleanly.
+     #682: the 4-col threshold is the handoff's 980px 2-col-collapse point
+     (HANDOFF §234), reconciled from the original 1024 so the whole district
+     surface shares one breakpoint system. The 640 intermediate stays — four
+     stacked cards on tablet would be needlessly tall. */
   @media (min-width: 640px) {
     .district-kpi-strip__cards {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
-  @media (min-width: 1024px) {
+  @media (min-width: 980px) {
     .district-kpi-strip__cards {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
@@ -137,8 +141,10 @@
     outline-offset: 2px;
   }
 
-  /* Desktop / tablet: chevron is hidden — strip is always expanded. */
-  @media (min-width: 768px) {
+  /* Desktop: chevron is hidden — strip is always expanded at the 980px
+     full-layout threshold (#682, matching the 4-col step). Below 980 the
+     collapse chevron is available. */
+  @media (min-width: 980px) {
     .district-kpi-strip__toggle {
       display: none;
     }
