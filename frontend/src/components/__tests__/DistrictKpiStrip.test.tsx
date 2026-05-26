@@ -36,6 +36,7 @@ const sampleKpis = {
   paidClubs: { current: 149, targets, rankings },
   membershipPayments: { current: 12500, targets, rankings },
   distinguishedClubs: { current: 84, targets, rankings },
+  netMemberChange: { current: 312 },
 }
 
 const renderStrip = (ui: React.ReactElement) =>
@@ -99,5 +100,39 @@ describe('DistrictKpiStrip (#572)', () => {
     expect(
       screen.getByTestId('district-kpi-strip-skeleton')
     ).toBeInTheDocument()
+  })
+
+  // #681 — KPI strip to spec: 4th card + legible gauge.
+  it('renders the 4th Net Member Change card with its signed value', () => {
+    renderStrip(<DistrictKpiStrip kpis={sampleKpis} />)
+    const strip = screen.getByRole('region', { name: /key district metrics/i })
+    expect(within(strip).getByText('Net Member Change')).toBeInTheDocument()
+    expect(within(strip).getByTestId('kpi-delta-value')).toHaveTextContent(
+      '+312'
+    )
+  })
+
+  it('includes the net member change in the collapsed summary row', () => {
+    window.sessionStorage.setItem('district-kpi-strip-collapsed', 'true')
+    renderStrip(<DistrictKpiStrip kpis={sampleKpis} />)
+    const summary = screen.getByTestId('district-kpi-strip-summary')
+    expect(within(summary).getByText(/\+312/)).toBeInTheDocument()
+  })
+
+  it('renders a legend expanding the D/S/P/Sm tier abbreviations', () => {
+    renderStrip(<DistrictKpiStrip kpis={sampleKpis} />)
+    const legend = screen.getByTestId('district-kpi-strip-legend')
+    expect(legend).toHaveTextContent(/Distinguished/)
+    expect(legend).toHaveTextContent(/Select/)
+    expect(legend).toHaveTextContent(/President/)
+    expect(legend).toHaveTextContent(/Smedley/)
+  })
+
+  it('hides the tier legend in the collapsed summary view', () => {
+    window.sessionStorage.setItem('district-kpi-strip-collapsed', 'true')
+    renderStrip(<DistrictKpiStrip kpis={sampleKpis} />)
+    expect(
+      screen.queryByTestId('district-kpi-strip-legend')
+    ).not.toBeInTheDocument()
   })
 })
