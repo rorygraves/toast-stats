@@ -16,10 +16,17 @@ export interface DistrictKpiCardData {
   rankings: MetricRankings
 }
 
+/** Net Member Change is a signed delta with no Distinguished tiers, so it
+ *  carries only a current value — not targets/rankings (#681). */
+export interface DistrictKpiDeltaData {
+  current: number
+}
+
 export interface DistrictKpiStripData {
   paidClubs: DistrictKpiCardData
   membershipPayments: DistrictKpiCardData
   distinguishedClubs: DistrictKpiCardData
+  netMemberChange: DistrictKpiDeltaData
 }
 
 export interface DistrictKpiStripProps {

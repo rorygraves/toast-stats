@@ -321,6 +321,12 @@ const DistrictDetailPageInner: React.FC = () => {
         targets: pt?.distinguishedClubs.targets ?? null,
         rankings: pt?.distinguishedClubs.rankings ?? NULL_RANKINGS,
       },
+      // #681 — Net Member Change = actual member-count delta since the
+      // program-year base (AnalyticsComputer.memberCountChange), distinct
+      // from the payment-based membershipChange that drives the Payments card.
+      netMemberChange: {
+        current: analytics.memberCountChange ?? 0,
+      },
     }
   }, [analytics, performanceTargets])
 
