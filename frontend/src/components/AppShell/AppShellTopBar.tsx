@@ -54,7 +54,7 @@ const AppShellTopBar: React.FC = () => {
       <button
         type="button"
         className="app-shell-nav-toggle"
-        aria-label="Menu"
+        aria-label={navOpen ? 'Close menu' : 'Open menu'}
         aria-controls={PRIMARY_NAV_ID}
         aria-expanded={navOpen}
         onClick={() => setNavOpen(prev => !prev)}

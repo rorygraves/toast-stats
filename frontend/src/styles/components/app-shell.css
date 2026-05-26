@@ -154,6 +154,17 @@
     background-color: var(--loyal-50);
   }
 
+  /* #735: --loyal-500 (#004165) has no dark remap and --loyal-50 → #112432 in
+     dark, so the active link is navy-on-navy (~1.1:1) on the dark surface. The
+     mobile disclosure panel turns this into a full-width 12px block on every
+     page, so the long-latent contrast miss is now prominent. --link is the
+     dark-safe blue the theme already remaps (#60a5d8), clearing AA on the dark
+     --loyal-50 pill. Scoped so light mode is untouched (Lesson 093/096, mirrors
+     the #609/#611 fixes above). */
+  [data-theme='dark'] .app-shell-nav__link[aria-current='page'] {
+    color: var(--link);
+  }
+
   .app-shell-nav__link--soon {
     color: var(--ink-4);
     cursor: not-allowed;
