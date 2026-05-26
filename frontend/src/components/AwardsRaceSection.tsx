@@ -14,6 +14,15 @@ import type {
 interface AwardsRaceSectionProps {
   /** Competitive award standings; null means no data for this snapshot */
   standings: CompetitiveAwardStandings | null
+  /**
+   * True while the competitive-awards query is still in flight (#750). This
+   * query resolves *separately from and later than* the rankings query that
+   * paints the page, so without a reserved slot the section pops in late and
+   * shoves the toolbar + rankings table down ~286px → CLS 0.198 (the
+   * secondary source Lesson 079 deferred). When loading we render a
+   * height-matched skeleton so the real cards fill the slot in place.
+   */
+  isLoading?: boolean
 }
 
 interface AwardCardSpec {
@@ -66,14 +75,24 @@ const AWARD_CARDS: ReadonlyArray<{
 
 export const AwardsRaceSection: React.FC<AwardsRaceSectionProps> = ({
   standings,
+  isLoading = false,
 }) => {
-  if (!standings) return null
+  // Reserve the slot while the (separate, slower) competitive-awards query is
+  // in flight so its late arrival doesn't shift the page below it (#750).
+  // Once the query settles with genuinely no data, collapse to null (rare
+  // legacy-snapshot case — the file predates #330).
+  if (!standings) return isLoading ? <AwardsRaceSkeleton /> : null
 
   const cardData = AWARD_CARDS.map(({ key, spec }) => {
     const entries = standings[key] ?? []
     return { spec, entries }
   })
 
+  // Settled with data but every award array empty → collapse (same rare path
+  // as the null/legacy-snapshot case above; on populated snapshots all three
+  // arrays carry contenders, so the reserved skeleton fills in place). The
+  // minor collapse shift here is bounded to snapshots that genuinely have no
+  // competitive-award standings.
   const allEmpty = cardData.every(({ entries }) => entries.length === 0)
   if (allEmpty) return null
 
@@ -108,6 +127,45 @@ export const AwardsRaceSection: React.FC<AwardsRaceSectionProps> = ({
     </section>
   )
 }
+
+/**
+ * Height-matched placeholder shown while the competitive-awards query loads
+ * (#750). Reuses the real `awards-race` / `awards-race-card` chrome and the
+ * *static* card titles + thresholds (the tallest, wrap-prone rows) so the
+ * reserved height tracks the loaded section across breakpoints, leaving only
+ * the fixed-height data rows as skeleton bars. aria-hidden: it carries no
+ * information for assistive tech.
+ */
+const AwardsRaceSkeleton: React.FC = () => (
+  <section
+    className="awards-race"
+    aria-hidden="true"
+    data-testid="awards-race-skeleton"
+  >
+    <header className="awards-race__header">
+      <span className="awards-race-skeleton__bar awards-race-skeleton__bar--heading" />
+    </header>
+    <div className="awards-race__grid">
+      {AWARD_CARDS.map(({ key, spec }) => (
+        <article className="awards-race-card" key={key}>
+          <header className="awards-race-card__header">
+            <h3 className="awards-race-card__title">{spec.title}</h3>
+            <p className="awards-race-card__threshold">{spec.threshold}</p>
+          </header>
+          <div className="awards-race-card__row">
+            <span className="awards-race-skeleton__bar awards-race-skeleton__bar--leader" />
+            <span className="awards-race-skeleton__bar awards-race-skeleton__bar--value" />
+          </div>
+          <div className="awards-race-card__progress-track" />
+          <div className="awards-race-card__status">
+            <span aria-hidden="true" className="awards-race-card__status-dot" />
+            <span className="awards-race-skeleton__bar awards-race-skeleton__bar--status" />
+          </div>
+        </article>
+      ))}
+    </div>
+  </section>
+)
 
 interface AwardCardProps {
   spec: AwardCardSpec

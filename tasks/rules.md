@@ -100,3 +100,4 @@ _Trigger:_ splitting a test suite into projects/shards, or adding a top-level te
 - Any chart with `|| 1` range fallback is a y-axis inversion bug waiting to happen. Pad symmetrically when `range === 0`.
 - Tailwind opacity variants (`text-tm-*-80`) don't inherit CSS variable overrides. Audit on every new brand token.
 - `Path.join()` with raw user input = path traversal. Always call `validateDistrictId()` before constructing paths from request params.
+- `AwardsRaceSection` (landing `/`, above the toolbar) is fed by `useCompetitiveAwards` — a **separate** query from rankings. It must reserve its slot while that query loads (height-matched skeleton), never render `null`-until-data: the late expansion shifts the whole page down ~286px → CLS 0.198 (Lesson 107). Same shape for any above-the-fold section fed by a secondary, separately-resolving query. A deferral conditioned on "the data is usually absent" expires the day the pipeline populates it.
