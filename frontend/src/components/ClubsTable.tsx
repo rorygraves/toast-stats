@@ -120,7 +120,11 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
   const [sortDirection, setSortDirection] = useState<SortDirection>(
     initialSortDirection ?? 'asc'
   )
-  const isMobile = useIsMobile(768)
+  // Collapse the table to cards at 640px per HANDOFF §126 (epic #665 Sprint 5,
+  // #671) — was 768px. Below 640 a 13-column table can't fit without a scroll
+  // trap; clubs are browsed one-at-a-time, so card-collapse is the right
+  // pattern (lesson 105).
+  const isMobile = useIsMobile(640)
 
   // Use column filters hook with optional URL-initialized state (#272)
   const {

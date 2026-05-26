@@ -2757,14 +2757,19 @@
   }
 
   /* Mobile sort controls (the dropdown + direction toggle above the card
-     list) — were border-gray-300 / text-gray-700 / bg-white / text-gray-500. */
+     list) — were border-gray-300 / text-gray-700 / bg-white / text-gray-500.
+     min-height/width 44px meets the WCAG 2.5.5 / handoff touch-target floor
+     (#671) so they're comfortably tappable on a phone. */
   .clubs-mobile-select {
+    min-height: 44px;
     background-color: var(--surface);
     border: 1px solid var(--line);
     color: var(--ink);
   }
 
   .clubs-sort-dir {
+    min-width: 44px;
+    min-height: 44px;
     color: var(--ink-3);
   }
 
@@ -2896,6 +2901,59 @@
 
   [data-theme='dark'] .clubs-dcp-bar__fill {
     background-color: #8ec5e8;
+  }
+
+  /* ── Mobile ClubCard re-skin (#671, epic #665 Sprint 5) ──
+     Replaces the card's legacy gray Tailwind + inline-hex status badge with
+     redesign tokens. The card is a full-width tap target (button); chrome is
+     --surface / --line / --ink so dark mode rides the [data-theme='dark']
+     remaps with no component branch (R10). The status badge reuses
+     .clubs-status-pill (above) so the same datum reads identically to the
+     desktop row (lesson 052). Card padding 16px / radius 8px per
+     HANDOFF §232/§240 (--rds-radius-md). */
+  .clubs-card {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 16px;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-md);
+    transition:
+      box-shadow 0.15s ease,
+      border-color 0.15s ease,
+      background-color 0.15s ease;
+  }
+
+  .clubs-card:hover {
+    background-color: var(--surface-3);
+    border-color: var(--loyal-200);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 12%);
+  }
+
+  .clubs-card__name {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 1.25;
+    color: var(--ink);
+  }
+
+  .clubs-card__stat-val {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .clubs-card__stat-unit {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--ink-3);
+  }
+
+  .clubs-card__stat-label {
+    font-size: 11px;
+    color: var(--ink-3);
   }
 
   /* History page year strip (#367) — chip row of archived years. */
