@@ -16,18 +16,20 @@
   }
 
   /* Top bar: 3-column flex (brand | nav with flex:1 | tools) per design.
-     The bar spans the viewport edge-to-edge with 24px gutter padding;
-     the .app-shell__page wrapper handles content max-width below. */
+     The bar spans the viewport edge-to-edge; the .app-shell__page wrapper
+     handles content max-width below. Mobile-first: tighter 16px gutters and
+     12px gaps so brand + hamburger + tools clear 375px with no horizontal
+     scroll (#735); the desktop breakpoint restores the 24px design gutters. */
   .app-shell-top-bar {
     position: sticky;
     top: 0;
     z-index: 40;
     height: 56px;
     border-bottom: 1px solid var(--line);
-    padding: 0 24px;
+    padding: 0 16px;
     display: flex;
     align-items: center;
-    gap: 24px;
+    gap: 12px;
     background-color: var(--surface);
     -webkit-backdrop-filter: saturate(140%) blur(8px);
     backdrop-filter: saturate(140%) blur(8px);
@@ -191,11 +193,20 @@
     align-items: center;
     gap: 12px;
     flex-shrink: 0;
+    /* Right-align the cluster on mobile, where the nav is an absolute
+       dropdown and no longer the flex:1 spacer that pushed it right (#735).
+       Inert on desktop — the flex:1 nav already consumes the free space. */
+    margin-left: auto;
   }
 
   /* Desktop (≥768px): no hamburger; the nav is the inline middle column
      it has always been. Overrides the mobile-first dropdown above (#735). */
   @media (min-width: 768px) {
+    .app-shell-top-bar {
+      padding: 0 24px;
+      gap: 24px;
+    }
+
     .app-shell-nav-toggle {
       display: none;
     }
