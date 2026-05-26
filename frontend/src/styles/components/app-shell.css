@@ -2759,12 +2759,29 @@
   /* Mobile sort controls (the dropdown + direction toggle above the card
      list) — were border-gray-300 / text-gray-700 / bg-white / text-gray-500.
      min-height/width 44px meets the WCAG 2.5.5 / handoff touch-target floor
-     (#671) so they're comfortably tappable on a phone. */
+     (#671) so they're comfortably tappable on a phone.
+
+     appearance:none is REQUIRED: a native <select> ignores min-height in
+     WebKit/Safari (renders ~20px tall on iOS), defeating the touch target —
+     caught by the WebKit preview smoke (#710 dual-engine, lesson 108). With
+     the native chrome off we own the box height and supply our own caret. */
   .clubs-mobile-select {
+    appearance: none;
     min-height: 44px;
+    padding: 0 28px 0 10px;
     background-color: var(--surface);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
     border: 1px solid var(--line);
     color: var(--ink);
+    cursor: pointer;
+  }
+
+  /* Lighter caret on dark surfaces so the affordance stays visible
+     (lesson 096 — a token/asset that doesn't adapt is a dark-mode trap). */
+  [data-theme='dark'] .clubs-mobile-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239aa4b2' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   }
 
   .clubs-sort-dir {

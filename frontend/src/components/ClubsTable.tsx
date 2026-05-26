@@ -708,7 +708,7 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
                   setSortDirection('asc')
                 }
               }}
-              className="text-xs clubs-mobile-select rounded-md px-2 py-1"
+              className="text-xs clubs-mobile-select rounded-md"
               aria-label="Sort clubs"
             >
               {COLUMN_CONFIGS.filter(c => c.sortable).map(config => (
