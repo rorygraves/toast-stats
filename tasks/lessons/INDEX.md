@@ -71,3 +71,4 @@
 - **109** [frontend, css, tests, scope, dark-mode] — A render-time class guard scopes to the resting state; let that be the deferral boundary, but don't mistake it for a contrast audit (#668, #665)
 - **110** [tests, e2e, css, frontend, verification] — jsdom `textContent` ignores CSS `text-transform`; a live `innerText` assertion doesn't (#669, #665)
 - **111** [css, accessibility, frontend, tests, playwright, dark-mode] — A native `<select>` ignores `min-height` in WebKit; the 44px touch target needs `appearance:none` (#671, #665)
+- **112** [accessibility, css, dark-mode, tests, frontend] — A "verification pass" contrast guard earns its keep on the marginals the eye and hand-math miss (#672, #665)

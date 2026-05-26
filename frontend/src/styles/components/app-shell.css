@@ -2864,7 +2864,10 @@
      confirmed" state, HANDOFF §256). Yellow tokens have no dark remap, so
      dark text on the stripe stays legible in both themes. */
   .clubs-tier-pill--projected {
-    color: #5a4a14;
+    /* #672: darkened #5a4a14 → #534213 so the dark text clears AA (4.5:1) on
+       the DARKER stripe band (--yellow-600 #c9b748) too — the worst case as
+       text crosses the 6px stripe (was 4.27:1 on that band). */
+    color: #534213;
     background-image: repeating-linear-gradient(
       45deg,
       var(--yellow-500) 0,

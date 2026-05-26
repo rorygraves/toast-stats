@@ -66,7 +66,11 @@ describe('Redesign token system (#353)', () => {
       expect(block).toMatch(/--ink:\s*#0f1720/i)
       expect(block).toMatch(/--ink-2:\s*#344052/i)
       expect(block).toMatch(/--ink-3:\s*#5b6675/i)
-      expect(block).toMatch(/--ink-4:\s*#8b94a3/i)
+      // #672: darkened #8b94a3 → #828b9a so the graphical-tier muted token
+      // (sort carets, pips, axis labels) clears the 3:1 floor on the off-white
+      // --surface-2/3 it lands on (was 2.93:1 on --surface-2). Light-side
+      // analog of the dark #610 bump below; monotonic-safe in light mode.
+      expect(block).toMatch(/--ink-4:\s*#828b9a/i)
       expect(block).toMatch(/--link:\s*var\(--loyal-500\)/i)
     })
 

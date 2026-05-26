@@ -9,7 +9,6 @@ import {
   getClubHealthStatusLabel,
   getClubHealthStatusPillModifier,
 } from '../utils/clubHealthStatus'
-import { EmptyState } from './ErrorDisplay'
 import { useColumnFilters } from '../hooks/useColumnFilters'
 import { ColumnHeader } from './ColumnHeader'
 import { SortField, SortDirection, COLUMN_CONFIGS } from './filters/types'
@@ -651,13 +650,32 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
       {/* Loading State */}
       {isLoading && <LoadingSkeleton variant="table" count={5} />}
 
-      {/* No Results */}
+      {/* No Results — no data at all. Token-driven inline markup mirroring
+          the filter-empty state below (#672), so the clubs table is gray-free
+          in every state it renders. Distinct copy from the filter-empty case:
+          this is "nothing cached yet", not "your filters excluded everything". */}
       {!isLoading && sortedClubs.length === 0 && clubs.length === 0 && (
-        <EmptyState
-          title="No Clubs Found"
-          message="No club data is available for this district. This may be because no data has been cached yet."
-          icon="data"
-        />
+        <div className="p-12 text-center" role="status">
+          <svg
+            className="w-16 h-16 clubs-text-muted mx-auto mb-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+            />
+          </svg>
+          <p className="clubs-text-muted font-medium">No Clubs Found</p>
+          <p className="clubs-text-muted text-sm mt-1 max-w-lg mx-auto">
+            No club data is available for this district. This may be because no
+            data has been cached yet.
+          </p>
+        </div>
       )}
 
       {/* No Search Results */}
