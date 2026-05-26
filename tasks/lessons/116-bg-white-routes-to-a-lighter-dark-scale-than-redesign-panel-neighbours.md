@@ -1,5 +1,5 @@
 ---
-id: '107'
+id: '116'
 category: lesson
 tags: [dark-mode, css, frontend, responsive]
 auto_load: true
@@ -7,7 +7,7 @@ date: 2026-05-26
 issues: [682, 674]
 ---
 
-# Lesson 107 — `bg-white` themes to a LIGHTER dark scale than its `.redesign-panel` neighbours
+# Lesson 116 — `bg-white` themes to a LIGHTER dark scale than its `.redesign-panel` neighbours
 
 **Date:** 2026-05-26
 **Issue:** #682 (epic #674 Sprint 8 — district page breakpoints + dark panels)
@@ -23,7 +23,7 @@ systems** in this app, and `bg-white` routes to the lighter one.
 - `.redesign-panel` (the neighbour primitive) → `var(--surface)` = **#111922**.
 - `bg-white` → (via the dark-mode.css override) `var(--surface-card)` =
   **#1A1722** — a visibly lighter surface from the older `--surface-primary/
-  secondary/card` scale.
+secondary/card` scale.
 
 So a panel built from `bg-white … border-gray-200` themes correctly but lands
 on a different, lighter surface than every panel built from `.redesign-panel`.
@@ -52,7 +52,7 @@ alone; the border is what carries the nesting cue there.
 - Auditing a "reads lighter/darker than neighbours" dark-mode report: compare
   the offending element's resolved `background-color` against a neighbour's,
   not against "is it dark at all." A live equality assertion (`panel.bg ===
-  neighbour.bg`) in a Playwright smoke catches this where a jsdom or single-
+neighbour.bg`) in a Playwright smoke catches this where a jsdom or single-
   element axe check can't.
 - Prefer the shared panel class over re-deriving chrome from raw utilities.
   `.redesign-panel` carries surface + line + radius + shadow + ink as one

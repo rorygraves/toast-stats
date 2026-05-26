@@ -68,7 +68,6 @@
 - **107** [dark-mode, css, accessibility, tests, vitest] — A CSS-parsing audit's selector matcher must exclude pseudo-class rules, or `:hover`/`:focus` shadows the resting state (#700, #701)
 - **107** [process, frontend, router, tdd, sprint-runner] — Reserve a future seam with a tripwire test, not just a comment (#680, #678, #674)
 - **107** [dark-mode, css, accessibility, frontend, tailwind] — Tailwind's `dark:` is OS-keyed; under a manual theme toggle it MISFIRES in the OS-dark + app-light quadrant (#710, #683)
-- **107** [dark-mode, css, frontend, responsive] — `bg-white` themes to a LIGHTER dark scale than its `.redesign-panel` neighbours (#682, #674)
 - **108** [tests, playwright, css, frontend, accessibility] — Verify a sticky header by measuring the sticky cell, not the `<thead>` wrapper (#667, #665)
 - **109** [frontend, css, tests, scope, dark-mode] — A render-time class guard scopes to the resting state; let that be the deferral boundary, but don't mistake it for a contrast audit (#668, #665)
 - **110** [tests, e2e, css, frontend, verification] — jsdom `textContent` ignores CSS `text-transform`; a live `innerText` assertion doesn't (#669, #665)
@@ -77,3 +76,4 @@
 - **113** [frontend, react, charts, performance, cls] — An IntersectionObserver visibility gate on already-code-split content is invisible to every non-scroll context (#675, #674)
 - **114** [dark-mode, css, accessibility, frontend] — A raw non-remapping token that "passes" in a sibling component may be leaning on that sibling's background fill (#678, #674)
 - **115** [frontend, analytics, data-pipeline, dcp, verification] — A field's name (and comment) can lie about whether it's populated in _your_ surface (#681, #674)
+- **116** [dark-mode, css, frontend, responsive] — `bg-white` themes to a LIGHTER dark scale than its `.redesign-panel` neighbours (#682, #674)
