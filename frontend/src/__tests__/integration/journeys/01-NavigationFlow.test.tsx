@@ -11,11 +11,6 @@ import '@testing-library/jest-dom'
 import App from '../../../App'
 import { setupCdnFetchMock } from '../utils/mockCdnData'
 
-// Mock LazyChart to immediately render its children in integration tests
-vi.mock('../../../components/LazyChart', () => ({
-  LazyChart: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}))
-
 describe('Journey 01: The Navigation Flow', () => {
   let user: ReturnType<typeof userEvent.setup>
 
