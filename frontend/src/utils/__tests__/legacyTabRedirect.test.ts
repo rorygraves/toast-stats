@@ -99,4 +99,34 @@ describe('redirectLegacyDistrictTab', () => {
       expect(out).toBe('/district/61/rankings?date=2026-04-30')
     })
   })
+
+  // #680 (epic #674 Sprint 6) — Trends and Analytics moved off the hub onto
+  // their own routes, so their legacy `?tab=` deep links redirect too.
+  describe('tab=trends', () => {
+    it('redirects to /district/:id/trends with no extra params', () => {
+      expect(redirectLegacyDistrictTab(base('tab=trends'), '61')).toBe(
+        '/district/61/trends'
+      )
+    })
+
+    it('preserves unrelated params (e.g. date)', () => {
+      expect(
+        redirectLegacyDistrictTab(base('tab=trends&date=2026-04-30'), '61')
+      ).toBe('/district/61/trends?date=2026-04-30')
+    })
+  })
+
+  describe('tab=analytics', () => {
+    it('redirects to /district/:id/analytics with no extra params', () => {
+      expect(redirectLegacyDistrictTab(base('tab=analytics'), '61')).toBe(
+        '/district/61/analytics'
+      )
+    })
+
+    it('preserves unrelated params (e.g. date)', () => {
+      expect(
+        redirectLegacyDistrictTab(base('tab=analytics&date=2026-04-30'), '61')
+      ).toBe('/district/61/analytics?date=2026-04-30')
+    })
+  })
 })
