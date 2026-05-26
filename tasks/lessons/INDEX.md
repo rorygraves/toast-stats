@@ -69,6 +69,7 @@
 - **107** [frontend, react, cls, performance] — A deferred async-insert CLS source reactivates the moment its data gets populated (#750, #488, #683)
 - **107** [css, responsive, frontend, mobile] — A horizontal-overflow fix has two layers: collapse the wide child AND shrink the container's own fixed gutters (#735, #756)
 - **107** [ci, automation, data-pipeline, monitoring] — Monitor the output's freshness, not the best-effort scheduler (#753, #757)
+- **107** [dark-mode, css, tailwind, accessibility, verification, frontend] — Re-scoping `dark:` → `theme-dark:` is a no-op in app-dark when the base class already has a `dark-mode.css` override (#715, #710, #564)
 - **107** [process, frontend, router, tdd, sprint-runner] — Reserve a future seam with a tripwire test, not just a comment (#680, #678, #674)
 - **107** [dark-mode, css, accessibility, frontend, tailwind] — Tailwind's `dark:` is OS-keyed; under a manual theme toggle it MISFIRES in the OS-dark + app-light quadrant (#710, #683)
 - **108** [tests, playwright, css, frontend, accessibility] — Verify a sticky header by measuring the sticky cell, not the `<thead>` wrapper (#667, #665)
