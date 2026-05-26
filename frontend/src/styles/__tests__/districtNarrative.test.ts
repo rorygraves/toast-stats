@@ -45,11 +45,12 @@ describe('district-narrative.css (#572)', () => {
     )
   })
 
-  it('hides the anchor TOC below the lg breakpoint', () => {
-    // Base rule sets display:none; the lg+ media query overrides to block.
-    expect(css).toMatch(/\.district-anchor-toc\s*\{[\s\S]*?display:\s*none/)
-    expect(css).toMatch(
-      /@media\s*\(min-width:\s*1024px\)[\s\S]*\.district-anchor-toc\s*\{[\s\S]*?display:\s*block/
-    )
+  it('no longer ships the anchor-TOC rail chrome (#679 — rail deleted)', () => {
+    // The "On this page" right rail was removed when the hub went lean
+    // (ADR-005 §5); DistrictSubnav now owns wayfinding at every width, so
+    // the rail's CSS — and the two-column gutter grid that only existed to
+    // host it — must be gone, not just hidden.
+    expect(css).not.toMatch(/\.district-anchor-toc/)
+    expect(css).not.toMatch(/\.district-detail-page__layout/)
   })
 })

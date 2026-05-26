@@ -1,6 +1,7 @@
-/* District Detail Phase 4 (#572) — sticky KPI strip, anchor TOC, and
-   smooth-scroll. Scoped to .district-detail-page-root so that the
-   smooth-scroll behaviour does not leak to the rest of the app
+/* District Detail Phase 4 (#572) — sticky KPI strip + smooth-scroll.
+   The "On this page" anchor TOC rail was removed in #679 (ADR-005 §5);
+   DistrictSubnav now owns wayfinding. Scoped to .district-detail-page-root
+   so the smooth-scroll behaviour does not leak to the rest of the app
    (would break a11y / motion-reduced flows elsewhere). */
 
 @layer brand {
@@ -138,68 +139,6 @@
   @media (prefers-reduced-motion: reduce) {
     .district-kpi-strip__skeleton {
       animation: none;
-    }
-  }
-
-  /* ---------- Anchor TOC (desktop only) ---------- */
-
-  .district-anchor-toc {
-    display: none;
-  }
-
-  @media (min-width: 1024px) {
-    .district-detail-page__layout {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 200px;
-      gap: 32px;
-      align-items: start;
-    }
-
-    .district-anchor-toc {
-      display: block;
-      position: sticky;
-      top: 80px; /* under topbar (56) + a little breathing room */
-      align-self: start;
-      padding: 12px 0;
-      font-family: var(--sans);
-      font-size: 13px;
-    }
-
-    .district-anchor-toc__heading {
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-size: 11px;
-      color: var(--ink-3);
-      margin-bottom: 8px;
-    }
-
-    .district-anchor-toc__list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .district-anchor-toc__link {
-      display: block;
-      padding: 6px 10px;
-      border-left: 2px solid transparent;
-      color: var(--ink-3);
-      text-decoration: none;
-      border-radius: 0 6px 6px 0;
-    }
-
-    .district-anchor-toc__link:hover {
-      color: var(--ink);
-      background-color: var(--surface-2);
-    }
-
-    .district-anchor-toc__link[aria-current='true'] {
-      color: var(--link, var(--ink));
-      border-left-color: var(--link, var(--ink));
-      font-weight: 600;
     }
   }
 }

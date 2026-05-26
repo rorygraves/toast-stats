@@ -46,8 +46,8 @@ Object.defineProperty(global, 'localStorage', {
 })
 
 // Mock IntersectionObserver. The trend charts no longer depend on it (#675
-// removed the LazyChart viewport gate), but DistrictAnchorToc's scroll-spy
-// still observes, so the page needs a working mock to mount.
+// removed the LazyChart viewport gate); the page still needs a working mock
+// to mount cleanly for any other observers in the tree.
 class MockIntersectionObserver implements IntersectionObserver {
   readonly root: Element | null = null
   readonly rootMargin: string = ''
