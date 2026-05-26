@@ -36,7 +36,13 @@
   --ink: #0f1720;
   --ink-2: #344052;
   --ink-3: #5b6675;
-  --ink-4: #8b94a3;
+  /* #672: darkened from #8b94a3 (2.93:1 on --surface-2, below the 3:1 graphical
+     floor for the sort caret + other --ink-4 carets/pips/axis labels that land
+     on the off-white panel surfaces). #828b9a clears 3:1 on every light surface
+     (#fff 3.44, --surface-2 3.29, --surface-3 ~3.2) while staying perceptibly
+     lighter than --ink-3. Light-side analog of the dark #610 bump (lesson 095);
+     monotonic-safe (only raises contrast in light mode). */
+  --ink-4: #828b9a;
   --link: var(--loyal-500);
 
   --serif: 'Montserrat', system-ui, sans-serif;
