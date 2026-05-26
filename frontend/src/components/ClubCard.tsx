@@ -17,8 +17,6 @@ interface ClubCardProps {
   onClick?: ((club: ProcessedClubTrend) => void) | undefined
 }
 
-type ClubHealthStatus = 'thriving' | 'vulnerable' | 'intervention-required'
-
 /**
  * Health-status → shared status-pill modifier + display label. Mirrors
  * ClubsTable's getStatusPillModifier / getStatusLabel so the mobile card and
@@ -39,7 +37,7 @@ function statusPill(status: string): { modifier: string; label: string } {
 }
 
 const ClubCard: React.FC<ClubCardProps> = ({ club, onClick }) => {
-  const { modifier, label } = statusPill(club.currentStatus as ClubHealthStatus)
+  const { modifier, label } = statusPill(club.currentStatus)
   const memberChange =
     club.latestMembership - (club.membershipBase ?? club.latestMembership)
 
