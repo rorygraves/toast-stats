@@ -397,6 +397,16 @@ gc_worktrees() {
   git -C "$REPO_DIR" worktree prune 2>/dev/null || true
 }
 
+# True (0) if the issue carries the `needs-product-review` label — the runner
+# must not launch such a sprint autonomously (#767); the session can't make a
+# product call. Fail-open: a gh error yields "not flagged" and lets the normal
+# predecessor gate (which also queries gh) skip the tick instead.
+issue_needs_review() {
+  local issue="$1"
+  gh issue view "$issue" --json labels --jq '.labels[].name' 2>/dev/null \
+    | grep -qx 'needs-product-review'
+}
+
 # === Gate check ===
 # Echoes "PASS <desc>" or "FAIL <desc>". Non-fatal — caller decides.
 check_gate() {
@@ -645,6 +655,17 @@ mode_run() {
   fi
   local target_n target_issue
   read -r target_n target_issue <<<"$pair"
+
+  # --- Operator review gate (#767) ---
+  # A sprint flagged needs-product-review must NOT run autonomously — the
+  # session can't honor a product decision. Skip and notify; the operator
+  # removes the label (or hand-runs the sprint) to release it. Applies in
+  # dry-run too: report the skip rather than a would-be launch.
+  if issue_needs_review "$target_issue"; then
+    log "Sprint $target_n (#$target_issue) has needs-product-review — NOT launching. Remove the label (or hand-run) to release it."
+    notify "sprint-runner" "Sprint $target_n (#$target_issue) needs product review — skipped"
+    exit 0
+  fi
 
   # --- Gate check ---
   local prev_n=$((target_n - 1))

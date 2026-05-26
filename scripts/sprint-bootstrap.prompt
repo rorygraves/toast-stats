@@ -19,7 +19,9 @@ Do these steps in order, and stop if any check fails:
    - If it is not CLOSED, STOP. Do not proceed; report to the operator via Remote Control and exit.
    - (No prod reachability gate: verification is done on the PR preview channel, not prod — see step 5.)
 
-3. **Re-read the epic** with `gh issue view {{EPIC}} --json body` and confirm Sprint {{SPRINT_N}} (#{{TARGET_ISSUE}}) is still the first unchecked sprint. If the epic has been edited (e.g. the operator manually advanced something), trust the epic over this prompt and re-pick the correct target.
+3. **Re-read the epic, then the target issue including its comments.**
+   - `gh issue view {{EPIC}} --json body` — confirm Sprint {{SPRINT_N}} (#{{TARGET_ISSUE}}) is still the first unchecked sprint. If the epic has been edited (e.g. the operator manually advanced something), trust the epic over this prompt and re-pick the correct target.
+   - `gh issue view {{TARGET_ISSUE}} --comments` — read the target's **body AND every comment**. `gh issue view` omits comments unless `--comments` is passed, so they were previously invisible to sessions (#767). Operator comments are **binding guidance**: they refine or override the body (scope, shape, constraints) and are newer intent, so where a comment conflicts with the body, **the comment wins**. If a comment asks for a decision, requests product review, or poses an unanswered question, **STOP** — do not proceed; surface it to the operator via Remote Control and exit.
 
 4. **Run the sprint skill** for the target: invoke `/sprint` with issue `#{{TARGET_ISSUE}}` as the input. Follow the sprint skill's full workflow (Red / Green / Refactor / Verify per CLAUDE.md), including filing the PR and watching CI.
 
