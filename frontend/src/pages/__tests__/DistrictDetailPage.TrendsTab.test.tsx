@@ -45,7 +45,9 @@ Object.defineProperty(global, 'localStorage', {
   writable: true,
 })
 
-// Mock IntersectionObserver so LazyChart renders children immediately
+// Mock IntersectionObserver. The trend charts no longer depend on it (#675
+// removed the LazyChart viewport gate), but DistrictAnchorToc's scroll-spy
+// still observes, so the page needs a working mock to mount.
 class MockIntersectionObserver implements IntersectionObserver {
   readonly root: Element | null = null
   readonly rootMargin: string = ''
@@ -57,7 +59,7 @@ class MockIntersectionObserver implements IntersectionObserver {
       observer: IntersectionObserver
     ) => void
   ) {
-    // Immediately trigger with isIntersecting: true so LazyChart renders children
+    // Fire isIntersecting so the scroll-spy TOC settles during the test.
     setTimeout(() => {
       callback([{ isIntersecting: true } as IntersectionObserverEntry], this)
     }, 0)
@@ -461,7 +463,7 @@ describe('DistrictDetailPage - Trends Tab Data Source Wiring', () => {
       // #569 — Trends content now scroll-stacks on the default district
       // page. No tab click required; the charts render on mount.
 
-      // Wait for LazyChart IntersectionObserver to fire
+      // Charts render on mount (#675 — no longer gated on viewport scroll).
       await waitFor(() => {
         expect(screen.getByTestId('membership-trend-chart')).toBeInTheDocument()
       })
