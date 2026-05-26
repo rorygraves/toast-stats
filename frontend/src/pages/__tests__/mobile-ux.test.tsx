@@ -64,14 +64,28 @@ describe('Issue #85 — Sticky table columns on mobile', () => {
   })
 })
 
-// ---- Issue #87: Export button compact on mobile ----
+// ---- Issue #87 / #676: header secondary actions are compact on mobile ----
+// #87 originally shipped an icon-only-on-mobile Export button. #676 superseded
+// that by moving Export + Share into a single overflow "⋯" menu, which keeps
+// the header uncrowded at 375px without hiding labels (the menu shows full
+// labels). The compact-on-mobile intent is preserved by the consolidation.
 
-describe('Issue #87 — Export button icon-only on mobile', () => {
-  it('DistrictExportButton should hide text labels on mobile via hidden sm:inline', () => {
+describe('Issue #676 — header secondary actions collapse into one overflow menu', () => {
+  it('HeaderActionsMenu renders a single "More actions" trigger, not inline buttons', () => {
     const source = fs.readFileSync(
-      path.join(SRC_DIR, 'components', 'DistrictExportButton.tsx'),
+      path.join(SRC_DIR, 'components', 'HeaderActionsMenu.tsx'),
       'utf-8'
     )
-    expect(source).toMatch(/hidden\s+sm:inline/)
+    expect(source).toContain('aria-label="More actions"')
+    expect(source).toContain('aria-haspopup="menu"')
+  })
+
+  it('DistrictDetailHeader uses the overflow menu instead of standalone buttons', () => {
+    const source = fs.readFileSync(
+      path.join(SRC_DIR, 'components', 'DistrictDetailHeader.tsx'),
+      'utf-8'
+    )
+    expect(source).toContain('HeaderActionsMenu')
+    expect(source).not.toContain('DistrictExportButton')
   })
 })
