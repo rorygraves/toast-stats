@@ -57,13 +57,11 @@ export const EducationLevelsCard: React.FC<EducationLevelsCardProps> = ({
   if (isLoading) {
     return (
       <section
-        className="bg-white rounded-lg p-4 border border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+        className="redesign-panel"
         aria-busy="true"
         aria-label="Loading education levels rollup"
       >
-        <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-          Education Levels
-        </p>
+        <p className="text-sm font-semibold text-gray-700">Education Levels</p>
         <p className="text-xs text-gray-500 mt-2">Loading…</p>
       </section>
     )
@@ -78,22 +76,22 @@ export const EducationLevelsCard: React.FC<EducationLevelsCardProps> = ({
 
   return (
     <section
-      className="bg-white rounded-lg p-4 border border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+      className="redesign-panel"
       aria-labelledby="education-levels-card-title"
       aria-label="education levels"
     >
       <header className="mb-3">
         <h3
           id="education-levels-card-title"
-          className="flex items-center gap-1 text-sm font-semibold text-gray-800 dark:text-gray-100"
+          className="flex items-center gap-1 text-sm font-semibold text-gray-800"
         >
           Education Levels
           <Tooltip content="Total education awards earned this program year, summed across all clubs. Source: clubPerformance.csv columns Level 1s, Level 2s, Level 3s, and the bundled Level 4 / Path Completion / DTM column. TI does not publish per-Pathway breakdowns in the district dashboard.">
             <InfoIcon />
           </Tooltip>
         </h3>
-        <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
-          <strong className="text-gray-900 dark:text-gray-50">
+        <p className="text-xs text-gray-600 mt-1">
+          <strong className="text-gray-900">
             {totals.total.toLocaleString()}
           </strong>{' '}
           total awards · {totals.contributingClubs}/{totals.totalClubs} clubs
@@ -110,22 +108,22 @@ export const EducationLevelsCard: React.FC<EducationLevelsCardProps> = ({
               key={spec.key}
               className="grid grid-cols-[6.5rem_1fr_5rem] items-center gap-2 text-xs"
             >
-              <span className="flex items-center gap-1 text-gray-700 dark:text-gray-200">
+              <span className="flex items-center gap-1 text-gray-700">
                 {spec.label}
                 <Tooltip content={spec.description}>
                   <InfoIcon />
                 </Tooltip>
               </span>
               <span
-                className="h-2 rounded-full bg-tm-loyal-blue/80 dark:bg-tm-loyal-blue/60"
+                className="h-2 rounded-full bg-tm-loyal-blue/80"
                 aria-hidden="true"
                 style={{ width: `${pct}%` }}
               />
-              <span className="text-right text-gray-700 dark:text-gray-200">
-                <strong className="text-gray-900 dark:text-gray-50">
+              <span className="text-right text-gray-700">
+                <strong className="text-gray-900">
                   {count.toLocaleString()}
                 </strong>{' '}
-                <span className="text-gray-500 dark:text-gray-400">{pct}%</span>
+                <span className="text-gray-500">{pct}%</span>
               </span>
             </li>
           )

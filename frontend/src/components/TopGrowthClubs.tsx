@@ -292,13 +292,18 @@ export const TopGrowthClubs: React.FC<TopGrowthClubsProps> = ({
         </div>
       )}
 
-      {/* Achievement Summary */}
-      <div className="bg-gradient-to-r from-tm-loyal-blue-10 to-tm-cool-gray-20 rounded-lg shadow-md p-6">
+      {/* Achievement Summary. #682: token-driven redesign-panel (was a
+          light-baked loyal-blue→cool-gray gradient that read lighter than the
+          neighbouring panels in dark mode). The nested stat cards sit on
+          --surface-2 (an arbitrary-value var that re-resolves live under the
+          [data-theme='dark'] toggle, Lesson 093) so they stay distinct from
+          the panel surface in both themes. */}
+      <div className="redesign-panel">
         <h3 className="text-lg font-semibold text-gray-900 mb-3 font-tm-headline">
           Achievement Highlights
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white rounded-lg p-4">
+        <div className="grid grid-cols-1 min-[980px]:grid-cols-2 gap-4">
+          <div className="bg-[var(--surface-2)] border border-[var(--line)] rounded-lg p-4">
             <div className="flex items-center gap-2 mb-2">
               <svg
                 className="w-5 h-5 text-green-600"
@@ -324,7 +329,7 @@ export const TopGrowthClubs: React.FC<TopGrowthClubsProps> = ({
           </div>
 
           {topDCPClubs && topDCPClubs.length > 0 && (
-            <div className="bg-white rounded-lg p-4">
+            <div className="bg-[var(--surface-2)] border border-[var(--line)] rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
                 <svg
                   className="w-5 h-5 text-tm-loyal-blue"
