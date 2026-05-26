@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.1](https://github.com/taverns-red/toast-stats/compare/analytics-core-v1.7.0...analytics-core-v1.7.1) (2026-05-26)
+
+
+### Refactors
+
+* **rankings:** consolidate duplicated Borda logic into analytics-core shared helpers ([#306](https://github.com/taverns-red/toast-stats/issues/306)) ([#759](https://github.com/taverns-red/toast-stats/issues/759)) ([244e649](https://github.com/taverns-red/toast-stats/commit/244e649f3aae2e34cef02c6895a50bdd1b2d3951))
+
 ## [1.7.0](https://github.com/taverns-red/toast-stats/compare/analytics-core-v1.6.0...analytics-core-v1.7.0) (2026-05-25)
 
 

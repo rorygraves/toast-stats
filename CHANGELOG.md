@@ -1,5 +1,37 @@
 # Changelog
 
+## [2.17.0](https://github.com/taverns-red/toast-stats/compare/toast-stats-v2.16.0...toast-stats-v2.17.0) (2026-05-26)
+
+
+### Features
+
+* **lessons:** depth-1 [[wikilink]] graph traversal for sprint lesson loading ([#772](https://github.com/taverns-red/toast-stats/issues/772)) ([#775](https://github.com/taverns-red/toast-stats/issues/775)) ([a593a0a](https://github.com/taverns-red/toast-stats/commit/a593a0ae5c4b15b3431ba8c170ca76a97f471c99))
+* **monitor:** alert + backup cron when the daily pipeline silently misses a run ([#753](https://github.com/taverns-red/toast-stats/issues/753)) ([#761](https://github.com/taverns-red/toast-stats/issues/761)) ([1b0dc43](https://github.com/taverns-red/toast-stats/commit/1b0dc432c0a869fe2c49b0fb7ac25b324d876d4f))
+
+
+### Bug Fixes
+
+* **app-shell:** collapse primary nav into a disclosure menu &lt;768px ([#735](https://github.com/taverns-red/toast-stats/issues/735)) ([#764](https://github.com/taverns-red/toast-stats/issues/764)) ([21d185d](https://github.com/taverns-red/toast-stats/commit/21d185d6368974fe8d86b317398b93852c3513fa))
+* **ci:** pr-preview-cleanup — checkout for firebase.json + capture stdout ([#776](https://github.com/taverns-red/toast-stats/issues/776)) ([#777](https://github.com/taverns-red/toast-stats/issues/777)) ([049d5fb](https://github.com/taverns-red/toast-stats/commit/049d5fbdf9f6c3454e5e04661a3a626e7b0f714c))
+* **dark-mode:** migrate remaining components off prefers-scheme `dark:` to the theme toggle ([#715](https://github.com/taverns-red/toast-stats/issues/715)) ([#766](https://github.com/taverns-red/toast-stats/issues/766)) ([791bac0](https://github.com/taverns-red/toast-stats/commit/791bac0384c59d2dd0590fbe1bdf4b694b55ed2c))
+* **landing:** reserve AwardsRaceSection slot to kill 0.198 landing-page CLS ([#750](https://github.com/taverns-red/toast-stats/issues/750)) ([#765](https://github.com/taverns-red/toast-stats/issues/765)) ([3d961f1](https://github.com/taverns-red/toast-stats/commit/3d961f1ee28f4d4f57ca19ee7e2811b78e80aa88))
+* **security:** override uuid to ^11.1.1 to clear CVE-2026-41907 ([#755](https://github.com/taverns-red/toast-stats/issues/755)) ([#770](https://github.com/taverns-red/toast-stats/issues/770)) ([4b9600a](https://github.com/taverns-red/toast-stats/commit/4b9600ab030637ce14853e9c57104d3b1a508098))
+* **sprint-runner:** --dry-run no longer mutates META_EPIC ([#694](https://github.com/taverns-red/toast-stats/issues/694)) ([#751](https://github.com/taverns-red/toast-stats/issues/751)) ([7fd25ef](https://github.com/taverns-red/toast-stats/commit/7fd25ef6e952d831099ebb1634e1a5d9c42cdce0))
+* **sprint-runner:** honor operator steering — read issue comments + gate needs-product-review ([#767](https://github.com/taverns-red/toast-stats/issues/767)) ([#768](https://github.com/taverns-red/toast-stats/issues/768)) ([adc0737](https://github.com/taverns-red/toast-stats/commit/adc07376f0a3e90fabafbd2995da478cfc43343b))
+* **sprint-runner:** refuse to auto-complete an epic with 0 parseable sprints ([#771](https://github.com/taverns-red/toast-stats/issues/771)) ([#774](https://github.com/taverns-red/toast-stats/issues/774)) ([351b6e1](https://github.com/taverns-red/toast-stats/commit/351b6e123b16cf2f8fd914ec1148ed5ba03eb744))
+
+
+### Refactors
+
+* **rankings:** consolidate duplicated Borda logic into analytics-core shared helpers ([#306](https://github.com/taverns-red/toast-stats/issues/306)) ([#759](https://github.com/taverns-red/toast-stats/issues/759)) ([244e649](https://github.com/taverns-red/toast-stats/commit/244e649f3aae2e34cef02c6895a50bdd1b2d3951))
+
+
+### Documentation
+
+* **fac:** resolve [#490](https://github.com/taverns-red/toast-stats/issues/490) — snapshot-only clubs are a registry-visibility signal ([#763](https://github.com/taverns-red/toast-stats/issues/763)) ([b22cf20](https://github.com/taverns-red/toast-stats/commit/b22cf20ea315f5e6fee9592f08de7608c317c116))
+* **lessons:** 107 — monitor output freshness, not the best-effort scheduler ([#753](https://github.com/taverns-red/toast-stats/issues/753)) ([#762](https://github.com/taverns-red/toast-stats/issues/762)) ([b6b1087](https://github.com/taverns-red/toast-stats/commit/b6b108739087da0c62af625a17dfcc3c48bb756e))
+* **security:** triage open uuid + @tootallnate/once alerts ([#754](https://github.com/taverns-red/toast-stats/issues/754)) ([#769](https://github.com/taverns-red/toast-stats/issues/769)) ([58d0a63](https://github.com/taverns-red/toast-stats/commit/58d0a63d8dbda2d9a883b68ad6a22b885829d485))
+
 ## [2.16.0](https://github.com/taverns-red/toast-stats/compare/toast-stats-v2.15.0...toast-stats-v2.16.0) (2026-05-26)
 
 

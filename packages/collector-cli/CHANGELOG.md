@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.4.1](https://github.com/taverns-red/toast-stats/compare/collector-cli-v1.4.0...collector-cli-v1.4.1) (2026-05-26)
+
+
+### Bug Fixes
+
+* **security:** override uuid to ^11.1.1 to clear CVE-2026-41907 ([#755](https://github.com/taverns-red/toast-stats/issues/755)) ([#770](https://github.com/taverns-red/toast-stats/issues/770)) ([4b9600a](https://github.com/taverns-red/toast-stats/commit/4b9600ab030637ce14853e9c57104d3b1a508098))
+
+
+### Refactors
+
+* **rankings:** consolidate duplicated Borda logic into analytics-core shared helpers ([#306](https://github.com/taverns-red/toast-stats/issues/306)) ([#759](https://github.com/taverns-red/toast-stats/issues/759)) ([244e649](https://github.com/taverns-red/toast-stats/commit/244e649f3aae2e34cef02c6895a50bdd1b2d3951))
+
+
+### Documentation
+
+* **fac:** resolve [#490](https://github.com/taverns-red/toast-stats/issues/490) — snapshot-only clubs are a registry-visibility signal ([#763](https://github.com/taverns-red/toast-stats/issues/763)) ([b22cf20](https://github.com/taverns-red/toast-stats/commit/b22cf20ea315f5e6fee9592f08de7608c317c116))
+
 ## [1.4.0](https://github.com/taverns-red/toast-stats/compare/collector-cli-v1.3.1...collector-cli-v1.4.0) (2026-05-23)
 
 

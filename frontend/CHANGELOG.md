@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.2.1](https://github.com/taverns-red/toast-stats/compare/frontend-v3.2.0...frontend-v3.2.1) (2026-05-26)
+
+
+### Bug Fixes
+
+* **app-shell:** collapse primary nav into a disclosure menu &lt;768px ([#735](https://github.com/taverns-red/toast-stats/issues/735)) ([#764](https://github.com/taverns-red/toast-stats/issues/764)) ([21d185d](https://github.com/taverns-red/toast-stats/commit/21d185d6368974fe8d86b317398b93852c3513fa))
+* **dark-mode:** migrate remaining components off prefers-scheme `dark:` to the theme toggle ([#715](https://github.com/taverns-red/toast-stats/issues/715)) ([#766](https://github.com/taverns-red/toast-stats/issues/766)) ([791bac0](https://github.com/taverns-red/toast-stats/commit/791bac0384c59d2dd0590fbe1bdf4b694b55ed2c))
+* **landing:** reserve AwardsRaceSection slot to kill 0.198 landing-page CLS ([#750](https://github.com/taverns-red/toast-stats/issues/750)) ([#765](https://github.com/taverns-red/toast-stats/issues/765)) ([3d961f1](https://github.com/taverns-red/toast-stats/commit/3d961f1ee28f4d4f57ca19ee7e2811b78e80aa88))
+
 ## [3.2.0](https://github.com/taverns-red/toast-stats/compare/frontend-v3.1.0...frontend-v3.2.0) (2026-05-26)
 
 
