@@ -8,6 +8,8 @@
  * Requirements: 2.1, 2.6, 5.5, 7.3
  */
 
+import { determineDivisionRecognitionLevel } from './divisionGapAnalysis'
+
 /**
  * Distinguished status levels for divisions and areas
  *
@@ -211,73 +213,58 @@ export function calculateVisitStatus(
 }
 
 /**
- * Calculates division distinguished status based on performance metrics
+ * Calculates division distinguished status (the recognition badge tier).
  *
- * Determines the distinguished status level for a division according to
- * Toastmasters International criteria. The status is determined by the
- * number of distinguished clubs and the paid club count/net growth.
+ * Divisions follow the **Distinguished Division Program (DDP)**, NOT the area
+ * program. DDP thresholds (District Recognition Program manual, item 1490):
+ * - Distinguished: distinguished ≥ 45% of base AND no net club loss (paid ≥ base)
+ * - Select: distinguished ≥ 50% of base AND paid ≥ base + 1
+ * - President's: distinguished ≥ 55% of base AND paid ≥ base + 2
  *
- * Status levels (in order of precedence):
- * 1. President's Distinguished: distinguished clubs ≥ (threshold + 1) AND net growth ≥ 1
- * 2. Select Distinguished: distinguished clubs ≥ (threshold + 1) AND paid clubs ≥ base
- * 3. Distinguished: distinguished clubs ≥ threshold AND paid clubs ≥ base
- * 4. Not Distinguished: Does not meet Distinguished criteria
+ * The tier is delegated to `determineDivisionRecognitionLevel`
+ * (`divisionGapAnalysis.ts`) — the single source of truth that the card's
+ * gap/summary line also uses. The badge and the gap line therefore agree by
+ * construction; the DDP threshold table lives in exactly one place. This
+ * function only maps that recognition level to the badge's `DistinguishedStatus`
+ * enum. See docs/investigations/798-division-recognition-thresholds.md.
  *
- * @param distinguishedClubs - Current number of clubs that have achieved Distinguished status
- * @param requiredDistinguishedClubs - Required number of distinguished clubs (50% of club base, rounded up)
- * @param paidClubs - Current number of clubs that have met membership payment requirements
+ * (Areas use 50%/50%+1 with visit requirements — see `calculateAreaStatus`.)
+ *
+ * @param distinguishedClubs - Clubs that have achieved Distinguished status
+ * @param paidClubs - Clubs that have met membership payment requirements
  * @param clubBase - Number of clubs at the start of the program year
- * @param netGrowth - Net growth (paidClubs - clubBase), can be positive, negative, or zero
  * @returns Distinguished status level (cannot be 'not-qualified' for divisions)
  *
  * @example
- * // President's Distinguished: 6 distinguished (≥ 5+1), net growth 2 (≥ 1)
- * calculateDivisionStatus(6, 5, 12, 10, 2) // Returns 'presidents-distinguished'
+ * // D61 Division G: base 16, paid 17, dist 8 → Select (50% + base+1 paid)
+ * calculateDivisionStatus(8, 17, 16) // Returns 'select-distinguished'
  *
- * // Select Distinguished: 6 distinguished (≥ 5+1), paid 10 (≥ 10), net growth 0
- * calculateDivisionStatus(6, 5, 10, 10, 0) // Returns 'select-distinguished'
- *
- * // Distinguished: 5 distinguished (≥ 5), paid 10 (≥ 10)
- * calculateDivisionStatus(5, 5, 10, 10, 0) // Returns 'distinguished'
- *
- * // Not Distinguished: 4 distinguished (< 5)
- * calculateDivisionStatus(4, 5, 10, 10, 0) // Returns 'not-distinguished'
- *
- * // Not Distinguished: 5 distinguished but paid < base
- * calculateDivisionStatus(5, 5, 8, 10, -2) // Returns 'not-distinguished'
+ * // D61 Division H: base 17, paid 18, dist 8 → Distinguished (45% + base paid)
+ * calculateDivisionStatus(8, 18, 17) // Returns 'distinguished'
  *
  * Requirements: 2.2, 2.3, 2.4, 2.5
  */
 export function calculateDivisionStatus(
   distinguishedClubs: number,
-  requiredDistinguishedClubs: number,
   paidClubs: number,
-  clubBase: number,
-  netGrowth: number
+  clubBase: number
 ): Exclude<DistinguishedStatus, 'not-qualified'> {
-  // President's Distinguished: distinguished ≥ (threshold + 1) AND net growth ≥ 1
-  if (distinguishedClubs >= requiredDistinguishedClubs + 1 && netGrowth >= 1) {
-    return 'presidents-distinguished'
-  }
+  const level = determineDivisionRecognitionLevel({
+    clubBase,
+    paidClubs,
+    distinguishedClubs,
+  })
 
-  // Select Distinguished: distinguished ≥ (threshold + 1) AND paid ≥ base
-  if (
-    distinguishedClubs >= requiredDistinguishedClubs + 1 &&
-    paidClubs >= clubBase
-  ) {
-    return 'select-distinguished'
+  switch (level) {
+    case 'presidents':
+      return 'presidents-distinguished'
+    case 'select':
+      return 'select-distinguished'
+    case 'distinguished':
+      return 'distinguished'
+    case 'none':
+      return 'not-distinguished'
   }
-
-  // Distinguished: distinguished ≥ threshold AND paid ≥ base
-  if (
-    distinguishedClubs >= requiredDistinguishedClubs &&
-    paidClubs >= clubBase
-  ) {
-    return 'distinguished'
-  }
-
-  // Not Distinguished: Does not meet Distinguished criteria
-  return 'not-distinguished'
 }
 
 /**

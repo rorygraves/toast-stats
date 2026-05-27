@@ -83,12 +83,16 @@ export interface DivisionMetrics {
 }
 
 /**
- * DDP threshold percentages for each recognition level
+ * DDP threshold percentages for each recognition level, expressed as whole
+ * percents. Integer percents (not 0.45/0.50/0.55) so the required-club count is
+ * computed with integer arithmetic — `Math.ceil(base * 0.55)` overshoots for
+ * some bases because 0.55 is not exactly representable (e.g. 100 * 0.55 =
+ * 55.00000000000001 → ceil → 56, when 55% of 100 is exactly 55). See #798.
  */
 const DDP_THRESHOLDS = {
-  distinguished: 0.45,
-  select: 0.5,
-  presidents: 0.55,
+  distinguished: 45,
+  select: 50,
+  presidents: 55,
 } as const
 
 /**
@@ -131,17 +135,21 @@ export function calculatePaidClubsGap(
 }
 
 /**
- * Calculates the required number of distinguished clubs for a given threshold percentage
+ * Calculates the required number of distinguished clubs for a given whole-percent
+ * threshold ("at least X% of club base", rounded up).
+ *
+ * Uses integer arithmetic — `Math.ceil((base * percent) / 100)` — to avoid the
+ * float-representation overshoot of `Math.ceil(base * (percent / 100))`. See #798.
  *
  * @param clubBase - Number of clubs at the start of the program year
- * @param thresholdPercentage - Threshold percentage (0.45, 0.50, or 0.55)
+ * @param thresholdPercent - Whole-percent threshold (45, 50, or 55)
  * @returns Required number of distinguished clubs (rounded up)
  */
 function calculateRequiredDistinguishedClubs(
   clubBase: number,
-  thresholdPercentage: number
+  thresholdPercent: number
 ): number {
-  return Math.ceil(clubBase * thresholdPercentage)
+  return Math.ceil((clubBase * thresholdPercent) / 100)
 }
 
 /**

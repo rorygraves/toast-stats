@@ -1,8 +1,16 @@
 /**
  * Division Status Unit Tests
  *
- * Unit tests for division status calculation focusing on boundary conditions
- * and edge cases.
+ * Unit tests for division recognition status (the card's top-right badge).
+ *
+ * Divisions follow the Distinguished DIVISION Program (DDP): distinguished-club
+ * thresholds of 45% / 50% / 55% of club base with paid offsets of base /
+ * base+1 / base+2. This is NOT the Distinguished Area Program (50% / 50%+1 +
+ * visit requirements). `calculateDivisionStatus` delegates its tier to
+ * `determineDivisionRecognitionLevel` (the single DDP source shared with the
+ * card's gap/summary line), so the badge and the gap line agree by
+ * construction. Source of truth: District Recognition Program manual (item
+ * 1490); see docs/investigations/798-division-recognition-thresholds.md (#798).
  *
  * Requirements: 2.2, 2.3, 2.4, 2.5
  */
@@ -13,469 +21,144 @@ import {
   calculateRequiredDistinguishedClubs,
 } from '../divisionStatus'
 
-describe('calculateDivisionStatus', () => {
-  describe('boundary conditions', () => {
-    it('should classify as Distinguished when exactly at 50% threshold', () => {
-      // Club base = 10, threshold = 5 (50%)
-      const clubBase = 10
-      const threshold = calculateRequiredDistinguishedClubs(clubBase)
-      const distinguishedClubs = threshold // Exactly 5
-      const paidClubs = clubBase // Exactly 10
-      const netGrowth = 0
+// Readability alias: signature is (distinguishedClubs, paidClubs, clubBase).
+const divisionStatus = calculateDivisionStatus
 
-      const status = calculateDivisionStatus(
-        distinguishedClubs,
-        threshold,
-        paidClubs,
-        clubBase,
-        netGrowth
-      )
-
-      expect(status).toBe('distinguished')
-      expect(threshold).toBe(5)
-      expect(distinguishedClubs).toBe(5)
+describe('calculateDivisionStatus (Distinguished Division Program)', () => {
+  describe('canonical D61 cases (#798) — badge must match the TI dashboard', () => {
+    it('classifies Division G (base 16, paid 17, dist 8) as Select Distinguished', () => {
+      // Select: dist >= ceil(.50*16)=8 ✓ AND paid >= base+1=17 ✓.
+      // President's needs dist >= ceil(.55*16)=9, so caps at Select.
+      expect(divisionStatus(8, 17, 16)).toBe('select-distinguished')
     })
 
-    it('should classify as Select Distinguished when exactly at threshold + 1', () => {
-      // Club base = 10, threshold = 5, distinguished = 6 (threshold + 1)
-      const clubBase = 10
-      const threshold = calculateRequiredDistinguishedClubs(clubBase)
-      const distinguishedClubs = threshold + 1 // Exactly 6
-      const paidClubs = clubBase // Exactly 10 (no net growth)
-      const netGrowth = 0
+    it('classifies Division H (base 17, paid 18, dist 8) as Distinguished', () => {
+      // Distinguished: dist >= ceil(.45*17)=8 ✓ AND paid >= base=17 ✓.
+      // Select needs dist >= ceil(.50*17)=9, so caps at Distinguished.
+      expect(divisionStatus(8, 18, 17)).toBe('distinguished')
+    })
+  })
 
-      const status = calculateDivisionStatus(
-        distinguishedClubs,
-        threshold,
-        paidClubs,
-        clubBase,
-        netGrowth
-      )
-
-      expect(status).toBe('select-distinguished')
-      expect(threshold).toBe(5)
-      expect(distinguishedClubs).toBe(6)
+  describe('tier boundaries (base 20 → 45%/50%/55% = 9/10/11 distinguished)', () => {
+    it('Distinguished at exactly 45% with no net loss', () => {
+      expect(divisionStatus(9, 20, 20)).toBe('distinguished')
     })
 
-    it("should classify as President's Distinguished when exactly at net growth = 1", () => {
-      // Club base = 10, threshold = 5, distinguished = 6, net growth = 1
-      const clubBase = 10
-      const threshold = calculateRequiredDistinguishedClubs(clubBase)
-      const distinguishedClubs = threshold + 1 // 6
-      const paidClubs = clubBase + 1 // 11 (net growth = 1)
-      const netGrowth = 1
-
-      const status = calculateDivisionStatus(
-        distinguishedClubs,
-        threshold,
-        paidClubs,
-        clubBase,
-        netGrowth
-      )
-
-      expect(status).toBe('presidents-distinguished')
-      expect(threshold).toBe(5)
-      expect(distinguishedClubs).toBe(6)
-      expect(netGrowth).toBe(1)
+    it('Not Distinguished one below 45%', () => {
+      expect(divisionStatus(8, 20, 20)).toBe('not-distinguished')
     })
 
-    it('should classify as Not Distinguished when one below 50% threshold', () => {
-      // Club base = 10, threshold = 5, distinguished = 4 (one below)
-      const clubBase = 10
-      const threshold = calculateRequiredDistinguishedClubs(clubBase)
-      const distinguishedClubs = threshold - 1 // 4
-      const paidClubs = clubBase // 10
-      const netGrowth = 0
-
-      const status = calculateDivisionStatus(
-        distinguishedClubs,
-        threshold,
-        paidClubs,
-        clubBase,
-        netGrowth
-      )
-
-      expect(status).toBe('not-distinguished')
-      expect(threshold).toBe(5)
-      expect(distinguishedClubs).toBe(4)
+    it('Select at exactly 50% and base+1 paid', () => {
+      expect(divisionStatus(10, 21, 20)).toBe('select-distinguished')
     })
 
-    it('should classify as Not Distinguished when at threshold but paid clubs below base', () => {
-      // Club base = 10, threshold = 5, distinguished = 5, but paid = 9 (below base)
-      const clubBase = 10
-      const threshold = calculateRequiredDistinguishedClubs(clubBase)
-      const distinguishedClubs = threshold // 5
-      const paidClubs = clubBase - 1 // 9 (below base)
-      const netGrowth = -1
-
-      const status = calculateDivisionStatus(
-        distinguishedClubs,
-        threshold,
-        paidClubs,
-        clubBase,
-        netGrowth
-      )
-
-      expect(status).toBe('not-distinguished')
-      expect(threshold).toBe(5)
-      expect(distinguishedClubs).toBe(5)
-      expect(paidClubs).toBe(9)
+    it('caps at Distinguished when distinguished hits 50% but paid is only base', () => {
+      // Select requires paid >= base+1; with paid == base it stays Distinguished.
+      expect(divisionStatus(10, 20, 20)).toBe('distinguished')
     })
 
-    it('should classify as Select Distinguished when at threshold + 1 but net growth = 0', () => {
-      // Club base = 10, threshold = 5, distinguished = 6, net growth = 0
-      // Should be Select, not President's (requires net growth ≥ 1)
-      const clubBase = 10
-      const threshold = calculateRequiredDistinguishedClubs(clubBase)
-      const distinguishedClubs = threshold + 1 // 6
-      const paidClubs = clubBase // 10 (net growth = 0)
-      const netGrowth = 0
-
-      const status = calculateDivisionStatus(
-        distinguishedClubs,
-        threshold,
-        paidClubs,
-        clubBase,
-        netGrowth
-      )
-
-      expect(status).toBe('select-distinguished')
+    it("President's at exactly 55% and base+2 paid", () => {
+      expect(divisionStatus(11, 22, 20)).toBe('presidents-distinguished')
     })
 
-    it('should classify as Not Distinguished when at threshold + 1 but paid clubs below base', () => {
-      // Club base = 10, threshold = 5, distinguished = 6, but paid = 9
-      // Should be Not Distinguished (paid < base)
-      const clubBase = 10
-      const threshold = calculateRequiredDistinguishedClubs(clubBase)
-      const distinguishedClubs = threshold + 1 // 6
-      const paidClubs = clubBase - 1 // 9 (below base)
-      const netGrowth = -1
+    it('caps at Select when distinguished hits 55% but paid is only base+1', () => {
+      // President's requires paid >= base+2; with paid == base+1 it stays Select.
+      expect(divisionStatus(11, 21, 20)).toBe('select-distinguished')
+    })
 
-      const status = calculateDivisionStatus(
-        distinguishedClubs,
-        threshold,
-        paidClubs,
-        clubBase,
-        netGrowth
-      )
+    it('caps at Select when paid is base+2 but distinguished is only 50%', () => {
+      // President's requires dist >= 55% (11); dist 10 → Select.
+      expect(divisionStatus(10, 22, 20)).toBe('select-distinguished')
+    })
+  })
 
-      expect(status).toBe('not-distinguished')
+  describe('no-net-club-loss gate (eligibility)', () => {
+    it('Not Distinguished on net loss regardless of distinguished count', () => {
+      expect(divisionStatus(20, 19, 20)).toBe('not-distinguished')
+    })
+
+    it('Not Distinguished at one paid club below base', () => {
+      expect(divisionStatus(11, 9, 10)).toBe('not-distinguished')
+    })
+  })
+
+  describe('integer rounding of the required-distinguished count (Math.ceil)', () => {
+    it('odd base 11 → Distinguished needs 5 (ceil(.45*11)=5)', () => {
+      expect(divisionStatus(5, 11, 11)).toBe('distinguished')
+      expect(divisionStatus(4, 11, 11)).toBe('not-distinguished')
+    })
+
+    it('odd base 11 → Select needs 6 (ceil(.50*11)) and base+1 paid', () => {
+      expect(divisionStatus(6, 12, 11)).toBe('select-distinguished')
+      // dist 5 (<50%) with base+1 paid stays Distinguished
+      expect(divisionStatus(5, 12, 11)).toBe('distinguished')
+    })
+
+    it("odd base 11 → President's needs 7 (ceil(.55*11)=7) and base+2 paid", () => {
+      expect(divisionStatus(7, 13, 11)).toBe('presidents-distinguished')
+    })
+
+    it('base 17 → Distinguished 8 (ceil 7.65), Select 9 (ceil 8.5)', () => {
+      expect(divisionStatus(8, 17, 17)).toBe('distinguished')
+      expect(divisionStatus(9, 18, 17)).toBe('select-distinguished')
     })
   })
 
   describe('edge case: zero club base', () => {
-    it('should handle zero club base gracefully', () => {
-      // Edge case: division with no clubs
-      const clubBase = 0
-      const threshold = calculateRequiredDistinguishedClubs(clubBase)
-      const distinguishedClubs = 0
-      const paidClubs = 0
-      const netGrowth = 0
-
-      const status = calculateDivisionStatus(
-        distinguishedClubs,
-        threshold,
-        paidClubs,
-        clubBase,
-        netGrowth
-      )
-
-      // With zero club base, threshold is 0
-      expect(threshold).toBe(0)
-
-      // 0 distinguished clubs ≥ 0 threshold AND 0 paid clubs ≥ 0 base
-      // Should be Distinguished
-      expect(status).toBe('distinguished')
-    })
-
-    it('should classify as Select Distinguished with zero club base and threshold + 1', () => {
-      // Edge case: zero club base, but 1 distinguished club
-      const clubBase = 0
-      const threshold = calculateRequiredDistinguishedClubs(clubBase)
-      const distinguishedClubs = threshold + 1 // 1
-      const paidClubs = 0
-      const netGrowth = 0
-
-      const status = calculateDivisionStatus(
-        distinguishedClubs,
-        threshold,
-        paidClubs,
-        clubBase,
-        netGrowth
-      )
-
-      // 1 distinguished club ≥ 0 + 1 AND 0 paid clubs ≥ 0 base
-      // Should be Select Distinguished
-      expect(status).toBe('select-distinguished')
-    })
-
-    it("should classify as President's Distinguished with zero club base and net growth", () => {
-      // Edge case: zero club base, 1 distinguished club, 1 paid club (net growth = 1)
-      const clubBase = 0
-      const threshold = calculateRequiredDistinguishedClubs(clubBase)
-      const distinguishedClubs = threshold + 1 // 1
-      const paidClubs = 1
-      const netGrowth = 1
-
-      const status = calculateDivisionStatus(
-        distinguishedClubs,
-        threshold,
-        paidClubs,
-        clubBase,
-        netGrowth
-      )
-
-      // 1 distinguished club ≥ 0 + 1 AND net growth = 1 ≥ 1
-      // Should be President's Distinguished
-      expect(status).toBe('presidents-distinguished')
+    it('a division with no clubs is Not Distinguished', () => {
+      // No recognition is possible without a club base.
+      expect(divisionStatus(0, 0, 0)).toBe('not-distinguished')
     })
   })
 
-  describe('edge case: club base = 1', () => {
-    it('should classify as Distinguished when club base = 1, threshold = 1, distinguished = 1', () => {
-      const clubBase = 1
-      const threshold = calculateRequiredDistinguishedClubs(clubBase)
-      const distinguishedClubs = 1
-      const paidClubs = 1
-      const netGrowth = 0
-
-      const status = calculateDivisionStatus(
-        distinguishedClubs,
-        threshold,
-        paidClubs,
-        clubBase,
-        netGrowth
-      )
-
-      expect(threshold).toBe(1)
-      expect(status).toBe('distinguished')
+  describe('edge case: club base = 1 (all thresholds round up to 1)', () => {
+    it('Distinguished at base+0 paid, 1 distinguished', () => {
+      expect(divisionStatus(1, 1, 1)).toBe('distinguished')
     })
 
-    it('should classify as Select Distinguished when club base = 1, distinguished = 2', () => {
-      const clubBase = 1
-      const threshold = calculateRequiredDistinguishedClubs(clubBase)
-      const distinguishedClubs = 2 // threshold + 1
-      const paidClubs = 1
-      const netGrowth = 0
-
-      const status = calculateDivisionStatus(
-        distinguishedClubs,
-        threshold,
-        paidClubs,
-        clubBase,
-        netGrowth
-      )
-
-      expect(threshold).toBe(1)
-      expect(status).toBe('select-distinguished')
+    it('Select at base+1 paid, 1 distinguished', () => {
+      expect(divisionStatus(1, 2, 1)).toBe('select-distinguished')
     })
 
-    it("should classify as President's Distinguished when club base = 1, distinguished = 2, net growth = 1", () => {
-      const clubBase = 1
-      const threshold = calculateRequiredDistinguishedClubs(clubBase)
-      const distinguishedClubs = 2 // threshold + 1
-      const paidClubs = 2 // net growth = 1
-      const netGrowth = 1
-
-      const status = calculateDivisionStatus(
-        distinguishedClubs,
-        threshold,
-        paidClubs,
-        clubBase,
-        netGrowth
-      )
-
-      expect(threshold).toBe(1)
-      expect(status).toBe('presidents-distinguished')
+    it("President's at base+2 paid, 1 distinguished", () => {
+      expect(divisionStatus(1, 3, 1)).toBe('presidents-distinguished')
     })
 
-    it('should classify as Not Distinguished when club base = 1, distinguished = 0', () => {
-      const clubBase = 1
-      const threshold = calculateRequiredDistinguishedClubs(clubBase)
-      const distinguishedClubs = 0 // below threshold
-      const paidClubs = 1
-      const netGrowth = 0
-
-      const status = calculateDivisionStatus(
-        distinguishedClubs,
-        threshold,
-        paidClubs,
-        clubBase,
-        netGrowth
-      )
-
-      expect(threshold).toBe(1)
-      expect(status).toBe('not-distinguished')
+    it('Not Distinguished with 0 distinguished clubs', () => {
+      expect(divisionStatus(0, 1, 1)).toBe('not-distinguished')
     })
   })
 
-  describe('odd club base (rounding up)', () => {
-    it('should handle odd club base correctly (club base = 11, threshold = 6)', () => {
-      const clubBase = 11
-      const threshold = calculateRequiredDistinguishedClubs(clubBase)
+  describe('large club base (base 100 → 45/50/55 distinguished)', () => {
+    it('Distinguished at 45 distinguished, base paid', () => {
+      expect(divisionStatus(45, 100, 100)).toBe('distinguished')
+    })
 
-      expect(threshold).toBe(6) // Math.ceil(11 * 0.5) = 6
+    it('Select at 50 distinguished, base+1 paid', () => {
+      expect(divisionStatus(50, 101, 100)).toBe('select-distinguished')
+    })
 
-      // Test Distinguished at threshold
-      const distinguishedStatus = calculateDivisionStatus(
-        6, // exactly at threshold
-        threshold,
-        clubBase,
-        clubBase,
-        0
-      )
-      expect(distinguishedStatus).toBe('distinguished')
+    it("President's at 55 distinguished, base+2 paid", () => {
+      expect(divisionStatus(55, 102, 100)).toBe('presidents-distinguished')
+    })
 
-      // Test Select Distinguished at threshold + 1
-      const selectStatus = calculateDivisionStatus(
-        7, // threshold + 1
-        threshold,
-        clubBase,
-        clubBase,
-        0
-      )
-      expect(selectStatus).toBe('select-distinguished')
-
-      // Test Not Distinguished below threshold
-      const notDistinguishedStatus = calculateDivisionStatus(
-        5, // below threshold
-        threshold,
-        clubBase,
-        clubBase,
-        0
-      )
-      expect(notDistinguishedStatus).toBe('not-distinguished')
+    it('Not Distinguished at 44 distinguished', () => {
+      expect(divisionStatus(44, 100, 100)).toBe('not-distinguished')
     })
   })
+})
 
-  describe('large club base', () => {
-    it('should handle large club base correctly (club base = 100)', () => {
-      const clubBase = 100
-      const threshold = calculateRequiredDistinguishedClubs(clubBase)
-
-      expect(threshold).toBe(50) // Math.ceil(100 * 0.5) = 50
-
-      // Test President's Distinguished
-      const presidentsStatus = calculateDivisionStatus(
-        51, // threshold + 1
-        threshold,
-        101, // net growth = 1
-        clubBase,
-        1
-      )
-      expect(presidentsStatus).toBe('presidents-distinguished')
-
-      // Test Select Distinguished
-      const selectStatus = calculateDivisionStatus(
-        51, // threshold + 1
-        threshold,
-        100, // net growth = 0
-        clubBase,
-        0
-      )
-      expect(selectStatus).toBe('select-distinguished')
-
-      // Test Distinguished
-      const distinguishedStatus = calculateDivisionStatus(
-        50, // exactly at threshold
-        threshold,
-        100,
-        clubBase,
-        0
-      )
-      expect(distinguishedStatus).toBe('distinguished')
-
-      // Test Not Distinguished
-      const notDistinguishedStatus = calculateDivisionStatus(
-        49, // below threshold
-        threshold,
-        100,
-        clubBase,
-        0
-      )
-      expect(notDistinguishedStatus).toBe('not-distinguished')
-    })
+describe('calculateRequiredDistinguishedClubs', () => {
+  // 50%-of-base helper. Still used for the AREA program and for the
+  // "X of Y distinguished" progress pill; it is NOT the division Distinguished
+  // threshold (which is 45%). See #798 out-of-scope notes.
+  it('returns Math.ceil(clubBase * 0.5)', () => {
+    expect(calculateRequiredDistinguishedClubs(10)).toBe(5)
+    expect(calculateRequiredDistinguishedClubs(11)).toBe(6)
+    expect(calculateRequiredDistinguishedClubs(1)).toBe(1)
   })
 
-  describe('negative net growth', () => {
-    it('should classify as Not Distinguished with negative net growth even if distinguished clubs are high', () => {
-      const clubBase = 10
-      const threshold = calculateRequiredDistinguishedClubs(clubBase)
-      const distinguishedClubs = 8 // well above threshold + 1
-      const paidClubs = 8 // below base
-      const netGrowth = -2
-
-      const status = calculateDivisionStatus(
-        distinguishedClubs,
-        threshold,
-        paidClubs,
-        clubBase,
-        netGrowth
-      )
-
-      // Even with 8 distinguished clubs, negative net growth means paid < base
-      // So cannot be Distinguished or higher
-      expect(status).toBe('not-distinguished')
-    })
-
-    it('should classify as Not Distinguished with net growth = -1', () => {
-      const clubBase = 10
-      const threshold = calculateRequiredDistinguishedClubs(clubBase)
-      const distinguishedClubs = 6 // threshold + 1
-      const paidClubs = 9 // one below base
-      const netGrowth = -1
-
-      const status = calculateDivisionStatus(
-        distinguishedClubs,
-        threshold,
-        paidClubs,
-        clubBase,
-        netGrowth
-      )
-
-      // Cannot be any distinguished level because paid < base
-      expect(status).toBe('not-distinguished')
-    })
-  })
-
-  describe('high net growth', () => {
-    it("should classify as President's Distinguished with high net growth", () => {
-      const clubBase = 10
-      const threshold = calculateRequiredDistinguishedClubs(clubBase)
-      const distinguishedClubs = 6 // threshold + 1
-      const paidClubs = 20 // net growth = 10
-      const netGrowth = 10
-
-      const status = calculateDivisionStatus(
-        distinguishedClubs,
-        threshold,
-        paidClubs,
-        clubBase,
-        netGrowth
-      )
-
-      // High net growth (≥ 1) with threshold + 1 should be President's
-      expect(status).toBe('presidents-distinguished')
-    })
-
-    it('should classify as Distinguished with high net growth but at threshold (not threshold + 1)', () => {
-      const clubBase = 10
-      const threshold = calculateRequiredDistinguishedClubs(clubBase)
-      const distinguishedClubs = 5 // exactly at threshold
-      const paidClubs = 20 // net growth = 10
-      const netGrowth = 10
-
-      const status = calculateDivisionStatus(
-        distinguishedClubs,
-        threshold,
-        paidClubs,
-        clubBase,
-        netGrowth
-      )
-
-      // High net growth but only at threshold (not threshold + 1)
-      // Should be Distinguished, not President's
-      expect(status).toBe('distinguished')
-    })
+  it('returns 0 for a zero club base', () => {
+    expect(calculateRequiredDistinguishedClubs(0)).toBe(0)
   })
 })

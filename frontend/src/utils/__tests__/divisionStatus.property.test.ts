@@ -21,6 +21,7 @@ import {
   checkAreaQualifying,
   calculateAreaStatus,
 } from '../divisionStatus'
+import { determineDivisionRecognitionLevel } from '../divisionGapAnalysis'
 
 /**
  * **Feature: division-area-performance-cards, Property 1: Distinguished Club Threshold Calculation**
@@ -618,538 +619,148 @@ describe('Property 6: Visit Completion Percentage Calculation', () => {
 })
 
 /**
- * **Feature: division-area-performance-cards, Property 2: Division Status Classification**
- * **Validates: Requirements 2.2, 2.3, 2.4, 2.5**
+ * **Feature: division-area-performance-cards, Property 2: Division Status Classification (DDP)**
+ * **Validates: Requirements 2.2, 2.3, 2.4, 2.5; #798**
  *
- * For any division with valid metrics (club base, paid clubs, distinguished clubs),
- * the calculated status SHALL match exactly one of the four status levels based on
- * the following rules:
- * - President's Distinguished when: distinguished clubs ≥ (50% of base + 1) AND net growth ≥ 1
- * - Select Distinguished when: distinguished clubs ≥ (50% of base + 1) AND paid clubs ≥ base (but not President's)
- * - Distinguished when: distinguished clubs ≥ 50% of base AND paid clubs ≥ base (but not Select or President's)
- * - Not Distinguished otherwise
- *
- * This property ensures that:
- * - Status classification is deterministic and consistent
- * - Status precedence is correctly applied (President's > Select > Distinguished > Not Distinguished)
- * - Boundary conditions are handled correctly
- * - The classification logic matches the requirements exactly
+ * Divisions follow the Distinguished DIVISION Program. `calculateDivisionStatus`
+ * delegates its tier to `determineDivisionRecognitionLevel` (the single DDP
+ * source shared with the card's gap/summary line) and maps the recognition
+ * level to the badge enum. These properties assert that single-source guarantee
+ * plus the DDP invariants: determinism, the no-net-club-loss gate, and
+ * monotonicity in both distinguished and paid clubs.
  */
-describe('Property 2: Division Status Classification', () => {
-  // Generator for valid club base values (positive integers)
-  const clubBaseArb = fc.integer({ min: 1, max: 100 })
+describe('Property 2: Division Status Classification (DDP)', () => {
+  const statusOf = (dist: number, paid: number, base: number) =>
+    calculateDivisionStatus(dist, paid, base)
 
-  // Generator for division metrics
-  const divisionMetricsArb = clubBaseArb.chain(clubBase => {
-    const threshold = Math.ceil(clubBase * 0.5)
-    return fc.record({
+  const LEVEL_TO_STATUS = {
+    none: 'not-distinguished',
+    distinguished: 'distinguished',
+    select: 'select-distinguished',
+    presidents: 'presidents-distinguished',
+  } as const
+
+  const statusOrder = {
+    'not-distinguished': 0,
+    distinguished: 1,
+    'select-distinguished': 2,
+    'presidents-distinguished': 3,
+  } as const
+
+  const divisionMetricsArb = fc.integer({ min: 0, max: 100 }).chain(clubBase =>
+    fc.record({
       clubBase: fc.constant(clubBase),
-      threshold: fc.constant(threshold),
       distinguishedClubs: fc.integer({ min: 0, max: clubBase }),
-      paidClubs: fc.integer({ min: 0, max: clubBase + 50 }), // Allow growth beyond base
+      paidClubs: fc.integer({ min: 0, max: clubBase + 50 }),
     })
-  })
+  )
 
-  it('should classify status correctly for any valid division metrics', () => {
+  it('badge tier equals the DDP recognition level mapped to the badge enum (single source of truth)', () => {
     fc.assert(
-      fc.property(divisionMetricsArb, metrics => {
-        const { clubBase, threshold, distinguishedClubs, paidClubs } = metrics
-        const netGrowth = paidClubs - clubBase
-
-        const status = calculateDivisionStatus(
-          distinguishedClubs,
-          threshold,
-          paidClubs,
-          clubBase,
-          netGrowth
-        )
-
-        // Status must be one of the four valid division statuses
-        expect([
-          'not-distinguished',
-          'distinguished',
-          'select-distinguished',
-          'presidents-distinguished',
-        ]).toContain(status)
-
-        // Verify status matches the classification rules
-        if (distinguishedClubs >= threshold + 1 && netGrowth >= 1) {
-          // Should be President's Distinguished
-          expect(status).toBe('presidents-distinguished')
-        } else if (
-          distinguishedClubs >= threshold + 1 &&
-          paidClubs >= clubBase
-        ) {
-          // Should be Select Distinguished (but not President's)
-          expect(status).toBe('select-distinguished')
-        } else if (distinguishedClubs >= threshold && paidClubs >= clubBase) {
-          // Should be Distinguished (but not Select or President's)
-          expect(status).toBe('distinguished')
-        } else {
-          // Should be Not Distinguished
-          expect(status).toBe('not-distinguished')
+      fc.property(
+        divisionMetricsArb,
+        ({ clubBase, distinguishedClubs, paidClubs }) => {
+          const status = statusOf(distinguishedClubs, paidClubs, clubBase)
+          const level = determineDivisionRecognitionLevel({
+            clubBase,
+            paidClubs,
+            distinguishedClubs,
+          })
+          expect(status).toBe(LEVEL_TO_STATUS[level])
         }
-      }),
-      { numRuns: 25 } // Optimized for CI/CD timeout compliance (was 100)
+      ),
+      { numRuns: 50 }
     )
   })
 
-  it('should produce consistent results for the same inputs', () => {
+  it('always returns one of the four division statuses', () => {
     fc.assert(
-      fc.property(divisionMetricsArb, metrics => {
-        const { clubBase, threshold, distinguishedClubs, paidClubs } = metrics
-        const netGrowth = paidClubs - clubBase
-
-        // Calculate status multiple times with the same inputs
-        const result1 = calculateDivisionStatus(
-          distinguishedClubs,
-          threshold,
-          paidClubs,
-          clubBase,
-          netGrowth
-        )
-        const result2 = calculateDivisionStatus(
-          distinguishedClubs,
-          threshold,
-          paidClubs,
-          clubBase,
-          netGrowth
-        )
-        const result3 = calculateDivisionStatus(
-          distinguishedClubs,
-          threshold,
-          paidClubs,
-          clubBase,
-          netGrowth
-        )
-
-        // All results must be identical (deterministic classification)
-        expect(result1).toBe(result2)
-        expect(result2).toBe(result3)
-      }),
-      { numRuns: 25 } // Optimized for CI/CD timeout compliance (was 100)
+      fc.property(
+        divisionMetricsArb,
+        ({ clubBase, distinguishedClubs, paidClubs }) => {
+          expect([
+            'not-distinguished',
+            'distinguished',
+            'select-distinguished',
+            'presidents-distinguished',
+          ]).toContain(statusOf(distinguishedClubs, paidClubs, clubBase))
+        }
+      ),
+      { numRuns: 25 }
     )
   })
 
-  it("should correctly identify President's Distinguished status", () => {
+  it('is deterministic for identical inputs', () => {
     fc.assert(
-      fc.property(clubBaseArb, clubBase => {
-        const threshold = Math.ceil(clubBase * 0.5)
-        const distinguishedClubs = threshold + 1
-        const paidClubs = clubBase + 1 // Net growth of 1
-        const netGrowth = 1
-
-        const status = calculateDivisionStatus(
-          distinguishedClubs,
-          threshold,
-          paidClubs,
-          clubBase,
-          netGrowth
-        )
-
-        // Must be President's Distinguished
-        expect(status).toBe('presidents-distinguished')
-      }),
-      { numRuns: 25 } // Optimized for CI/CD timeout compliance (was 100)
+      fc.property(
+        divisionMetricsArb,
+        ({ clubBase, distinguishedClubs, paidClubs }) => {
+          const a = statusOf(distinguishedClubs, paidClubs, clubBase)
+          const b = statusOf(distinguishedClubs, paidClubs, clubBase)
+          expect(a).toBe(b)
+        }
+      ),
+      { numRuns: 25 }
     )
   })
 
-  it('should correctly identify Select Distinguished status', () => {
+  it('returns Not Distinguished on any net club loss (paid < base)', () => {
     fc.assert(
-      fc.property(clubBaseArb, clubBase => {
-        const threshold = Math.ceil(clubBase * 0.5)
-        const distinguishedClubs = threshold + 1
-        const paidClubs = clubBase // No net growth
-        const netGrowth = 0
-
-        const status = calculateDivisionStatus(
-          distinguishedClubs,
-          threshold,
-          paidClubs,
-          clubBase,
-          netGrowth
-        )
-
-        // Must be Select Distinguished (not President's because net growth < 1)
-        expect(status).toBe('select-distinguished')
-      }),
-      { numRuns: 25 } // Optimized for CI/CD timeout compliance (was 100)
-    )
-  })
-
-  it('should correctly identify Distinguished status', () => {
-    fc.assert(
-      fc.property(clubBaseArb, clubBase => {
-        const threshold = Math.ceil(clubBase * 0.5)
-        const distinguishedClubs = threshold // Exactly at threshold
-        const paidClubs = clubBase // No net growth
-        const netGrowth = 0
-
-        const status = calculateDivisionStatus(
-          distinguishedClubs,
-          threshold,
-          paidClubs,
-          clubBase,
-          netGrowth
-        )
-
-        // Must be Distinguished (not Select because distinguished < threshold + 1)
-        expect(status).toBe('distinguished')
-      }),
-      { numRuns: 25 } // Optimized for CI/CD timeout compliance (was 100)
-    )
-  })
-
-  it('should correctly identify Not Distinguished status', () => {
-    fc.assert(
-      fc.property(clubBaseArb, clubBase => {
-        const threshold = Math.ceil(clubBase * 0.5)
-
-        // Test case 1: Below threshold
-        if (threshold > 0) {
-          const status1 = calculateDivisionStatus(
-            threshold - 1,
-            threshold,
-            clubBase,
-            clubBase,
-            0
+      fc.property(
+        fc.integer({ min: 1, max: 100 }).chain(clubBase =>
+          fc.record({
+            clubBase: fc.constant(clubBase),
+            distinguishedClubs: fc.integer({ min: 0, max: clubBase }),
+            paidClubs: fc.integer({ min: 0, max: clubBase - 1 }),
+          })
+        ),
+        ({ clubBase, distinguishedClubs, paidClubs }) => {
+          expect(statusOf(distinguishedClubs, paidClubs, clubBase)).toBe(
+            'not-distinguished'
           )
-          expect(status1).toBe('not-distinguished')
         }
-
-        // Test case 2: At threshold but paid clubs below base
-        if (clubBase > 0) {
-          const status2 = calculateDivisionStatus(
-            threshold,
-            threshold,
-            clubBase - 1,
-            clubBase,
-            -1
-          )
-          expect(status2).toBe('not-distinguished')
-        }
-      }),
-      { numRuns: 25 } // Optimized for CI/CD timeout compliance (was 100)
+      ),
+      { numRuns: 25 }
     )
   })
 
-  it("should respect status precedence (President's > Select > Distinguished)", () => {
+  it('never decreases tier when distinguished clubs increase (paid fixed)', () => {
     fc.assert(
-      fc.property(clubBaseArb, clubBase => {
-        const threshold = Math.ceil(clubBase * 0.5)
-
-        // When all criteria for President's are met, it should be President's
-        const presidentsStatus = calculateDivisionStatus(
-          threshold + 1,
-          threshold,
-          clubBase + 1,
-          clubBase,
-          1
-        )
-        expect(presidentsStatus).toBe('presidents-distinguished')
-
-        // When criteria for Select are met but not President's, it should be Select
-        const selectStatus = calculateDivisionStatus(
-          threshold + 1,
-          threshold,
-          clubBase,
-          clubBase,
-          0
-        )
-        expect(selectStatus).toBe('select-distinguished')
-
-        // When criteria for Distinguished are met but not Select, it should be Distinguished
-        const distinguishedStatus = calculateDivisionStatus(
-          threshold,
-          threshold,
-          clubBase,
-          clubBase,
-          0
-        )
-        expect(distinguishedStatus).toBe('distinguished')
-      }),
-      { numRuns: 25 } // Optimized for CI/CD timeout compliance (was 100)
-    )
-  })
-
-  it('should handle boundary conditions correctly', () => {
-    fc.assert(
-      fc.property(clubBaseArb, clubBase => {
-        const threshold = Math.ceil(clubBase * 0.5)
-
-        // Exactly at threshold + 1 with net growth = 1 should be President's
-        const atPresidentsThreshold = calculateDivisionStatus(
-          threshold + 1,
-          threshold,
-          clubBase + 1,
-          clubBase,
-          1
-        )
-        expect(atPresidentsThreshold).toBe('presidents-distinguished')
-
-        // Exactly at threshold + 1 with net growth = 0 should be Select
-        const atSelectThreshold = calculateDivisionStatus(
-          threshold + 1,
-          threshold,
-          clubBase,
-          clubBase,
-          0
-        )
-        expect(atSelectThreshold).toBe('select-distinguished')
-
-        // Exactly at threshold with paid = base should be Distinguished
-        const atDistinguishedThreshold = calculateDivisionStatus(
-          threshold,
-          threshold,
-          clubBase,
-          clubBase,
-          0
-        )
-        expect(atDistinguishedThreshold).toBe('distinguished')
-
-        // One below threshold should be Not Distinguished
-        if (threshold > 0) {
-          const belowThreshold = calculateDivisionStatus(
-            threshold - 1,
-            threshold,
-            clubBase,
-            clubBase,
-            0
-          )
-          expect(belowThreshold).toBe('not-distinguished')
+      fc.property(
+        fc.integer({ min: 1, max: 100 }).chain(clubBase =>
+          fc.record({
+            clubBase: fc.constant(clubBase),
+            distinguishedClubs: fc.integer({ min: 0, max: clubBase - 1 }),
+            paidClubs: fc.integer({ min: 0, max: clubBase + 50 }),
+          })
+        ),
+        ({ clubBase, distinguishedClubs, paidClubs }) => {
+          const lower = statusOf(distinguishedClubs, paidClubs, clubBase)
+          const higher = statusOf(distinguishedClubs + 1, paidClubs, clubBase)
+          expect(statusOrder[higher]).toBeGreaterThanOrEqual(statusOrder[lower])
         }
-      }),
-      { numRuns: 25 } // Optimized for CI/CD timeout compliance (was 100)
+      ),
+      { numRuns: 25 }
     )
   })
 
-  it('should verify specific known examples', () => {
-    // Test specific examples to ensure correctness
-    const testCases = [
-      {
-        description:
-          "President's Distinguished: 6 distinguished (≥ 5+1), net growth 2 (≥ 1)",
-        distinguishedClubs: 6,
-        threshold: 5,
-        paidClubs: 12,
-        clubBase: 10,
-        netGrowth: 2,
-        expected: 'presidents-distinguished',
-      },
-      {
-        description:
-          'Select Distinguished: 6 distinguished (≥ 5+1), paid 10 (≥ 10), net growth 0',
-        distinguishedClubs: 6,
-        threshold: 5,
-        paidClubs: 10,
-        clubBase: 10,
-        netGrowth: 0,
-        expected: 'select-distinguished',
-      },
-      {
-        description: 'Distinguished: 5 distinguished (≥ 5), paid 10 (≥ 10)',
-        distinguishedClubs: 5,
-        threshold: 5,
-        paidClubs: 10,
-        clubBase: 10,
-        netGrowth: 0,
-        expected: 'distinguished',
-      },
-      {
-        description: 'Not Distinguished: 4 distinguished (< 5)',
-        distinguishedClubs: 4,
-        threshold: 5,
-        paidClubs: 10,
-        clubBase: 10,
-        netGrowth: 0,
-        expected: 'not-distinguished',
-      },
-      {
-        description: 'Not Distinguished: 5 distinguished but paid < base',
-        distinguishedClubs: 5,
-        threshold: 5,
-        paidClubs: 8,
-        clubBase: 10,
-        netGrowth: -2,
-        expected: 'not-distinguished',
-      },
-      {
-        description:
-          "President's Distinguished: Exactly at threshold + 1, net growth = 1",
-        distinguishedClubs: 6,
-        threshold: 5,
-        paidClubs: 11,
-        clubBase: 10,
-        netGrowth: 1,
-        expected: 'presidents-distinguished',
-      },
-      {
-        description: 'Select Distinguished: threshold + 1 but net growth = 0',
-        distinguishedClubs: 6,
-        threshold: 5,
-        paidClubs: 10,
-        clubBase: 10,
-        netGrowth: 0,
-        expected: 'select-distinguished',
-      },
-      {
-        description: 'Not Distinguished: threshold + 1 but paid < base',
-        distinguishedClubs: 6,
-        threshold: 5,
-        paidClubs: 9,
-        clubBase: 10,
-        netGrowth: -1,
-        expected: 'not-distinguished',
-      },
-      {
-        description: 'Distinguished: Exactly at threshold, paid = base',
-        distinguishedClubs: 5,
-        threshold: 5,
-        paidClubs: 10,
-        clubBase: 10,
-        netGrowth: 0,
-        expected: 'distinguished',
-      },
-      {
-        description: 'Not Distinguished: One below threshold',
-        distinguishedClubs: 4,
-        threshold: 5,
-        paidClubs: 10,
-        clubBase: 10,
-        netGrowth: 0,
-        expected: 'not-distinguished',
-      },
-      {
-        description: "Edge case: club base = 1, threshold = 1, President's",
-        distinguishedClubs: 2,
-        threshold: 1,
-        paidClubs: 2,
-        clubBase: 1,
-        netGrowth: 1,
-        expected: 'presidents-distinguished',
-      },
-      {
-        description: 'Edge case: club base = 1, threshold = 1, Select',
-        distinguishedClubs: 2,
-        threshold: 1,
-        paidClubs: 1,
-        clubBase: 1,
-        netGrowth: 0,
-        expected: 'select-distinguished',
-      },
-      {
-        description: 'Edge case: club base = 1, threshold = 1, Distinguished',
-        distinguishedClubs: 1,
-        threshold: 1,
-        paidClubs: 1,
-        clubBase: 1,
-        netGrowth: 0,
-        expected: 'distinguished',
-      },
-    ]
-
-    testCases.forEach(
-      ({
-        distinguishedClubs,
-        threshold,
-        paidClubs,
-        clubBase,
-        netGrowth,
-        expected,
-      }) => {
-        // description field is for documentation purposes only
-        const status = calculateDivisionStatus(
-          distinguishedClubs,
-          threshold,
-          paidClubs,
-          clubBase,
-          netGrowth
-        )
-        expect(status).toBe(expected)
-      }
-    )
-  })
-
-  it('should maintain invariant: higher distinguished clubs never decrease status', () => {
+  it('never decreases tier when paid clubs increase (distinguished fixed)', () => {
     fc.assert(
-      fc.property(divisionMetricsArb, metrics => {
-        const { clubBase, threshold, distinguishedClubs, paidClubs } = metrics
-        const netGrowth = paidClubs - clubBase
-
-        // Calculate status with current distinguished clubs
-        const status1 = calculateDivisionStatus(
-          distinguishedClubs,
-          threshold,
-          paidClubs,
-          clubBase,
-          netGrowth
-        )
-
-        // Calculate status with one more distinguished club
-        const status2 = calculateDivisionStatus(
-          distinguishedClubs + 1,
-          threshold,
-          paidClubs,
-          clubBase,
-          netGrowth
-        )
-
-        // Define status ordering
-        const statusOrder = {
-          'not-distinguished': 0,
-          distinguished: 1,
-          'select-distinguished': 2,
-          'presidents-distinguished': 3,
+      fc.property(
+        divisionMetricsArb,
+        ({ clubBase, distinguishedClubs, paidClubs }) => {
+          const lower = statusOf(distinguishedClubs, paidClubs, clubBase)
+          const higher = statusOf(distinguishedClubs, paidClubs + 1, clubBase)
+          expect(statusOrder[higher]).toBeGreaterThanOrEqual(statusOrder[lower])
         }
-
-        // Status with more distinguished clubs should be >= status with fewer
-        expect(statusOrder[status2]).toBeGreaterThanOrEqual(
-          statusOrder[status1]
-        )
-      }),
-      { numRuns: 25 } // Optimized for CI/CD timeout compliance (was 100)
+      ),
+      { numRuns: 25 }
     )
   })
 
-  it('should maintain invariant: higher net growth never decreases status', () => {
-    fc.assert(
-      fc.property(divisionMetricsArb, metrics => {
-        const { clubBase, threshold, distinguishedClubs, paidClubs } = metrics
-        const netGrowth = paidClubs - clubBase
-
-        // Calculate status with current net growth
-        const status1 = calculateDivisionStatus(
-          distinguishedClubs,
-          threshold,
-          paidClubs,
-          clubBase,
-          netGrowth
-        )
-
-        // Calculate status with one more paid club (net growth + 1)
-        const status2 = calculateDivisionStatus(
-          distinguishedClubs,
-          threshold,
-          paidClubs + 1,
-          clubBase,
-          netGrowth + 1
-        )
-
-        // Define status ordering
-        const statusOrder = {
-          'not-distinguished': 0,
-          distinguished: 1,
-          'select-distinguished': 2,
-          'presidents-distinguished': 3,
-        }
-
-        // Status with higher net growth should be >= status with lower net growth
-        expect(statusOrder[status2]).toBeGreaterThanOrEqual(
-          statusOrder[status1]
-        )
-      }),
-      { numRuns: 25 } // Optimized for CI/CD timeout compliance (was 100)
-    )
+  it('verifies the canonical D61 cases (#798): G→Select, H→Distinguished', () => {
+    expect(statusOf(8, 17, 16)).toBe('select-distinguished') // base 16
+    expect(statusOf(8, 18, 17)).toBe('distinguished') // base 17
   })
 })
 
@@ -1711,17 +1322,26 @@ describe('Property 4: Area Status Classification with Qualifying Gate', () => {
           netGrowth
         )
 
-        // Calculate what the status would be using division logic
-        const divisionStatus = calculateDivisionStatus(
-          distinguishedClubs,
-          threshold,
-          paidClubs,
-          clubBase,
-          netGrowth
-        )
+        // Areas follow the Distinguished AREA Program (50% / 50%+1 with net
+        // growth) — independent of the DDP division rules (#798). Assert
+        // against the area rules directly, not by reference to
+        // calculateDivisionStatus (which now uses the DDP 45/50/55 thresholds).
+        let expected: string
+        if (distinguishedClubs >= threshold + 1 && netGrowth >= 1) {
+          expected = 'presidents-distinguished'
+        } else if (
+          distinguishedClubs >= threshold + 1 &&
+          paidClubs >= clubBase
+        ) {
+          expected = 'select-distinguished'
+        } else if (distinguishedClubs >= threshold && paidClubs >= clubBase) {
+          expected = 'distinguished'
+        } else {
+          expected = 'not-distinguished'
+        }
 
-        // For qualified areas, status should match division status
-        expect(areaStatus).toBe(divisionStatus)
+        // For qualified areas, status should match the area (DAP) rules
+        expect(areaStatus).toBe(expected)
 
         // Area status should never be 'not-qualified' when isQualified is true
         expect(areaStatus).not.toBe('not-qualified')

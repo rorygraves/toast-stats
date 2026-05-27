@@ -818,10 +818,10 @@ describe('calculateDivisionGapAnalysis', () => {
     })
 
     it('scenario: large division with 100 clubs', () => {
-      // 100 club base
-      // Distinguished: ceil(100 * 0.45) = 45
-      // Select: ceil(100 * 0.50) = 50
-      // Presidents: ceil(100 * 0.55) = 56 (due to floating point: 100 * 0.55 = 55.00000000000001)
+      // 100 club base (integer-percent thresholds, no float overshoot — #798)
+      // Distinguished: ceil(100 * 45 / 100) = 45
+      // Select: ceil(100 * 50 / 100) = 50
+      // Presidents: ceil(100 * 55 / 100) = 55
       const analysis = calculateDivisionGapAnalysis({
         clubBase: 100,
         paidClubs: 100,
@@ -839,7 +839,7 @@ describe('calculateDivisionGapAnalysis', () => {
       expect(analysis.selectGap.paidClubsNeeded).toBe(1) // Need 101, have 100
 
       expect(analysis.presidentsGap.achieved).toBe(false)
-      expect(analysis.presidentsGap.distinguishedClubsNeeded).toBe(11) // Need 56, have 45
+      expect(analysis.presidentsGap.distinguishedClubsNeeded).toBe(10) // Need 55, have 45
       expect(analysis.presidentsGap.paidClubsNeeded).toBe(2) // Need 102, have 100
     })
   })
