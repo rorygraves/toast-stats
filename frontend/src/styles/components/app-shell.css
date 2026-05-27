@@ -387,7 +387,8 @@
   }
 
   .districts-page {
-    max-width: 1280px;
+    /* Data-table page: wide cap (#810, ADR-006 §1). Prose pages stay 1280. */
+    max-width: var(--page-max-wide);
     margin-left: auto;
     margin-right: auto;
     padding: 32px 24px;
@@ -2582,7 +2583,8 @@
   }
 
   .district-detail-page {
-    max-width: 1280px;
+    /* Data-table page (clubs): wide cap (#810, ADR-006 §1). */
+    max-width: var(--page-max-wide);
     margin-left: auto;
     margin-right: auto;
     padding: 24px 24px 32px;
