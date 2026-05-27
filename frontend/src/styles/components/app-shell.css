@@ -3003,6 +3003,113 @@
     overflow-y: auto;
   }
 
+  /* ── Club table: priority columns + sticky key column + scroll-cue (#812,
+     epic #813 Sprint 4, ADR-006 §2–3) ──
+     Mirrors the landing rankings table (#811) for the club table. The card
+     view is true-mobile only (< 768px, ClubsTable useIsMobile); the table
+     renders at the tablet tier and up. */
+
+  /* Positioning context for the right-edge scroll-cue overlay. */
+  .clubs-table__scroll-wrap {
+    position: relative;
+  }
+
+  /* Single sticky key column (Club) pinned at left:0 — a robust sticky, no
+     hardcoded px offset. Themed background (var(--surface)) so it converges on
+     the SAME surface scale as the default table row, not the lighter
+     --surface-card path (Lesson 116). The cell must be OPAQUE or scrolled
+     columns bleed through. Two inset box-shadows: the right one draws the
+     sticky/scroll seam; the bottom one re-draws the row rule (#clubs-table
+     tbody tr border-bottom) on the pinned cell — an opaque positioned cell can
+     mask the row border behind it, leaving a gap in the hairline down the Club
+     column. Both use var(--line) to match that row rule, on every row (the
+     club table keeps the bottom rule on the last row too — no :last-child
+     special case, unlike the districts table #811). */
+  .clubs-table__sticky-col {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background-color: var(--surface);
+    box-shadow:
+      inset -1px 0 0 var(--line),
+      inset 0 -1px 0 var(--line);
+  }
+
+  /* The Club header cell is the corner: it pins both top (via
+     .clubs-table-sticky-head th) AND left (here), so it must layer above both
+     the other sticky headers and the body sticky cells. It keeps the header
+     surface (--surface-2 from .clubs-table-sticky-head th wins on specificity);
+     only the stacking order needs raising. */
+  .clubs-table-sticky-head th.clubs-table__sticky-col {
+    z-index: 3;
+  }
+
+  /* Keep the sticky cell in sync with the row-hover swap — only for untinted
+     (default-status) rows, which hover to --surface-3 (matching
+     .clubs-table-row:hover). Tinted rows handle their own hover below. */
+  #clubs-table tbody tr:hover .clubs-table__sticky-col[data-row-tint='none'] {
+    background-color: var(--surface-3);
+  }
+
+  /* Tinted rows (vulnerable / intervention) repaint the sticky cell opaque to
+     match the row's status bg (the <tr> carries bg-yellow-50 / bg-red-50 on its
+     transparent cells; the pinned cell carries no Tailwind bg, so it needs the
+     literal here). Light literals = Tailwind yellow-50 / red-50; the hover
+     literals = yellow-100 / red-100, matching the row's hover:bg-*-100. Dark
+     variants live in dark-mode.css (Lesson 096). */
+  .clubs-table__sticky-col[data-row-tint='vulnerable'] {
+    background-color: #fefce8;
+  }
+  .clubs-table__sticky-col[data-row-tint='intervention'] {
+    background-color: #fef2f2;
+  }
+  #clubs-table
+    tbody
+    tr:hover
+    .clubs-table__sticky-col[data-row-tint='vulnerable'] {
+    background-color: #fef9c3;
+  }
+  #clubs-table
+    tbody
+    tr:hover
+    .clubs-table__sticky-col[data-row-tint='intervention'] {
+    background-color: #fee2e2;
+  }
+
+  /* Per-column responsive priority. The detail columns are hidden by default
+     (tablet tier, 768–1279) and revealed at desktop (≥1280). The core set
+     (Club sticky, Status, Members, Needed, DCP, Tier) is always shown when the
+     table renders. The card view carries the full record below 768. */
+  .clubs-table__col--desktop {
+    display: none;
+  }
+  @media (min-width: 1280px) {
+    .clubs-table__col--desktop {
+      display: table-cell;
+    }
+  }
+
+  /* Right-edge fade discoverability cue. Themed (transparent → --surface, so it
+     remaps in dark); pointer-events:none so it never blocks taps/scroll. Shown
+     ONLY when the table overflows to the right (data-scrollable-right, set by
+     ClubsTable) — a permanent fade would wash out the right-most column on a
+     wide desktop where nothing scrolls. */
+  .clubs-table__scroll-cue {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 40px;
+    pointer-events: none;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0), var(--surface));
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .clubs-table__scroll-wrap[data-scrollable-right='true']
+    .clubs-table__scroll-cue {
+    opacity: 1;
+  }
+
   /* ── Clubs table chrome re-skin (#668, epic #665 Sprint 2) ──
      Replaces the legacy gray Tailwind utilities (text-gray-*, bg-gray-50,
      border-gray-200, divide-gray-200, font-tm-headline) with redesign tokens.
