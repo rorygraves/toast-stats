@@ -104,7 +104,7 @@ const DistrictDivisionsPage: React.FC = () => {
 
   const rawName = selectedDistrict?.name || districtId || ''
   const districtName = /^\d+$/.test(rawName) ? `District ${rawName}` : rawName
-  useDocumentTitle(`${districtName} Divisions`)
+  useDocumentTitle(districtName ? `${districtName} Divisions` : null)
 
   const availableDates = cachedDatesInProgramYear.sort((a, b) =>
     b.localeCompare(a)
