@@ -1,11 +1,13 @@
 /**
- * Responsive collapse breakpoint for ClubsTable (#671, epic #665 Sprint 5).
+ * Responsive collapse breakpoint for ClubsTable (#671 → #812).
  *
- * HANDOFF §126: "Tables in District page collapse to card layout under
- * ~640px." The table→card collapse must therefore key off a 640px breakpoint
- * (matchMedia `(max-width: 639px)`), not the legacy 768px. This asserts the
- * query string ClubsTable hands to matchMedia via useIsMobile — falsifiable:
- * at 768 it would read `(max-width: 767px)`.
+ * ADR-006 §2 (epic #813 table-UX program) re-establishes the tablet tier: the
+ * card view is for TRUE mobile only (`< 768px`), and 768–1279px shows the table
+ * with low-priority columns hidden (the priority-column model, #812) rather
+ * than the old 640px desktop→mobile cliff (#671). The table→card collapse must
+ * therefore key off a 768px breakpoint (matchMedia `(max-width: 767px)`). This
+ * asserts the query string ClubsTable hands to matchMedia via useIsMobile —
+ * falsifiable: at the old 640 it would read `(max-width: 639px)`.
  */
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, cleanup } from '@testing-library/react'
@@ -26,13 +28,13 @@ const CLUB: ClubTrend = {
   dcpGoalsTrend: [{ date: new Date().toISOString(), goalsAchieved: 5 }],
 }
 
-describe('ClubsTable responsive collapse (#671)', () => {
+describe('ClubsTable responsive collapse (#671 → #812)', () => {
   afterEach(() => {
     cleanup()
     vi.restoreAllMocks()
   })
 
-  it('collapses to cards at the 640px breakpoint (matchMedia 639px)', () => {
+  it('collapses to cards at the 768px tablet boundary (matchMedia 767px)', () => {
     const queries: string[] = []
     vi.stubGlobal(
       'matchMedia',
@@ -51,7 +53,7 @@ describe('ClubsTable responsive collapse (#671)', () => {
       })
     )
     render(<ClubsTable clubs={[CLUB]} districtId="61" isLoading={false} />)
-    expect(queries).toContain('(max-width: 639px)')
-    expect(queries).not.toContain('(max-width: 767px)')
+    expect(queries).toContain('(max-width: 767px)')
+    expect(queries).not.toContain('(max-width: 639px)')
   })
 })
