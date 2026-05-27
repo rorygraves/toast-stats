@@ -3018,14 +3018,21 @@
      hardcoded px offset. Themed background (var(--surface)) so it converges on
      the SAME surface scale as the default table row, not the lighter
      --surface-card path (Lesson 116). The cell must be OPAQUE or scrolled
-     columns bleed through; the right inset box-shadow draws the sticky/scroll
-     seam (border-collapse drops a positioned cell's own border). */
+     columns bleed through. Two inset box-shadows: the right one draws the
+     sticky/scroll seam; the bottom one re-draws the row rule (#clubs-table
+     tbody tr border-bottom) on the pinned cell — an opaque positioned cell can
+     mask the row border behind it, leaving a gap in the hairline down the Club
+     column. Both use var(--line) to match that row rule, on every row (the
+     club table keeps the bottom rule on the last row too — no :last-child
+     special case, unlike the districts table #811). */
   .clubs-table__sticky-col {
     position: sticky;
     left: 0;
     z-index: 2;
     background-color: var(--surface);
-    box-shadow: inset -1px 0 0 var(--line);
+    box-shadow:
+      inset -1px 0 0 var(--line),
+      inset 0 -1px 0 var(--line);
   }
 
   /* The Club header cell is the corner: it pins both top (via

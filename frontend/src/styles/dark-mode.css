@@ -512,12 +512,13 @@
 }
 
 /* Club table sticky key column (#812). Default bg is themed var(--surface)
-   (dark-safe); only the status-tinted-row repaints need a dark variant. These
-   match the bg-yellow-50 / bg-red-50 (resting) and bg-yellow-100 / bg-red-100
-   (hover) dark remaps used elsewhere in this file, so the opaque pinned cell
-   stays consistent with the rest of its tinted row in dark mode. No !important
-   (the cell carries no Tailwind bg utility to override, and it would desync the
-   row-hover highlight — Lesson 107). */
+   (dark-safe); only the status-tinted-row repaints need a dark variant. The
+   resting values match the .bg-yellow-50 / .bg-red-50 dark remaps (0.10); the
+   hover values match the .hover\:bg-yellow-100:hover / .hover\:bg-red-100:hover
+   dark remaps (0.20) — the row's NON-sticky cells carry those hover utilities,
+   so the opaque pinned cell must land on the same alpha or it shows a seam down
+   the hovered tinted row. No !important (the cell carries no Tailwind bg utility
+   to override, and it would desync the row-hover highlight — Lesson 107). */
 [data-theme='dark'] .clubs-table__sticky-col[data-row-tint='vulnerable'] {
     background-color: rgba(161, 98, 7, 0.1);
 }
@@ -529,14 +530,14 @@
     tbody
     tr:hover
     .clubs-table__sticky-col[data-row-tint='vulnerable'] {
-    background-color: rgba(161, 98, 7, 0.18);
+    background-color: rgba(161, 98, 7, 0.2);
 }
 [data-theme='dark']
     #clubs-table
     tbody
     tr:hover
     .clubs-table__sticky-col[data-row-tint='intervention'] {
-    background-color: rgba(185, 28, 28, 0.18);
+    background-color: rgba(185, 28, 28, 0.2);
 }
 
 /* ═══════════════════════════════════════════
