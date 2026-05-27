@@ -320,6 +320,37 @@ const DistrictsPage: React.FC = () => {
     return displayRankings.slice(0, 5)
   }, [displayRankings, searchQuery])
 
+  // Show the right-edge scroll-cue ONLY when the rankings table actually
+  // overflows to the right. A permanent fade would wash out the right-aligned
+  // Score column on desktop, where the full set fits and nothing scrolls — a
+  // false affordance over the headline metric. Toggled imperatively (a
+  // data-attr on the scroll-wrap, gated in CSS) so scroll/resize don't
+  // re-render the whole table. Unlike the regions leaderboard's always-on cue
+  // (#689, 19 cols that always scroll), this one is conditional.
+  const rankingsScrollRef = useRef<HTMLDivElement>(null)
+  React.useEffect(() => {
+    const el = rankingsScrollRef.current
+    if (!el) return
+    const update = () => {
+      const moreToRight = el.scrollWidth - el.clientWidth - el.scrollLeft > 1
+      el.parentElement?.setAttribute(
+        'data-scrollable-right',
+        String(moreToRight)
+      )
+    }
+    update()
+    el.addEventListener('scroll', update, { passive: true })
+    let ro: ResizeObserver | undefined
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(update)
+      ro.observe(el)
+    }
+    return () => {
+      el.removeEventListener('scroll', update)
+      ro?.disconnect()
+    }
+  }, [displayRankings])
+
   const handleDistrictClick = (districtId: string) => {
     navigate(`/district/${districtId}`)
   }
@@ -991,320 +1022,354 @@ const DistrictsPage: React.FC = () => {
               <InfoTooltip text="Paid Clubs = clubs that have met renewal obligations for the program year. Total Payments = year-to-date membership payment count. Distinguished = clubs achieving Distinguished status or higher. Score = Borda-count composite of the three rankings. Higher is better on all four." />
             </span>
           </div>
-          <div className="overflow-x-auto">
-            <table
-              className="districts-rankings-table"
-              aria-label="District rankings"
+          {/* Non-trap horizontal scroll (Lesson 105). This is a LEADERBOARD —
+              its value is comparing districts across rows — so it keeps the
+              table and makes the scroll non-trap rather than card-collapsing
+              (which would destroy the comparison; that pattern is right for
+              the club table, not this one). Three moves: (1) the scroller is a
+              focusable, labelled region (WCAG 2.1.1 / axe
+              scrollable-region-focusable); (2) the District identity column is
+              the single sticky key column (no hardcoded second-sticky px seam);
+              (3) the right-edge scroll-cue signals more columns. Low-priority
+              columns hide at tablet/mobile via the __col--tablet/--desktop
+              priority classes so a phone shows a sensible set. Don't "fix" this
+              into a card collapse. */}
+          <div className="districts-rankings-table__scroll-wrap">
+            <div
+              ref={rankingsScrollRef}
+              className="overflow-x-auto"
+              role="region"
+              tabIndex={0}
+              aria-label="District rankings — scroll horizontally to see all metrics"
             >
-              <caption className="sr-only">
-                District rankings by Paid Clubs, Total Payments, Distinguished
-                club count, and Borda-count Score.
-              </caption>
-              <thead>
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 z-10">
-                    District
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-[200px] z-10 sticky-column-shadow">
-                    Rank
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tier
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Paid Clubs
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Total Payments
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Distinguished
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Score
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {displayRankings.map(district => {
-                  const rank = district.displayRank
-                  const isPinned = pinnedDistrictIds.has(district.districtId)
-                  const pinDisabled =
-                    !isPinned && pinnedDistrictIds.size >= MAX_PINNED
-                  const isMine = isMyDistrict(district.districtId)
-                  const rawTier =
-                    competitiveAwards?.distinguishedDistrict?.[
-                      district.districtId
-                    ]?.currentTier ?? null
-                  // The row-level data-tier hook is only meaningful for
-                  // ACHIEVED tiers; CSS rules like [data-tier="Smedley"]
-                  // never want to match NotDistinguished. So absence is
-                  // the signal there too — same convention as the chip.
-                  const ddpTier =
-                    rawTier && rawTier !== 'NotDistinguished' ? rawTier : null
-                  return (
-                    <tr
-                      key={district.districtId}
-                      data-testid={`district-row-${district.districtId}`}
-                      data-tier={ddpTier ?? undefined}
-                      onClick={() => handleDistrictClick(district.districtId)}
-                      className={`cursor-pointer ${
-                        isMine
-                          ? 'bg-yellow-50 border-l-4 border-l-tm-loyal-blue'
-                          : isPinned
-                            ? 'bg-blue-50'
-                            : ''
-                      }`}
-                    >
-                      {/* District cell first (#436) — primary entity. The
-                          number is rendered as a standalone chip so the
-                          click affordance reads as obviously interactive.
-                          (#417) Star button toggles 'my district'.
-                          Sticky cell background must honour the row's
-                          isMine/isPinned tint, not stay white (#546 review). */}
-                      <td
-                        className={`px-6 py-4 whitespace-nowrap sticky left-0 z-10 ${
+              <table
+                className="districts-rankings-table"
+                aria-label="District rankings"
+              >
+                <caption className="sr-only">
+                  District rankings by Paid Clubs, Total Payments, Distinguished
+                  club count, and Borda-count Score.
+                </caption>
+                <thead>
+                  <tr>
+                    <th className="districts-rankings-table__sticky-col px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      District
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Rank
+                    </th>
+                    <th className="districts-rankings-table__col--desktop px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Tier
+                    </th>
+                    <th className="districts-rankings-table__col--tablet px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Paid Clubs
+                    </th>
+                    <th className="districts-rankings-table__col--tablet px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Total Payments
+                    </th>
+                    <th className="districts-rankings-table__col--tablet px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Distinguished
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Score
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {displayRankings.map(district => {
+                    const rank = district.displayRank
+                    const isPinned = pinnedDistrictIds.has(district.districtId)
+                    const pinDisabled =
+                      !isPinned && pinnedDistrictIds.size >= MAX_PINNED
+                    const isMine = isMyDistrict(district.districtId)
+                    const rawTier =
+                      competitiveAwards?.distinguishedDistrict?.[
+                        district.districtId
+                      ]?.currentTier ?? null
+                    // The row-level data-tier hook is only meaningful for
+                    // ACHIEVED tiers; CSS rules like [data-tier="Smedley"]
+                    // never want to match NotDistinguished. So absence is
+                    // the signal there too — same convention as the chip.
+                    const ddpTier =
+                      rawTier && rawTier !== 'NotDistinguished' ? rawTier : null
+                    return (
+                      <tr
+                        key={district.districtId}
+                        data-testid={`district-row-${district.districtId}`}
+                        data-tier={ddpTier ?? undefined}
+                        onClick={() => handleDistrictClick(district.districtId)}
+                        className={`cursor-pointer ${
                           isMine
-                            ? 'bg-yellow-50'
+                            ? 'bg-yellow-50 border-l-4 border-l-tm-loyal-blue'
                             : isPinned
                               ? 'bg-blue-50'
-                              : 'bg-white'
+                              : ''
                         }`}
                       >
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <button
-                            type="button"
-                            onClick={e => {
-                              e.stopPropagation()
-                              setMyDistrict(isMine ? null : district.districtId)
-                            }}
-                            aria-label={
-                              isMine
-                                ? `Unset District ${district.districtId} as my district`
-                                : `Set District ${district.districtId} as my district`
-                            }
-                            aria-pressed={isMine}
-                            title={
-                              isMine
-                                ? 'Click to clear · this district pins to top across visits'
-                                : 'Click to mark as my district · pins to top across visits'
-                            }
-                            className={`flex-shrink-0 w-6 h-6 inline-flex items-center justify-center rounded transition-colors ${
-                              isMine
-                                ? 'text-yellow-500 hover:text-gray-400'
-                                : 'text-gray-300 hover:text-yellow-500'
-                            }`}
-                          >
-                            <svg
-                              className="w-4 h-4"
-                              fill={isMine ? 'currentColor' : 'none'}
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                              aria-hidden="true"
+                        {/* District cell first (#436) — primary entity, and the
+                          single sticky key column (#811). The number is a
+                          standalone chip so the click affordance reads as
+                          interactive. (#417) Star toggles 'my district'.
+                          The sticky cell needs an opaque themed background so
+                          scrolled columns don't bleed through; data-row-tint
+                          lets the CSS repaint the isMine/isPinned tint (token-
+                          based, dark-safe — replaces the old hardcoded bg-white
+                          that routed to the lighter dark scale, Lesson 116). */}
+                        <td
+                          data-testid={`district-cell-${district.districtId}`}
+                          data-row-tint={
+                            isMine ? 'mine' : isPinned ? 'pinned' : 'none'
+                          }
+                          className="districts-rankings-table__sticky-col px-6 py-4 whitespace-nowrap"
+                        >
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <button
+                              type="button"
+                              onClick={e => {
+                                e.stopPropagation()
+                                setMyDistrict(
+                                  isMine ? null : district.districtId
+                                )
+                              }}
+                              aria-label={
+                                isMine
+                                  ? `Unset District ${district.districtId} as my district`
+                                  : `Set District ${district.districtId} as my district`
+                              }
+                              aria-pressed={isMine}
+                              title={
+                                isMine
+                                  ? 'Click to clear · this district pins to top across visits'
+                                  : 'Click to mark as my district · pins to top across visits'
+                              }
+                              className={`districts-rankings-table__touch-btn flex-shrink-0 inline-flex items-center justify-center rounded transition-colors ${
+                                isMine
+                                  ? 'text-yellow-500 hover:text-gray-400'
+                                  : 'text-gray-300 hover:text-yellow-500'
+                              }`}
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-                              />
-                            </svg>
-                          </button>
-                          <DistrictChipAndName
-                            districtId={district.districtId}
-                            name={district.districtName}
-                            nameClassName="text-sm font-medium text-gray-900"
-                            ariaHidden
-                          />
-                          {/* Competitive award winner badges (#331) */}
-                          {competitiveAwards?.byDistrict?.[district.districtId]
-                            ?.extensionIsWinner && (
-                            <span
-                              title="President's Extension Award winner"
-                              className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-50 text-yellow-800 border border-yellow-200"
-                            >
-                              <span aria-hidden="true">🏆</span>
-                              <span className="ml-1">Extension</span>
-                            </span>
-                          )}
-                          {competitiveAwards?.byDistrict?.[district.districtId]
-                            ?.twentyPlusIsWinner && (
-                            <span
-                              title="President's 20-Plus Award winner"
-                              className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-50 text-yellow-800 border border-yellow-200"
-                            >
-                              <span aria-hidden="true">🏆</span>
-                              <span className="ml-1">20-Plus</span>
-                            </span>
-                          )}
-                          {competitiveAwards?.byDistrict?.[district.districtId]
-                            ?.retentionIsWinner && (
-                            <span
-                              title="District Club Retention Award winner"
-                              className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-50 text-yellow-800 border border-yellow-200"
-                            >
-                              <span aria-hidden="true">🏆</span>
-                              <span className="ml-1">Retention</span>
-                            </span>
-                          )}
-                          {/* Region collapses into the District cell as
+                              <svg
+                                className="w-4 h-4"
+                                fill={isMine ? 'currentColor' : 'none'}
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                                />
+                              </svg>
+                            </button>
+                            <DistrictChipAndName
+                              districtId={district.districtId}
+                              name={district.districtName}
+                              nameClassName="text-sm font-medium text-gray-900"
+                              ariaHidden
+                            />
+                            {/* Competitive award winner badges (#331) */}
+                            {competitiveAwards?.byDistrict?.[
+                              district.districtId
+                            ]?.extensionIsWinner && (
+                              <span
+                                title="President's Extension Award winner"
+                                className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-50 text-yellow-800 border border-yellow-200"
+                              >
+                                <span aria-hidden="true">🏆</span>
+                                <span className="ml-1">Extension</span>
+                              </span>
+                            )}
+                            {competitiveAwards?.byDistrict?.[
+                              district.districtId
+                            ]?.twentyPlusIsWinner && (
+                              <span
+                                title="President's 20-Plus Award winner"
+                                className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-50 text-yellow-800 border border-yellow-200"
+                              >
+                                <span aria-hidden="true">🏆</span>
+                                <span className="ml-1">20-Plus</span>
+                              </span>
+                            )}
+                            {competitiveAwards?.byDistrict?.[
+                              district.districtId
+                            ]?.retentionIsWinner && (
+                              <span
+                                title="District Club Retention Award winner"
+                                className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-50 text-yellow-800 border border-yellow-200"
+                              >
+                                <span aria-hidden="true">🏆</span>
+                                <span className="ml-1">Retention</span>
+                              </span>
+                            )}
+                            {/* Region collapses into the District cell as
                               a quiet "· R<n>" suffix (#546) — saves the
                               standalone Region column's width. */}
-                          {district.region && (
-                            <span
-                              data-testid={`district-region-suffix-${district.districtId}`}
-                              className="text-xs text-gray-500"
+                            {district.region && (
+                              <span
+                                data-testid={`district-region-suffix-${district.districtId}`}
+                                className="text-xs text-gray-500"
+                              >
+                                · R{district.region}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        {/* Rank cell — second column (#436). No longer a second
+                          sticky column (#811): the old `left-[200px]` magic
+                          offset was a fragile px seam (AC #2) and the sticky
+                          pair (~380px) alone overflowed a 375px phone. Only the
+                          District identity column sticks now; this cell scrolls
+                          and inherits the row tint through its transparent bg. */}
+                        <td
+                          data-testid={`rank-cell-${district.districtId}`}
+                          className="px-6 py-4 whitespace-nowrap"
+                        >
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={e => {
+                                e.stopPropagation()
+                                togglePin(district.districtId)
+                              }}
+                              disabled={pinDisabled}
+                              aria-label={
+                                isPinned
+                                  ? `Unpin District ${district.districtId}`
+                                  : `Pin District ${district.districtId}`
+                              }
+                              className={`districts-rankings-table__touch-btn flex-shrink-0 flex items-center justify-center rounded transition-colors ${
+                                isPinned
+                                  ? 'text-tm-loyal-blue hover:text-red-500'
+                                  : pinDisabled
+                                    ? 'text-gray-300 cursor-not-allowed'
+                                    : 'text-gray-400 hover:text-tm-loyal-blue'
+                              }`}
                             >
-                              · R{district.region}
+                              <svg
+                                className="w-4 h-4"
+                                fill={isPinned ? 'currentColor' : 'none'}
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                                />
+                              </svg>
+                            </button>
+                            <span
+                              data-testid={`rank-badge-${district.districtId}`}
+                              className={`inline-flex items-center justify-center w-10 h-10 rounded-full font-bold ${getRankBadgeColor(rank)}`}
+                            >
+                              {rank}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="districts-rankings-table__col--desktop px-4 py-4 whitespace-nowrap">
+                          {ddpTier ? (
+                            <DistrictTierChip
+                              districtId={district.districtId}
+                              tier={ddpTier}
+                            />
+                          ) : (
+                            // Empty Tier cell: the column header "Tier"
+                            // already provides context; an aria-label here
+                            // would chatter on every NotDistinguished row
+                            // (which is the majority).
+                            <span
+                              className="text-gray-400 text-sm"
+                              aria-hidden="true"
+                            >
+                              —
                             </span>
                           )}
-                        </div>
-                      </td>
-                      {/* Rank cell — now second column (#436). Pin button
-                          stays adjacent to rank badge for symmetry with
-                          the existing comparison-pin UX. Sticky background
-                          must honour the row tint (#546 review). */}
-                      <td
-                        className={`px-6 py-4 whitespace-nowrap sticky left-[200px] z-10 sticky-column-shadow ${
-                          isMine
-                            ? 'bg-yellow-50'
-                            : isPinned
-                              ? 'bg-blue-50'
-                              : 'bg-white'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={e => {
-                              e.stopPropagation()
-                              togglePin(district.districtId)
-                            }}
-                            disabled={pinDisabled}
-                            aria-label={
-                              isPinned
-                                ? `Unpin District ${district.districtId}`
-                                : `Pin District ${district.districtId}`
-                            }
-                            className={`flex-shrink-0 w-6 h-6 flex items-center justify-center rounded transition-colors ${
-                              isPinned
-                                ? 'text-tm-loyal-blue hover:text-red-500'
-                                : pinDisabled
-                                  ? 'text-gray-300 cursor-not-allowed'
-                                  : 'text-gray-400 hover:text-tm-loyal-blue'
-                            }`}
-                          >
-                            <svg
-                              className="w-4 h-4"
-                              fill={isPinned ? 'currentColor' : 'none'}
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
+                        </td>
+                        <td className="districts-rankings-table__col--tablet px-6 py-4 whitespace-nowrap text-right">
+                          <div className="text-sm font-medium text-gray-900">
+                            {formatNumber(district.paidClubs)}
+                          </div>
+                          <div className="text-xs flex items-center justify-end gap-1">
+                            <span className="text-tm-loyal-blue font-tm-body">
+                              #{district.clubsRank}
+                            </span>
+                            <span className="text-gray-400">•</span>
+                            <span
+                              className={
+                                formatPercentage(district.clubGrowthPercent)
+                                  .color
+                              }
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                              />
-                            </svg>
-                          </button>
-                          <span
-                            className={`inline-flex items-center justify-center w-10 h-10 rounded-full font-bold ${getRankBadgeColor(rank)}`}
-                          >
-                            {rank}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        {ddpTier ? (
-                          <DistrictTierChip
-                            districtId={district.districtId}
-                            tier={ddpTier}
-                          />
-                        ) : (
-                          // Empty Tier cell: the column header "Tier"
-                          // already provides context; an aria-label here
-                          // would chatter on every NotDistinguished row
-                          // (which is the majority).
-                          <span
-                            className="text-gray-400 text-sm"
-                            aria-hidden="true"
-                          >
-                            —
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <div className="text-sm font-medium text-gray-900">
-                          {formatNumber(district.paidClubs)}
-                        </div>
-                        <div className="text-xs flex items-center justify-end gap-1">
-                          <span className="text-tm-loyal-blue font-tm-body">
-                            #{district.clubsRank}
-                          </span>
-                          <span className="text-gray-400">•</span>
-                          <span
-                            className={
-                              formatPercentage(district.clubGrowthPercent).color
-                            }
-                          >
-                            {formatPercentage(district.clubGrowthPercent).text}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <div className="text-sm font-medium text-gray-900">
-                          {formatNumber(district.totalPayments)}
-                        </div>
-                        <div className="text-xs flex items-center justify-end gap-1">
-                          <span className="text-tm-loyal-blue font-tm-body">
-                            #{district.paymentsRank}
-                          </span>
-                          <span className="text-gray-400">•</span>
-                          <span
-                            className={
-                              formatPercentage(district.paymentGrowthPercent)
-                                .color
-                            }
-                          >
-                            {
-                              formatPercentage(district.paymentGrowthPercent)
-                                .text
-                            }
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <div className="text-sm font-medium text-gray-900">
-                          {formatNumber(district.distinguishedClubs)}
-                        </div>
-                        <div className="text-xs flex items-center justify-end gap-1">
-                          <span className="text-tm-loyal-blue font-tm-body">
-                            #{district.distinguishedRank}
-                          </span>
-                          <span className="text-gray-400">•</span>
-                          <span
-                            className={
-                              formatPercentage(district.distinguishedPercent)
-                                .color
-                            }
-                          >
-                            {
-                              formatPercentage(district.distinguishedPercent)
-                                .text
-                            }
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <div className="text-sm font-bold text-tm-loyal-blue font-tm-headline">
-                          {formatNumber(Math.round(district.aggregateScore))}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+                              {
+                                formatPercentage(district.clubGrowthPercent)
+                                  .text
+                              }
+                            </span>
+                          </div>
+                        </td>
+                        <td className="districts-rankings-table__col--tablet px-6 py-4 whitespace-nowrap text-right">
+                          <div className="text-sm font-medium text-gray-900">
+                            {formatNumber(district.totalPayments)}
+                          </div>
+                          <div className="text-xs flex items-center justify-end gap-1">
+                            <span className="text-tm-loyal-blue font-tm-body">
+                              #{district.paymentsRank}
+                            </span>
+                            <span className="text-gray-400">•</span>
+                            <span
+                              className={
+                                formatPercentage(district.paymentGrowthPercent)
+                                  .color
+                              }
+                            >
+                              {
+                                formatPercentage(district.paymentGrowthPercent)
+                                  .text
+                              }
+                            </span>
+                          </div>
+                        </td>
+                        <td className="districts-rankings-table__col--tablet px-6 py-4 whitespace-nowrap text-right">
+                          <div className="text-sm font-medium text-gray-900">
+                            {formatNumber(district.distinguishedClubs)}
+                          </div>
+                          <div className="text-xs flex items-center justify-end gap-1">
+                            <span className="text-tm-loyal-blue font-tm-body">
+                              #{district.distinguishedRank}
+                            </span>
+                            <span className="text-gray-400">•</span>
+                            <span
+                              className={
+                                formatPercentage(district.distinguishedPercent)
+                                  .color
+                              }
+                            >
+                              {
+                                formatPercentage(district.distinguishedPercent)
+                                  .text
+                              }
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <div className="text-sm font-bold text-tm-loyal-blue font-tm-headline">
+                            {formatNumber(Math.round(district.aggregateScore))}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {/* Right-edge fade cue — themed (transparent → --surface, remaps in
+                dark); pointer-events:none so it never blocks taps/scroll. */}
+            <div
+              className="districts-rankings-table__scroll-cue"
+              aria-hidden="true"
+            />
           </div>
         </div>
 
