@@ -39,23 +39,38 @@ describe('Issue #86 — Tab bar scroll fade indicator', () => {
   // lives in `src/components/__tests__/DistrictDetailTabs.test.tsx`.
 })
 
-// ---- Issue #85: Sticky table columns ----
+// ---- Issue #85 → #811: Sticky key column on horizontal scroll ----
+// #85 originally pinned BOTH Rank and District as sticky via inline Tailwind
+// (`sticky left-0` + `sticky left-[200px]`). #811 (epic #813) superseded that:
+// the two-sticky pair (~380px) alone overflowed a 375px phone, and the
+// `left-[200px]` magic offset was a fragile px seam (ADR-006 §3). The new model
+// pins ONE sticky key column (District) via a CSS class — no hardcoded offset —
+// so the row stays labelled while metric columns scroll. The #85 intent (a
+// labelled, scroll-stable identity column) is preserved by the single sticky
+// column; the rendered-DOM contract is covered in DistrictsPage.responsive.test.
 
-describe('Issue #85 — Sticky table columns on mobile', () => {
-  it('DistrictsPage should have sticky classes on Rank column', () => {
+describe('Issue #85 → #811 — single sticky key column', () => {
+  it('DistrictsPage marks District as the sticky key column (not inline px sticky)', () => {
     const source = fs.readFileSync(
       path.join(SRC_DIR, 'pages', 'DistrictsPage.tsx'),
       'utf-8'
     )
-    expect(source).toMatch(/sticky.*left-0/)
+    expect(source).toContain('districts-rankings-table__sticky-col')
   })
 
-  it('DistrictsPage should have sticky classes on District column', () => {
-    const source = fs.readFileSync(
-      path.join(SRC_DIR, 'pages', 'DistrictsPage.tsx'),
+  it('app-shell.css pins the key column with position:sticky, no hardcoded left offset', () => {
+    const css = fs.readFileSync(
+      path.join(SRC_DIR, 'styles', 'components', 'app-shell.css'),
       'utf-8'
     )
-    expect(source).toMatch(/sticky.*left-\[/)
+    // The sticky key-column rule resolves position:sticky + left:0 (a token-
+    // free, offset-free pin — no `left: 120px/200px` magic number seam).
+    expect(css).toMatch(
+      /\.districts-rankings-table__sticky-col\s*\{[\s\S]*?position:\s*sticky/
+    )
+    expect(css).toMatch(
+      /\.districts-rankings-table__sticky-col\s*\{[\s\S]*?left:\s*0/
+    )
   })
 
   it('index.css should define .sticky-column-shadow class', () => {

@@ -902,6 +902,96 @@
     overflow: hidden;
   }
 
+  /* ── Landing rankings table: non-trap scroll + priority columns (#811) ──
+     A leaderboard keeps the table and makes the horizontal scroll non-trap
+     (Lesson 105): one sticky key column, a scroll-cue, a focusable scroller —
+     NOT a card collapse. Positioning context for the right-edge cue. */
+  .districts-rankings-table__scroll-wrap {
+    position: relative;
+  }
+
+  /* Single sticky key column (District) pinned at left:0. Themed background
+     (var(--surface)) so it converges on the SAME surface scale as the table
+     body — not the lighter --surface-card the old `.sticky` dark path landed on
+     (Lesson 116). border-collapse drops a positioned cell's borders, so the row
+     rule + the sticky/scroll seam are restored with inset box-shadows. */
+  .districts-rankings-table__sticky-col {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background-color: var(--surface);
+    box-shadow:
+      inset -1px 0 0 var(--line),
+      inset 0 -1px 0 var(--line-2);
+  }
+
+  /* Header sticky cell rides the thead surface and layers above body cells. */
+  .districts-rankings-table thead .districts-rankings-table__sticky-col {
+    z-index: 3;
+    background-color: var(--surface-2);
+  }
+
+  /* Keep the pinned cell in sync with the row-hover highlight. */
+  .districts-rankings-table
+    tbody
+    tr:hover
+    .districts-rankings-table__sticky-col {
+    background-color: var(--surface-2);
+  }
+
+  /* The sticky cell must be OPAQUE or scrolled columns bleed through; a tinted
+     row (my-district / pinned) repaints its tint here so it stays opaque. The
+     literals match Tailwind yellow-50 / blue-50 (the tints the <tr> still
+     carries for its transparent cells); dark variants live in dark-mode.css. */
+  .districts-rankings-table__sticky-col[data-row-tint='mine'] {
+    background-color: #fefce8;
+  }
+  .districts-rankings-table__sticky-col[data-row-tint='pinned'] {
+    background-color: #eff6ff;
+  }
+
+  /* ≥44px touch targets for the row action buttons (WCAG 2.5.5, Lesson 111).
+     These are <button>s, so min-height applies in WebKit without
+     appearance:none (that caveat is for native <select>). The icon stays small
+     (w-4 h-4); the padding box carries the hit area. */
+  .districts-rankings-table__touch-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Per-column responsive priority (ADR-006 §3). Mobile-first: low-priority
+     columns are hidden by default and revealed at each breakpoint. Always-on
+     at 375px: District (sticky), Rank, Score. */
+  .districts-rankings-table__col--tablet,
+  .districts-rankings-table__col--desktop {
+    display: none;
+  }
+  /* Tablet (≥768): + the three metric columns (Paid Clubs / Payments /
+     Distinguished). */
+  @media (min-width: 768px) {
+    .districts-rankings-table__col--tablet {
+      display: table-cell;
+    }
+  }
+  /* Desktop (≥1280): + Tier (the full set). */
+  @media (min-width: 1280px) {
+    .districts-rankings-table__col--desktop {
+      display: table-cell;
+    }
+  }
+
+  /* Right-edge fade discoverability cue. Themed (transparent → --surface, so it
+     remaps in dark); pointer-events:none so it never blocks taps/scroll. */
+  .districts-rankings-table__scroll-cue {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 40px;
+    pointer-events: none;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0), var(--surface));
+  }
+
   /* Region rankings: intentional, documented horizontal scroll (#689, epic
      #683). The 19-column table can't fit a phone and a regional leaderboard
      exists to compare districts across rows, so card-collapse is wrong here

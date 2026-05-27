@@ -282,19 +282,13 @@ describe('DistrictsPage - District Search (#91)', () => {
     // District 61 should retain its original rank of 2, NOT become rank 1
     expect(screen.getByText('District 61')).toBeInTheDocument()
 
-    // The rank badge should show "2" not "1"
-    const rankBadges = screen.getAllByText('2')
-    const rankBadge = rankBadges.find(el =>
-      el.closest('td')?.classList.contains('sticky')
-    )
-    expect(rankBadge).toBeDefined()
+    // D61's rank badge should show "2" (its original rank), not "1". The rank
+    // column is no longer a sticky cell (#811 dropped the hardcoded second
+    // sticky), so identify the badge by its stable testid instead.
+    expect(screen.getByTestId('rank-badge-61').textContent?.trim()).toBe('2')
 
-    // Rank "1" should NOT be present (District 57 is filtered out)
-    const allOnes = screen.queryAllByText('1')
-    const rankOneInSticky = allOnes.find(el =>
-      el.closest('td')?.classList.contains('sticky')
-    )
-    expect(rankOneInSticky).toBeUndefined()
+    // No surviving row should show rank "1" — D57 (rank 1) is filtered out.
+    expect(screen.queryByTestId('rank-badge-57')).toBeNull()
   })
 
   it('search suggestions do not duplicate bare-numeric districtName (#522)', async () => {

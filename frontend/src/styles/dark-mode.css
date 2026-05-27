@@ -495,6 +495,18 @@
     background-color: rgba(37, 99, 235, 0.10) !important;
 }
 
+/* Landing rankings table sticky key column (#811). Its default bg is the
+   themed var(--surface) (already dark-safe); only the tinted-row repaints need
+   a dark variant. Match the bg-yellow-50 / bg-blue-50 dark remaps (0.10 alpha)
+   so the opaque sticky cell stays consistent with the rest of the tinted row. */
+[data-theme='dark'] .districts-rankings-table__sticky-col[data-row-tint='mine'] {
+    background-color: rgba(161, 98, 7, 0.10) !important;
+}
+
+[data-theme='dark'] .districts-rankings-table__sticky-col[data-row-tint='pinned'] {
+    background-color: rgba(37, 99, 235, 0.10) !important;
+}
+
 /* ═══════════════════════════════════════════
    Gradient Backgrounds (Summary Cards)
    Light gradients → dark translucent gradients
