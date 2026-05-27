@@ -3,6 +3,7 @@
  */
 
 import type { SnapshotDiff } from '@toastmasters/shared-contracts'
+import { distinguishedTierName } from './distinguishedTier'
 import { logger } from './logger'
 
 /**
@@ -623,17 +624,6 @@ export const exportClubPerformance = (
   downloadCSV(csvContent, filename)
 }
 
-/** "Club Distinguished Status" tier codes → display names (stable: '' D S P M). */
-const DIFF_TIER_NAMES: Record<string, string> = {
-  D: 'Distinguished',
-  S: 'Select Distinguished',
-  P: "President's Distinguished",
-  M: 'Distinguished',
-}
-
-const diffTierName = (code: string): string =>
-  code ? (DIFF_TIER_NAMES[code] ?? 'Distinguished') : 'None'
-
 /**
  * #795 (epic #797 Sprint 3) — export a snapshot-to-snapshot diff to CSV.
  *
@@ -680,8 +670,8 @@ export const exportSnapshotDiff = (diff: SnapshotDiff): void => {
     c.dcpGoals.from,
     c.dcpGoals.to,
     c.dcpGoals.delta,
-    diffTierName(c.distinguishedFrom),
-    diffTierName(c.distinguishedTo),
+    distinguishedTierName(c.distinguishedFrom),
+    distinguishedTierName(c.distinguishedTo),
     c.distinguishedChanged ? 'Yes' : 'No',
   ])
 

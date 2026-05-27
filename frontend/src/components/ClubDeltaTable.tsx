@@ -7,6 +7,7 @@ import type {
 import { ChangeIndicator } from './ChangeIndicator'
 import { ExportButton } from './ExportButton'
 import { exportSnapshotDiff } from '../utils/csvExport'
+import { distinguishedTierName } from '../utils/distinguishedTier'
 import { useIsMobile } from '../hooks/useIsMobile'
 
 /**
@@ -28,26 +29,14 @@ import { useIsMobile } from '../hooks/useIsMobile'
  *   time, so card-collapse preserves the per-row reading the table is for).
  */
 
-/** "Club Distinguished Status" tier codes → display names (matches the diff
- *  engine's private TIER_NAMES; codes are stable: '' D S P M). */
-const TIER_NAMES: Record<string, string> = {
-  D: 'Distinguished',
-  S: 'Select Distinguished',
-  P: "President's Distinguished",
-  M: 'Distinguished',
-}
-
-function tierName(code: string): string {
-  return TIER_NAMES[code] ?? 'Distinguished'
-}
-
 /** Human transition text for the distinguished cell. v1 leans on the became/
- *  lost boolean (epic open question); tier-to-tier shows both names. */
+ *  lost boolean (epic open question); tier-to-tier shows both names. Tier names
+ *  come from the shared `distinguishedTier` helper (one home — lesson 117). */
 function distinguishedText(from: string, to: string): string | null {
   if (from === to) return null
-  if (!from && to) return `Became ${tierName(to)}`
+  if (!from && to) return `Became ${distinguishedTierName(to)}`
   if (from && !to) return 'Lost Distinguished status'
-  return `${tierName(from)} → ${tierName(to)}`
+  return `${distinguishedTierName(from)} → ${distinguishedTierName(to)}`
 }
 
 type SortField = 'name' | 'membership' | 'payments' | 'dcpGoals'
