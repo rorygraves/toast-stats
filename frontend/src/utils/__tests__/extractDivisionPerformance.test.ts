@@ -214,6 +214,34 @@ describe('extractVisitData', () => {
 
 describe('extractDivisionPerformance', () => {
   /**
+   * A division's requiredDistinguishedClubs (the value the progress pill counts
+   * toward and the "threshold met" indicator compares against) must use the DDP
+   * Distinguished threshold of 45% of club base — NOT the 50% area/DAP rule.
+   * Otherwise the pill demands more distinguished clubs than the recognition
+   * badge requires and the two disagree (D61 Division H, base 17: badge says
+   * Distinguished at 8 clubs, but a 50% pill demanded 9). See #798 / #799.
+   */
+  it('derives division requiredDistinguishedClubs from DDP 45% of club base', () => {
+    const snapshot = {
+      divisionPerformance: [
+        {
+          Division: 'H',
+          'Division Club Base': '17',
+          Club: 'C1',
+        },
+      ],
+      clubPerformance: [],
+    }
+
+    const result = extractDivisionPerformance(snapshot)
+
+    expect(result).toHaveLength(1)
+    expect(result[0].clubBase).toBe(17)
+    // ceil(17 * 0.45) = 8 (DDP Distinguished); the old 50% rule gave 9
+    expect(result[0].requiredDistinguishedClubs).toBe(8)
+  })
+
+  /**
    * Test with empty divisions
    * Requirements: 1.4
    */

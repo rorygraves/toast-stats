@@ -21,6 +21,7 @@ import {
   calculateAreaStatus,
   checkAreaQualifying,
 } from './divisionStatus.js'
+import { calculateDivisionDistinguishedRequirement } from './divisionGapAnalysis.js'
 import { logger } from './logger'
 
 /**
@@ -535,8 +536,10 @@ export function extractDivisionPerformance(
 
     // Calculate derived metrics
     const netGrowth = calculateNetGrowth(paidClubs, clubBase)
+    // Divisions use the DDP Distinguished threshold (45% of club base), not the
+    // 50% area/DAP rule, so the progress pill agrees with the badge (#799).
     const requiredDistinguishedClubs =
-      calculateRequiredDistinguishedClubs(clubBase)
+      calculateDivisionDistinguishedRequirement(clubBase)
 
     // Calculate division recognition status (DDP — see calculateDivisionStatus)
     const status = calculateDivisionStatus(

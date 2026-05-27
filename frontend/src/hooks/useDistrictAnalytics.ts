@@ -93,59 +93,6 @@ export interface AreaAnalytics {
 
 // ========== Distinguished Area Program (DAP) Types ==========
 
-/**
- * Recognition level for Areas and Divisions
- * Ordinal: NotDistinguished < Distinguished < Select < Presidents
- */
-export type AreaDivisionRecognitionLevel =
-  | 'NotDistinguished'
-  | 'Distinguished'
-  | 'Select'
-  | 'Presidents'
-
-/**
- * Eligibility status for DAP/DDP recognition
- */
-export type RecognitionEligibility = 'eligible' | 'ineligible' | 'unknown'
-
-/**
- * Distinguished Area Program (DAP) metrics and recognition
- */
-export interface AreaRecognition {
-  areaId: string
-  areaName: string
-  divisionId: string
-  totalClubs: number
-  paidClubs: number
-  distinguishedClubs: number
-  paidClubsPercent: number
-  distinguishedClubsPercent: number
-  eligibility: RecognitionEligibility
-  eligibilityReason?: string
-  recognitionLevel: AreaDivisionRecognitionLevel
-  meetsPaidThreshold: boolean
-  meetsDistinguishedThreshold: boolean
-}
-
-/**
- * Distinguished Division Program (DDP) metrics and recognition
- */
-export interface DivisionRecognition {
-  divisionId: string
-  divisionName: string
-  totalAreas: number
-  paidAreas: number
-  distinguishedAreas: number
-  paidAreasPercent: number
-  distinguishedAreasPercent: number
-  eligibility: RecognitionEligibility
-  eligibilityReason?: string
-  recognitionLevel: AreaDivisionRecognitionLevel
-  meetsPaidThreshold: boolean
-  meetsDistinguishedThreshold: boolean
-  areas: AreaRecognition[]
-}
-
 export interface DistrictAnalytics {
   districtId: string
   dateRange: { start: string; end: string }
@@ -183,7 +130,6 @@ export interface DistrictAnalytics {
       }
   divisionRankings: DivisionAnalytics[]
   topPerformingAreas: AreaAnalytics[]
-  divisionRecognition?: DivisionRecognition[]
   yearOverYear?: {
     membershipChange: number
     distinguishedChange: number

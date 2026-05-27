@@ -199,17 +199,27 @@ As a general rule, Area Directors are required to make **at least two club visit
 - **Partial**: Only one round meets the threshold (or both below)
 - **Pre-deadline**: Before Nov 30 (Round 1) or May 31 (Round 2), the round is pending
 
-### 6.2 Paid Clubs Requirement
+### 6.2 Club Base Requirement (No Net Loss)
 
-- ≥ 75% of clubs in the Area must be paid clubs
+- **No net club loss**: paid clubs ≥ the Area's club base (club base = paid clubs as of July 1).
+- Distinguished-club counts are measured against the **club base**, not against paid clubs.
 
 ### 6.3 Recognition Levels
 
-| Level                          | Paid Clubs | Distinguished Clubs (of paid) |
-| ------------------------------ | ---------- | ----------------------------- |
-| Distinguished Area             | ≥ 75%      | ≥ 50%                         |
-| Select Distinguished Area      | ≥ 75%      | ≥ 75%                         |
-| President's Distinguished Area | ≥ 75%      | 100%                          |
+Distinguished clubs are counted as a percentage of the Area's **club base**, rounded up
+(`Math.ceil(base × pct)` — "at least X%"). All levels also require the §6.1 club-visit gate
+(75% per round).
+
+| Level                          | Distinguished Clubs (of club base) | Paid Clubs                  |
+| ------------------------------ | ---------------------------------- | --------------------------- |
+| Distinguished Area             | ≥ 50%                              | ≥ base (no net loss)        |
+| Select Distinguished Area      | ≥ 50% + 1                          | ≥ base                      |
+| President's Distinguished Area | ≥ 50% + 1                          | ≥ base + 1 (net growth ≥ 1) |
+
+**Source:** District Recognition Program manual (item 1490), Distinguished Area Program (DAP).
+Implemented by `frontend/src/utils/divisionStatus.ts::calculateAreaStatus` +
+`areaGapAnalysis.ts`. The earlier "% of _paid_ clubs, 50/75/100" model was a legacy
+misreading corrected in #799.
 
 ---
 
@@ -217,20 +227,36 @@ As a general rule, Area Directors are required to make **at least two club visit
 
 ### 7.1 Eligibility Gate
 
-A Division's eligibility for the DDP is based on paid areas and distinguished areas — **area club visits are NOT a qualifying requirement for division recognition**. Club visits gate Area Distinguished status (§6.1), which in turn affects whether areas count as "Distinguished" for the DDP percentage calculation, but visit completion is not an independent DDP gate.
+A Division qualifies for the DDP when it has **no net club loss** (paid clubs ≥ club base)
+and **≥ 4 areas**. Division recognition is based on the division's distinguished **clubs**
+and its paid-club growth — **NOT** on distinguished areas. Area club visits are NOT a DDP
+qualifying requirement: visits gate Area Distinguished status (§6.1), but visit completion is
+not an independent DDP gate.
 
-### 7.2 Paid Areas Requirement
+### 7.2 Paid Clubs Requirement (No Net Loss + Growth)
 
-- ≥ 85% of Areas in the Division must be paid Areas
-- A "paid Area" is an Area not suspended due to unpaid clubs
+The paid-club requirement rises by level (relative to club base = paid clubs as of July 1):
+
+- **Distinguished**: no net club loss (paid clubs ≥ club base)
+- **Select**: paid clubs ≥ club base + 1 (net growth of one)
+- **President's**: paid clubs ≥ club base + 2 (net growth of two)
 
 ### 7.3 Recognition Levels
 
-| Level                              | Paid Areas | Distinguished Areas (of paid) |
-| ---------------------------------- | ---------- | ----------------------------- |
-| Distinguished Division             | ≥ 85%      | ≥ 50%                         |
-| Select Distinguished Division      | ≥ 85%      | ≥ 75%                         |
-| President's Distinguished Division | ≥ 85%      | 100%                          |
+Distinguished clubs are counted as a percentage of the Division's **club base**, rounded up
+(`Math.ceil(base × pct)`).
+
+| Level                              | Distinguished Clubs (of club base) | Paid Clubs (net growth) |
+| ---------------------------------- | ---------------------------------- | ----------------------- |
+| Distinguished Division             | ≥ 45%                              | ≥ base                  |
+| Select Distinguished Division      | ≥ 50%                              | ≥ base + 1              |
+| President's Distinguished Division | ≥ 55%                              | ≥ base + 2              |
+
+**Source:** District Recognition Program manual (item 1490), Distinguished Division Program
+(DDP). This is the model implemented by `frontend/src/utils/divisionGapAnalysis.ts` (the
+verified recognition source of truth) and it reproduces the official TI dashboard. The earlier
+"≥ 85% paid _areas_, % of distinguished _areas_ 50/75/100" model was a legacy interpretation
+removed in #799 — see `docs/investigations/798-division-recognition-thresholds.md`.
 
 ---
 
@@ -253,14 +279,16 @@ A Division's eligibility for the DDP is based on paid areas and distinguished ar
 
 This section documents differences between legacy report assumptions and current official rules.
 
-| Legacy PDF Assumption             | Current Official Rule                                | Application Rule                                  |
-| --------------------------------- | ---------------------------------------------------- | ------------------------------------------------- |
-| No CSP requirement                | CSP required for Distinguished (2025-2026+)          | Check CSP field; default true for historical data |
-| Distinguished valid year-round    | Distinguished valid from April 1                     | Apply April 1 cutoff for recognition              |
-| Fixed membership thresholds       | Net growth alternative allowed                       | Check both membership AND net growth              |
-| No club visit requirement for DAP | Club visits required for DAP eligibility             | Mark eligibility "Unknown" when data unavailable  |
-| Simple percentage calculations    | Distinguished % uses paid clubs as denominator       | Always calculate against paid clubs only          |
-| No Smedley level mentioned        | Smedley Distinguished exists (10 goals + 25 members) | Include Smedley in all calculations               |
+| Legacy PDF Assumption                 | Current Official Rule                                                                                                              | Application Rule                                                                       |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| No CSP requirement                    | CSP required for Distinguished (2025-2026+)                                                                                        | Check CSP field; default true for historical data                                      |
+| Distinguished valid year-round        | Distinguished valid from April 1                                                                                                   | Apply April 1 cutoff for recognition                                                   |
+| Fixed membership thresholds           | Net growth alternative allowed                                                                                                     | Check both membership AND net growth                                                   |
+| No club visit requirement for DAP     | Club visits required for DAP eligibility                                                                                           | Mark eligibility "Unknown" when data unavailable                                       |
+| Simple percentage calculations        | District **% Distinguished** ranking uses paid club base as denominator                                                            | Applies to the district ranking metric only (see Lesson 60)                            |
+| Division recognition by area %        | DDP recognition counts distinguished **clubs** as % of division club base (45/50/55), NOT distinguished _areas_ as % of paid areas | Use `divisionGapAnalysis.ts`; the area-% model was removed in #799                     |
+| Area/Division recognition denominator | Area & Division recognition tiers count distinguished clubs against the **club base**                                              | Do not reuse the district ranking's paid-club-base denominator for area/division tiers |
+| No Smedley level mentioned            | Smedley Distinguished exists (10 goals + 25 members)                                                                               | Include Smedley in all calculations                                                    |
 
 ---
 
@@ -367,11 +395,12 @@ Smedley Distinguished is new for the 2025-2026 program year.
 
 ## 14. Version History
 
-| Version | Date          | Changes                                                     |
-| ------- | ------------- | ----------------------------------------------------------- |
-| 1.0     | January 2026  | Initial canonical rules reference                           |
-| 1.1     | February 2026 | Added membership dues payment schedule (§4.1)               |
-| 1.2     | April 2026    | Added §13 District Recognition Program (all 11 award types) |
+| Version | Date          | Changes                                                                                                                                                                                                                                                          |
+| ------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1.0     | January 2026  | Initial canonical rules reference                                                                                                                                                                                                                                |
+| 1.1     | February 2026 | Added membership dues payment schedule (§4.1)                                                                                                                                                                                                                    |
+| 1.2     | April 2026    | Added §13 District Recognition Program (all 11 award types)                                                                                                                                                                                                      |
+| 1.3     | May 2026      | Corrected §6 (DAP) and §7 (DDP) to the manual (item 1490) model — distinguished **clubs** as % of **club base** (DAP 50/50+1, DDP 45/50/55) + paid-club growth; removed the legacy area-%/paid-% recognition model; clarified §9 recognition denominators (#799) |
 
 ---
 

@@ -24,7 +24,29 @@ import {
   calculatePaidClubsGap,
   determineDivisionRecognitionLevel,
   calculateDivisionGapAnalysis,
+  calculateDivisionDistinguishedRequirement,
 } from '../divisionGapAnalysis'
+
+describe('calculateDivisionDistinguishedRequirement (DDP 45% of club base)', () => {
+  // A division's Distinguished tier needs distinguished clubs >= 45% of club
+  // base (manual item 1490), NOT 50% (that is the area/DAP threshold). This is
+  // the single source of truth the progress pill must flow through so the pill
+  // and the recognition badge agree. See #798 / #799.
+  it('uses 45%, rounded up — D61 Division H base 17 needs 8, not 9', () => {
+    // ceil(17 * 0.45) = ceil(7.65) = 8; the old 50% rule gave ceil(8.5) = 9
+    expect(calculateDivisionDistinguishedRequirement(17)).toBe(8)
+  })
+
+  it('matches 45% across representative bases', () => {
+    expect(calculateDivisionDistinguishedRequirement(16)).toBe(8) // ceil(7.2)
+    expect(calculateDivisionDistinguishedRequirement(20)).toBe(9) // ceil(9.0)
+    expect(calculateDivisionDistinguishedRequirement(100)).toBe(45) // exact 45
+  })
+
+  it('returns 0 for an empty club base', () => {
+    expect(calculateDivisionDistinguishedRequirement(0)).toBe(0)
+  })
+})
 
 describe('calculatePaidClubsGap', () => {
   /**
