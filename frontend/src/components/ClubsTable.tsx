@@ -336,12 +336,19 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
         : { field: 'status', type: 'categorical', value: [status] }
     )
   }
-  const statusCounts = {
-    thriving: clubs.filter(c => c.currentStatus === 'thriving').length,
-    vulnerable: clubs.filter(c => c.currentStatus === 'vulnerable').length,
-    intervention: clubs.filter(c => c.currentStatus === 'intervention-required')
-      .length,
-  }
+  // One pass, memoized on `clubs` (the sort below memoizes for the same
+  // reason) — the badges recompute only when the data changes, not on every
+  // filter/sort/scroll-cue re-render.
+  const statusCounts = useMemo(() => {
+    const counts = { thriving: 0, vulnerable: 0, intervention: 0 }
+    for (const c of clubs) {
+      if (c.currentStatus === 'thriving') counts.thriving++
+      else if (c.currentStatus === 'vulnerable') counts.vulnerable++
+      else if (c.currentStatus === 'intervention-required')
+        counts.intervention++
+    }
+    return counts
+  }, [clubs])
 
   // Status-pill modifier + label come from the shared clubHealthStatus helpers
   // so the desktop row and the mobile ClubCard render the same datum
