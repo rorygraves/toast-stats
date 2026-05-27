@@ -33,6 +33,16 @@ module.exports = {
         // Performance score
         'categories:performance': ['warn', { minScore: 0.9 }],
         'categories:accessibility': ['warn', { minScore: 0.9 }],
+        // Best-practices gate (#783). Enforcing (error), not just reported —
+        // a public marketing surface advertises Red Taverns' quality, so a
+        // regression below the floor should block the merge. Current build
+        // measures a stable 0.96 (3/3 local runs); 0.9 leaves headroom for
+        // run variance while still catching a real drop (console errors,
+        // deprecated APIs, insecure subresources). Note: the CSP/headers from
+        // firebase.json are NOT present in this localhost preview run, so this
+        // gate is independent of them — header verification is on the preview
+        // channel (see scripts/lib/__tests__/firebaseHeaders.test.ts).
+        'categories:best-practices': ['error', { minScore: 0.9 }],
 
         // Share/SEO metadata (#778) + robots.txt (#782). These audits run
         // against the served page, so they prove the artifacts actually ship
