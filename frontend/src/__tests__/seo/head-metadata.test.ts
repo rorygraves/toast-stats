@@ -25,6 +25,9 @@ const html = readFileSync(resolve(FRONTEND_ROOT, 'index.html'), 'utf-8')
 
 const CANONICAL_URL = 'https://ts.taverns.red/'
 const OG_IMAGE_URL = 'https://ts.taverns.red/og-image.png'
+const TITLE = 'Toast Stats — Toastmasters District Performance'
+const DESCRIPTION =
+  'Explore Toastmasters district performance: club health, DCP goals, membership trends, and Distinguished status — visualized across program years.'
 
 /** Extract a `<meta name|property="X" content="Y">` value, attribute order agnostic. */
 const meta = (key: 'name' | 'property', value: string): string | null => {
@@ -41,25 +44,28 @@ describe('head share/SEO metadata (#778)', () => {
   describe('title + description', () => {
     it('renders a branded, descriptive <title> (not the old name)', () => {
       const title = html.match(/<title>([^<]*)<\/title>/i)?.[1] ?? ''
-      expect(title).toBe('Toast Stats — Toastmasters District Performance')
+      expect(title).toBe(TITLE)
       // The stale pre-rename title must be gone.
       expect(html).not.toMatch(/Toastmasters District Visualizer/)
     })
 
     it('declares an accurate, concise meta description', () => {
       const description = meta('name', 'description')
-      expect(description).toBeTruthy()
-      expect(description!.length).toBeGreaterThan(50)
-      expect(description!.length).toBeLessThanOrEqual(160)
-      expect(description).toMatch(/Toastmasters/)
-      expect(description).toMatch(/district/i)
+      expect(description).toBe(DESCRIPTION)
+      expect(DESCRIPTION.length).toBeGreaterThan(50)
+      expect(DESCRIPTION.length).toBeLessThanOrEqual(160)
+      expect(DESCRIPTION).toMatch(/Toastmasters/)
+      expect(DESCRIPTION).toMatch(/district/i)
     })
   })
 
   describe('Open Graph', () => {
     it('declares the full Open Graph set', () => {
-      expect(meta('property', 'og:title')).toBeTruthy()
-      expect(meta('property', 'og:description')).toBeTruthy()
+      // og:/twitter: title + description must stay consistent with the
+      // <title>/<meta description> — a copy-edit that updates one tag but
+      // not its siblings is exactly the drift this contract test guards.
+      expect(meta('property', 'og:title')).toBe(TITLE)
+      expect(meta('property', 'og:description')).toBe(DESCRIPTION)
       expect(meta('property', 'og:type')).toBe('website')
       expect(meta('property', 'og:url')).toBe(CANONICAL_URL)
       expect(meta('property', 'og:image')).toBe(OG_IMAGE_URL)
@@ -73,8 +79,8 @@ describe('head share/SEO metadata (#778)', () => {
   describe('Twitter Card', () => {
     it('declares a summary_large_image card with title/description/image', () => {
       expect(meta('name', 'twitter:card')).toBe('summary_large_image')
-      expect(meta('name', 'twitter:title')).toBeTruthy()
-      expect(meta('name', 'twitter:description')).toBeTruthy()
+      expect(meta('name', 'twitter:title')).toBe(TITLE)
+      expect(meta('name', 'twitter:description')).toBe(DESCRIPTION)
       expect(meta('name', 'twitter:image')).toBe(OG_IMAGE_URL)
     })
   })
