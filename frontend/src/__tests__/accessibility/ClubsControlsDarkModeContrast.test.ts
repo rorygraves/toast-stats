@@ -145,15 +145,12 @@ interface Surface {
 
 const SURFACES: Surface[] = [
   {
-    name: 'segmented active label',
-    fg: ['.clubs-status-segmented__btn--active', 'color'],
-    expectFgToken: 'var(--link)',
-    bgToken: 'var(--loyal-50)',
-  },
-  {
-    name: 'segmented active count badge',
+    // #815: the segmented status control merged into the single preset row;
+    // the active health-band chip is now `.clubs-quick-filter-chip--active`
+    // (covered below), and its count badge inverts to --link on --surface.
+    name: 'health preset active count badge',
     fg: [
-      '.clubs-status-segmented__btn--active .clubs-status-segmented__count',
+      '.clubs-quick-filter-chip--active .clubs-quick-filter-chip__count',
       'color',
     ],
     expectFgToken: 'var(--link)',

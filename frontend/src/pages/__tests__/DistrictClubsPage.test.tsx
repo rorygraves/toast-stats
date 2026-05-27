@@ -288,16 +288,15 @@ describe('DistrictClubsPage (#570 — Phase 2)', () => {
     expect(screen.queryByText(/alpha toastmasters/i)).not.toBeInTheDocument()
   })
 
-  it('writes ?status= to the URL when a status chip is activated', async () => {
+  it('writes ?status= to the URL when a health preset is activated', async () => {
     const user = userEvent.setup()
     const { router } = renderAt('/district/61/clubs')
 
     await screen.findByText(/alpha toastmasters/i)
 
-    const statusStrip = screen.getByRole('tablist', {
-      name: /filter clubs by health status/i,
-    })
-    const vulnerableChip = within(statusStrip).getByRole('tab', {
+    // #815: health bands are now toggle buttons in the single preset row, not
+    // tabs in a segmented control.
+    const vulnerableChip = screen.getByRole('button', {
       name: /^vulnerable/i,
     })
     await user.click(vulnerableChip)
@@ -308,17 +307,18 @@ describe('DistrictClubsPage (#570 — Phase 2)', () => {
     })
   })
 
-  it('clears ?status= from the URL when chip is deactivated', async () => {
+  it('clears ?status= from the URL when the active health preset is toggled off', async () => {
     const user = userEvent.setup()
     const { router } = renderAt('/district/61/clubs?status=vulnerable')
 
     await screen.findByText(/beta speakers/i)
 
-    const statusStrip = screen.getByRole('tablist', {
-      name: /filter clubs by health status/i,
+    // No more "All" button (#815) — clicking the active band toggles it off.
+    const vulnerableChip = screen.getByRole('button', {
+      name: /^vulnerable/i,
     })
-    const allChip = within(statusStrip).getByRole('tab', { name: /^all\b/i })
-    await user.click(allChip)
+    expect(vulnerableChip).toHaveAttribute('aria-pressed', 'true')
+    await user.click(vulnerableChip)
 
     await waitFor(() => {
       const params = new URLSearchParams(router.state.location.search)

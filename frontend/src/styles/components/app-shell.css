@@ -2144,74 +2144,9 @@
     margin-top: 12px;
   }
 
-  /* Clubs tab segmented status filter (#361). Larger primary filter
-     above the quick-filter chip strip — All / Thriving / Vulnerable /
-     Intervention with counts. */
-  .clubs-status-segmented {
-    display: inline-flex;
-    flex-wrap: wrap;
-    gap: 2px;
-    margin-bottom: 12px;
-    padding: 2px;
-    background-color: var(--surface-2);
-    border: 1px solid var(--line);
-    border-radius: var(--rds-radius-md);
-  }
-
-  .clubs-status-segmented__btn {
-    appearance: none;
-    border: 0;
-    padding: 6px 12px;
-    border-radius: calc(var(--rds-radius-md) - 2px);
-    background-color: transparent;
-    color: var(--ink-2);
-    font-family: var(--sans);
-    font-weight: 600;
-    font-size: 13px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: background-color 120ms ease, color 120ms ease;
-  }
-
-  .clubs-status-segmented__btn:hover {
-    color: var(--ink);
-    background-color: var(--surface-3);
-  }
-
-  /* Active = --link text on --loyal-50 per handoff (#670). --link equals
-     --loyal-500 in light (byte-identical to the old look) but remaps to a
-     dark-safe #60a5d8 — never raw --loyal-500, the navy-on-navy dark trap
-     (lessons 093/096). */
-  .clubs-status-segmented__btn--active {
-    background-color: var(--loyal-50);
-    color: var(--link);
-  }
-
-  .clubs-status-segmented__count {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 22px;
-    padding: 0 6px;
-    height: 18px;
-    border-radius: 999px;
-    background-color: var(--surface-3);
-    color: var(--ink-3);
-    font-family: var(--mono, ui-monospace, SFMono-Regular, monospace);
-    font-weight: 500;
-    font-size: 11px;
-    line-height: 1;
-  }
-
-  .clubs-status-segmented__btn--active .clubs-status-segmented__count {
-    background-color: var(--surface);
-    color: var(--link);
-  }
-
   /* Clubs tab quick-filter chip strip (#24 follow-up). Sits above the
-     ClubsTable toolbar on the District detail Clubs tab. */
+     ClubsTable toolbar on the District detail Clubs tab. Since #815 this is
+     the SINGLE preset row: health bands (with count badges) + intent presets. */
   .clubs-quick-filters {
     display: flex;
     flex-wrap: wrap;
@@ -2269,6 +2204,31 @@
      a light tint, so a white star would vanish). */
   .clubs-quick-filter-chip__star {
     color: var(--yellow-600);
+  }
+
+  /* Count badge on the health-band presets (#815). Pill of --surface-3 / --ink-3
+     at rest; on the active chip it inverts to --link on --surface to match the
+     active label (dark-safe via --link, lessons 093/096). */
+  .clubs-quick-filter-chip__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    padding: 0 6px;
+    height: 16px;
+    margin-left: 2px;
+    border-radius: 999px;
+    background-color: var(--surface-3);
+    color: var(--ink-3);
+    font-family: var(--mono, ui-monospace, SFMono-Regular, monospace);
+    font-weight: 500;
+    font-size: 11px;
+    line-height: 1;
+  }
+
+  .clubs-quick-filter-chip--active .clubs-quick-filter-chip__count {
+    background-color: var(--surface);
+    color: var(--link);
   }
 
   .clubs-quick-filter-chip__clear {

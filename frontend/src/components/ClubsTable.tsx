@@ -314,6 +314,35 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
   const isNeedsMembersActive =
     membersNeededValue?.[0] === 2 && membersNeededValue?.[1] === null
 
+  // Health-band presets (#815 B2). Merged into the ONE preset row below: the
+  // old segmented `role="tablist"` status control and the quick-filter chips
+  // read as two unrelated systems (table-ux-review §1). These filter the same
+  // `status` field, single-select (choosing one replaces the prior; clicking
+  // the active one clears it). "All" is the absence of an active band — the
+  // "Total / Showing N" count line already carries the total. `aria-pressed`
+  // (not `role="tab"`): a filter toggles a set, it doesn't switch a panel — and
+  // it unifies the affordance with the intent chips in the same row.
+  const statusFilterValue = (() => {
+    const f = getFilter('status')
+    return Array.isArray(f?.value) ? (f.value as string[]) : []
+  })()
+  const isStatusActive = (status: string) =>
+    statusFilterValue.length === 1 && statusFilterValue[0] === status
+  const setStatusPreset = (status: string) => {
+    setFilter(
+      'status',
+      isStatusActive(status)
+        ? null
+        : { field: 'status', type: 'categorical', value: [status] }
+    )
+  }
+  const statusCounts = {
+    thriving: clubs.filter(c => c.currentStatus === 'thriving').length,
+    vulnerable: clubs.filter(c => c.currentStatus === 'vulnerable').length,
+    intervention: clubs.filter(c => c.currentStatus === 'intervention-required')
+      .length,
+  }
+
   // Status-pill modifier + label come from the shared clubHealthStatus helpers
   // so the desktop row and the mobile ClubCard render the same datum
   // identically (lesson 052). Token-driven via the CSS layer so dark mode
@@ -549,128 +578,42 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
             )}
           </div>
 
-          {/* Status segmented filter (#361) — All / Thriving / Vulnerable
-              / Intervention with counts, per design mockup. Sits above the
-              quick-filter chips so users can narrow by club health first,
-              then refine. */}
-          {(() => {
-            const statusFilter = getFilter('status')
-            const activeStatuses =
-              statusFilter && Array.isArray(statusFilter.value)
-                ? (statusFilter.value as string[])
-                : []
-            const isActive = (status: string) =>
-              activeStatuses.length === 1 && activeStatuses[0] === status
-            const isAllActive = activeStatuses.length === 0
-            const counts = {
-              all: clubs.length,
-              thriving: clubs.filter(c => c.currentStatus === 'thriving')
-                .length,
-              vulnerable: clubs.filter(c => c.currentStatus === 'vulnerable')
-                .length,
-              intervention: clubs.filter(
-                c => c.currentStatus === 'intervention-required'
-              ).length,
-            }
-            const setStatus = (status: string | null) => {
-              if (status === null) {
-                setFilter('status', null)
-              } else {
-                setFilter('status', {
-                  field: 'status',
-                  type: 'categorical',
-                  value: [status],
-                })
-              }
-            }
-            return (
-              <div
-                className="clubs-status-segmented"
-                role="tablist"
-                aria-label="Filter clubs by health status"
-              >
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={isAllActive}
-                  onClick={() => setStatus(null)}
-                  className={
-                    'clubs-status-segmented__btn' +
-                    (isAllActive ? ' clubs-status-segmented__btn--active' : '')
-                  }
-                >
-                  All{' '}
-                  <span className="clubs-status-segmented__count">
-                    {counts.all}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={isActive('thriving')}
-                  onClick={() =>
-                    setStatus(isActive('thriving') ? null : 'thriving')
-                  }
-                  className={
-                    'clubs-status-segmented__btn' +
-                    (isActive('thriving')
-                      ? ' clubs-status-segmented__btn--active'
-                      : '')
-                  }
-                >
-                  Thriving{' '}
-                  <span className="clubs-status-segmented__count">
-                    {counts.thriving}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={isActive('vulnerable')}
-                  onClick={() =>
-                    setStatus(isActive('vulnerable') ? null : 'vulnerable')
-                  }
-                  className={
-                    'clubs-status-segmented__btn' +
-                    (isActive('vulnerable')
-                      ? ' clubs-status-segmented__btn--active'
-                      : '')
-                  }
-                >
-                  Vulnerable{' '}
-                  <span className="clubs-status-segmented__count">
-                    {counts.vulnerable}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={isActive('intervention-required')}
-                  onClick={() =>
-                    setStatus(
-                      isActive('intervention-required')
-                        ? null
-                        : 'intervention-required'
-                    )
-                  }
-                  className={
-                    'clubs-status-segmented__btn' +
-                    (isActive('intervention-required')
-                      ? ' clubs-status-segmented__btn--active'
-                      : '')
-                  }
-                >
-                  Intervention{' '}
-                  <span className="clubs-status-segmented__count">
-                    {counts.intervention}
-                  </span>
-                </button>
-              </div>
-            )
-          })()}
-
+          {/* ONE preset row (#815 B2): health bands + intent presets, merged
+              from the former segmented control and the separate chip strip.
+              Health bands first (single-select, with counts) so a leader can
+              narrow by health, then layer an intent preset on top. */}
           <div className="clubs-quick-filters">
             <span className="clubs-quick-filters__label">Quick filters:</span>
+
+            {/* Health bands — Thriving / Vulnerable / Intervention, single-select
+                (#361 → #815). Each carries its count; "All" = none active. */}
+            {(
+              [
+                ['thriving', 'Thriving', statusCounts.thriving],
+                ['vulnerable', 'Vulnerable', statusCounts.vulnerable],
+                [
+                  'intervention-required',
+                  'Intervention',
+                  statusCounts.intervention,
+                ],
+              ] as const
+            ).map(([value, label, count]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setStatusPreset(value)}
+                className={
+                  'clubs-quick-filter-chip' +
+                  (isStatusActive(value)
+                    ? ' clubs-quick-filter-chip--active'
+                    : '')
+                }
+                aria-pressed={isStatusActive(value)}
+              >
+                {label}
+                <span className="clubs-quick-filter-chip__count">{count}</span>
+              </button>
+            ))}
 
             {/* ⭐ Close to Distinguished — 1–4 more members (#433).
                 Threshold shared with ClubDetailPage banner. */}
@@ -680,14 +623,14 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
                 if (isCloseToDistinguishedActive) {
                   setFilter('membersNeeded', null)
                 } else {
+                  // Filter only — no hidden auto-sort (#815 B2). The chip used
+                  // to silently re-sort by membersNeeded, surprising the user
+                  // and overriding any column sort they'd chosen.
                   setFilter('membersNeeded', {
                     field: 'membersNeeded',
                     type: 'numeric',
                     value: [1, CLOSE_TO_DISTINGUISHED_MAX_MEMBERS],
                   })
-                  setSortField('membersNeeded')
-                  setSortDirection('asc')
-                  onSortChange?.('membersNeeded', 'asc')
                 }
               }}
               className={
