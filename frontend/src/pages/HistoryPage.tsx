@@ -1,4 +1,5 @@
 import React from 'react'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 /* History page (#367). The 2026 design specifies year-end snapshot
    cards (top 5 districts + headline metrics + notable note) for each
@@ -20,6 +21,7 @@ const PROGRAM_YEARS_ON_FILE = [
 ]
 
 const HistoryPage: React.FC = () => {
+  useDocumentTitle('Program Year History')
   return (
     <div className="placeholder-page">
       <p className="placeholder-page__eyebrow">

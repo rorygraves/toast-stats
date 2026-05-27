@@ -8,6 +8,7 @@ import {
 } from 'react-router-dom'
 import { redirectLegacyDistrictTab } from '../utils/legacyTabRedirect'
 import { useDistricts } from '../hooks/useDistricts'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { DistrictDetailHeader } from '../components/DistrictDetailHeader'
 import { DistrictSubnav } from '../components/DistrictSubnav'
 import { useDistrictAnalytics } from '../hooks/useDistrictAnalytics'
@@ -212,6 +213,7 @@ const DistrictDetailPageInner: React.FC = () => {
 
   const rawName = selectedDistrict?.name || districtId || ''
   const districtName = /^\d+$/.test(rawName) ? `District ${rawName}` : rawName
+  useDocumentTitle(districtName)
 
   // Get all clubs from analytics
   const allClubs = analytics?.allClubs || []

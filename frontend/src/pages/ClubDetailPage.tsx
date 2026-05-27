@@ -2,6 +2,7 @@ import React, { useMemo } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { useDistrictAnalytics, ClubTrend } from '../hooks/useDistrictAnalytics'
 import { useDistricts } from '../hooks/useDistricts'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useUrlProgramYear } from '../hooks/useUrlProgramYear'
 import { useDistrictCachedDates } from '../hooks/useDistrictData'
 import {
@@ -378,15 +379,9 @@ const ClubDetailPage: React.FC = () => {
   // panel meta and the chart's aria-label so they stay in sync.
   const programYearLabelDisplay = programYear.label.replace(/-/g, '–')
 
-  // Set page title
-  React.useEffect(() => {
-    if (club) {
-      document.title = `${club.clubName} — ${districtName} | Toast Stats`
-    }
-    return () => {
-      document.title = 'Toast Stats'
-    }
-  }, [club, districtName])
+  // Per-route title (#780): club + district, falling back to the branded
+  // default while the club is still loading or absent.
+  useDocumentTitle(club ? `${club.clubName} — ${districtName}` : null)
 
   // ── Loading state ────────────────────────────────────────────────────────
 

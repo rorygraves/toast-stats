@@ -6,6 +6,7 @@ import {
   useSearchParams,
 } from 'react-router-dom'
 import { useDistricts } from '../hooks/useDistricts'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useDistrictAnalytics, ClubTrend } from '../hooks/useDistrictAnalytics'
 import { useDistrictCachedDates } from '../hooks/useDistrictData'
 import { useUrlProgramYear } from '../hooks/useUrlProgramYear'
@@ -249,6 +250,7 @@ const DistrictClubsPage: React.FC = () => {
 
   const rawName = selectedDistrict?.name || districtId || ''
   const districtName = /^\d+$/.test(rawName) ? `District ${rawName}` : rawName
+  useDocumentTitle(`${districtName} Clubs`)
 
   const availableDates = cachedDatesInProgramYear.sort((a, b) =>
     b.localeCompare(a)
