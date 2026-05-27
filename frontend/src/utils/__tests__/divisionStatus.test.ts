@@ -478,4 +478,46 @@ describe('calculateDivisionStatus', () => {
       expect(status).toBe('distinguished')
     })
   })
+
+  // #798 — Divisions follow the Distinguished DIVISION Program (DDP): 45/50/55%
+  // distinguished thresholds with base/base+1/base+2 paid offsets — NOT the
+  // Distinguished Area Program's 50%/50%+1. The badge previously used DAP
+  // thresholds and rendered one tier too low. Source of truth: District
+  // Recognition Program manual (item 1490); see
+  // docs/investigations/798-division-recognition-thresholds.md.
+  // requiredDistinguishedClubs/netGrowth args are vestigial (DAP-only) and
+  // ignored by the DDP computation.
+  describe('DDP division thresholds (#798)', () => {
+    it('classifies D61 Division G (base 16, paid 17, dist 8) as Select Distinguished', () => {
+      // DDP Select: dist >= ceil(.50*16)=8 ✓ AND paid >= base+1=17 ✓
+      // (President's needs dist >= ceil(.55*16)=9, so caps at Select.)
+      const status = calculateDivisionStatus(8, 8, 17, 16, 1)
+      expect(status).toBe('select-distinguished')
+    })
+
+    it('classifies D61 Division H (base 17, paid 18, dist 8) as Distinguished', () => {
+      // DDP Distinguished: dist >= ceil(.45*17)=8 ✓ AND paid >= base=17 ✓
+      // (Select needs dist >= ceil(.50*17)=9, so caps at Distinguished.)
+      const status = calculateDivisionStatus(8, 9, 18, 17, 1)
+      expect(status).toBe('distinguished')
+    })
+
+    it("classifies President's Distinguished at 55% + base+2 paid (base 20, paid 22, dist 11)", () => {
+      // dist >= ceil(.55*20)=11 ✓, paid >= base+2=22 ✓
+      const status = calculateDivisionStatus(11, 10, 22, 20, 2)
+      expect(status).toBe('presidents-distinguished')
+    })
+
+    it('caps at Select when paid growth is +1 even if distinguished count reaches 55% (base 20, paid 21, dist 11)', () => {
+      // President's needs paid >= base+2=22; paid=21 → not President's.
+      // Select: dist >= ceil(.50*20)=10 ✓ AND paid >= base+1=21 ✓.
+      const status = calculateDivisionStatus(11, 10, 21, 20, 1)
+      expect(status).toBe('select-distinguished')
+    })
+
+    it('returns Not Distinguished on net club loss regardless of distinguished count (base 16, paid 15, dist 10)', () => {
+      const status = calculateDivisionStatus(10, 8, 15, 16, -1)
+      expect(status).toBe('not-distinguished')
+    })
+  })
 })
