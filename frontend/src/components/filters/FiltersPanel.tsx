@@ -162,10 +162,7 @@ export const FiltersPanel: React.FC<FiltersPanelProps> = ({
         aria-label="Filters"
         className="clubs-filters-panel"
         onKeyDown={e => {
-          if (e.key === 'Escape') {
-            e.stopPropagation()
-            onClose()
-          }
+          if (e.key === 'Escape') onClose()
         }}
       >
         <div className="clubs-filters-panel__header">
