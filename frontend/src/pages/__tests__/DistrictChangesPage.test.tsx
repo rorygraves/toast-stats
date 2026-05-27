@@ -20,9 +20,9 @@ const mockedDates = vi.mocked(useDistrictCachedDates)
 const mockedDiff = vi.mocked(useSnapshotDiff)
 const mockedDistricts = vi.mocked(useDistricts)
 
-function renderPage() {
+function renderPage(initialEntry = '/district/61/changes') {
   return render(
-    <MemoryRouter initialEntries={['/district/61/changes']}>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <Routes>
         <Route
           path="/district/:districtId/changes"
@@ -97,6 +97,46 @@ describe('DistrictChangesPage', () => {
     expect(
       screen.getByText('iA Montreal Toastmasters (Active) joined the roster')
     ).toBeInTheDocument()
+  })
+
+  it('renders the date-pair picker when at least two snapshots exist (#794)', () => {
+    mockedDates.mockReturnValue({
+      data: { dates: ['2026-05-25', '2026-05-26'] },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useDistrictCachedDates>)
+    mockedDiff.mockReturnValue({
+      data: diffFixture(),
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<typeof useSnapshotDiff>)
+
+    renderPage()
+    expect(screen.getByTestId('changes-date-pair-picker')).toBeInTheDocument()
+    expect(screen.getByTestId('changes-from-chip-select')).toHaveValue(
+      '2026-05-25'
+    )
+    expect(screen.getByTestId('changes-to-chip-select')).toHaveValue(
+      '2026-05-26'
+    )
+  })
+
+  it('shows "Pick two different dates" when from === to (#794, R17)', () => {
+    mockedDates.mockReturnValue({
+      data: { dates: ['2026-05-25', '2026-05-26'] },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useDistrictCachedDates>)
+    mockedDiff.mockReturnValue({
+      data: diffFixture(),
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<typeof useSnapshotDiff>)
+
+    renderPage('/district/61/changes?from=2026-05-26&to=2026-05-26')
+    expect(screen.getByTestId('changes-same-date')).toBeInTheDocument()
+    expect(screen.queryByTestId('changes-headline')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('changes-list')).not.toBeInTheDocument()
+    // the picker stays visible so the user can correct the pair
+    expect(screen.getByTestId('changes-date-pair-picker')).toBeInTheDocument()
   })
 
   it('shows a "no recorded changes" message when the diff has no events', () => {
