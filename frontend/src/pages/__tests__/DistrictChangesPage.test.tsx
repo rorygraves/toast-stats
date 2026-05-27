@@ -173,6 +173,41 @@ describe('DistrictChangesPage', () => {
     expect(screen.queryByTestId('changes-list')).not.toBeInTheDocument()
   })
 
+  it('renders the per-club delta table when clubs are present (#795)', () => {
+    mockedDates.mockReturnValue({
+      data: { dates: ['2026-05-25', '2026-05-26'] },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useDistrictCachedDates>)
+    mockedDiff.mockReturnValue({
+      data: diffFixture({
+        clubs: {
+          bothPresent: [
+            {
+              clubId: 'c1',
+              clubName: 'Westmount Toastmasters',
+              divisionId: 'A',
+              areaId: '1',
+              membership: ag(20, 26),
+              payments: ag(20, 25),
+              dcpGoals: ag(4, 5),
+              distinguishedFrom: '',
+              distinguishedTo: 'D',
+              distinguishedChanged: true,
+            },
+          ],
+          onlyInFrom: [],
+          onlyInTo: [],
+        },
+      }),
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<typeof useSnapshotDiff>)
+
+    renderPage()
+    expect(screen.getByTestId('club-delta-table')).toBeInTheDocument()
+    expect(screen.getByText('Westmount Toastmasters')).toBeInTheDocument()
+  })
+
   it('explains the disabled state when only one snapshot exists', () => {
     mockedDates.mockReturnValue({
       data: { dates: ['2026-05-26'] },

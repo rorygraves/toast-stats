@@ -9,6 +9,7 @@ import { SubpageBreadcrumb } from '../components/SubpageBreadcrumb'
 import { DistrictSubnav } from '../components/DistrictSubnav'
 import { DatePairPicker } from '../components/DatePairPicker'
 import { KpiDeltaCard } from '../components/KpiDeltaCard'
+import { ClubDeltaTable } from '../components/ClubDeltaTable'
 import { LoadingSkeleton } from '../components/LoadingSkeleton'
 import ErrorBoundary from '../components/ErrorBoundary'
 import type {
@@ -236,6 +237,11 @@ const DistrictChangesPage: React.FC = () => {
                     ))}
                   </div>
                 )}
+
+                {/* Per-club delta drill-down beneath the narrative digest
+                    (#795). Own data model (SnapshotDiff.clubs) and own
+                    pipeline — see ClubDeltaTable (R6/lesson 117). */}
+                <ClubDeltaTable diff={diff} />
               </>
             )}
           </section>

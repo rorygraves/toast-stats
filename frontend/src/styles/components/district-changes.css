@@ -101,3 +101,170 @@
   color: var(--ink-2);
   border-top: 1px solid var(--line);
 }
+
+/* Per-club delta table (#795, epic #797 Sprint 3) — the drill-down beneath the
+   digest. Redesign tokens so light/dark remap together (R10, lessons 093/094);
+   the ChangeIndicator green/red utilities self-override in dark-mode.css. */
+.club-delta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.club-delta__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.club-delta__title {
+  font-family: var(--display, var(--sans));
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.club-delta__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.club-delta__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--sans);
+  font-size: 0.875rem;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.club-delta__scroll {
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--surface);
+  /* Keyboard-operable scroll region (WCAG 2.1.1) — see JSX role/tabindex. */
+}
+
+.club-delta__scroll:focus-visible {
+  outline: 2px solid var(--focus, var(--link));
+  outline-offset: -2px;
+}
+
+.club-delta__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--sans);
+}
+
+.club-delta__table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  /* Opaque themed bg so scrolled rows don't bleed through (lesson 105/092). */
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.club-delta__table thead th:first-child {
+  text-align: left;
+}
+
+.club-delta__table tbody td {
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--ink-2);
+  border-top: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.club-delta__center {
+  text-align: center;
+}
+
+.club-delta__name {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.club-delta__sort {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: inherit;
+  cursor: pointer;
+}
+
+.club-delta__sort:hover {
+  color: var(--link);
+}
+
+.club-delta__sort:focus-visible {
+  outline: 2px solid var(--focus, var(--link));
+  outline-offset: 2px;
+}
+
+.change-indicator__arrow {
+  font-size: 0.7em;
+  line-height: 1;
+}
+
+.club-delta__roster-status {
+  color: var(--ink-3);
+}
+
+/* Card view ≤640px (lesson 105 — clubs browsed one at a time). */
+.club-delta__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.club-delta-card {
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--surface);
+  padding: 0.75rem;
+}
+
+.club-delta-card__name {
+  font-family: var(--sans);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.club-delta-card__meta {
+  font-size: 0.75rem;
+}
+
+.club-delta-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.club-delta-card__metrics dt {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--ink-3);
+}
+
+.club-delta-card__metrics dd {
+  margin: 0;
+  font-size: 0.95rem;
+}
