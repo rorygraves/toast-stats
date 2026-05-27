@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/taverns-red/toast-stats/compare/shared-contracts-v1.4.0...shared-contracts-v1.5.0) (2026-05-27)
+
+
+### Features
+
+* **changes:** Phase 1 — snapshot diff engine + default district digest ([#793](https://github.com/taverns-red/toast-stats/issues/793)) ([#801](https://github.com/taverns-red/toast-stats/issues/801)) ([86d4ccb](https://github.com/taverns-red/toast-stats/commit/86d4ccb920a59160f42584b923a515eaf377ebeb))
+
 ## [1.4.0](https://github.com/taverns-red/toast-stats/compare/shared-contracts-v1.3.0...shared-contracts-v1.4.0) (2026-05-23)
 
 

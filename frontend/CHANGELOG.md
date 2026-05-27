@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.4.0](https://github.com/taverns-red/toast-stats/compare/frontend-v3.3.0...frontend-v3.4.0) (2026-05-27)
+
+
+### Features
+
+* **changes:** Phase 1 — snapshot diff engine + default district digest ([#793](https://github.com/taverns-red/toast-stats/issues/793)) ([#801](https://github.com/taverns-red/toast-stats/issues/801)) ([86d4ccb](https://github.com/taverns-red/toast-stats/commit/86d4ccb920a59160f42584b923a515eaf377ebeb))
+
+
+### Bug Fixes
+
+* **division:** recognition badge derives tier from the DDP single source ([#798](https://github.com/taverns-red/toast-stats/issues/798)) ([#805](https://github.com/taverns-red/toast-stats/issues/805)) ([07a6629](https://github.com/taverns-red/toast-stats/commit/07a662938a53947d6902ada2da313d83b6695180))
+* **recognition:** consolidate division-recognition onto DDP source of truth + correct rules doc ([#799](https://github.com/taverns-red/toast-stats/issues/799)) ([#806](https://github.com/taverns-red/toast-stats/issues/806)) ([1433ed9](https://github.com/taverns-red/toast-stats/commit/1433ed9b3f6dc1f5c532f1cedc16a07572d72c2e))
+
 ## [3.3.0](https://github.com/taverns-red/toast-stats/compare/frontend-v3.2.1...frontend-v3.3.0) (2026-05-27)
 
 

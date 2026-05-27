@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.8.0](https://github.com/taverns-red/toast-stats/compare/analytics-core-v1.7.1...analytics-core-v1.8.0) (2026-05-27)
+
+
+### Features
+
+* **changes:** Phase 1 — snapshot diff engine + default district digest ([#793](https://github.com/taverns-red/toast-stats/issues/793)) ([#801](https://github.com/taverns-red/toast-stats/issues/801)) ([86d4ccb](https://github.com/taverns-red/toast-stats/commit/86d4ccb920a59160f42584b923a515eaf377ebeb))
+
+
+### Bug Fixes
+
+* **recognition:** consolidate division-recognition onto DDP source of truth + correct rules doc ([#799](https://github.com/taverns-red/toast-stats/issues/799)) ([#806](https://github.com/taverns-red/toast-stats/issues/806)) ([1433ed9](https://github.com/taverns-red/toast-stats/commit/1433ed9b3f6dc1f5c532f1cedc16a07572d72c2e))
+
 ## [1.7.1](https://github.com/taverns-red/toast-stats/compare/analytics-core-v1.7.0...analytics-core-v1.7.1) (2026-05-26)
 
 
