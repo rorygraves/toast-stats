@@ -538,13 +538,11 @@ export function extractDivisionPerformance(
     const requiredDistinguishedClubs =
       calculateRequiredDistinguishedClubs(clubBase)
 
-    // Calculate division status
+    // Calculate division recognition status (DDP — see calculateDivisionStatus)
     const status = calculateDivisionStatus(
       distinguishedClubs,
-      requiredDistinguishedClubs,
       paidClubs,
-      clubBase,
-      netGrowth
+      clubBase
     )
 
     // Extract areas for this division

@@ -627,12 +627,11 @@ describe('Property 6: Visit Completion Percentage Calculation', () => {
  * source shared with the card's gap/summary line) and maps the recognition
  * level to the badge enum. These properties assert that single-source guarantee
  * plus the DDP invariants: determinism, the no-net-club-loss gate, and
- * monotonicity in both distinguished and paid clubs. (The 2nd/5th args of
- * calculateDivisionStatus are vestigial DAP params — passed as 0.)
+ * monotonicity in both distinguished and paid clubs.
  */
 describe('Property 2: Division Status Classification (DDP)', () => {
   const statusOf = (dist: number, paid: number, base: number) =>
-    calculateDivisionStatus(dist, 0, paid, base, 0)
+    calculateDivisionStatus(dist, paid, base)
 
   const LEVEL_TO_STATUS = {
     none: 'not-distinguished',

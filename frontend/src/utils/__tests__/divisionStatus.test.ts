@@ -21,17 +21,8 @@ import {
   calculateRequiredDistinguishedClubs,
 } from '../divisionStatus'
 
-// calculateDivisionStatus signature is (distinguishedClubs,
-// requiredDistinguishedClubs, paidClubs, clubBase, netGrowth). The 2nd and 5th
-// args are vestigial (DAP-era) and ignored — the DDP thresholds are derived
-// from clubBase. A small wrapper keeps the call sites readable in DDP terms.
-function divisionStatus(
-  distinguishedClubs: number,
-  paidClubs: number,
-  clubBase: number
-) {
-  return calculateDivisionStatus(distinguishedClubs, 0, paidClubs, clubBase, 0)
-}
+// Readability alias: signature is (distinguishedClubs, paidClubs, clubBase).
+const divisionStatus = calculateDivisionStatus
 
 describe('calculateDivisionStatus (Distinguished Division Program)', () => {
   describe('canonical D61 cases (#798) — badge must match the TI dashboard', () => {

@@ -231,28 +231,23 @@ export function calculateVisitStatus(
  * (Areas use 50%/50%+1 with visit requirements — see `calculateAreaStatus`.)
  *
  * @param distinguishedClubs - Clubs that have achieved Distinguished status
- * @param _requiredDistinguishedClubs - Unused (vestigial DAP threshold); the DDP
- *   thresholds are derived internally from clubBase
  * @param paidClubs - Clubs that have met membership payment requirements
  * @param clubBase - Number of clubs at the start of the program year
- * @param _netGrowth - Unused (vestigial); net growth is encoded by paidClubs vs clubBase
  * @returns Distinguished status level (cannot be 'not-qualified' for divisions)
  *
  * @example
  * // D61 Division G: base 16, paid 17, dist 8 → Select (50% + base+1 paid)
- * calculateDivisionStatus(8, 8, 17, 16, 1) // Returns 'select-distinguished'
+ * calculateDivisionStatus(8, 17, 16) // Returns 'select-distinguished'
  *
  * // D61 Division H: base 17, paid 18, dist 8 → Distinguished (45% + base paid)
- * calculateDivisionStatus(8, 9, 18, 17, 1) // Returns 'distinguished'
+ * calculateDivisionStatus(8, 18, 17) // Returns 'distinguished'
  *
  * Requirements: 2.2, 2.3, 2.4, 2.5
  */
 export function calculateDivisionStatus(
   distinguishedClubs: number,
-  _requiredDistinguishedClubs: number,
   paidClubs: number,
-  clubBase: number,
-  _netGrowth: number
+  clubBase: number
 ): Exclude<DistinguishedStatus, 'not-qualified'> {
   const level = determineDivisionRecognitionLevel({
     clubBase,
