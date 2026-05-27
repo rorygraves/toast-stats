@@ -445,10 +445,9 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
             filterState so a URL-derived initial value (and the dropdown) flow
             straight in. */}
         {(() => {
+          const nameFilterValue = getFilter('name')?.value
           const nameValue =
-            typeof getFilter('name')?.value === 'string'
-              ? (getFilter('name')!.value as string)
-              : ''
+            typeof nameFilterValue === 'string' ? nameFilterValue : ''
           const setSearch = (raw: string) => {
             setFilter(
               'name',
