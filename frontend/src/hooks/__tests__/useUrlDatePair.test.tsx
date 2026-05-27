@@ -22,7 +22,7 @@ const Harness: React.FC<{ dates?: string[] }> = ({ dates = DATES }) => {
       <span data-testid="to">{to ?? 'none'}</span>
       <span data-testid="search">{search}</span>
       <button onClick={() => setFrom('2026-05-22')}>from-22</button>
-      <button onClick={() => setFrom('2026-05-20')}>from-default</button>
+      <button onClick={() => setFrom('2026-05-25')}>from-default</button>
       <button onClick={() => setTo('2026-05-25')}>to-25</button>
       <button onClick={() => setTo('2026-05-26')}>to-default</button>
     </div>
@@ -69,7 +69,7 @@ describe('useUrlDatePair', () => {
     renderAt('/district/61/changes?from=2026-05-22')
     await user.click(screen.getByText('from-default'))
     expect(screen.getByTestId('search')).not.toHaveTextContent('from=')
-    expect(screen.getByTestId('from')).toHaveTextContent('2026-05-20')
+    expect(screen.getByTestId('from')).toHaveTextContent('2026-05-25')
   })
 
   it('returns undefined when fewer than two dates exist', () => {
