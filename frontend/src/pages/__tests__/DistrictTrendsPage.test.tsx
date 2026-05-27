@@ -196,6 +196,13 @@ describe('DistrictTrendsPage (#680 — ADR-005)', () => {
     expect(screen.getByTestId('year-over-year-comparison')).toBeInTheDocument()
   })
 
+  it('self-titles the document per route (#780)', async () => {
+    renderAt('/district/61/trends')
+    await waitFor(() =>
+      expect(document.title).toBe('District 61 Trends — Toast Stats')
+    )
+  })
+
   it('feeds MembershipTrendChart the aggregated time-series points', async () => {
     renderAt('/district/61/trends')
     await screen.findByTestId('membership-trend-chart')

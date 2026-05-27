@@ -169,6 +169,13 @@ describe('DistrictDivisionsPage (#571 — Phase 3)', () => {
     ).toBeInTheDocument()
   })
 
+  it('self-titles the document per route (#780)', async () => {
+    renderAt('/district/61/divisions')
+    await waitFor(() =>
+      expect(document.title).toBe('District 61 Divisions — Toast Stats')
+    )
+  })
+
   it('renders the District section subnav with Divisions active (#678)', async () => {
     renderAt('/district/61/divisions')
     await screen.findByTestId('division-performance-cards')

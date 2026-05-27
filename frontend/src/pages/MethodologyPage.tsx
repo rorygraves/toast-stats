@@ -1,5 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 /* Methodology page (#368). Authored fresh from analytics-core as the
    source of truth — Borda formula, DCP thresholds, club health
@@ -29,6 +30,7 @@ const SECTIONS: ReadonlyArray<{ id: string; num: string; title: string }> = [
 ]
 
 const MethodologyPage: React.FC = () => {
+  useDocumentTitle('Methodology')
   return (
     <div className="methodology-page">
       <header className="methodology-page__header">

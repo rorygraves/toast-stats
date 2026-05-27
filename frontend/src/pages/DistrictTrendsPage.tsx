@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useDistricts } from '../hooks/useDistricts'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useDistrictCachedDates } from '../hooks/useDistrictData'
 import { useAggregatedAnalytics } from '../hooks/useAggregatedAnalytics'
 import { useTimeSeries } from '../hooks/useTimeSeries'
@@ -134,6 +135,7 @@ const DistrictTrendsPage: React.FC = () => {
 
   const rawName = selectedDistrict?.name || districtId || ''
   const districtName = /^\d+$/.test(rawName) ? `District ${rawName}` : rawName
+  useDocumentTitle(districtName ? `${districtName} Trends` : null)
 
   const availableDates = cachedDatesInProgramYear.sort((a, b) =>
     b.localeCompare(a)

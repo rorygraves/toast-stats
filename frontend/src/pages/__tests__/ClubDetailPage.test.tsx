@@ -147,6 +147,16 @@ describe('ClubDetailPage (#208)', () => {
     expect(breadcrumbLink).toHaveAttribute('href', '/district/61')
   })
 
+  it('self-titles the document with club and district (#780)', () => {
+    renderWithRoute()
+    // render() flushes the title effect inside act(), so the title is set
+    // synchronously — no waitFor (whose polling would leak a deferred render
+    // into the next test and consume its mockReturnValueOnce).
+    expect(document.title).toBe(
+      'St Lawrence Toastmasters — District 61 — Toast Stats'
+    )
+  })
+
   it('renders the District › Clubs › Club trail with a Clubs crumb (#577)', () => {
     renderWithRoute()
 
