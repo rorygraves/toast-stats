@@ -3131,6 +3131,75 @@
     font-family: var(--serif);
   }
 
+  /* Visible name search box (#814, epic #818 Sprint 1). A prominent input at
+     the top of the table — recognition over recall — wired to the existing
+     `name` text filter. Token-driven so dark mode "just works" (R10). */
+  .clubs-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+    max-width: 28rem;
+  }
+
+  .clubs-search__icon {
+    position: absolute;
+    left: 12px;
+    width: 18px;
+    height: 18px;
+    color: var(--ink-3);
+    pointer-events: none;
+  }
+
+  /* appearance:none so the 44px min-height applies in WebKit/Safari too — a
+     styled native control otherwise renders at its intrinsic height there
+     (lesson 111). Also strips the WebKit search decorations (cancel/results
+     button) so our own clear button is the only affordance. */
+  .clubs-search__input {
+    appearance: none;
+    width: 100%;
+    min-height: 44px;
+    padding: 0 40px 0 38px;
+    border: 1px solid var(--line);
+    border-radius: 0.5rem;
+    background-color: var(--surface);
+    color: var(--ink);
+    font-size: 0.875rem;
+  }
+
+  .clubs-search__input::placeholder {
+    color: var(--ink-3);
+  }
+
+  .clubs-search__input:focus {
+    outline: none;
+    border-color: var(--rt-stats, #d4873f);
+    box-shadow: 0 0 0 2px var(--rt-stats, #d4873f);
+  }
+
+  .clubs-search__input::-webkit-search-decoration,
+  .clubs-search__input::-webkit-search-cancel-button {
+    appearance: none;
+  }
+
+  /* 44px touch target for the clear control (WCAG 2.5.5). */
+  .clubs-search__clear {
+    position: absolute;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    color: var(--ink-3);
+    font-size: 0.875rem;
+  }
+
+  .clubs-search__clear:hover,
+  .clubs-search__clear:focus {
+    color: var(--ink);
+  }
+
   /* Muted text outside the table grid (results count, empty-state copy,
      mobile sort label) — was text-gray-{400,500,600}. */
   .clubs-text-muted {

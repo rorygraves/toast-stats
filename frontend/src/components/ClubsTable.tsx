@@ -436,6 +436,70 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
           />
         </div>
 
+        {/* Visible name search (#814, epic #818 Sprint 1). Recognition over
+            recall: a prominent box at the top of the table replaces the search
+            that was buried in the hidden "Club" column-header dropdown. It is a
+            second UI entry point onto the EXISTING `name` text filter (R11), so
+            it stays in sync with that dropdown and URL-syncs through the parent
+            (DistrictClubsPage maps `name` ⇄ `?search=`). Controlled off
+            filterState so a URL-derived initial value (and the dropdown) flow
+            straight in. */}
+        {(() => {
+          const nameValue =
+            typeof getFilter('name')?.value === 'string'
+              ? (getFilter('name')!.value as string)
+              : ''
+          const setSearch = (raw: string) => {
+            setFilter(
+              'name',
+              raw.trim()
+                ? {
+                    field: 'name',
+                    type: 'text',
+                    value: raw,
+                    operator: 'contains',
+                  }
+                : null
+            )
+          }
+          return (
+            <div className="clubs-search">
+              <svg
+                className="clubs-search__icon"
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+              <input
+                type="search"
+                className="clubs-search__input"
+                placeholder="Search clubs by name…"
+                aria-label="Search clubs by name"
+                value={nameValue}
+                onChange={e => setSearch(e.target.value)}
+              />
+              {nameValue && (
+                <button
+                  type="button"
+                  className="clubs-search__clear"
+                  aria-label="Clear search"
+                  onClick={() => setSearch('')}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          )
+        })()}
+
         {/* Results Count and Quick Filters */}
         <div className="flex flex-wrap items-center gap-4 text-sm clubs-text-muted">
           <div>
