@@ -103,6 +103,26 @@ export {
   type ClubHealthStatusSchemaType,
 } from './schemas/club-health-status.schema.js'
 
+// Snapshot diff ("What Changed", epic #797) — schema + inferred types
+export {
+  AggregateDeltaSchema,
+  DiffEventCategorySchema,
+  ClubDiffSchema,
+  ClubPresenceSchema,
+  DiffEventSchema,
+  SnapshotDiffSideSchema,
+  SnapshotDiffTotalsSchema,
+  SnapshotDiffSchema,
+  type AggregateDelta,
+  type DiffEventCategory,
+  type ClubDiff,
+  type ClubPresence,
+  type DiffEvent,
+  type SnapshotDiffSide,
+  type SnapshotDiffTotals,
+  type SnapshotDiff,
+} from './schemas/snapshot-diff.schema.js'
+
 // Validation helpers
 export {
   validatePerDistrictData,
