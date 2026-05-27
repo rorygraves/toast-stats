@@ -147,6 +147,19 @@ describe('AppShell (#354)', () => {
       expect(footer).toHaveTextContent(/a red taverns production/i)
     })
 
+    it('links the "Red Taverns" attribution to the portal with utm params (#779)', () => {
+      renderShell()
+      const footer = screen.getByRole('contentinfo')
+      const link = within(footer).getByRole('link', { name: 'Red Taverns' })
+      expect(link).toHaveAttribute(
+        'href',
+        'https://taverns.red?utm_source=toast-stats&utm_medium=footer'
+      )
+      // External link hygiene — matches the existing data-source / license links.
+      expect(link).toHaveAttribute('target', '_blank')
+      expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+    })
+
     it('renders the data source + license + version line', () => {
       renderShell()
       const footer = screen.getByRole('contentinfo')

@@ -13,7 +13,18 @@ const AppShellFooter: React.FC = () => {
   return (
     <footer role="contentinfo" className="app-shell-footer">
       <div className="app-shell-footer__inner">
-        <div>Toast Stats · ts.taverns.red · A Red Taverns production</div>
+        <div>
+          Toast Stats · ts.taverns.red · A{' '}
+          <a
+            href="https://taverns.red?utm_source=toast-stats&utm_medium=footer"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="app-shell-footer__link"
+          >
+            Red Taverns
+          </a>{' '}
+          production
+        </div>
         <div className="app-shell-footer__meta">
           <span data-testid="app-version">
             Data:{' '}
