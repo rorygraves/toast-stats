@@ -29,6 +29,7 @@ describe('DistrictSubnav (#678, ADR-005 §3)', () => {
     renderAt('/district/61')
     const expected: Record<string, string> = {
       Overview: '/district/61',
+      'What Changed': '/district/61/changes',
       Clubs: '/district/61/clubs',
       Divisions: '/district/61/divisions',
       Trends: '/district/61/trends',
@@ -57,6 +58,7 @@ describe('DistrictSubnav (#678, ADR-005 §3)', () => {
     // Trends · Analytics · Rankings.
     expect(DISTRICT_SECTIONS.map(s => s.label)).toEqual([
       'Overview',
+      'What Changed',
       'Clubs',
       'Divisions',
       'Trends',

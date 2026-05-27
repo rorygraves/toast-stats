@@ -38,6 +38,9 @@ export interface DistrictSection {
    is the single extension point. */
 export const DISTRICT_SECTIONS: readonly DistrictSection[] = [
   { label: 'Overview', segment: '' },
+  // 'What Changed' (#793, epic #797) — a real route, sits next to Overview as
+  // the "since I last looked" companion to the current-state hub.
+  { label: 'What Changed', segment: 'changes' },
   { label: 'Clubs', segment: 'clubs' },
   { label: 'Divisions', segment: 'divisions' },
   { label: 'Trends', segment: 'trends' },

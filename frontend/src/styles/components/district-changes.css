@@ -1,0 +1,96 @@
+/* District "What Changed" page (#793, epic #797 Sprint 1).
+   Uses the redesign token set (--ink*, --surface*, --line) so light/dark remap
+   together (Lessons 093/094). The KPI cards themselves are KpiDeltaCard
+   (#681), which carries its own dark-mode overrides in dark-mode.css. */
+
+.district-changes__title {
+  font-family: var(--display, var(--sans));
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 0.5rem;
+}
+
+.district-changes {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.district-changes__headline {
+  font-family: var(--sans);
+  font-size: 1rem;
+  color: var(--ink-2);
+}
+
+.district-changes__kpis {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .district-changes__kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .district-changes__kpis {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.district-changes__empty {
+  font-family: var(--sans);
+  color: var(--ink-3);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.district-changes__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.changes-group {
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.changes-group__summary {
+  cursor: pointer;
+  padding: 0.75rem 1rem;
+  font-family: var(--sans);
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface-2);
+}
+
+.changes-group__summary:focus-visible {
+  outline: 2px solid var(--focus, var(--link));
+  outline-offset: -2px;
+}
+
+.changes-group__count {
+  color: var(--ink-3);
+  font-weight: 400;
+}
+
+.changes-group__list {
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem 0;
+}
+
+.changes-group__item {
+  padding: 0.5rem 1rem;
+  font-family: var(--sans);
+  color: var(--ink-2);
+  border-top: 1px solid var(--line);
+}
