@@ -85,3 +85,4 @@
 - **118** [data-pipeline, analytics, collector-cli, find-a-club] — "Missing from Find-A-Club" is a registry-visibility signal, not a data gap (#490, #757)
 - **119** [ci, tests, seo, frontend, verification, performance] — Before gating a Lighthouse SEO audit at `error`, verify which audits survive the localhost/preview host (#778, #785)
 - **120** [tests, vitest, flaky, react, frontend] — `await waitFor` for an already-flushed effect leaks a deferred render into the next test (#780, #785)
+- **121** [ci, tests, seo, verification, frontend] — A "presence-implying" audit may only validate; pair it with a drift guard (#782, #785)
