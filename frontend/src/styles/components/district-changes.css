@@ -17,6 +17,13 @@
   gap: 1rem;
 }
 
+.district-changes__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
 .district-changes__headline {
   font-family: var(--sans);
   font-size: 1rem;
