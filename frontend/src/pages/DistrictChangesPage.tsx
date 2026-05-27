@@ -3,9 +3,11 @@ import { useParams } from 'react-router-dom'
 import { useDistricts } from '../hooks/useDistricts'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useDistrictCachedDates } from '../hooks/useDistrictData'
-import { useSnapshotDiff, previousRecordedDate } from '../hooks/useSnapshotDiff'
+import { useSnapshotDiff } from '../hooks/useSnapshotDiff'
+import { useUrlDatePair } from '../hooks/useUrlDatePair'
 import { SubpageBreadcrumb } from '../components/SubpageBreadcrumb'
 import { DistrictSubnav } from '../components/DistrictSubnav'
+import { DatePairPicker } from '../components/DatePairPicker'
 import { KpiDeltaCard } from '../components/KpiDeltaCard'
 import { LoadingSkeleton } from '../components/LoadingSkeleton'
 import ErrorBoundary from '../components/ErrorBoundary'
@@ -14,10 +16,11 @@ import type {
   DiffEventCategory,
 } from '@toastmasters/shared-contracts'
 
-/* District "What Changed" page (#793, epic #797 Sprint 1, ADR-005 §1).
-   Default digest — what changed between the district's previous recorded
-   snapshot date and the latest one. No date picker yet (Phase 2, #794); the
-   from/to pair is owned here and passed to useSnapshotDiff as props (R3). */
+/* District "What Changed" page (#793, epic #797 Sprint 1–2, ADR-005 §1).
+   What changed between two recorded snapshot dates. The from/to pair is owned
+   here via useUrlDatePair (URL-synced, #794) and passed to useSnapshotDiff as
+   props (R3); empty params fall back to the Phase-1 default (previous → latest).
+   from === to is an explicit "pick two different dates" case (R17). */
 
 /** Human-friendly date, e.g. "May 25, 2026". Date-only, UTC-safe. */
 function fmtDate(iso: string): string {
@@ -77,13 +80,22 @@ const DistrictChangesPage: React.FC = () => {
     districtId || ''
   )
   const dates = useMemo(() => cachedDates?.dates ?? [], [cachedDates?.dates])
-  const pair = useMemo(() => previousRecordedDate(dates), [dates])
+  const { from, to, setFrom, setTo } = useUrlDatePair(dates)
+
+  // The pair must be two distinct dates with from strictly before to. Each
+  // invalid shape gets its own explicit prompt (R17) and skips the fetch —
+  // from === to would diff to an all-zero "nothing changed" digest, and
+  // from > to would render reversed (negative) deltas under a "what changed"
+  // header. Dates are ISO YYYY-MM-DD, so string comparison is chronological.
+  const sameDate = !!from && !!to && from === to
+  const reversed = !!from && !!to && from > to
+  const invalidPair = sameDate || reversed
 
   const {
     data: diff,
     isLoading: diffLoading,
     isError,
-  } = useSnapshotDiff(districtId, pair?.from, pair?.to)
+  } = useSnapshotDiff(districtId, from, invalidPair ? undefined : to)
 
   const eventsByCategory = useMemo(() => {
     const map = new Map<DiffEventCategory, DiffEvent[]>()
@@ -113,6 +125,18 @@ const DistrictChangesPage: React.FC = () => {
           <DistrictSubnav districtId={districtId} />
 
           <section aria-label="What changed" className="district-changes">
+            {enoughHistory && (
+              <div className="district-changes__controls">
+                <DatePairPicker
+                  dates={dates}
+                  from={from}
+                  to={to}
+                  onFromChange={setFrom}
+                  onToChange={setTo}
+                />
+              </div>
+            )}
+
             {onlyOneSnapshot && (
               <p
                 className="district-changes__empty"
@@ -124,11 +148,29 @@ const DistrictChangesPage: React.FC = () => {
               </p>
             )}
 
-            {enoughHistory && (datesLoading || diffLoading) && (
+            {enoughHistory && sameDate && (
+              <p
+                className="district-changes__empty"
+                data-testid="changes-same-date"
+              >
+                Pick two different dates to see what changed.
+              </p>
+            )}
+
+            {enoughHistory && reversed && (
+              <p
+                className="district-changes__empty"
+                data-testid="changes-reversed"
+              >
+                Pick a “from” date that comes before the “to” date.
+              </p>
+            )}
+
+            {enoughHistory && !invalidPair && (datesLoading || diffLoading) && (
               <LoadingSkeleton variant="card" height="220px" />
             )}
 
-            {enoughHistory && isError && (
+            {enoughHistory && !invalidPair && isError && (
               <p
                 className="district-changes__empty"
                 data-testid="changes-error"
@@ -138,7 +180,7 @@ const DistrictChangesPage: React.FC = () => {
               </p>
             )}
 
-            {diff && (
+            {!invalidPair && diff && (
               <>
                 <p
                   className="district-changes__headline"
