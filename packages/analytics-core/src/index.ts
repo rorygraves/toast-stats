@@ -17,6 +17,9 @@ export {
 export { DataTransformer } from './transformation/index.js'
 export type { Logger, DataTransformerConfig } from './transformation/index.js'
 
+// Snapshot diff engine ("What Changed", epic #797)
+export { diffSnapshots } from './analytics/diffSnapshots.js'
+
 // Analytics computation
 export {
   AnalyticsComputer,
