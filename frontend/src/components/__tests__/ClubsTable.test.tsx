@@ -827,9 +827,12 @@ describe('ClubsTable', () => {
         />
       )
 
+      // Scope to the count badge so the assertion can't pass on an incidental
+      // "2" elsewhere in the label.
+      const vulnerable = screen.getByRole('button', { name: /^vulnerable/i })
       expect(
-        screen.getByRole('button', { name: /^vulnerable/i })
-      ).toHaveTextContent('2')
+        vulnerable.querySelector('.clubs-quick-filter-chip__count')?.textContent
+      ).toBe('2')
     })
   })
 
