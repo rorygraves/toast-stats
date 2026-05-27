@@ -242,6 +242,13 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
   // The dedicated Filters drawer (#816). Replaces the hidden per-column header
   // filter dropdowns with one discoverable, instant-apply panel.
   const [isFiltersOpen, setIsFiltersOpen] = useState(false)
+  // Return focus to the trigger when the drawer closes (WCAG 2.4.3) — a modal
+  // dialog must restore focus to the control that opened it.
+  const filtersTriggerRef = useRef<HTMLButtonElement>(null)
+  const closeFilters = useCallback(() => {
+    setIsFiltersOpen(false)
+    filtersTriggerRef.current?.focus()
+  }, [])
   // Collapse the table to cards at the 768px tablet boundary (ADR-006 §2, epic
   // #813 Sprint 4, #812). The card view is for TRUE mobile only (< 768px);
   // 768–1279px shows the table with low-priority columns hidden (the
@@ -582,6 +589,7 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
               active-count badge is the single, visible way into precise
               column filtering. */}
           <button
+            ref={filtersTriggerRef}
             type="button"
             className="clubs-filters-trigger"
             onClick={() => setIsFiltersOpen(true)}
@@ -1157,7 +1165,7 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
           mechanism, three entry points. */}
       <FiltersPanel
         isOpen={isFiltersOpen}
-        onClose={() => setIsFiltersOpen(false)}
+        onClose={closeFilters}
         getFilter={getFilter}
         setFilter={setFilter}
         clearAllFilters={clearAllFilters}
