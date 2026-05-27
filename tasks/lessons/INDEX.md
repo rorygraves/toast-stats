@@ -88,3 +88,4 @@
 - **121** [ci, tests, seo, verification, frontend] — A "presence-implying" audit may only validate; pair it with a drift guard (#782, #785)
 - **122** [ci, lighthouse, security, csp, verification, frontend] — A CSP in hosting config is invisible to the localhost Lighthouse gate; verify headers on the deployed surface (#783, #785)
 - **123** [analytics, data-pipeline, dcp, frontend, verification] — `totals.distinguished*` is unpopulated mid-year; count distinguished from `clubPerformance` (#793, #797)
+- **124** [router, react, hooks, frontend, verification] — Validate URL-synced range state at the page that owns it, not at the picker (#794, #797)
