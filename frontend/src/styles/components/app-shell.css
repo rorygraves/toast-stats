@@ -3200,6 +3200,14 @@
     color: var(--ink);
   }
 
+  /* Visible focus ring (WCAG 2.4.7) — a colour swap alone is too weak an
+     indicator on a small glyph; match the input's focus affordance. */
+  .clubs-search__clear:focus-visible {
+    outline: none;
+    border-radius: 0.375rem;
+    box-shadow: 0 0 0 2px var(--rt-stats, #d4873f);
+  }
+
   /* Muted text outside the table grid (results count, empty-state copy,
      mobile sort label) — was text-gray-{400,500,600}. */
   .clubs-text-muted {
