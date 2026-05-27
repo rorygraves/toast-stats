@@ -224,6 +224,13 @@ describe('DistrictClubsPage (#570 — Phase 2)', () => {
     expect(screen.getByText(/beta speakers/i)).toBeInTheDocument()
   })
 
+  it('self-titles the document per route (#780)', async () => {
+    renderAt('/district/61/clubs')
+    await waitFor(() =>
+      expect(document.title).toBe('District 61 Clubs — Toast Stats')
+    )
+  })
+
   it('shows a back-to-district breadcrumb crumb, not the old back button (#577)', async () => {
     renderAt('/district/61/clubs')
 

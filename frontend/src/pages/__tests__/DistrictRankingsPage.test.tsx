@@ -158,6 +158,13 @@ describe('DistrictRankingsPage (#571 — Phase 3)', () => {
     expect(await screen.findByTestId('global-rankings-tab')).toBeInTheDocument()
   })
 
+  it('self-titles the document per route (#780)', async () => {
+    renderAt('/district/61/rankings')
+    await waitFor(() =>
+      expect(document.title).toBe('District 61 Rankings — Toast Stats')
+    )
+  })
+
   it('renders the District section subnav with Rankings active (#678)', async () => {
     renderAt('/district/61/rankings')
     await screen.findByTestId('global-rankings-tab')

@@ -167,6 +167,13 @@ describe('DistrictAnalyticsPage (#680 — ADR-005)', () => {
     expect(screen.getByTestId('education-levels-card')).toBeInTheDocument()
   })
 
+  it('self-titles the document per route (#780)', async () => {
+    renderAt('/district/61/analytics')
+    await waitFor(() =>
+      expect(document.title).toBe('District 61 Analytics — Toast Stats')
+    )
+  })
+
   it('derives the top DCP list from analytics.allClubs (sorted, capped)', async () => {
     renderAt('/district/61/analytics')
     await screen.findByTestId('top-growth-clubs')

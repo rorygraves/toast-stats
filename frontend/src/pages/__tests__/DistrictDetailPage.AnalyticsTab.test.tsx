@@ -168,6 +168,13 @@ describe('DistrictDetailPage — Analytics section (post-#569 narrative merge)',
       expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
     })
 
+    it('self-titles the document per route (#780)', async () => {
+      renderWithProviders('/district/57')
+      await waitFor(() =>
+        expect(document.title).toBe('District 57 — Toast Stats')
+      )
+    })
+
     it('exposes CTA links to the Clubs / Divisions / Rankings routes', () => {
       renderWithProviders()
       expect(
