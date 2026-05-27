@@ -95,3 +95,4 @@
 - **126** [css, frontend, responsive, tables, dark-mode] — Porting a sticky-column treatment to a sibling table must re-derive the border restoration for THAT table's border-collapse model (#812, #813, #811)
 - **127** [frontend, react, performance, tests, playwright, verification] — A controlled input bound to an expensive derived filter drops fast keystrokes (#814, #818)
 - **128** [accessibility, frontend, react, ux] — A filter control is `aria-pressed`, not `role="tab"` — tabs promise a panel switch (#815, #818)
+- **129** [react, frontend, hooks, tests, verification] — A render-phase prop-sync that compares by REFERENCE clobbers local edits when the parent rebuilds the prop each render (#816, #818)

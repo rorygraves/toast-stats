@@ -34,9 +34,12 @@ export const NumericFilter: React.FC<NumericFilterProps> = ({
 
   // Render-phase sync: when the parent updates `value` (e.g. external
   // "Clear all filters"), propagate it to local inputs without
-  // setState-in-effect (#340).
+  // setState-in-effect (#340). Compare element-wise, NOT by reference: the
+  // FiltersPanel rebuilds the `[min, max]` tuple on every render, so a
+  // reference compare would re-fire on any unrelated panel re-render and clobber
+  // an in-progress (e.g. invalid, uncommitted) min/max edit (#816 review).
   const [trackedValue, setTrackedValue] = useState(value)
-  if (value !== trackedValue) {
+  if (value[0] !== trackedValue[0] || value[1] !== trackedValue[1]) {
     setTrackedValue(value)
     setLocalMin(value[0]?.toString() || '')
     setLocalMax(value[1]?.toString() || '')

@@ -23,23 +23,15 @@ describe('Keyboard Accessibility', () => {
     direction: 'asc' as SortDirection,
   }
 
-  describe('ColumnHeader keyboard accessibility', () => {
+  describe('ColumnHeader keyboard accessibility (sort-only since #816)', () => {
     it('should have tabIndex=0 on header button for keyboard focus', () => {
-      const mockOnSort = vi.fn()
-      const mockOnFilter = vi.fn()
-
       const { container } = render(
         <ColumnHeader
           field="name"
           label="Club Name"
           sortable={true}
-          filterable={true}
-          filterType="text"
           currentSort={defaultSort}
-          currentFilter={null}
-          onSort={mockOnSort}
-          onFilter={mockOnFilter}
-          options={[]}
+          onSort={vi.fn()}
         />
       )
 
@@ -49,21 +41,13 @@ describe('Keyboard Accessibility', () => {
     })
 
     it('should have descriptive aria-label with keyboard instructions', () => {
-      const mockOnSort = vi.fn()
-      const mockOnFilter = vi.fn()
-
       const { container } = render(
         <ColumnHeader
           field="division"
           label="Division"
           sortable={true}
-          filterable={true}
-          filterType="categorical"
           currentSort={defaultSort}
-          currentFilter={null}
-          onSort={mockOnSort}
-          onFilter={mockOnFilter}
-          options={['A', 'B', 'C']}
+          onSort={vi.fn()}
         />
       )
 
@@ -71,26 +55,18 @@ describe('Keyboard Accessibility', () => {
       expect(headerButton).toBeTruthy()
 
       const ariaLabel = headerButton?.getAttribute('aria-label') || ''
-      expect(ariaLabel).toContain('Press Enter or Space to open options')
+      expect(ariaLabel).toContain('Press Enter or Space to open sort options')
       expect(ariaLabel).toContain('Division')
     })
 
-    it('should open dropdown when Enter key is pressed', () => {
-      const mockOnSort = vi.fn()
-      const mockOnFilter = vi.fn()
-
+    it('should open the sort popover when Enter key is pressed', () => {
       const { container } = render(
         <ColumnHeader
           field="membership"
           label="Members"
           sortable={true}
-          filterable={true}
-          filterType="numeric"
           currentSort={defaultSort}
-          currentFilter={null}
-          onSort={mockOnSort}
-          onFilter={mockOnFilter}
-          options={[]}
+          onSort={vi.fn()}
         />
       )
 
@@ -102,22 +78,14 @@ describe('Keyboard Accessibility', () => {
       expect(headerButton).toHaveAttribute('aria-expanded', 'true')
     })
 
-    it('should open dropdown when Space key is pressed', () => {
-      const mockOnSort = vi.fn()
-      const mockOnFilter = vi.fn()
-
+    it('should open the sort popover when Space key is pressed', () => {
       const { container } = render(
         <ColumnHeader
           field="status"
           label="Status"
-          sortable={false}
-          filterable={true}
-          filterType="categorical"
+          sortable={true}
           currentSort={defaultSort}
-          currentFilter={null}
-          onSort={mockOnSort}
-          onFilter={mockOnFilter}
-          options={['Active', 'Inactive']}
+          onSort={vi.fn()}
         />
       )
 
@@ -129,38 +97,26 @@ describe('Keyboard Accessibility', () => {
       expect(headerButton).toHaveAttribute('aria-expanded', 'true')
     })
 
-    it('should have keyboard-accessible interactive elements in dropdown', () => {
-      const mockOnSort = vi.fn()
-      const mockOnFilter = vi.fn()
-
+    it('should have keyboard-accessible interactive elements in the popover', () => {
       const { container } = render(
         <ColumnHeader
           field="name"
           label="Club Name"
           sortable={true}
-          filterable={true}
-          filterType="text"
           currentSort={defaultSort}
-          currentFilter={null}
-          onSort={mockOnSort}
-          onFilter={mockOnFilter}
-          options={[]}
+          onSort={vi.fn()}
         />
       )
 
-      // Open the dropdown
       const headerButton = container.querySelector('button[aria-expanded]')
       fireEvent.click(headerButton!)
 
-      // Check that all interactive elements within the dropdown have proper tabIndex
       const interactiveElements = container.querySelectorAll(
         'button:not([tabindex="-1"]), input:not([tabindex="-1"]), [tabindex="0"]'
       )
 
-      // All interactive elements should be keyboard accessible
       interactiveElements.forEach(element => {
         const tabIndex = element.getAttribute('tabIndex')
-        // Should either have tabIndex="0" or no tabIndex (which defaults to 0 for interactive elements)
         expect(tabIndex === '0' || tabIndex === null).toBe(true)
       })
     })
@@ -381,110 +337,48 @@ describe('Keyboard Accessibility', () => {
   })
 
   describe('keyboard event handling', () => {
-    it('should handle Enter key without throwing errors', () => {
-      const mockOnSort = vi.fn()
-      const mockOnFilter = vi.fn()
-
-      const { container } = render(
+    const renderHeader = (field: SortField, label: string) =>
+      render(
         <ColumnHeader
-          field="name"
-          label="Club Name"
+          field={field}
+          label={label}
           sortable={true}
-          filterable={true}
-          filterType="text"
           currentSort={defaultSort}
-          currentFilter={null}
-          onSort={mockOnSort}
-          onFilter={mockOnFilter}
-          options={[]}
+          onSort={vi.fn()}
         />
       )
 
+    it('should handle Enter key without throwing errors', () => {
+      const { container } = renderHeader('name', 'Club Name')
       const headerButton = container.querySelector('button[aria-expanded]')
-
       expect(() => {
         fireEvent.keyDown(headerButton!, { key: 'Enter' })
       }).not.toThrow()
     })
 
     it('should handle Space key without throwing errors', () => {
-      const mockOnSort = vi.fn()
-      const mockOnFilter = vi.fn()
-
-      const { container } = render(
-        <ColumnHeader
-          field="division"
-          label="Division"
-          sortable={true}
-          filterable={false}
-          filterType="text"
-          currentSort={defaultSort}
-          currentFilter={null}
-          onSort={mockOnSort}
-          onFilter={mockOnFilter}
-          options={[]}
-        />
-      )
-
+      const { container } = renderHeader('division', 'Division')
       const headerButton = container.querySelector('button[aria-expanded]')
-
       expect(() => {
         fireEvent.keyDown(headerButton!, { key: ' ' })
       }).not.toThrow()
     })
 
     it('should handle Tab key without throwing errors', () => {
-      const mockOnSort = vi.fn()
-      const mockOnFilter = vi.fn()
-
-      const { container } = render(
-        <ColumnHeader
-          field="area"
-          label="Area"
-          sortable={true}
-          filterable={true}
-          filterType="categorical"
-          currentSort={defaultSort}
-          currentFilter={null}
-          onSort={mockOnSort}
-          onFilter={mockOnFilter}
-          options={['1', '2', '3']}
-        />
-      )
-
+      const { container } = renderHeader('area', 'Area')
       const headerButton = container.querySelector('button[aria-expanded]')
-
       expect(() => {
         fireEvent.keyDown(headerButton!, { key: 'Tab' })
       }).not.toThrow()
     })
 
-    it('should handle Escape key to close dropdown', () => {
-      const mockOnSort = vi.fn()
-      const mockOnFilter = vi.fn()
-
-      const { container } = render(
-        <ColumnHeader
-          field="status"
-          label="Status"
-          sortable={true}
-          filterable={true}
-          filterType="categorical"
-          currentSort={defaultSort}
-          currentFilter={null}
-          onSort={mockOnSort}
-          onFilter={mockOnFilter}
-          options={['Active', 'Inactive']}
-        />
-      )
-
+    it('should handle Escape key to close the sort popover', () => {
+      const { container } = renderHeader('status', 'Status')
       const headerButton = container.querySelector('button[aria-expanded]')
 
-      // Open dropdown
       fireEvent.click(headerButton!)
       expect(headerButton).toHaveAttribute('aria-expanded', 'true')
 
-      // Close with Escape
       fireEvent.keyDown(headerButton!, { key: 'Escape' })
       expect(headerButton).toHaveAttribute('aria-expanded', 'false')
     })

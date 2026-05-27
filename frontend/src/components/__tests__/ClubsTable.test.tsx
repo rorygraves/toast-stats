@@ -42,6 +42,47 @@ describe('ClubsTable', () => {
     vi.restoreAllMocks()
   })
 
+  describe('Filters drawer (#816)', () => {
+    const clubs = [
+      createMockClub({ clubId: 'club-1', clubName: 'Alpha Club' }),
+      createMockClub({ clubId: 'club-2', clubName: 'Beta Club' }),
+    ]
+
+    it('opens the Filters drawer from the toolbar trigger', () => {
+      render(<ClubsTable clubs={clubs} districtId="d" isLoading={false} />)
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: /^filters/i }))
+      expect(screen.getByRole('dialog')).toHaveAccessibleName(/filters/i)
+    })
+
+    it('restores focus to the trigger when the drawer closes', () => {
+      render(<ClubsTable clubs={clubs} districtId="d" isLoading={false} />)
+      const trigger = screen.getByRole('button', { name: /^filters/i })
+      fireEvent.click(trigger)
+      fireEvent.click(screen.getByRole('button', { name: /close filters/i }))
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+      expect(document.activeElement).toBe(trigger)
+    })
+
+    it('applies a drawer filter instantly (no Apply button) and updates the trigger badge', () => {
+      render(<ClubsTable clubs={clubs} districtId="d" isLoading={false} />)
+      const trigger = screen.getByRole('button', { name: /^filters/i })
+      fireEvent.click(trigger)
+
+      // Instant-apply: there is no Apply button to gate the change.
+      expect(
+        screen.queryByRole('button', { name: /^apply/i })
+      ).not.toBeInTheDocument()
+
+      // Toggling a categorical option commits immediately (a Club Status pick).
+      fireEvent.click(screen.getByRole('checkbox', { name: /suspended/i }))
+
+      // The trigger badge reflects the now-active filter count without any
+      // further action.
+      expect(trigger).toHaveTextContent('1')
+    })
+  })
+
   describe('Results Count Display', () => {
     /**
      * Validates: Requirements 2.5, 3.4

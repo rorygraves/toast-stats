@@ -1,15 +1,16 @@
 /**
- * Re-skin guard for the clubs column-filter popover (#670, epic #665 Sprint 4).
+ * Re-skin guard for the clubs filter controls (#670, epic #665 Sprint 4) —
+ * relocated to the FiltersPanel in #816.
  *
- * The #668 chrome re-skin (Sprint 2) deliberately left the *open* column-filter
- * popover on legacy gray Tailwind — its guard (ClubsTable.reskin.test.tsx) only
- * renders the resting header, so the closed popover's gray was out of frame. A
- * breadcrumb in app-shell.css / ColumnHeader.tsx parks it for "the controls
- * re-skin (Sprint 4 #670)". This guard opens each popover variant (text /
- * numeric / categorical) and fails if any rendered element still carries a
- * legacy `*-gray-*` utility OR a baked opacity-variant brand utility
- * (`bg-tm-loyal-blue-NN`) — the latter is the lesson-073 dark trap (it inlines a
- * light-mode rgba at build time and never re-resolves under [data-theme=dark]).
+ * #670 established that the open column-filter controls (text / numeric /
+ * categorical) carry zero legacy gray Tailwind utilities and zero baked
+ * opacity-variant brand utilities (`bg-tm-loyal-blue-NN`) — the latter is the
+ * lesson-073 dark trap (it inlines a light-mode rgba at build time and never
+ * re-resolves under [data-theme=dark]). Sprint #816 moved those exact controls
+ * out of the hidden per-column header dropdown into the FiltersPanel drawer, so
+ * the guard now renders the panel — which mounts all three filter-control
+ * variants at once — and fails if any rendered element still ships a legacy
+ * class.
  *
  * JSDOM can't compute contrast (lesson 075) but it CAN prove which classes ship
  * — which is exactly what a "no legacy chrome left" criterion is about. The
@@ -17,21 +18,9 @@
  * by ClubsControlsDarkModeContrast.test.ts.
  */
 import { describe, it, expect, afterEach } from 'vitest'
-import { render, screen, fireEvent, cleanup } from '@testing-library/react'
-import { ColumnHeader } from '../ColumnHeader'
-import { SortField, ColumnFilter } from '../filters/types'
-
-const baseProps = {
-  field: 'name' as SortField,
-  label: 'Club Name',
-  sortable: true,
-  filterable: true,
-  currentSort: { field: null as SortField | null, direction: 'asc' as const },
-  currentFilter: null as ColumnFilter | null,
-  onSort: () => {},
-  onFilter: () => {},
-  options: ['Active', 'Suspended'] as string[],
-}
+import { render, screen, cleanup } from '@testing-library/react'
+import { FiltersPanel } from '../filters/FiltersPanel'
+import { ColumnFilter, SortField } from '../filters/types'
 
 // Matches Tailwind gray utilities incl. state-variant prefixes
 // (`hover:bg-gray-100`, `group-hover:text-gray-700`), but NOT brand tokens like
@@ -53,28 +42,23 @@ function offenders(container: HTMLElement): string[] {
   return out
 }
 
-const VARIANTS: ReadonlyArray<{
-  name: string
-  filterType: ColumnFilter['type']
-}> = [
-  { name: 'text (search)', filterType: 'text' },
-  { name: 'numeric', filterType: 'numeric' },
-  { name: 'categorical', filterType: 'categorical' },
-]
+const noop = () => {}
+const panelProps = {
+  isOpen: true,
+  onClose: noop,
+  getFilter: (_field: SortField): ColumnFilter | null => null,
+  setFilter: noop,
+  clearAllFilters: noop,
+  activeFilterCount: 0,
+}
 
-describe('Clubs column-filter popover re-skin (#670)', () => {
+describe('Clubs filter controls re-skin (#670, relocated to FiltersPanel #816)', () => {
   afterEach(cleanup)
 
-  it.each(VARIANTS)(
-    'open $name popover carries zero legacy gray / opacity-variant classes',
-    ({ filterType }) => {
-      const { container } = render(
-        <ColumnHeader {...baseProps} filterType={filterType} />
-      )
-      fireEvent.click(screen.getByRole('button', { expanded: false }))
-      // popover is open
-      expect(screen.getByRole('button', { expanded: true })).toBeInTheDocument()
-      expect(offenders(container)).toEqual([])
-    }
-  )
+  it('the open Filters panel carries zero legacy gray / opacity-variant classes', () => {
+    render(<FiltersPanel {...panelProps} />)
+    // text + numeric + categorical controls are all mounted in the panel
+    const dialog = screen.getByRole('dialog')
+    expect(offenders(dialog)).toEqual([])
+  })
 })
