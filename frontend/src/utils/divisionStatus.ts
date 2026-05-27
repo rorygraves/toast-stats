@@ -101,7 +101,11 @@ export interface DivisionPerformance {
   netGrowth: number
   /** Current number of clubs that have achieved Distinguished status */
   distinguishedClubs: number
-  /** Required number of distinguished clubs (50% of club base, rounded up) */
+  /**
+   * Required distinguished clubs for the division's Distinguished tier — DDP
+   * 45% of club base, rounded up (NOT the 50% area/DAP rule). Sourced from
+   * `calculateDivisionDistinguishedRequirement` in divisionGapAnalysis (#799).
+   */
   requiredDistinguishedClubs: number
   /** Array of all areas within this division */
   areas: AreaPerformance[]

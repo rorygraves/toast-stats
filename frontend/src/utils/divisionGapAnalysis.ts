@@ -153,6 +153,25 @@ function calculateRequiredDistinguishedClubs(
 }
 
 /**
+ * Distinguished clubs a division needs to reach the **Distinguished** tier:
+ * 45% of club base, rounded up (DDP, manual item 1490). This is the single
+ * source of truth for the division progress pill's "required" count, so the
+ * pill and the recognition badge (which also flows from the DDP table here)
+ * agree by construction. NOT 50% — that is the area/DAP threshold. See #799.
+ *
+ * @param clubBase - Number of clubs at the start of the program year
+ * @returns Required distinguished clubs for Distinguished (0 when base is 0)
+ */
+export function calculateDivisionDistinguishedRequirement(
+  clubBase: number
+): number {
+  return calculateRequiredDistinguishedClubs(
+    clubBase,
+    DDP_THRESHOLDS.distinguished
+  )
+}
+
+/**
  * Determines the current recognition level based on metrics
  *
  * Property 1: Recognition Level Classification
