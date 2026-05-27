@@ -9,12 +9,12 @@ never a date-to-date diff.
 
 ## §1. Phasing
 
-| Phase | Issue | Scope |
-| ----- | ----- | ----- |
-| 1 | #793 | Pure `diffSnapshots` engine + `SnapshotDiff` type + **default** district digest page at `/district/:id/changes` (from = previous recorded date, to = latest). No date picker. |
-| 2 | #794 | Arbitrary date-pair picker (from/to, URL-synced, per-district index). |
-| 3 | #795 | Per-club delta table + diff CSV export. |
-| 4 | #796 | (optional) Pre-computed GCS digest + cross-district view. |
+| Phase | Issue | Scope                                                                                                                                                                         |
+| ----- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | #793  | Pure `diffSnapshots` engine + `SnapshotDiff` type + **default** district digest page at `/district/:id/changes` (from = previous recorded date, to = latest). No date picker. |
+| 2     | #794  | Arbitrary date-pair picker (from/to, URL-synced, per-district index).                                                                                                         |
+| 3     | #795  | Per-club delta table + diff CSV export.                                                                                                                                       |
+| 4     | #796  | (optional) Pre-computed GCS digest + cross-district view.                                                                                                                     |
 
 ## §2. Architectural spine
 
