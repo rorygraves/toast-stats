@@ -85,6 +85,7 @@
 - **118** [data-pipeline, analytics, collector-cli, find-a-club] — "Missing from Find-A-Club" is a registry-visibility signal, not a data gap (#490, #757)
 - **119** [automation, sprint-runner, prompts, process] — An issue's cited doc may be uncommitted in the operator's main checkout, not missing (#809, #813)
 - **119** [ci, tests, seo, frontend, verification, performance] — Before gating a Lighthouse SEO audit at `error`, verify which audits survive the localhost/preview host (#778, #785)
+- **120** [css, frontend, scope, router, architecture] — A CSS class named like "a page" may be shared chrome for a whole route family (#810, #813)
 - **120** [tests, vitest, flaky, react, frontend] — `await waitFor` for an already-flushed effect leaks a deferred render into the next test (#780, #785)
 - **121** [ci, tests, seo, verification, frontend] — A "presence-implying" audit may only validate; pair it with a drift guard (#782, #785)
 - **122** [ci, lighthouse, security, csp, verification, frontend] — A CSP in hosting config is invisible to the localhost Lighthouse gate; verify headers on the deployed surface (#783, #785)
