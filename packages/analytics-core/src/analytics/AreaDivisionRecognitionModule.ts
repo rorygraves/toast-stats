@@ -1,87 +1,47 @@
 /**
- * Area/Division Recognition Module
+ * Area Recognition Module
  *
- * Implements Distinguished Area Program (DAP) and Distinguished Division Program (DDP)
- * recognition calculations per steering document dap-ddp-recognition.md.
+ * Aggregates per-area club counts (total / paid / distinguished) from a
+ * district snapshot. The only live consumer is
+ * `AnalyticsComputer.computePerformanceTargets`, which sums `paidClubs` and
+ * `distinguishedClubs` across areas to derive the district's distinguished
+ * target.
  *
- * Key rules:
- * - Eligibility gates hard-block recognition
- * - Distinguished percentages use paid units as denominator
- * - Recognition levels are ordinal: Distinguished < Select < Presidents
- *
- * Moved from backend AnalyticsEngine for shared use in analytics-core.
- * Preserves all hardened computation logic from the backend version.
+ * The former divergent recognition-LEVEL logic (DAP/DDP percent-based tiers,
+ * eligibility gates, threshold percentages, division recognition) was removed
+ * in #799: it had no live consumer and conflicted with the verified
+ * recognition source of truth (`divisionGapAnalysis.ts`, DDP manual item 1490).
+ * The club-paid / club-distinguished counting below is unchanged from the
+ * prior implementation — the computed counts are byte-identical.
  *
  * Requirements: 7.1
  */
 
 import type { DistrictStatistics, ClubStatistics } from '../interfaces.js'
-import type {
-  AreaRecognition,
-  DivisionRecognition,
-  AreaDivisionRecognitionLevel,
-  RecognitionEligibility,
-} from '../types.js'
+import type { AreaRecognition } from '../types.js'
 import {
   calculateNetGrowth,
   determineDistinguishedLevel,
   getCSPStatus,
 } from './ClubEligibilityUtils.js'
 
-// ========== DAP Thresholds (from steering document) ==========
-const DAP_PAID_CLUBS_THRESHOLD = 75 // ≥75% of clubs must be paid
-const DAP_DISTINGUISHED_THRESHOLD = 50 // ≥50% for Distinguished
-const DAP_SELECT_THRESHOLD = 75 // ≥75% for Select Distinguished
-const DAP_PRESIDENTS_THRESHOLD = 100 // 100% for President's Distinguished
-
-// ========== DDP Thresholds (from steering document) ==========
-const DDP_PAID_AREAS_THRESHOLD = 85 // ≥85% of areas must be paid
-const DDP_DISTINGUISHED_THRESHOLD = 50 // ≥50% for Distinguished
-const DDP_SELECT_THRESHOLD = 75 // ≥75% for Select Distinguished
-const DDP_PRESIDENTS_THRESHOLD = 100 // 100% for President's Distinguished
-
 /**
  * AreaDivisionRecognitionModule
  *
- * Calculates DAP and DDP recognition status for areas and divisions.
- * Works directly with DistrictStatistics data without external dependencies.
- * Stateless module - all methods accept data as parameters.
+ * Calculates per-area club counts for areas in a district. Works directly with
+ * DistrictStatistics data without external dependencies. Stateless module — all
+ * methods accept data as parameters.
  *
  * Requirements: 7.1
  */
 export class AreaDivisionRecognitionModule {
-  // ========== Public API Methods ==========
-
   /**
-   * Calculate area recognition for all areas in a district
+   * Calculate per-area club counts for all areas in a district.
    *
    * @param snapshot - District statistics snapshot
    * @returns Array of AreaRecognition objects
    */
   calculateAreaRecognition(snapshot: DistrictStatistics): AreaRecognition[] {
-    return this.analyzeAreaRecognition(snapshot)
-  }
-
-  /**
-   * Calculate division recognition for all divisions in a district
-   *
-   * @param snapshot - District statistics snapshot
-   * @returns Array of DivisionRecognition objects
-   */
-  calculateDivisionRecognition(
-    snapshot: DistrictStatistics
-  ): DivisionRecognition[] {
-    return this.analyzeDivisionRecognition(snapshot)
-  }
-
-  // ========== Area Recognition Analysis ==========
-
-  /**
-   * Analyze area recognition from district statistics
-   */
-  private analyzeAreaRecognition(
-    snapshot: DistrictStatistics
-  ): AreaRecognition[] {
     // Group clubs by area
     const areaMap = new Map<
       string,
@@ -108,88 +68,31 @@ export class AreaDivisionRecognitionModule {
       areaMap.get(areaId)!.clubs.push(club)
     }
 
-    // Extract visit data from divisionPerformance CSV (#325)
-    const areaVisitMap = this.extractAreaVisitData(snapshot.divisionPerformance)
-
-    // Calculate recognition for each area
+    // Calculate counts for each area
     return Array.from(areaMap.values()).map(area =>
       this.calculateSingleAreaRecognition(
         area.areaId,
         area.areaName,
         area.divisionId,
-        area.clubs,
-        areaVisitMap.get(area.areaId)
+        area.clubs
       )
     )
   }
 
   /**
-   * Calculate recognition for a single area
+   * Calculate club counts for a single area.
    */
   private calculateSingleAreaRecognition(
     areaId: string,
     areaName: string,
     divisionId: string,
-    clubs: ClubStatistics[],
-    visitData?: {
-      novVisits: number
-      mayVisits: number
-      clubCount: number
-    }
+    clubs: ClubStatistics[]
   ): AreaRecognition {
     const totalClubs = clubs.length
     const paidClubs = clubs.filter(club => this.isClubPaid(club)).length
     const distinguishedClubs = clubs.filter(
       club => this.isClubPaid(club) && this.isClubDistinguished(club)
     ).length
-
-    // Calculate percentages
-    const paidClubsPercent =
-      totalClubs > 0
-        ? Math.round((paidClubs / totalClubs) * 100 * 100) / 100
-        : 0
-    const distinguishedClubsPercent =
-      paidClubs > 0
-        ? Math.round((distinguishedClubs / paidClubs) * 100 * 100) / 100
-        : 0
-
-    // Check thresholds
-    const meetsPaidThreshold = paidClubsPercent >= DAP_PAID_CLUBS_THRESHOLD
-
-    // Determine eligibility from club visit data (#325)
-    // DAP requires ≥75% of club base visited per round
-    let eligibility: RecognitionEligibility = 'unknown'
-    let eligibilityReason = 'Club visit data not available'
-
-    if (visitData && visitData.clubCount > 0) {
-      const novPct = (visitData.novVisits / visitData.clubCount) * 100
-      const mayPct = (visitData.mayVisits / visitData.clubCount) * 100
-      const round1Met = novPct >= 75
-      const round2Met = mayPct >= 75
-
-      if (round1Met && round2Met) {
-        eligibility = 'eligible'
-        eligibilityReason = `Visits complete: Round 1 ${Math.round(novPct)}%, Round 2 ${Math.round(mayPct)}%`
-      } else {
-        eligibility = 'ineligible'
-        const parts: string[] = []
-        if (!round1Met) parts.push(`Round 1: ${Math.round(novPct)}% (need 75%)`)
-        if (!round2Met) parts.push(`Round 2: ${Math.round(mayPct)}% (need 75%)`)
-        eligibilityReason = `Visits incomplete: ${parts.join(', ')}`
-      }
-    }
-
-    // Determine recognition level based on thresholds
-    const recognitionLevel = this.determineAreaRecognitionLevel(
-      meetsPaidThreshold,
-      distinguishedClubsPercent
-    )
-
-    const meetsDistinguishedThreshold = this.checkDistinguishedThreshold(
-      recognitionLevel,
-      distinguishedClubsPercent,
-      DAP_DISTINGUISHED_THRESHOLD
-    )
 
     return {
       areaId,
@@ -198,175 +101,7 @@ export class AreaDivisionRecognitionModule {
       totalClubs,
       paidClubs,
       distinguishedClubs,
-      paidClubsPercent,
-      distinguishedClubsPercent,
-      eligibility,
-      eligibilityReason,
-      recognitionLevel,
-      meetsPaidThreshold,
-      meetsDistinguishedThreshold,
     }
-  }
-
-  /**
-   * Determine area recognition level based on DAP thresholds
-   */
-  private determineAreaRecognitionLevel(
-    meetsPaidThreshold: boolean,
-    distinguishedPercent: number
-  ): AreaDivisionRecognitionLevel {
-    if (!meetsPaidThreshold) {
-      return 'NotDistinguished'
-    }
-
-    // Check from highest to lowest (ordinal)
-    if (distinguishedPercent >= DAP_PRESIDENTS_THRESHOLD) {
-      return 'Presidents'
-    }
-    if (distinguishedPercent >= DAP_SELECT_THRESHOLD) {
-      return 'Select'
-    }
-    if (distinguishedPercent >= DAP_DISTINGUISHED_THRESHOLD) {
-      return 'Distinguished'
-    }
-
-    return 'NotDistinguished'
-  }
-
-  // ========== Division Recognition Analysis ==========
-
-  /**
-   * Analyze division recognition from district statistics
-   */
-  private analyzeDivisionRecognition(
-    snapshot: DistrictStatistics
-  ): DivisionRecognition[] {
-    // First calculate area recognition
-    const areaRecognitions = this.analyzeAreaRecognition(snapshot)
-
-    // Group areas by division
-    const divisionMap = new Map<
-      string,
-      {
-        divisionId: string
-        divisionName: string
-        areas: AreaRecognition[]
-      }
-    >()
-
-    for (const area of areaRecognitions) {
-      if (!divisionMap.has(area.divisionId)) {
-        // Get division name from first club in this division
-        const divisionClub = snapshot.clubs.find(
-          club => club.divisionId === area.divisionId
-        )
-        divisionMap.set(area.divisionId, {
-          divisionId: area.divisionId,
-          divisionName: divisionClub?.divisionName || area.divisionId,
-          areas: [],
-        })
-      }
-      divisionMap.get(area.divisionId)!.areas.push(area)
-    }
-
-    // Calculate recognition for each division
-    return Array.from(divisionMap.values()).map(division =>
-      this.calculateSingleDivisionRecognition(
-        division.divisionId,
-        division.divisionName,
-        division.areas
-      )
-    )
-  }
-
-  /**
-   * Calculate recognition for a single division
-   */
-  private calculateSingleDivisionRecognition(
-    divisionId: string,
-    divisionName: string,
-    areas: AreaRecognition[]
-  ): DivisionRecognition {
-    const totalAreas = areas.length
-    const paidAreas = areas.filter(area => this.isAreaPaid(area)).length
-    const distinguishedAreas = areas.filter(
-      area =>
-        this.isAreaPaid(area) && area.recognitionLevel !== 'NotDistinguished'
-    ).length
-
-    // Calculate percentages
-    const paidAreasPercent =
-      totalAreas > 0
-        ? Math.round((paidAreas / totalAreas) * 100 * 100) / 100
-        : 0
-    const distinguishedAreasPercent =
-      paidAreas > 0
-        ? Math.round((distinguishedAreas / paidAreas) * 100 * 100) / 100
-        : 0
-
-    // Check thresholds
-    const meetsPaidThreshold = paidAreasPercent >= DDP_PAID_AREAS_THRESHOLD
-
-    // Division eligibility: visits are NOT a DDP gate (#325)
-    // Area visits gate DAP (area Distinguished status), which affects
-    // whether areas count as "Distinguished" for the DDP percentage.
-    // But visit completion itself is not an independent DDP requirement.
-    const eligibility: RecognitionEligibility = 'eligible'
-    const eligibilityReason =
-      'DDP eligibility based on paid and distinguished area percentages'
-
-    // Determine recognition level based on thresholds
-    const recognitionLevel = this.determineDivisionRecognitionLevel(
-      meetsPaidThreshold,
-      distinguishedAreasPercent
-    )
-
-    const meetsDistinguishedThreshold = this.checkDistinguishedThreshold(
-      recognitionLevel,
-      distinguishedAreasPercent,
-      DDP_DISTINGUISHED_THRESHOLD
-    )
-
-    return {
-      divisionId,
-      divisionName,
-      totalAreas,
-      paidAreas,
-      distinguishedAreas,
-      paidAreasPercent,
-      distinguishedAreasPercent,
-      eligibility,
-      eligibilityReason,
-      recognitionLevel,
-      meetsPaidThreshold,
-      meetsDistinguishedThreshold,
-      areas,
-    }
-  }
-
-  /**
-   * Determine division recognition level based on DDP thresholds
-   */
-  private determineDivisionRecognitionLevel(
-    meetsPaidThreshold: boolean,
-    distinguishedPercent: number
-  ): AreaDivisionRecognitionLevel {
-    if (!meetsPaidThreshold) {
-      return 'NotDistinguished'
-    }
-
-    // Check from highest to lowest (ordinal)
-    if (distinguishedPercent >= DDP_PRESIDENTS_THRESHOLD) {
-      return 'Presidents'
-    }
-    if (distinguishedPercent >= DDP_SELECT_THRESHOLD) {
-      return 'Select'
-    }
-    if (distinguishedPercent >= DDP_DISTINGUISHED_THRESHOLD) {
-      return 'Distinguished'
-    }
-
-    return 'NotDistinguished'
   }
 
   // ========== Helper Methods ==========
@@ -398,82 +133,4 @@ export class AreaDivisionRecognitionModule {
     )
     return level !== 'NotDistinguished'
   }
-
-  /**
-   * Extract per-area visit completion data from divisionPerformance CSV (#325).
-   *
-   * Reads "Nov Visit award" (Round 1) and "May Visit award" (Round 2)
-   * columns from the raw CSV records, grouped by Area.
-   */
-  private extractAreaVisitData(
-    divisionPerformance?: Array<Record<string, string | number | null>>
-  ): Map<string, { novVisits: number; mayVisits: number; clubCount: number }> {
-    const map = new Map<
-      string,
-      { novVisits: number; mayVisits: number; clubCount: number }
-    >()
-
-    if (!divisionPerformance) return map
-
-    for (const record of divisionPerformance) {
-      const areaId = String(record['Area'] ?? '').trim()
-      if (!areaId) continue
-
-      if (!map.has(areaId)) {
-        map.set(areaId, { novVisits: 0, mayVisits: 0, clubCount: 0 })
-      }
-      const entry = map.get(areaId)!
-      entry.clubCount++
-
-      const nov = String(record['Nov Visit award'] ?? '0').trim()
-      if (nov === '1') entry.novVisits++
-
-      const may = String(
-        record['May Visit award'] ?? record['May visit award'] ?? '0'
-      ).trim()
-      if (may === '1') entry.mayVisits++
-    }
-
-    return map
-  }
-
-  /**
-   * Check if an area is paid (not suspended due to unpaid clubs)
-   * An area is considered paid if it has at least one paid club
-   */
-  private isAreaPaid(area: AreaRecognition): boolean {
-    return area.paidClubs > 0
-  }
-
-  // NOTE: calculateNetGrowth has been extracted to ClubEligibilityUtils.ts
-  // as a shared pure function.
-
-  /**
-   * Check if distinguished threshold is met for the given recognition level
-   */
-  private checkDistinguishedThreshold(
-    recognitionLevel: AreaDivisionRecognitionLevel,
-    distinguishedPercent: number,
-    baseThreshold: number
-  ): boolean {
-    if (recognitionLevel === 'NotDistinguished') {
-      return false
-    }
-    return distinguishedPercent >= baseThreshold
-  }
 }
-
-// ========== Exported Threshold Constants ==========
-export const DAP_THRESHOLDS = {
-  PAID_CLUBS: DAP_PAID_CLUBS_THRESHOLD,
-  DISTINGUISHED: DAP_DISTINGUISHED_THRESHOLD,
-  SELECT: DAP_SELECT_THRESHOLD,
-  PRESIDENTS: DAP_PRESIDENTS_THRESHOLD,
-} as const
-
-export const DDP_THRESHOLDS = {
-  PAID_AREAS: DDP_PAID_AREAS_THRESHOLD,
-  DISTINGUISHED: DDP_DISTINGUISHED_THRESHOLD,
-  SELECT: DDP_SELECT_THRESHOLD,
-  PRESIDENTS: DDP_PRESIDENTS_THRESHOLD,
-} as const

@@ -29,8 +29,6 @@ export {
   DivisionAreaAnalyticsModule,
   LeadershipAnalyticsModule,
   AreaDivisionRecognitionModule,
-  DAP_THRESHOLDS,
-  DDP_THRESHOLDS,
   // Utility functions
   parseIntSafe,
   parseIntOrUndefined,
@@ -154,11 +152,8 @@ export type {
   // Club Trends Index types (Requirements 2.2)
   ClubTrendsIndex,
 
-  // Area/Division Recognition types (Requirements 7.1)
-  AreaDivisionRecognitionLevel,
-  RecognitionEligibility,
+  // Area recognition types (per-area club counts; Requirements 7.1)
   AreaRecognition,
-  DivisionRecognition,
 
   // Distinguished Club Analytics Data types (Requirements 5.1, 5.2)
   DistinguishedClubAnalyticsData,
