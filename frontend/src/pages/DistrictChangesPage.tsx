@@ -82,15 +82,20 @@ const DistrictChangesPage: React.FC = () => {
   const dates = useMemo(() => cachedDates?.dates ?? [], [cachedDates?.dates])
   const { from, to, setFrom, setTo } = useUrlDatePair(dates)
 
-  // from === to has no meaningful diff — surface an explicit prompt (R17) and
-  // skip the fetch rather than rendering an all-zero "nothing changed" digest.
+  // The pair must be two distinct dates with from strictly before to. Each
+  // invalid shape gets its own explicit prompt (R17) and skips the fetch —
+  // from === to would diff to an all-zero "nothing changed" digest, and
+  // from > to would render reversed (negative) deltas under a "what changed"
+  // header. Dates are ISO YYYY-MM-DD, so string comparison is chronological.
   const sameDate = !!from && !!to && from === to
+  const reversed = !!from && !!to && from > to
+  const invalidPair = sameDate || reversed
 
   const {
     data: diff,
     isLoading: diffLoading,
     isError,
-  } = useSnapshotDiff(districtId, from, sameDate ? undefined : to)
+  } = useSnapshotDiff(districtId, from, invalidPair ? undefined : to)
 
   const eventsByCategory = useMemo(() => {
     const map = new Map<DiffEventCategory, DiffEvent[]>()
@@ -152,11 +157,20 @@ const DistrictChangesPage: React.FC = () => {
               </p>
             )}
 
-            {enoughHistory && !sameDate && (datesLoading || diffLoading) && (
+            {enoughHistory && reversed && (
+              <p
+                className="district-changes__empty"
+                data-testid="changes-reversed"
+              >
+                Pick a “from” date that comes before the “to” date.
+              </p>
+            )}
+
+            {enoughHistory && !invalidPair && (datesLoading || diffLoading) && (
               <LoadingSkeleton variant="card" height="220px" />
             )}
 
-            {enoughHistory && !sameDate && isError && (
+            {enoughHistory && !invalidPair && isError && (
               <p
                 className="district-changes__empty"
                 data-testid="changes-error"
@@ -166,7 +180,7 @@ const DistrictChangesPage: React.FC = () => {
               </p>
             )}
 
-            {!sameDate && diff && (
+            {!invalidPair && diff && (
               <>
                 <p
                   className="district-changes__headline"

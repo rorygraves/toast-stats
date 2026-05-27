@@ -139,6 +139,24 @@ describe('DistrictChangesPage', () => {
     expect(screen.getByTestId('changes-date-pair-picker')).toBeInTheDocument()
   })
 
+  it('shows a "from before to" message when from > to (#794, R17)', () => {
+    mockedDates.mockReturnValue({
+      data: { dates: ['2026-05-25', '2026-05-26'] },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useDistrictCachedDates>)
+    mockedDiff.mockReturnValue({
+      data: diffFixture(),
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<typeof useSnapshotDiff>)
+
+    renderPage('/district/61/changes?from=2026-05-26&to=2026-05-25')
+    expect(screen.getByTestId('changes-reversed')).toBeInTheDocument()
+    expect(screen.queryByTestId('changes-headline')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('changes-list')).not.toBeInTheDocument()
+    expect(screen.getByTestId('changes-date-pair-picker')).toBeInTheDocument()
+  })
+
   it('shows a "no recorded changes" message when the diff has no events', () => {
     mockedDates.mockReturnValue({
       data: { dates: ['2026-05-25', '2026-05-26'] },
