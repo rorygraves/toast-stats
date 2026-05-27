@@ -709,6 +709,133 @@ describe('ClubsTable', () => {
     })
   })
 
+  describe('Consolidated preset filter row (#815)', () => {
+    it('clicking "Close to Distinguished" does NOT trigger a hidden sort change', () => {
+      const onSortChange = vi.fn()
+      const clubs = [createMockClub({ clubId: 'club-1' })]
+
+      render(
+        <ClubsTable
+          clubs={clubs}
+          districtId="test-district"
+          isLoading={false}
+          onSortChange={onSortChange}
+        />
+      )
+
+      fireEvent.click(
+        screen.getByRole('button', { name: /close to distinguished/i })
+      )
+
+      // The chip filters; it must not silently re-sort the table (#815 B2 —
+      // the hidden auto-sort surprise removed).
+      expect(onSortChange).not.toHaveBeenCalled()
+    })
+
+    it('renders a single preset row — no separate status tablist', () => {
+      const clubs = [createMockClub({ clubId: 'club-1' })]
+
+      render(
+        <ClubsTable
+          clubs={clubs}
+          districtId="test-district"
+          isLoading={false}
+        />
+      )
+
+      expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
+      expect(screen.queryByRole('tab')).not.toBeInTheDocument()
+    })
+
+    it('exposes health presets as toggle buttons (aria-pressed)', () => {
+      const clubs = [
+        createMockClub({ clubId: 'club-1', currentStatus: 'vulnerable' }),
+      ]
+
+      render(
+        <ClubsTable
+          clubs={clubs}
+          districtId="test-district"
+          isLoading={false}
+        />
+      )
+
+      const vulnerable = screen.getByRole('button', { name: /^vulnerable/i })
+      expect(vulnerable).toHaveAttribute('aria-pressed', 'false')
+    })
+
+    it('clicking a health preset writes the status filter', () => {
+      const onFilterChange = vi.fn()
+      const clubs = [
+        createMockClub({ clubId: 'club-1', currentStatus: 'vulnerable' }),
+      ]
+
+      render(
+        <ClubsTable
+          clubs={clubs}
+          districtId="test-district"
+          isLoading={false}
+          onFilterChange={onFilterChange}
+        />
+      )
+
+      fireEvent.click(screen.getByRole('button', { name: /^vulnerable/i }))
+
+      const lastCall =
+        onFilterChange.mock.calls[onFilterChange.mock.calls.length - 1]
+      const filterState = lastCall![0] as Record<string, { value: string[] }>
+      expect(filterState.status!.value).toEqual(['vulnerable'])
+    })
+
+    it('health presets are single-select: a second choice replaces the first', () => {
+      const onFilterChange = vi.fn()
+      const clubs = [
+        createMockClub({ clubId: 'club-1', currentStatus: 'vulnerable' }),
+        createMockClub({ clubId: 'club-2', currentStatus: 'thriving' }),
+      ]
+
+      render(
+        <ClubsTable
+          clubs={clubs}
+          districtId="test-district"
+          isLoading={false}
+          onFilterChange={onFilterChange}
+        />
+      )
+
+      fireEvent.click(screen.getByRole('button', { name: /^thriving/i }))
+      fireEvent.click(screen.getByRole('button', { name: /^vulnerable/i }))
+
+      const lastCall =
+        onFilterChange.mock.calls[onFilterChange.mock.calls.length - 1]
+      const filterState = lastCall![0] as Record<string, { value: string[] }>
+      expect(filterState.status!.value).toEqual(['vulnerable'])
+    })
+
+    it('shows a count badge on each health preset', () => {
+      const clubs = [
+        createMockClub({ clubId: 'club-1', currentStatus: 'vulnerable' }),
+        createMockClub({ clubId: 'club-2', currentStatus: 'vulnerable' }),
+        createMockClub({ clubId: 'club-3', currentStatus: 'thriving' }),
+      ]
+
+      render(
+        <ClubsTable
+          clubs={clubs}
+          districtId="test-district"
+          isLoading={false}
+        />
+      )
+
+      // Scope to the count badge so the assertion can't pass on an incidental
+      // "2" elsewhere in the label.
+      const vulnerable = screen.getByRole('button', { name: /^vulnerable/i })
+      expect(
+        vulnerable.querySelector('.clubs-quick-filter-chip__count')?.textContent
+      ).toBe('2')
+    })
+  })
+
   describe('Row Click Handler', () => {
     it('should call onClubClick when a row is clicked', () => {
       const onClubClick = vi.fn()
