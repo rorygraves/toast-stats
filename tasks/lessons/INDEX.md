@@ -92,3 +92,4 @@
 - **123** [analytics, data-pipeline, dcp, frontend, verification] — `totals.distinguished*` is unpopulated mid-year; count distinguished from `clubPerformance` (#793, #797)
 - **124** [router, react, hooks, frontend, verification] — Validate URL-synced range state at the page that owns it, not at the picker (#794, #797)
 - **125** [cls, performance, frontend, verification, ci] — A CLS fix for the loading state must cover the error/empty states too (#811, #488, #750)
+- **126** [css, frontend, responsive, tables, dark-mode] — Porting a sticky-column treatment to a sibling table must re-derive the border restoration for THAT table's border-collapse model (#812, #813, #811)
