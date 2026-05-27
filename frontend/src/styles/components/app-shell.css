@@ -925,17 +925,33 @@
       inset 0 -1px 0 var(--line-2);
   }
 
+  /* The last row zeroes its real border-bottom; do the same for the sticky
+     cell's box-shadow-drawn rule so it doesn't leave a stray hairline under
+     the first column. Keep only the right (sticky/scroll seam) inset. */
+  .districts-rankings-table
+    tbody
+    tr:last-child
+    .districts-rankings-table__sticky-col {
+    box-shadow: inset -1px 0 0 var(--line);
+  }
+
   /* Header sticky cell rides the thead surface and layers above body cells. */
   .districts-rankings-table thead .districts-rankings-table__sticky-col {
     z-index: 3;
     background-color: var(--surface-2);
   }
 
-  /* Keep the pinned cell in sync with the row-hover highlight. */
+  /* Keep the sticky cell in sync with the row-hover highlight — but ONLY for
+     untinted rows. A tinted (my-district / pinned) row keeps its tint on hover
+     (its non-sticky cells use Tailwind bg-yellow-50/bg-blue-50, which sit in
+     the utilities layer and outrank the row-hover rule), so the sticky cell
+     must keep its tint too rather than flipping to --surface-2. Targeting
+     [data-row-tint='none'] makes light and dark behave identically (avoids the
+     lessons 94/95 hover asymmetry). */
   .districts-rankings-table
     tbody
     tr:hover
-    .districts-rankings-table__sticky-col {
+    .districts-rankings-table__sticky-col[data-row-tint='none'] {
     background-color: var(--surface-2);
   }
 
@@ -981,7 +997,10 @@
   }
 
   /* Right-edge fade discoverability cue. Themed (transparent → --surface, so it
-     remaps in dark); pointer-events:none so it never blocks taps/scroll. */
+     remaps in dark); pointer-events:none so it never blocks taps/scroll. Shown
+     ONLY when the table overflows to the right (data-scrollable-right, set by
+     DistrictsPage) — otherwise the fade would wash out the right-aligned Score
+     column on desktop, where the full set fits and nothing scrolls. */
   .districts-rankings-table__scroll-cue {
     position: absolute;
     top: 0;
@@ -990,6 +1009,12 @@
     width: 40px;
     pointer-events: none;
     background: linear-gradient(to right, rgba(0, 0, 0, 0), var(--surface));
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .districts-rankings-table__scroll-wrap[data-scrollable-right='true']
+    .districts-rankings-table__scroll-cue {
+    opacity: 1;
   }
 
   /* Region rankings: intentional, documented horizontal scroll (#689, epic

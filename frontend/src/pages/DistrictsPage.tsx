@@ -320,6 +320,37 @@ const DistrictsPage: React.FC = () => {
     return displayRankings.slice(0, 5)
   }, [displayRankings, searchQuery])
 
+  // Show the right-edge scroll-cue ONLY when the rankings table actually
+  // overflows to the right. A permanent fade would wash out the right-aligned
+  // Score column on desktop, where the full set fits and nothing scrolls — a
+  // false affordance over the headline metric. Toggled imperatively (a
+  // data-attr on the scroll-wrap, gated in CSS) so scroll/resize don't
+  // re-render the whole table. Unlike the regions leaderboard's always-on cue
+  // (#689, 19 cols that always scroll), this one is conditional.
+  const rankingsScrollRef = useRef<HTMLDivElement>(null)
+  React.useEffect(() => {
+    const el = rankingsScrollRef.current
+    if (!el) return
+    const update = () => {
+      const moreToRight = el.scrollWidth - el.clientWidth - el.scrollLeft > 1
+      el.parentElement?.setAttribute(
+        'data-scrollable-right',
+        String(moreToRight)
+      )
+    }
+    update()
+    el.addEventListener('scroll', update, { passive: true })
+    let ro: ResizeObserver | undefined
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(update)
+      ro.observe(el)
+    }
+    return () => {
+      el.removeEventListener('scroll', update)
+      ro?.disconnect()
+    }
+  }, [displayRankings])
+
   const handleDistrictClick = (districtId: string) => {
     navigate(`/district/${districtId}`)
   }
@@ -1005,7 +1036,8 @@ const DistrictsPage: React.FC = () => {
               into a card collapse. */}
           <div className="districts-rankings-table__scroll-wrap">
             <div
-              className="overflow-x-auto districts-rankings-table__scroll"
+              ref={rankingsScrollRef}
+              className="overflow-x-auto"
               role="region"
               tabIndex={0}
               aria-label="District rankings — scroll horizontally to see all metrics"
