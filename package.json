@@ -48,7 +48,9 @@
     "pipeline:run": "npx tsx scripts/prune-month-end-pipeline.ts --execute",
     "pipeline:step": "npx tsx scripts/prune-month-end-pipeline.ts",
     "lessons:index": "npx tsx scripts/regenerate-lessons-index.ts",
-    "lessons:index:check": "npx tsx scripts/regenerate-lessons-index.ts --check"
+    "lessons:index:check": "npx tsx scripts/regenerate-lessons-index.ts --check",
+    "seo:generate": "npx tsx scripts/generate-seo-assets.ts",
+    "seo:check": "npx tsx scripts/generate-seo-assets.ts --check"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.7",
