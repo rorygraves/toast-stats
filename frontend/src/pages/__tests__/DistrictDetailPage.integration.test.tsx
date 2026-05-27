@@ -190,11 +190,14 @@ describe('DistrictDetailPage - Division Performance Cards Integration', () => {
       // Since we have 2 clubs with "Division Club Base": "50", the division uses 50 as base
       // New compact format without spaces
       expect(screen.getByText('2/50')).toBeInTheDocument() // Paid clubs (2 active / 50 base)
-      expect(screen.getByText('2/25')).toBeInTheDocument() // Distinguished clubs (2 / 25 required)
+      // Distinguished required = DDP Distinguished tier, 45% of club base (#799):
+      // ceil(50 * 0.45) = 23 (the old 50% rule incorrectly demanded 25)
+      expect(screen.getByText('2/23')).toBeInTheDocument()
 
       // Verify Division B data - 1 club in division B
       expect(screen.getByText('1/40')).toBeInTheDocument() // Paid clubs (1 active / 40 base)
-      expect(screen.getByText('1/20')).toBeInTheDocument() // Distinguished clubs (1 / 20 required)
+      // ceil(40 * 0.45) = 18 (the old 50% rule incorrectly demanded 20)
+      expect(screen.getByText('1/18')).toBeInTheDocument()
     })
 
     it('should display area performance tables', () => {
@@ -322,10 +325,10 @@ describe('DistrictDetailPage - Division Performance Cards Integration', () => {
       )
 
       // Verify key metrics are visible and readable
-      // Division A: 2 paid clubs / 50 base, 2 distinguished / 25 required
-      // New compact format without spaces
+      // Division A: 2 paid clubs / 50 base, 2 distinguished / 23 required
+      // (DDP Distinguished = 45% of club base, #799: ceil(50 * 0.45) = 23)
       expect(screen.getByText('2/50')).toBeVisible()
-      expect(screen.getByText('2/25')).toBeVisible()
+      expect(screen.getByText('2/23')).toBeVisible()
     })
 
     it('should handle horizontal scrolling for area tables on mobile', () => {
