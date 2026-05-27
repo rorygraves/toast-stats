@@ -121,6 +121,12 @@ export async function reportErrorRemote(
       | undefined
     if (!endpoint) return
 
+    // CSP coupling (#783): this POST is a `connect-src` sink. The endpoint is
+    // unset in every current pipeline, so it's dormant — but if remote
+    // telemetry is ever wired up, its origin MUST be added to the
+    // Content-Security-Policy `connect-src` in firebase.json, or the browser
+    // will block the request (and the catch below will swallow the violation).
+
     const report: RemoteErrorReport = {
       timestamp: new Date().toISOString(),
       message: error.message,

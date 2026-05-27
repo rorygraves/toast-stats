@@ -52,6 +52,15 @@ function headerValue(headers: HeaderKV[], key: string): string | undefined {
 }
 
 describe('firebase.json security headers (#783)', () => {
+  it('keeps the production and staging CSP byte-identical (no drift)', () => {
+    // The CSP is duplicated verbatim across both targets (JSON has no
+    // variables). Per-target regex checks below can't catch a one-sided edit
+    // that still matches the loose patterns — this equality assertion does.
+    const cspFor = (t: string) =>
+      headerValue(catchAllHeaders(t), 'Content-Security-Policy')
+    expect(cspFor('production')).toBe(cspFor('staging'))
+  })
+
   for (const targetName of ['production', 'staging']) {
     describe(`target: ${targetName}`, () => {
       const headers = () => catchAllHeaders(targetName)
