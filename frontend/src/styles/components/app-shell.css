@@ -2309,7 +2309,9 @@
 
   .clubs-active-filters__remove:hover {
     background-color: var(--loyal-100);
-    color: var(--loyal-600);
+    /* --link (not --loyal-600) — the latter has no dark remap and would go
+       navy-on-navy on the dark --loyal-100 fill (R10, lessons 093/096). */
+    color: var(--link);
   }
 
   .clubs-active-filters__remove:focus-visible {

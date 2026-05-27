@@ -60,6 +60,9 @@ export const FILTER_PARAM_KEYS: string[] = [
 const parseNumericRange = (
   raw: string
 ): [number | null, number | null] | null => {
+  // Require the `..` range form. A bare `?membership=10` (only ever from a
+  // hand-edited URL — the writer always emits `min..max`) is intentionally
+  // dropped rather than guessed at.
   if (!raw.includes('..')) return null
   const [lo, hi] = raw.split('..')
   const min = lo === '' ? null : Number(lo)
