@@ -11,6 +11,7 @@ import {
 } from '../utils/clubHealthStatus'
 import { useColumnFilters } from '../hooks/useColumnFilters'
 import { ColumnHeader } from './ColumnHeader'
+import { FiltersPanel } from './filters/FiltersPanel'
 import { SortField, SortDirection, COLUMN_CONFIGS } from './filters/types'
 import { CLOSE_TO_DISTINGUISHED_MAX_MEMBERS } from '../utils/closeToDistinguished'
 import ClubCard from './ClubCard'
@@ -238,6 +239,9 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
   const [sortDirection, setSortDirection] = useState<SortDirection>(
     initialSortDirection ?? 'asc'
   )
+  // The dedicated Filters drawer (#816). Replaces the hidden per-column header
+  // filter dropdowns with one discoverable, instant-apply panel.
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false)
   // Collapse the table to cards at the 768px tablet boundary (ADR-006 §2, epic
   // #813 Sprint 4, #812). The card view is for TRUE mobile only (< 768px);
   // 768–1279px shows the table with low-priority columns hidden (the
@@ -564,14 +568,48 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
             second UI entry point onto the EXISTING `name` text filter (R11), so
             it stays in sync with that dropdown and URL-syncs through the parent
             (DistrictClubsPage maps `name` ⇄ `?search=`). */}
-        <ClubSearchBox
-          value={
-            typeof getFilter('name')?.value === 'string'
-              ? (getFilter('name')!.value as string)
-              : ''
-          }
-          onSearchChange={handleSearchChange}
-        />
+        <div className="clubs-filter-toolbar">
+          <ClubSearchBox
+            value={
+              typeof getFilter('name')?.value === 'string'
+                ? (getFilter('name')!.value as string)
+                : ''
+            }
+            onSearchChange={handleSearchChange}
+          />
+          {/* Discoverable entry to the Filters drawer (#816). The hidden
+              per-column header dropdowns are gone; this button + its
+              active-count badge is the single, visible way into precise
+              column filtering. */}
+          <button
+            type="button"
+            className="clubs-filters-trigger"
+            onClick={() => setIsFiltersOpen(true)}
+            aria-haspopup="dialog"
+            aria-expanded={isFiltersOpen}
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L14 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 018 21v-7.586L3.293 6.707A1 1 0 013 6V4z"
+              />
+            </svg>
+            <span>Filters</span>
+            {activeFilterCount > 0 && (
+              <span className="clubs-filters-trigger__badge">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+        </div>
 
         {/* Results Count and Quick Filters */}
         <div className="flex flex-wrap items-center gap-4 text-sm clubs-text-muted">
@@ -911,18 +949,11 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
                         field={config.field}
                         label={config.label}
                         sortable={config.sortable}
-                        filterable={config.filterable}
-                        filterType={config.filterType}
                         currentSort={{
                           field: sortField,
                           direction: sortDirection,
                         }}
-                        currentFilter={getFilter(config.field)}
                         onSort={handleSort}
-                        onFilter={setFilter}
-                        {...(config.filterOptions && {
-                          options: config.filterOptions,
-                        })}
                       />
                     </th>
                   ))}
@@ -1120,6 +1151,18 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
           <div className="clubs-table__scroll-cue" aria-hidden="true" />
         </div>
       )}
+
+      {/* Dedicated Filters drawer (#816). Instant-apply over the SAME filter
+          state the quick-filter chips and search box write to (R11) — one
+          mechanism, three entry points. */}
+      <FiltersPanel
+        isOpen={isFiltersOpen}
+        onClose={() => setIsFiltersOpen(false)}
+        getFilter={getFilter}
+        setFilter={setFilter}
+        clearAllFilters={clearAllFilters}
+        activeFilterCount={activeFilterCount}
+      />
     </div>
   )
 }

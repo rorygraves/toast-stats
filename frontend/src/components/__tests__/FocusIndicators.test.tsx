@@ -17,28 +17,20 @@ import type { SortField, SortDirection } from '../filters/types'
  */
 
 describe('Focus Indicators', () => {
-  describe('ColumnHeader focus indicators', () => {
+  describe('ColumnHeader focus indicators (sort-only since #816)', () => {
     const defaultSort = {
       field: 'name' as SortField,
       direction: 'asc' as SortDirection,
     }
 
     it('should have focus ring classes on the header button', () => {
-      const mockOnSort = vi.fn()
-      const mockOnFilter = vi.fn()
-
       const { container } = render(
         <ColumnHeader
           field="name"
           label="Club Name"
           sortable={true}
-          filterable={true}
-          filterType="text"
           currentSort={defaultSort}
-          currentFilter={null}
-          onSort={mockOnSort}
-          onFilter={mockOnFilter}
-          options={[]}
+          onSort={vi.fn()}
         />
       )
 
@@ -52,21 +44,13 @@ describe('Focus Indicators', () => {
     })
 
     it('should have tabIndex=0 for keyboard accessibility', () => {
-      const mockOnSort = vi.fn()
-      const mockOnFilter = vi.fn()
-
       const { container } = render(
         <ColumnHeader
           field="division"
           label="Division"
           sortable={true}
-          filterable={false}
-          filterType="text"
           currentSort={defaultSort}
-          currentFilter={null}
-          onSort={mockOnSort}
-          onFilter={mockOnFilter}
-          options={[]}
+          onSort={vi.fn()}
         />
       )
 
@@ -74,30 +58,21 @@ describe('Focus Indicators', () => {
       expect(headerButton).toHaveAttribute('tabIndex', '0')
     })
 
-    it('should have focus indicators on sort buttons when dropdown is open', () => {
-      const mockOnSort = vi.fn()
-      const mockOnFilter = vi.fn()
-
+    it('should have focus indicators on sort buttons when the popover is open', () => {
       const { container } = render(
         <ColumnHeader
           field="membership"
           label="Members"
           sortable={true}
-          filterable={true}
-          filterType="numeric"
           currentSort={defaultSort}
-          currentFilter={null}
-          onSort={mockOnSort}
-          onFilter={mockOnFilter}
-          options={[]}
+          onSort={vi.fn()}
         />
       )
 
-      // Open the dropdown
       const headerButton = container.querySelector('button[aria-expanded]')
       fireEvent.click(headerButton!)
 
-      // Check sort buttons have focus indicators
+      // Sort A-Z / Sort Z-A buttons
       const sortButtons = container.querySelectorAll(
         'button:not([aria-expanded])'
       )
@@ -111,39 +86,26 @@ describe('Focus Indicators', () => {
     })
 
     it('should have consistent focus indicators across all focusable elements', () => {
-      const mockOnSort = vi.fn()
-      const mockOnFilter = vi.fn()
-
       const { container } = render(
         <ColumnHeader
           field="status"
           label="Status"
           sortable={true}
-          filterable={true}
-          filterType="categorical"
           currentSort={defaultSort}
-          currentFilter={null}
-          onSort={mockOnSort}
-          onFilter={mockOnFilter}
-          options={['Active', 'Inactive', 'Suspended']}
+          onSort={vi.fn()}
         />
       )
 
-      // Open dropdown to access all interactive elements
       const headerButton = container.querySelector('button[aria-expanded]')
       fireEvent.click(headerButton!)
 
-      // Collect all focusable elements
       const focusableElements = container.querySelectorAll(
         'button, input, [tabindex="0"]'
       )
 
-      // All focusable elements should have focus:outline-hidden
       focusableElements.forEach(element => {
         const elementClasses = element.className
         expect(elementClasses).toContain('focus:outline-hidden')
-
-        // All should have some form of focus ring
         const hasFocusRing =
           elementClasses.includes('focus:ring-') ||
           elementClasses.includes('focus:bg-')
