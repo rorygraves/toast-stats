@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.18.0](https://github.com/taverns-red/toast-stats/compare/toast-stats-v2.17.0...toast-stats-v2.18.0) (2026-05-27)
+
+
+### Features
+
+* **brand:** link footer Red Taverns attribution to portal ([#779](https://github.com/taverns-red/toast-stats/issues/779)) ([#789](https://github.com/taverns-red/toast-stats/issues/789)) ([cb745ec](https://github.com/taverns-red/toast-stats/commit/cb745ece25a63db0e9c6065829e20a1a1f061c2e))
+* **seo:** per-route document titles ([#780](https://github.com/taverns-red/toast-stats/issues/780)) ([#790](https://github.com/taverns-red/toast-stats/issues/790)) ([2d2225b](https://github.com/taverns-red/toast-stats/commit/2d2225b9d2f56f423f8e9a77d1be6d85efaadf6f))
+* **seo:** static share + SEO metadata in index.html ([#778](https://github.com/taverns-red/toast-stats/issues/778)) ([#788](https://github.com/taverns-red/toast-stats/issues/788)) ([2a94bbc](https://github.com/taverns-red/toast-stats/commit/2a94bbcc6c1077abff2a1dab6698230795fe10eb))
+
+
+### Documentation
+
+* **audit:** site & showcase audit + reusable capture script ([#778](https://github.com/taverns-red/toast-stats/issues/778)) ([#784](https://github.com/taverns-red/toast-stats/issues/784)) ([1d6022a](https://github.com/taverns-red/toast-stats/commit/1d6022a8691ff317929e69a19fc0416c743b97c0))
+
 ## [2.17.0](https://github.com/taverns-red/toast-stats/compare/toast-stats-v2.16.0...toast-stats-v2.17.0) (2026-05-26)
 
 
