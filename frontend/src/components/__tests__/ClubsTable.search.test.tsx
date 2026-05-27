@@ -6,10 +6,14 @@
  * SAME `name` text filter (R11 — a new UI entry point onto the existing
  * pipeline step, not a new step). The input is URL-synced through the parent's
  * onFilterChange callback (DistrictClubsPage maps `name` ⇄ `?search=`).
+ *
+ * The box mirrors the column TextFilter: a LOCAL input value keeps typing
+ * instant while the table re-filter is driven off a 300ms-debounced value, so
+ * these tests advance fake timers to flush the debounce.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, cleanup, fireEvent } from '@testing-library/react'
+import { render, screen, cleanup, fireEvent, act } from '@testing-library/react'
 import { ClubsTable } from '../ClubsTable'
 import { ClubTrend } from '../../hooks/useDistrictAnalytics'
 import type { FilterState } from '../filters/types'
@@ -35,9 +39,16 @@ const threeClubs = () => [
   createMockClub({ clubId: 'c3', clubName: 'Gamma Society' }),
 ]
 
+// Flush the 300ms search debounce.
+const flushDebounce = () => act(() => vi.advanceTimersByTime(350))
+
 describe('ClubsTable — visible search box (#814)', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.useFakeTimers()
+  })
   afterEach(() => {
+    vi.useRealTimers()
     cleanup()
     vi.restoreAllMocks()
   })
@@ -48,15 +59,27 @@ describe('ClubsTable — visible search box (#814)', () => {
     expect(input).toBeInTheDocument()
   })
 
-  it('filters the table by club name as the user types', () => {
+  it('filters the table by club name as the user types (debounced)', () => {
     render(<ClubsTable clubs={threeClubs()} districtId="123" />)
     const input = screen.getByRole('searchbox', { name: /search clubs/i })
 
     fireEvent.change(input, { target: { value: 'alpha' } })
+    flushDebounce()
 
     expect(screen.getByText('Alpha Club')).toBeInTheDocument()
     expect(screen.queryByText('Beta Club')).not.toBeInTheDocument()
     expect(screen.queryByText('Gamma Society')).not.toBeInTheDocument()
+  })
+
+  it('keeps the typed value instantly (no dropped characters)', () => {
+    render(<ClubsTable clubs={threeClubs()} districtId="123" />)
+    const input = screen.getByRole('searchbox', {
+      name: /search clubs/i,
+    }) as HTMLInputElement
+
+    // The input reflects each keystroke immediately, before the debounce fires.
+    fireEvent.change(input, { target: { value: 'gamma society' } })
+    expect(input.value).toBe('gamma society')
   })
 
   it('pre-fills the input from an initial (URL-derived) name filter', () => {
@@ -79,7 +102,6 @@ describe('ClubsTable — visible search box (#814)', () => {
       name: /search clubs/i,
     }) as HTMLInputElement
     expect(input.value).toBe('gamma')
-    // and the table is filtered to match
     expect(screen.getByText('Gamma Society')).toBeInTheDocument()
     expect(screen.queryByText('Alpha Club')).not.toBeInTheDocument()
   })
@@ -96,6 +118,7 @@ describe('ClubsTable — visible search box (#814)', () => {
     const input = screen.getByRole('searchbox', { name: /search clubs/i })
 
     fireEvent.change(input, { target: { value: 'beta' } })
+    flushDebounce()
 
     expect(onFilterChange).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -128,13 +151,38 @@ describe('ClubsTable — visible search box (#814)', () => {
     const input = screen.getByRole('searchbox', { name: /search clubs/i })
 
     fireEvent.change(input, { target: { value: '' } })
+    flushDebounce()
 
-    // All three clubs visible again
     expect(screen.getByText('Alpha Club')).toBeInTheDocument()
     expect(screen.getByText('Beta Club')).toBeInTheDocument()
     expect(screen.getByText('Gamma Society')).toBeInTheDocument()
-    // Parent told the name filter is gone
     const lastCall = onFilterChange.mock.calls.at(-1)?.[0]
     expect(lastCall?.name).toBeUndefined()
+  })
+
+  it('clears via the clear (✕) button', () => {
+    render(
+      <ClubsTable
+        clubs={threeClubs()}
+        districtId="123"
+        initialFilterState={{
+          name: {
+            field: 'name',
+            type: 'text',
+            value: 'alpha',
+            operator: 'contains',
+          },
+        }}
+      />
+    )
+    const clear = screen.getByRole('button', { name: /clear search/i })
+    fireEvent.click(clear)
+    flushDebounce()
+
+    const input = screen.getByRole('searchbox', {
+      name: /search clubs/i,
+    }) as HTMLInputElement
+    expect(input.value).toBe('')
+    expect(screen.getByText('Beta Club')).toBeInTheDocument()
   })
 })
