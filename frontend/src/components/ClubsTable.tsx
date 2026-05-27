@@ -15,6 +15,7 @@ import { SortField, SortDirection, COLUMN_CONFIGS } from './filters/types'
 import { CLOSE_TO_DISTINGUISHED_MAX_MEMBERS } from '../utils/closeToDistinguished'
 import ClubCard from './ClubCard'
 import { useIsMobile } from '../hooks/useIsMobile'
+import { useDebounce } from '../hooks/useDebounce'
 
 // DCP tier pill maps (#669). Confirmed tiers carry their HANDOFF §256 color
 // (Smedley maroon, President's loyal-500, Select loyal-400, Distinguished
@@ -83,6 +84,77 @@ const rowTint = (
     : status === 'vulnerable'
       ? 'vulnerable'
       : 'none'
+
+/**
+ * Visible club-name search box (#814). Mirrors the column TextFilter pattern:
+ * a LOCAL input value keeps typing instant, while the heavy table re-filter is
+ * driven off a 300ms-debounced value. Without the local/debounced split the
+ * controlled input is gated on the 100+-row re-sort and drops fast keystrokes.
+ *
+ * `value` is the external `name`-filter value (URL on load, the column
+ * dropdown, or Clear-all). It is pulled into the local input whenever it
+ * changes externally; debounce coalescing means our own outbound writes settle
+ * to the same value and don't fight the user mid-type.
+ */
+const ClubSearchBox: React.FC<{
+  value: string
+  onSearchChange: (value: string) => void
+}> = ({ value, onSearchChange }) => {
+  const [input, setInput] = useState(value)
+  const debounced = useDebounce(input, 300)
+
+  // Pull external changes (Clear-all, column dropdown, back/forward) back into
+  // the local input. Render-phase sync (tracked-value compare) avoids
+  // setState-in-effect — the established pattern here, see TextFilter (#340):
+  // https://react.dev/reference/react/useState#storing-information-from-previous-renders
+  const [trackedValue, setTrackedValue] = useState(value)
+  if (value !== trackedValue) {
+    setTrackedValue(value)
+    setInput(value)
+  }
+
+  // Push the settled input outward (filter + URL) when it diverges.
+  useEffect(() => {
+    if (debounced !== value) onSearchChange(debounced)
+  }, [debounced, value, onSearchChange])
+
+  return (
+    <div className="clubs-search">
+      <svg
+        className="clubs-search__icon"
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+        />
+      </svg>
+      <input
+        type="search"
+        className="clubs-search__input"
+        placeholder="Search clubs by name…"
+        aria-label="Search clubs by name"
+        value={input}
+        onChange={e => setInput(e.target.value)}
+      />
+      {input && (
+        <button
+          type="button"
+          className="clubs-search__clear"
+          aria-label="Clear search"
+          onClick={() => setInput('')}
+        >
+          ✕
+        </button>
+      )}
+    </div>
+  )
+}
 
 /**
  * Props for the ClubsTable component
@@ -207,6 +279,20 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
     clearAllFiltersInternal()
     onFilterChange?.({})
   }, [clearAllFiltersInternal, onFilterChange])
+
+  // Visible-search → `name` text filter (#814). Empty/whitespace clears the
+  // filter rather than writing `?search=` junk to the URL.
+  const handleSearchChange = useCallback(
+    (raw: string) => {
+      setFilter(
+        'name',
+        raw.trim()
+          ? { field: 'name', type: 'text', value: raw, operator: 'contains' }
+          : null
+      )
+    },
+    [setFilter]
+  )
 
   // Quick-filter chip active flags — derived once per render from filterState.
   // The membersNeeded filter is shared by two chips that interpret different
@@ -435,6 +521,21 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
             disabled={sortedClubs.length === 0}
           />
         </div>
+
+        {/* Visible name search (#814, epic #818 Sprint 1). Recognition over
+            recall: a prominent box at the top of the table replaces the search
+            that was buried in the hidden "Club" column-header dropdown. A
+            second UI entry point onto the EXISTING `name` text filter (R11), so
+            it stays in sync with that dropdown and URL-syncs through the parent
+            (DistrictClubsPage maps `name` ⇄ `?search=`). */}
+        <ClubSearchBox
+          value={
+            typeof getFilter('name')?.value === 'string'
+              ? (getFilter('name')!.value as string)
+              : ''
+          }
+          onSearchChange={handleSearchChange}
+        />
 
         {/* Results Count and Quick Filters */}
         <div className="flex flex-wrap items-center gap-4 text-sm clubs-text-muted">
