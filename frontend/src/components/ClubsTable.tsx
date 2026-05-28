@@ -16,13 +16,19 @@ import { useColumnFilters } from '../hooks/useColumnFilters'
 import { ColumnHeader } from './ColumnHeader'
 import { FiltersPanel } from './filters/FiltersPanel'
 import { ActiveFiltersBar } from './ActiveFiltersBar'
+import { ColumnGroupsMenu } from './ColumnGroupsMenu'
 import { describeActiveFilters } from '../utils/clubFilterDescribe'
 import {
   SortField,
   SortDirection,
   COLUMN_CONFIGS,
+  COLUMN_GROUPS,
+  COLUMN_GROUP_IDS,
+  STICKY_COLUMN_FIELD,
+  type ColumnGroup,
   type ProcessedClubTrend,
 } from './filters/types'
+import { usePersistedState } from '../hooks/usePersistedState'
 import {
   clubsColumns,
   clubColumnPriorityClass,
@@ -38,6 +44,26 @@ import { useDebounce } from '../hooks/useDebounce'
 // `clubsColumns.tsx` (the TanStack migration, #835). The DCP tier pill maps,
 // status-rank sort key, and sticky/desktop priority that ClubsTable used to own
 // inline moved there. ClubsTable keeps only the row-level concerns below.
+
+/** Persisted-store name for the club table's hidden column groups (#819).
+ *  Passed to the versioned localStorage primitive (#420), which prefixes it
+ *  with `toast-stats:v<N>:` so it migrates with every other persisted key. */
+const HIDDEN_GROUPS_STORAGE_NAME = 'clubs-table:hidden-groups'
+
+const VALID_GROUPS = new Set<ColumnGroup>(COLUMN_GROUP_IDS)
+/** A stale/corrupt store must never hide phantom groups or wedge the table
+ *  into an unusable column set — keep only known group ids. */
+const sanitizeHiddenGroups = (raw: unknown): ColumnGroup[] =>
+  Array.isArray(raw)
+    ? raw.filter((g): g is ColumnGroup => VALID_GROUPS.has(g as ColumnGroup))
+    : []
+
+// Groups offered in the show/hide menu: only those with at least one column in
+// the current table (so "Changes" stays out until #795 lands its delta cols).
+// COLUMN_CONFIGS is static, so this resolves once at module load.
+const AVAILABLE_COLUMN_GROUPS = COLUMN_GROUPS.filter(g =>
+  COLUMN_CONFIGS.some(c => c.group === g.id)
+)
 
 /** Row-tint key for the sticky cell, so it can repaint OPAQUE per row status
  *  (a sticky cell must be opaque or scrolled columns bleed through it). Mirrors
@@ -372,20 +398,62 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
 
   // The sticky key column ('name') is the left-pinned column (ADR-006 §3,
   // Lesson 105); the existing CSS (.clubs-table__sticky-col) renders the
-  // stickiness, the pinning state is the model of record. columnVisibility is
-  // wired empty here — Sprint 2 (#819) drives it from the column-group toggles;
-  // the tablet-tier hiding stays CSS-@media-driven (.clubs-table__col--desktop).
+  // stickiness, the pinning state is the model of record.
   const columnPinning: ColumnPinningState = useMemo(
-    () => ({ left: ['name'], right: [] }),
+    () => ({ left: [STICKY_COLUMN_FIELD], right: [] }),
     []
   )
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+
+  // Column-group show/hide (#819, ADR-006 §4). Persisted to localStorage so the
+  // selection survives reload. Group visibility is a durable per-user VIEW
+  // preference (like dark mode), not shareable filter data — keeping it out of
+  // the URL avoids the filter↔URL reconcile race surface (lessons 070/130).
+  // The hidden set is the source of truth (default empty = all visible, so the
+  // table is unchanged until the user opts in). Drives TanStack's native
+  // `columnVisibility` state — no parallel responsive logic, no hand-rolled
+  // filter on the body (TanStack's row.getVisibleCells keeps header/body in
+  // lockstep automatically). The sticky 'name' column is forced visible so
+  // hiding the Identity group can't strip the row's own label (ADR-006 §3).
+  const [storedHiddenGroups, setStoredHiddenGroups] = usePersistedState<
+    ColumnGroup[]
+  >(HIDDEN_GROUPS_STORAGE_NAME, [])
+  const hiddenGroups = useMemo(
+    () => new Set(sanitizeHiddenGroups(storedHiddenGroups)),
+    [storedHiddenGroups]
+  )
+  const isGroupHidden = useCallback(
+    (group: ColumnGroup) => hiddenGroups.has(group),
+    [hiddenGroups]
+  )
+  const toggleGroup = useCallback(
+    (group: ColumnGroup) => {
+      setStoredHiddenGroups(prev => {
+        const next = new Set(sanitizeHiddenGroups(prev))
+        if (next.has(group)) next.delete(group)
+        else next.add(group)
+        return [...next]
+      })
+    },
+    [setStoredHiddenGroups]
+  )
+
+  const columnVisibility = useMemo<VisibilityState>(() => {
+    const vis: VisibilityState = {}
+    for (const c of COLUMN_CONFIGS) {
+      // The sticky key column is the row's label — never hidden by a group.
+      if (c.field === STICKY_COLUMN_FIELD) continue
+      if (hiddenGroups.has(c.group)) vis[c.field] = false
+    }
+    return vis
+  }, [hiddenGroups])
 
   const table = useReactTable<ProcessedClubTrend>({
     data: nameSortedClubs,
     columns: clubsColumns,
     state: { sorting, columnPinning, columnVisibility },
-    onColumnVisibilityChange: setColumnVisibility,
+    // columnVisibility is fully controlled by hiddenGroups above — TanStack
+    // never writes it directly, so onColumnVisibilityChange is intentionally
+    // omitted (R11 — drive the existing state, don't add a parallel one).
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     enableSortingRemoval: false,
@@ -528,6 +596,15 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
               </span>
             )}
           </button>
+          {/* Column-group show/hide (#819, ADR-006 §4). Same toolbar slot as
+              the Filters trigger so the two table-shape controls live together;
+              uses the same .clubs-filters-trigger styling for a single visual
+              language. */}
+          <ColumnGroupsMenu
+            groups={AVAILABLE_COLUMN_GROUPS}
+            isGroupHidden={isGroupHidden}
+            onToggle={toggleGroup}
+          />
         </div>
 
         {/* Results Count and Quick Filters */}
