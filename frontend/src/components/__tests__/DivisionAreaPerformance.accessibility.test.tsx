@@ -34,6 +34,23 @@ import type {
   DivisionPerformance,
   AreaPerformance,
 } from '../../types/performance'
+import { deriveAreaRecognitionState } from '../../utils/areaRecognitionState'
+
+function withState(
+  fixture: Omit<AreaPerformance, 'recognitionState'>
+): AreaPerformance {
+  return {
+    ...fixture,
+    recognitionState: deriveAreaRecognitionState({
+      clubBase: fixture.clubBase,
+      paidClubs: fixture.paidClubs,
+      distinguishedClubs: fixture.distinguishedClubs,
+      firstRoundVisitMet: fixture.firstRoundVisits.meetsThreshold,
+      secondRoundVisitMet: fixture.secondRoundVisits.meetsThreshold,
+      snapshotDate: '2026-06-15',
+    }),
+  }
+}
 
 // Extend expect with jest-axe matchers
 // @ts-expect-error - jest-axe types are not perfectly compatible with vitest expect
@@ -132,7 +149,7 @@ const createMockDivisionPerformance = (): DivisionPerformance => ({
   distinguishedClubs: 6,
   requiredDistinguishedClubs: 5,
   areas: [
-    {
+    withState({
       areaId: 'A1',
       status: 'presidents-distinguished',
       clubBase: 5,
@@ -153,8 +170,8 @@ const createMockDivisionPerformance = (): DivisionPerformance => ({
         meetsThreshold: true,
       },
       isQualified: true,
-    },
-    {
+    }),
+    withState({
       areaId: 'A2',
       status: 'distinguished',
       clubBase: 5,
@@ -175,32 +192,33 @@ const createMockDivisionPerformance = (): DivisionPerformance => ({
         meetsThreshold: false,
       },
       isQualified: false,
-    },
+    }),
   ],
 })
 
-const createMockAreaPerformance = (): AreaPerformance => ({
-  areaId: 'A1',
-  status: 'presidents-distinguished',
-  clubBase: 5,
-  paidClubs: 6,
-  netGrowth: 1,
-  distinguishedClubs: 3,
-  requiredDistinguishedClubs: 3,
-  firstRoundVisits: {
-    completed: 4,
-    required: 4,
-    percentage: 80,
-    meetsThreshold: true,
-  },
-  secondRoundVisits: {
-    completed: 4,
-    required: 4,
-    percentage: 80,
-    meetsThreshold: true,
-  },
-  isQualified: true,
-})
+const createMockAreaPerformance = (): AreaPerformance =>
+  withState({
+    areaId: 'A1',
+    status: 'presidents-distinguished',
+    clubBase: 5,
+    paidClubs: 6,
+    netGrowth: 1,
+    distinguishedClubs: 3,
+    requiredDistinguishedClubs: 3,
+    firstRoundVisits: {
+      completed: 4,
+      required: 4,
+      percentage: 80,
+      meetsThreshold: true,
+    },
+    secondRoundVisits: {
+      completed: 4,
+      required: 4,
+      percentage: 80,
+      meetsThreshold: true,
+    },
+    isQualified: true,
+  })
 
 describe('Division and Area Performance Components - Accessibility Audit', () => {
   describe('DivisionPerformanceCards - axe-core validation', () => {

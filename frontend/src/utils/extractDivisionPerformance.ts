@@ -22,7 +22,18 @@ import {
   checkAreaQualifying,
 } from './divisionStatus.js'
 import { calculateDivisionDistinguishedRequirement } from './divisionGapAnalysis.js'
+import { deriveAreaRecognitionState } from './areaRecognitionState.js'
 import { logger } from './logger'
+
+/**
+ * Fallback snapshot date when none is provided by the caller. Today's date
+ * preserves the legacy wall-clock behaviour for unwired callers (tests,
+ * stories), while wired callers (DistrictDivisionsPage) MUST pass
+ * `districtStatistics.asOfDate` so historical snapshots gate correctly.
+ */
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10)
+}
 
 /**
  * Determines the distinguished level for a club based on DCP criteria
@@ -382,8 +393,11 @@ export function extractVisitData(
  * Requirements: 1.1, 1.3, 1.4, 6.8
  */
 export function extractDivisionPerformance(
-  districtSnapshot: unknown
+  districtSnapshot: unknown,
+  snapshotDate?: string
 ): DivisionPerformance[] {
+  const effectiveSnapshotDate = snapshotDate ?? todayIso()
+
   // Type guard: ensure districtSnapshot is an object
   if (typeof districtSnapshot !== 'object' || districtSnapshot === null) {
     return []
@@ -552,7 +566,8 @@ export function extractDivisionPerformance(
     const areas = extractAreasForDivision(
       divisionId,
       clubDataRaw,
-      clubPerformanceMap
+      clubPerformanceMap,
+      effectiveSnapshotDate
     )
 
     // Add division to results
@@ -585,7 +600,8 @@ export function extractDivisionPerformance(
 function extractAreasForDivision(
   divisionId: string,
   clubData: unknown[],
-  clubPerformanceMap: Map<string, Record<string, unknown>>
+  clubPerformanceMap: Map<string, Record<string, unknown>>,
+  snapshotDate: string
 ): AreaPerformance[] {
   // Group clubs by area
   const areaMap = new Map<string, unknown[]>()
@@ -730,6 +746,17 @@ function extractAreasForDivision(
       netGrowth
     )
 
+    // Source-of-truth recognition state (snapshot-date-aware, gated on
+    // qualifying visit deadlines — #832).
+    const recognitionState = deriveAreaRecognitionState({
+      clubBase,
+      paidClubs,
+      distinguishedClubs,
+      firstRoundVisitMet: firstRound.meetsThreshold,
+      secondRoundVisitMet: secondRound.meetsThreshold,
+      snapshotDate,
+    })
+
     // Add area to results
     areas.push({
       areaId,
@@ -742,6 +769,7 @@ function extractAreasForDivision(
       firstRoundVisits: firstRound,
       secondRoundVisits: secondRound,
       isQualified,
+      recognitionState,
     })
   }
 

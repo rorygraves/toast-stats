@@ -4,8 +4,8 @@ import {
   calculateAreaGapAnalysis,
   calculatePaidClubsPercentage,
   calculateDistinguishedPercentage,
-  RecognitionLevel,
 } from '../utils/areaGapAnalysis'
+import { renderRecognitionBadge } from '../utils/areaRecognitionBadge'
 
 /**
  * Props for the AreaPerformanceTable component
@@ -13,55 +13,6 @@ import {
 interface AreaPerformanceTableProps {
   /** Array of area performance data to display */
   areas: AreaPerformance[]
-}
-
-/**
- * Get recognition badge styling and label based on recognition level
- *
- * Uses Toastmasters brand colors for status indicators:
- * - President's Distinguished: TM Happy Yellow background
- * - Select Distinguished: TM Cool Gray background
- * - Distinguished: TM True Maroon background
- * - Not Distinguished: Gray background
- * - Net Loss: Red background (special indicator)
- *
- * Requirements: 9.5
- */
-const getRecognitionBadge = (
-  level: RecognitionLevel,
-  meetsNoNetLossRequirement: boolean
-): { className: string; label: string } => {
-  // If no net loss requirement not met, show special indicator
-  if (!meetsNoNetLossRequirement) {
-    return {
-      className: 'bg-red-100 text-red-800 border-red-300',
-      label: 'Net Loss',
-    }
-  }
-
-  switch (level) {
-    case 'presidents':
-      return {
-        className:
-          'bg-tm-happy-yellow text-gray-900 border-yellow-500 font-semibold',
-        label: "President's Distinguished",
-      }
-    case 'select':
-      return {
-        className: 'bg-tm-cool-gray text-gray-900 border-gray-400',
-        label: 'Select Distinguished',
-      }
-    case 'distinguished':
-      return {
-        className: 'bg-tm-true-maroon text-white border-tm-true-maroon',
-        label: 'Distinguished',
-      }
-    default:
-      return {
-        className: 'bg-gray-100 text-gray-600 border-gray-300',
-        label: 'Not Distinguished',
-      }
-  }
 }
 
 /**
@@ -346,11 +297,9 @@ export const AreaPerformanceTable: React.FC<AreaPerformanceTableProps> = ({
               area.distinguishedClubs
             )
 
-            // Get recognition badge
-            const badge = getRecognitionBadge(
-              gapAnalysis.currentLevel,
-              gapAnalysis.meetsNoNetLossRequirement
-            )
+            // Source-of-truth recognition badge (#832) — visit-deadline gate
+            // lives in `deriveAreaRecognitionState`; this is a pure presenter.
+            const badge = renderRecognitionBadge(area.recognitionState)
 
             return (
               <tr
@@ -425,6 +374,7 @@ export const AreaPerformanceTable: React.FC<AreaPerformanceTableProps> = ({
                   <span
                     className={`px-2 py-1 text-xs font-medium rounded-full border ${badge.className}`}
                     aria-label={`Recognition status: ${badge.label}`}
+                    title={badge.tooltip}
                   >
                     {badge.label}
                   </span>

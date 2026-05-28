@@ -9,6 +9,7 @@
  */
 
 import { determineDivisionRecognitionLevel } from './divisionGapAnalysis'
+import type { AreaRecognitionState } from './areaRecognitionState'
 
 /**
  * Distinguished status levels for divisions and areas
@@ -77,6 +78,13 @@ export interface AreaPerformance {
   secondRoundVisits: VisitStatus
   /** Whether the area meets all qualifying requirements */
   isQualified: boolean
+  /**
+   * Snapshot-date-aware recognition state — the source of truth for the
+   * area's recognition badge. See `deriveAreaRecognitionState` (#832).
+   * Components MUST read this rather than re-deriving deadline-blind
+   * provisional logic locally.
+   */
+  recognitionState: AreaRecognitionState
 }
 
 /**

@@ -67,12 +67,12 @@ export const DivisionPerformanceCards: React.FC<
       return []
     }
     try {
-      return extractDivisionPerformance(districtSnapshot)
+      return extractDivisionPerformance(districtSnapshot, snapshotTimestamp)
     } catch (error) {
       logger.error('Error extracting division performance:', error)
       return []
     }
-  }, [districtSnapshot, isLoading])
+  }, [districtSnapshot, isLoading, snapshotTimestamp])
 
   // Loading state
   if (isLoading) {

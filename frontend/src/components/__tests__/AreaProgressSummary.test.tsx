@@ -33,34 +33,50 @@ import type {
   DivisionPerformance,
   AreaPerformance,
 } from '../../utils/divisionStatus'
+import { deriveAreaRecognitionState } from '../../utils/areaRecognitionState'
 /**
  * Test data factory for creating area data
  */
 const createArea = (
   overrides: Partial<AreaPerformance> = {}
-): AreaPerformance => ({
-  areaId: 'A1',
-  clubBase: 4,
-  paidClubs: 4,
-  distinguishedClubs: 2,
-  netGrowth: 0,
-  requiredDistinguishedClubs: 2,
-  firstRoundVisits: {
-    completed: 4,
-    required: 3,
-    percentage: 100,
-    meetsThreshold: true,
-  },
-  secondRoundVisits: {
-    completed: 2,
-    required: 3,
-    percentage: 50,
-    meetsThreshold: false,
-  },
-  status: 'distinguished',
-  isQualified: true,
-  ...overrides,
-})
+): AreaPerformance => {
+  const base: Omit<AreaPerformance, 'recognitionState'> = {
+    areaId: 'A1',
+    clubBase: 4,
+    paidClubs: 4,
+    distinguishedClubs: 2,
+    netGrowth: 0,
+    requiredDistinguishedClubs: 2,
+    firstRoundVisits: {
+      completed: 4,
+      required: 3,
+      percentage: 100,
+      meetsThreshold: true,
+    },
+    secondRoundVisits: {
+      completed: 2,
+      required: 3,
+      percentage: 50,
+      meetsThreshold: false,
+    },
+    status: 'distinguished',
+    isQualified: true,
+    ...overrides,
+  }
+  return {
+    ...base,
+    recognitionState: deriveAreaRecognitionState({
+      clubBase: base.clubBase,
+      paidClubs: base.paidClubs,
+      distinguishedClubs: base.distinguishedClubs,
+      firstRoundVisitMet: base.firstRoundVisits.meetsThreshold,
+      secondRoundVisitMet: base.secondRoundVisits.meetsThreshold,
+      // Mid-year snapshot: R1 deadline already passed, R2 still pending.
+      snapshotDate: '2026-03-15',
+    }),
+    ...overrides,
+  }
+}
 
 /**
  * Helper to group flat area data into DivisionPerformance[] format.

@@ -153,7 +153,10 @@ const DistrictDivisionsPage: React.FC = () => {
 
             {districtStatistics ? (
               <DivisionAreaRecognitionPanel
-                divisions={extractDivisionPerformance(districtStatistics)}
+                divisions={extractDivisionPerformance(
+                  districtStatistics,
+                  districtStatistics.asOfDate
+                )}
                 isLoading={isLoadingStatistics}
               />
             ) : (
