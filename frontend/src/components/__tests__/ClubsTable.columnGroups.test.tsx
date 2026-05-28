@@ -144,6 +144,28 @@ describe('ClubsTable column groups (#819)', () => {
     expect(within(firstRow).getByText('Alpha Club')).toBeInTheDocument()
   })
 
+  it('keeps the sticky Club column even when every group is hidden', async () => {
+    const user = userEvent.setup()
+    renderTable()
+    await user.click(screen.getByRole('button', { name: /columns/i }))
+    for (const name of [
+      /identity/i,
+      /membership/i,
+      /renewals/i,
+      /recognition/i,
+    ])
+      await user.click(screen.getByRole('checkbox', { name }))
+
+    // Only the sticky key column remains; header/body still in lockstep.
+    expect(headerLabels()).toEqual(['Club'])
+    expect(headerCount()).toBe(1)
+    expect(firstRowCellCount()).toBe(1)
+    const firstRow = document.querySelector(
+      '#clubs-table tbody tr:first-child'
+    ) as HTMLElement
+    expect(within(firstRow).getByText('Alpha Club')).toBeInTheDocument()
+  })
+
   it('persists the hidden group and rehydrates on remount', async () => {
     const user = userEvent.setup()
     const { unmount } = renderTable()

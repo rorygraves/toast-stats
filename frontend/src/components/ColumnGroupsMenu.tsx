@@ -57,16 +57,20 @@ export const ColumnGroupsMenu: React.FC<ColumnGroupsMenuProps> = ({
   }, [isOpen, close])
 
   const hiddenCount = groups.filter(g => isGroupHidden(g.id)).length
+  const popoverId = 'clubs-columns-menu-popover'
 
   return (
     <div className="clubs-columns-menu">
+      {/* Disclosure pattern: the popover is a region of checkboxes, not a menu
+          — so it's `aria-expanded` + `aria-controls`, NOT `aria-haspopup="menu"`
+          (which would promise menuitem semantics it doesn't have). */}
       <button
         ref={triggerRef}
         type="button"
         className="clubs-filters-trigger"
         onClick={() => setIsOpen(o => !o)}
-        aria-haspopup="true"
         aria-expanded={isOpen}
+        aria-controls={popoverId}
       >
         <svg
           className="w-4 h-4"
@@ -91,6 +95,7 @@ export const ColumnGroupsMenu: React.FC<ColumnGroupsMenuProps> = ({
       {isOpen && (
         <div
           ref={popoverRef}
+          id={popoverId}
           className="clubs-columns-menu__popover"
           role="group"
           aria-label="Show or hide column groups"
