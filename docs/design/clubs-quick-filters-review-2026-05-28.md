@@ -21,17 +21,17 @@ unless stated. The row is rendered inside the panel header at
 
 ### 1.1 Anatomy
 
-| # | Control | File:line | Field written | Value written | Selection model |
-|---|---|---|---|---|---|
-| L | `Quick filters:` label | `ClubsTable.tsx:716` | — | — | — |
-| 1 | **Thriving** chip + count | `ClubsTable.tsx:722, 731–746` | `status` | `['thriving']` | single-select within bands; toggling the active one clears |
-| 2 | **Vulnerable** chip + count | `ClubsTable.tsx:723, 731–746` | `status` | `['vulnerable']` | same |
-| 3 | **Intervention** chip + count | `ClubsTable.tsx:724–728, 731–746` | `status` | `['intervention-required']` | same |
-| 4 | ⭐ **Close to Distinguished** | `ClubsTable.tsx:750–781` | `membersNeeded` | `[1, 4]` (`CLOSE_TO_DISTINGUISHED_MAX_MEMBERS`) | independent toggle, but writes the same field as #5 |
-| 5 | **Needs members** | `ClubsTable.tsx:784–804` | `membersNeeded` | `[2, null]` (≥2) | independent toggle, but writes the same field as #4 |
-| 6 | **Missing renewals** | `ClubsTable.tsx:807–846` | `octoberRenewals` | `[0, 0]` | independent toggle |
-| 7 | **President's tier only** | `ClubsTable.tsx:849–885` | `distinguished` | `['President']` | independent toggle |
-| 8 | **Clear all (N)** | `ClubsTable.tsx:887–895` | — | resets all filters | only present when `hasActiveFilters` |
+| #   | Control                       | File:line                         | Field written     | Value written                                   | Selection model                                            |
+| --- | ----------------------------- | --------------------------------- | ----------------- | ----------------------------------------------- | ---------------------------------------------------------- |
+| L   | `Quick filters:` label        | `ClubsTable.tsx:716`              | —                 | —                                               | —                                                          |
+| 1   | **Thriving** chip + count     | `ClubsTable.tsx:722, 731–746`     | `status`          | `['thriving']`                                  | single-select within bands; toggling the active one clears |
+| 2   | **Vulnerable** chip + count   | `ClubsTable.tsx:723, 731–746`     | `status`          | `['vulnerable']`                                | same                                                       |
+| 3   | **Intervention** chip + count | `ClubsTable.tsx:724–728, 731–746` | `status`          | `['intervention-required']`                     | same                                                       |
+| 4   | ⭐ **Close to Distinguished** | `ClubsTable.tsx:750–781`          | `membersNeeded`   | `[1, 4]` (`CLOSE_TO_DISTINGUISHED_MAX_MEMBERS`) | independent toggle, but writes the same field as #5        |
+| 5   | **Needs members**             | `ClubsTable.tsx:784–804`          | `membersNeeded`   | `[2, null]` (≥2)                                | independent toggle, but writes the same field as #4        |
+| 6   | **Missing renewals**          | `ClubsTable.tsx:807–846`          | `octoberRenewals` | `[0, 0]`                                        | independent toggle                                         |
+| 7   | **President's tier only**     | `ClubsTable.tsx:849–885`          | `distinguished`   | `['President']`                                 | independent toggle                                         |
+| 8   | **Clear all (N)**             | `ClubsTable.tsx:887–895`          | —                 | resets all filters                              | only present when `hasActiveFilters`                       |
 
 Counts on chips 1–3 are derived once from `clubs` (memoized,
 `ClubsTable.tsx:360–369`); chips 4–7 do not show counts.
@@ -45,14 +45,14 @@ Counts on chips 1–3 are derived once from `clubs` (memoized,
 - **Close to Distinguished (4)** filters by `computeMembersToDistinguished`
   (qualification-aware, includes Goal 7/8 paths). The 4-member cap is shared
   with the `ClubDetailPage` banner. The chip's body comment
-  (`ClubsTable.tsx:316–324`) flags that this is *not* fully equivalent to the
+  (`ClubsTable.tsx:316–324`) flags that this is _not_ fully equivalent to the
   banner's raw `gap.members` — a club can appear here without firing the banner
   and vice versa.
 - **Needs members (5)** is `membersNeeded` ≥ 2 — clubs short by two or more.
   Overlaps **Close to Distinguished** on `[2, 4]`. They write the same field;
   clicking one replaces the other (`useColumnFilters` enforces last-write-wins).
 - **Missing renewals (6)** is `octoberRenewals === 0`. **It does not cover
-  April.** A club that paid October but missed April is *not* in this chip's
+  April.** A club that paid October but missed April is _not_ in this chip's
   scope.
 - **President's tier only (7)** is `distinguished` includes literal
   `'President'`. The display name in `clubFilterDescribe.ts:39` is
@@ -84,12 +84,12 @@ Counts on chips 1–3 are derived once from `clubs` (memoized,
 - **Mobile (<768px).** The card view (`ClubsTable.tsx:984–1037`) still renders
   the whole quick-filter row above it. At 375px the row wraps to ~4 lines,
   pushing the first card ~120px down. The mobile sort dropdown (lines 988–1024)
-  lives *below* the chip row, so the toolbar above the cards is
+  lives _below_ the chip row, so the toolbar above the cards is
   Search → Filters → Columns → Quick-filter chip row → Sort dropdown — five
   controls before the first card.
 - **Status redundancy with `ClubStatusBadge`.** The clubs themselves carry a
   `ClubStatusBadge` in the table body (Suspended / Ineligible / Low / Active).
-  The Status quick-filter bands are *health* (Thriving / Vulnerable /
+  The Status quick-filter bands are _health_ (Thriving / Vulnerable /
   Intervention), a different axis. The two semantically distinct "status"
   concepts use overlapping vocabulary, which is on-brand for Toastmasters but
   re-introduced into the same surface.
@@ -121,7 +121,7 @@ controls writing the same store" anti-pattern.
 ### F3 — "Missing renewals" silently ignores April
 
 The chip's label promises a renewal-state filter; its implementation is `October
-== 0` only. From October–April a club that missed April is filtered *out*. The
+== 0` only. From October–April a club that missed April is filtered _out_. The
 spec is asymmetric without a label cue. This is the same shape as Lesson 115:
 the field's name (and the chip's label) lies about which surface it covers.
 
@@ -150,7 +150,7 @@ Chip highlight + active-filters bar pill + Filters drawer badge + count-line
 flip is one filter announced four ways. Visually noisy; cognitively, each
 surface phrases it slightly differently (the chip says "President's tier
 only", the bar says "Tier: President's", the badge says "1"). The user has to
-reconcile them. The chip row was originally added because there was *no*
+reconcile them. The chip row was originally added because there was _no_
 visible filter state; with the bar and drawer badge shipped (#817, #816) the
 chip's `--active` state is now the redundant one.
 
@@ -176,7 +176,7 @@ a compact segmented control.
 
 Two "status" concepts on the same surface: health (the bands) and operational
 status (Suspended / Ineligible / Low / Active, surfaced as `ClubStatusBadge`
-in-row). The chip row uses the word *status* internally
+in-row). The chip row uses the word _status_ internally
 (`filterStateToParams` writes `?status=…`); the badge column header is also
 labelled "Club Status". This isn't a row-level bug, but the chip-row review is
 the right place to note that **"Status" should not be a label on the chip row
@@ -250,13 +250,14 @@ Pick one (recommendation: counts on all chips):
 
 - **(Recommended)** Compute counts for chips 4–7 in the same memoized pass as
   `statusCounts` (`ClubsTable.tsx:360–369`). Append a `<span
-  class="clubs-quick-filter-chip__count">` to chips 4–7. Counts preview impact
+class="clubs-quick-filter-chip__count">` to chips 4–7. Counts preview impact
   before clicking.
 - OR drop counts from chips 1–3 to match.
 
 **Why:** F5. Inconsistent count-ness is worse than either choice.
 
 ### R6 — Drop the chip `--active` highlight; let the active-filters bar own
+
 "on"
 
 `ClubsTable.tsx:737–739` (and the four other chip-active class concatenations).
@@ -276,6 +277,7 @@ neighbourhood. Reclaim the horizontal space.
 **Why:** F7. A label that doesn't aid pick-decisions is noise.
 
 ### R8 — Mobile: collapse intents into the drawer; keep bands as a segmented
+
 strip
 
 `ClubsTable.tsx:266` (`useIsMobile(768)`). Inside the `isMobile` branch
@@ -326,7 +328,7 @@ sized to ship in one PR with a single ticked acceptance checklist.
 Ship the high-confidence, low-risk fixes; defer the structural split until
 the operator wants it.
 
-**Epic:** *Clubs quick-filter row — vocabulary + redundancy cleanup*
+**Epic:** _Clubs quick-filter row — vocabulary + redundancy cleanup_
 
 - **Sprint 1** — R3 (rename **Missing October renewals**) + R4 (rename
   **President's Distinguished**) + R7 (drop "Quick filters:" label). Pure
@@ -345,11 +347,11 @@ the operator wants it.
 ### Option B — **Structural split** (1 epic, 5 sprints, ~4 days)
 
 Everything in Option A + the two-region split (R1) + mobile collapse (R8) +
-the Health rename (R9). Recommended if the operator wants the row to *feel*
+the Health rename (R9). Recommended if the operator wants the row to _feel_
 right, not just read right.
 
-**Epic:** *Clubs quick-filter row — split presets from health, collapse on
-mobile*
+**Epic:** _Clubs quick-filter row — split presets from health, collapse on
+mobile_
 
 - **Sprint 1** — same as Option A Sprint 1 (vocabulary).
 - **Sprint 2** — same as Option A Sprint 2 (drop **Needs members**, add
@@ -368,7 +370,7 @@ mobile*
   active-filters bar is the only visible "on" cue; aria-label is "Health";
   URL param compatibility intact (`?status=` still parses).
 
-### What I am *not* recommending
+### What I am _not_ recommending
 
 - A full Filters-drawer redesign — out of scope; the chip row is the
   complaint.
