@@ -15,6 +15,14 @@ export interface UseUrlSortOptions<F extends string> {
   defaultField: F
   /** Direction used when URL has no dir param. Default 'asc'. */
   defaultDirection?: SortDirection
+  /**
+   * Direction used when the user clicks a NEW field (not the currently
+   * active one). Defaults to 'asc' — Excel / GitHub-style: clicking a new
+   * column shows ascending first; click again to flip. Distinct from
+   * `defaultDirection` so the table can boot in desc (e.g. "Score") while
+   * a new column click still starts at asc.
+   */
+  newFieldDirection?: SortDirection
   /** URL param name for the field. Default 'sort'. */
   fieldParam?: string
   /** URL param name for the direction. Default 'dir'. */
@@ -46,6 +54,7 @@ export function useUrlSort<F extends string>(
     fields,
     defaultField,
     defaultDirection = 'asc',
+    newFieldDirection = 'asc',
     fieldParam = 'sort',
     dirParam = 'dir',
   } = opts
@@ -83,7 +92,7 @@ export function useUrlSort<F extends string>(
           ? resolvedDir === 'asc'
             ? 'desc'
             : 'asc'
-          : defaultDirection
+          : newFieldDirection
 
       const isDefault =
         nextField === defaultField && nextDirection === defaultDirection
@@ -124,6 +133,7 @@ export function useUrlSort<F extends string>(
       fields,
       defaultField,
       defaultDirection,
+      newFieldDirection,
     ]
   )
 
