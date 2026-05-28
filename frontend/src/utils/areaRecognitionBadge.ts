@@ -5,10 +5,7 @@
  * label + Tailwind classes + tooltip copy. The deadline-aware gating
  * lives in `deriveAreaRecognitionState`; this module is cosmetic only.
  */
-import type {
-  AreaRecognitionState,
-  PendingRound,
-} from './areaRecognitionState'
+import type { AreaRecognitionState, PendingRound } from './areaRecognitionState'
 
 export interface BadgePresentation {
   label: string
@@ -41,7 +38,10 @@ function formatDeadline(deadline: string): string {
   // month doesn't shift in timezones west of UTC.
   const [, mm, dd] = deadline.split('-').map(s => Number.parseInt(s, 10))
   const date = new Date(Date.UTC(2000, (mm ?? 1) - 1, dd ?? 1))
-  const month = date.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' })
+  const month = date.toLocaleString('en-US', {
+    month: 'short',
+    timeZone: 'UTC',
+  })
   return `${month} ${dd}`
 }
 

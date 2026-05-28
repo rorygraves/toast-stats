@@ -69,7 +69,9 @@ describe('getAreaVisitDeadlines (program-year anchoring)', () => {
 describe('deriveAreaRecognitionState — earned tier × deadline-aware visits', () => {
   describe('CONFIRMED (both rounds met)', () => {
     it("confirms Distinguished when both rounds met at year's end", () => {
-      const s = deriveAreaRecognitionState(input({ snapshotDate: '2026-06-15' }))
+      const s = deriveAreaRecognitionState(
+        input({ snapshotDate: '2026-06-15' })
+      )
       expect(s.level).toBe('distinguished')
       expect(s.status).toBe('confirmed')
       expect(s.pendingRounds).toEqual([])
