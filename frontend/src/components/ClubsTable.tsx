@@ -71,15 +71,14 @@ const DESKTOP_ONLY_FIELDS: ReadonlySet<SortField> = new Set([
   'yearsChartered',
 ])
 
-// The sticky key column — pinned at left:0 so the row stays labelled while the
-// metric columns scroll horizontally (Lesson 105). It is never hidden, by the
-// responsive model OR the column-group toggle (ADR-006 §3). Sourced from the
-// column model so the two stay in lockstep.
-const STICKY_FIELD: SortField = STICKY_COLUMN_FIELD
+// The sticky key column (`STICKY_COLUMN_FIELD`, sourced from the column model)
+// is pinned at left:0 so the row stays labelled while the metric columns scroll
+// horizontally (Lesson 105). It is never hidden, by the responsive model OR the
+// column-group toggle (ADR-006 §3).
 
 /** Responsive priority class for a column header/cell, by field. */
 const colPriorityClass = (field: SortField): string =>
-  field === STICKY_FIELD
+  field === STICKY_COLUMN_FIELD
     ? 'clubs-table__sticky-col'
     : DESKTOP_ONLY_FIELDS.has(field)
       ? 'clubs-table__col--desktop'
@@ -291,7 +290,8 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
     const set = new Set<SortField>()
     for (const c of COLUMN_CONFIGS) {
       // The sticky key column is the row's label — never hidden by a group.
-      if (c.field === STICKY_FIELD || !isGroupHidden(c.group)) set.add(c.field)
+      if (c.field === STICKY_COLUMN_FIELD || !isGroupHidden(c.group))
+        set.add(c.field)
     }
     return set
   }, [isGroupHidden])

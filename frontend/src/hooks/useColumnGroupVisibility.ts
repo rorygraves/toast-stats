@@ -1,31 +1,28 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useMemo } from 'react'
+import { usePersistedState } from './usePersistedState'
+import { storageKey } from '../utils/localStorageStore'
 import { COLUMN_GROUP_IDS, type ColumnGroup } from '../components/filters/types'
 
 /**
- * localStorage key for the club table's hidden column groups (#819).
- * Namespaced so it can't collide with other persisted preferences.
+ * Persisted-store NAME for the club table's hidden column groups (#819).
+ * Passed to the versioned localStorage primitive (#420), which prefixes it
+ * with `toast-stats:v<N>:` so it migrates with every other persisted key.
  */
-export const COLUMN_GROUP_VISIBILITY_STORAGE_KEY =
-  'toast-stats:clubs-table:hidden-groups'
+export const COLUMN_GROUP_VISIBILITY_STORAGE_NAME = 'clubs-table:hidden-groups'
+
+/** The fully-qualified localStorage key (versioned). Exposed for tests. */
+export const COLUMN_GROUP_VISIBILITY_STORAGE_KEY = storageKey(
+  COLUMN_GROUP_VISIBILITY_STORAGE_NAME
+)
 
 const VALID_GROUPS = new Set<ColumnGroup>(COLUMN_GROUP_IDS)
 
-/** Read + sanitise the persisted hidden-group set. Unknown/malformed ids and a
- *  corrupt (non-JSON) value both degrade to "nothing hidden" — a bad store
- *  must never wedge the table into an unusable column set. */
-const readStored = (): Set<ColumnGroup> => {
-  try {
-    const raw = localStorage.getItem(COLUMN_GROUP_VISIBILITY_STORAGE_KEY)
-    if (!raw) return new Set()
-    const parsed: unknown = JSON.parse(raw)
-    if (!Array.isArray(parsed)) return new Set()
-    return new Set(
-      parsed.filter((g): g is ColumnGroup => VALID_GROUPS.has(g as ColumnGroup))
-    )
-  } catch {
-    return new Set()
-  }
-}
+/** Keep only known group ids; a stale/corrupt store must never hide phantom
+ *  groups or wedge the table into an unusable column set. */
+const sanitize = (raw: unknown): ColumnGroup[] =>
+  Array.isArray(raw)
+    ? raw.filter((g): g is ColumnGroup => VALID_GROUPS.has(g as ColumnGroup))
+    : []
 
 export interface ColumnGroupVisibility {
   /** Groups the user has hidden. Empty = all visible (the default). */
@@ -39,38 +36,36 @@ export interface ColumnGroupVisibility {
  * Persisted show/hide state for the club table's column groups (#819).
  *
  * The hidden set is the source of truth (default empty = all visible, so the
- * table is unchanged until the user opts in). Writes mirror to localStorage so
- * the selection survives reloads; reads sanitise against the canonical group
- * ids so a stale/corrupt store can't hide phantom groups or crash the table.
+ * table is unchanged until the user opts in). Built on `usePersistedState`
+ * (#416) over the versioned store (#420) rather than URL sync, because group
+ * visibility is a durable per-user VIEW preference (like dark mode), not
+ * shareable filter data — keeping it out of the URL avoids the filter↔URL
+ * reconcile race surface (lessons 070/130). Reads sanitise against the
+ * canonical group ids so a stale store can't hide phantom groups.
  */
 export const useColumnGroupVisibility = (): ColumnGroupVisibility => {
-  const [hiddenGroups, setHiddenGroups] = useState<Set<ColumnGroup>>(readStored)
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(
-        COLUMN_GROUP_VISIBILITY_STORAGE_KEY,
-        JSON.stringify([...hiddenGroups])
-      )
-    } catch {
-      // Private-mode / quota failures are non-fatal: the in-memory set still
-      // drives the table for this session; we just can't persist it.
-    }
-  }, [hiddenGroups])
+  const [stored, setStored] = usePersistedState<ColumnGroup[]>(
+    COLUMN_GROUP_VISIBILITY_STORAGE_NAME,
+    []
+  )
+  const hiddenGroups = useMemo(() => new Set(sanitize(stored)), [stored])
 
   const isGroupHidden = useCallback(
     (group: ColumnGroup) => hiddenGroups.has(group),
     [hiddenGroups]
   )
 
-  const toggleGroup = useCallback((group: ColumnGroup) => {
-    setHiddenGroups(prev => {
-      const next = new Set(prev)
-      if (next.has(group)) next.delete(group)
-      else next.add(group)
-      return next
-    })
-  }, [])
+  const toggleGroup = useCallback(
+    (group: ColumnGroup) => {
+      setStored(prev => {
+        const next = new Set(sanitize(prev))
+        if (next.has(group)) next.delete(group)
+        else next.add(group)
+        return [...next]
+      })
+    },
+    [setStored]
+  )
 
   return { hiddenGroups, isGroupHidden, toggleGroup }
 }
