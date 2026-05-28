@@ -825,11 +825,22 @@ const DistrictsPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Awards Race — competitive district awards (#331) */}
+          {/* Awards Race — competitive district awards (#331).
+              #862 — at <768px the heavy 3-card section is deferred behind a
+              compact "See Awards →" link to its canonical home (/awards); the
+              full section returns at ≥768px. Both stay mounted — the toggle is
+              pure CSS `display` (see .awards-race / .awards-race-mobile-link),
+              so the desktop render path and the #750 reserved-skeleton CLS
+              contract are untouched, and the mobile section never expands to
+              shift the page. */}
           <AwardsRaceSection
             standings={competitiveAwards ?? null}
             isLoading={isLoadingAwards}
           />
+          <Link to="/awards" className="awards-race-mobile-link">
+            See Awards
+            <span aria-hidden="true"> →</span>
+          </Link>
 
           {/* Region Filter Toolbar — compact (#83). The dedicated "Sort by:"
             button row was retired in #851: sort now lives on the table
