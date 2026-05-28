@@ -355,18 +355,17 @@ const DistrictsPage: React.FC = () => {
   const isMobile = useIsMobile(768)
   const [showAllMobile, setShowAllMobile] = useState(false)
   const isSearching = searchQuery.trim().length > 0
-  const mobileCapActive =
-    isMobile &&
-    !showAllMobile &&
-    !isSearching &&
-    displayRankings.length > MOBILE_RANKINGS_CAP
+  // The cap features (the disclosure toggle and the row-slice) both apply only
+  // on mobile, off-search, and when there are more rows than the cap.
+  const mobileCapEligible =
+    isMobile && !isSearching && displayRankings.length > MOBILE_RANKINGS_CAP
+  // The slice is active until the user expands; the disclosure stays visible in
+  // the expanded state so it offers a way back to the capped view.
+  const mobileCapActive = mobileCapEligible && !showAllMobile
   const visibleRankings = mobileCapActive
     ? displayRankings.slice(0, MOBILE_RANKINGS_CAP)
     : displayRankings
-  // The disclosure toggle is mobile-only and only when there's something to
-  // reveal; in the expanded state it offers a way back to the capped view.
-  const showMobileDisclosure =
-    isMobile && !isSearching && displayRankings.length > MOBILE_RANKINGS_CAP
+  const showMobileDisclosure = mobileCapEligible
 
   // Type-ahead suggestions for the search bar (#435). Top 5 matches.
   const searchSuggestions = React.useMemo(() => {
