@@ -575,10 +575,7 @@
     margin-bottom: 20px;
   }
 
-  /* #861 — the 2-col step starts at 768px (was 640) so the mobile single-tile
-     demotion below 768 renders the lone headline tile full-width, and the
-     "full strip" returns exactly at the 768 demotion boundary (AC #2). */
-  @media (min-width: 768px) {
+  @media (min-width: 640px) {
     .districts-kpi-strip {
       grid-template-columns: repeat(2, 1fr);
     }
@@ -643,6 +640,17 @@
      Clubs · Global) on mobile. */
   .districts-kpi-card--secondary {
     display: none;
+  }
+
+  /* The lone visible tile must span full width. `.districts-kpi-strip` is
+     SHARED with RegionPage (Lesson 120), which keeps all 4 cards and relies on
+     its 2-col step at 640px — so scope this re-collapse to the landing stack:
+     in the 640–767 band only the landing strip (where 3 cards are --secondary)
+     drops back to a single column. The full strip returns at 768px (AC #2). */
+  @media (min-width: 640px) and (max-width: 767px) {
+    .districts-hero-stack .districts-kpi-strip {
+      grid-template-columns: 1fr;
+    }
   }
 
   /* Reserved slot for the hoisted search in the loading/error shell, so the
