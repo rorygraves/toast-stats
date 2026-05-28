@@ -100,3 +100,4 @@
 - **129** [react, frontend, hooks, tests, verification] — A render-phase prop-sync that compares by REFERENCE clobbers local edits when the parent rebuilds the prop each render (#816, #818)
 - **130** [react, frontend, hooks, debounce, router] — A debounced outward-push must gate on the debounce having SETTLED, or an external clear races the stale value back out (#817, #818)
 - **131** [css, frontend, scope, responsive, architecture] — The class-cardinality check must cover EVERY shared class your CSS diff touches, not just the headline one (#861, #865)
+- **132** [css, dark-mode, frontend, tailwind] — A `var(--undefined-token, #hex)` fallback is a permanent literal, not a theme (#863, #865)
