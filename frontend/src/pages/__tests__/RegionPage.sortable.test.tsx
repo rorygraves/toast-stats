@@ -15,10 +15,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import '@testing-library/jest-dom/vitest'
 import RegionPage from '../RegionPage'
-import {
-  fetchCdnRankings,
-  fetchCdnCompetitiveAwards,
-} from '../../services/cdn'
+import { fetchCdnRankings } from '../../services/cdn'
 
 vi.mock('../../services/cdn', () => ({
   fetchCdnRankings: vi.fn(),

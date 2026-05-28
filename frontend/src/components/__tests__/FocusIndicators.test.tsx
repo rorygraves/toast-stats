@@ -1,4 +1,4 @@
-import { render, fireEvent } from '@testing-library/react'
+import { render } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { ColumnHeader } from '../ColumnHeader'
 import { TextFilter } from '../filters/TextFilter'
