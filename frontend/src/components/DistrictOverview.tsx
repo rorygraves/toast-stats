@@ -5,7 +5,7 @@ import type { DistrictPerformanceTargets } from '../hooks/useDistrictAnalytics'
 import { LoadingSkeleton } from './LoadingSkeleton'
 import { ErrorDisplay, EmptyState } from './ErrorDisplay'
 import DistinguishedCompositionBar from './DistinguishedCompositionBar'
-import PaymentCompositionDonut from './PaymentCompositionDonut'
+import PaymentComposition from './PaymentComposition'
 
 interface DistrictOverviewProps {
   districtId: string
@@ -105,7 +105,7 @@ export const DistrictOverview: React.FC<DistrictOverviewProps> = ({
             distinguished={analytics.distinguishedClubs.distinguished}
             totalClubs={analytics.allClubs.length}
           />
-          <PaymentCompositionDonut
+          <PaymentComposition
             totalMembership={analytics.totalMembership}
             newPayments={districtRanking?.newPayments ?? 0}
             aprilPayments={districtRanking?.aprilPayments ?? 0}

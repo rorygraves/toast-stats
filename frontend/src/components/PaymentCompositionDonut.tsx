@@ -5,23 +5,14 @@
    needed for a 4-segment donut. */
 
 import React from 'react'
+import {
+  buildPaymentSegments,
+  type PaymentCompositionInputs,
+} from '../utils/paymentComposition'
 
-interface PaymentCompositionDonutProps {
+interface PaymentCompositionDonutProps extends PaymentCompositionInputs {
   /** Number of currently-paid members (the cohort — for the tooltip only). */
   totalMembership: number
-  newPayments: number
-  aprilPayments: number
-  octoberPayments: number
-  latePayments: number
-  charterPayments: number
-}
-
-interface Segment {
-  key: string
-  label: string
-  count: number
-  /** SVG stroke color (CSS var or fallback hex). */
-  color: string
 }
 
 const RADIUS = 46
@@ -29,67 +20,28 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 
 const PaymentCompositionDonut: React.FC<PaymentCompositionDonutProps> = ({
   totalMembership,
-  newPayments,
-  aprilPayments,
-  octoberPayments,
-  latePayments,
-  charterPayments,
+  ...inputs
 }) => {
   // Total PAYMENTS is the sum of payment events across the program year
   // (a single member can show up in multiple buckets). All 5 categories
-  // are sourced from the all-districts-rankings.json file.
-  const totalPayments =
-    newPayments +
-    aprilPayments +
-    octoberPayments +
-    latePayments +
-    charterPayments
+  // are sourced from the all-districts-rankings.json file. Segment math is
+  // shared with the mobile sparkbar via buildPaymentSegments (#868).
+  const { totalPayments, segments } = buildPaymentSegments(inputs)
   if (totalPayments <= 0) return null
 
-  const segments: Segment[] = [
-    {
-      key: 'new',
-      label: 'New member payments',
-      count: newPayments,
-      color: 'var(--tm-loyal-blue, #004165)',
-    },
-    {
-      key: 'april',
-      label: 'April renewals',
-      count: aprilPayments,
-      color: 'var(--tm-loyal-blue-80, #3D7AA0)',
-    },
-    {
-      key: 'october',
-      label: 'October renewals',
-      count: octoberPayments,
-      color: 'rgb(22 163 74)',
-    },
-    {
-      key: 'late',
-      label: 'Late payments',
-      count: latePayments,
-      color: 'var(--tm-true-maroon, #772432)',
-    },
-    {
-      key: 'charter',
-      label: 'Charter payments',
-      count: charterPayments,
-      color: 'var(--yellow-500, #f59e0b)',
-    },
-  ].filter(s => s.count > 0)
-
-  // Compute cumulative offsets along the circle.
-  let cumulative = 0
-  const arcs = segments.map(seg => {
+  // Compute each arc's length and its cumulative start offset along the
+  // circle. Done functionally (no post-render reassignment) so the React
+  // Compiler immutability rule stays satisfied; n ≤ 5 so the inner sum is
+  // cheap.
+  const arcs = segments.map((seg, i) => {
     const length = (seg.count / totalPayments) * CIRCUMFERENCE
-    const offset = -cumulative
-    cumulative += length
+    const precedingLength = segments
+      .slice(0, i)
+      .reduce((sum, s) => sum + (s.count / totalPayments) * CIRCUMFERENCE, 0)
     return {
       ...seg,
       length,
-      offset,
-      percent: Math.round((seg.count / totalPayments) * 100),
+      offset: -precedingLength,
     }
   })
 
