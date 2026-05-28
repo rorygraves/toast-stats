@@ -132,6 +132,40 @@ The in-flight delta columns (#795) land via the column model as an opt-in
 that already overflows. (Recorded here because it is the column-model decision
 that motivated the group dimension; the disposition itself is owned by Epic C / #797.)
 
+## Addendum (2026-05-27, #835 — Epic C Sprint 1): the column-model implementation standard
+
+The §6 "evaluate-then-extract" question resolved. The #820 evaluation
+(closed) found the club table and the landing rankings table share **zero**
+code — a smell, not a verified abstraction — so **no shared `DataTable`
+primitive is built** (the up-front-primitive alternative stays rejected, R6).
+Instead the **standard for the column model is the table library, chosen per
+table**:
+
+- **Club table = TanStack Table v8** (`@tanstack/react-table`, headless, MIT).
+  The growing, sorted/filtered/pinned club table (the one #795's delta columns
+  and Sprint 2's column groups target) is migrated onto TanStack: the column
+  descriptor of §4 is realised as `createColumnHelper` `columnDef`s
+  (`frontend/src/components/clubsColumns.tsx`); sorting is TanStack
+  `SortingState` + per-column `sortingFn`s; the sticky key column is
+  `columnPinning.left`; responsive group show/hide (Sprint 2) and the opt-in
+  Changes group (Sprint 3) ride TanStack `columnVisibility`.
+- **Landing rankings table = bespoke.** ~260 LoC, read-only, not growing, and
+  zero code shared with the club table → migrating it is churn with ~0 benefit.
+  It stays hand-rolled. **This split is a deliberate decision, not drift.**
+
+**Column model vs. filter model are separate concerns.** The club table's
+**filter** metadata stays in `frontend/src/components/filters/types.ts`
+`COLUMN_CONFIGS` (consumed by the Filters drawer, the URL codec, the
+active-filters bar). TanStack `columnDef`s own **presentation / sort / sizing /
+pinning / visibility**; `COLUMN_CONFIGS` owns **filterability / filter type /
+filter options**. They are not merged — conflating them would pull the migration
+into the preserved filter UI (R11). The `original → filtered → searchFiltered →
+sorted` pipeline is intact; TanStack presents over it.
+
+Bundle cost: `@tanstack/react-table` adds **+12.0 KB gzip** to the frontend
+(351,974 → 364,249 bytes gzip total JS, measured at adoption; same vendor org as
+the TanStack Query already shipped). Recorded in the #835 PR.
+
 ## Consequences
 
 **Easier:**
