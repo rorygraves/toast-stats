@@ -18,6 +18,17 @@ import {
   type CountdownCell,
 } from '../utils/distinguishedCountdown'
 import { DistrictChipAndName } from '../components/DistrictChipAndName'
+import { useUrlSort } from '../hooks/useUrlSort'
+import { SortableHeader } from '../components/SortableHeader'
+
+const REGION_SORT_FIELDS = [
+  'aggregate',
+  'world-rank',
+  'clubs',
+  'payments',
+  'distinguished',
+] as const
+type RegionSortField = (typeof REGION_SORT_FIELDS)[number]
 
 interface KpiCardProps {
   label: string
@@ -241,6 +252,14 @@ const RegionPage: React.FC = () => {
   const navigate = useNavigate()
   const region = (n ?? '').trim()
 
+  // URL-synced click-header sort (#851). Default keeps the historical
+  // behaviour — aggregate score, highest first.
+  const { sort, toggleSort } = useUrlSort<RegionSortField>({
+    fields: REGION_SORT_FIELDS,
+    defaultField: 'aggregate',
+    defaultDirection: 'desc',
+  })
+
   const { data, isLoading, error } = useQuery({
     queryKey: ['district-rankings', 'latest'],
     queryFn: async () => {
@@ -256,21 +275,53 @@ const RegionPage: React.FC = () => {
   // calls would race during a publish.
   const { data: awards } = useCompetitiveAwards(data?.date)
 
-  // No useMemo — list is small (≤ ~10 districts) and the page is
-  // route-level. The React Compiler manages memoization automatically.
-  const regionDistricts: DistrictRanking[] =
+  // Region ranks are ALWAYS computed from aggregate score, regardless of
+  // the visible sort order — a district's regional rank is a property of
+  // the district, not of how the table is currently arranged. We compute
+  // the rank lookup once, then sort the rows for display per the URL.
+  const scoreSortedDistricts: DistrictRanking[] =
     data?.rankings && region
       ? data.rankings
           .filter(r => r.region === region)
           .sort((a, b) => (b.aggregateScore ?? 0) - (a.aggregateScore ?? 0))
       : []
 
-  // Rank within the region by aggregateScore desc. Ties share rank
-  // (competition ranking via computeTiedRanks).
   const regionRanks = computeTiedRanks(
-    regionDistricts,
+    scoreSortedDistricts,
     d => d.aggregateScore ?? 0
   )
+  const rankByDistrictId = new Map(
+    scoreSortedDistricts.map((d, i) => [d.districtId, regionRanks[i]!])
+  )
+
+  // Apply the URL-driven sort on top of the score-ordered base.
+  const regionDistricts: DistrictRanking[] = (() => {
+    if (scoreSortedDistricts.length === 0) return []
+    const arr = [...scoreSortedDistricts]
+    const dir = sort.direction === 'asc' ? 1 : -1
+    switch (sort.field) {
+      case 'clubs':
+        return arr.sort(
+          (a, b) => ((a.paidClubs ?? 0) - (b.paidClubs ?? 0)) * dir
+        )
+      case 'payments':
+        return arr.sort(
+          (a, b) => ((a.totalPayments ?? 0) - (b.totalPayments ?? 0)) * dir
+        )
+      case 'distinguished':
+        return arr.sort(
+          (a, b) =>
+            ((a.distinguishedClubs ?? 0) - (b.distinguishedClubs ?? 0)) * dir
+        )
+      case 'world-rank':
+        return arr.sort(
+          (a, b) => ((a.overallRank ?? 0) - (b.overallRank ?? 0)) * dir
+        )
+      default:
+        // aggregate score — base order is desc-by-score; flip if asc.
+        return sort.direction === 'asc' ? arr.reverse() : arr
+    }
+  })()
 
   if (isLoading) {
     return <LoadingSkeleton variant="card" />
@@ -407,42 +458,54 @@ const RegionPage: React.FC = () => {
                 >
                   District
                 </th>
-                <th
+                <SortableHeader<RegionSortField>
+                  field="world-rank"
+                  label="World Rank"
+                  currentSort={sort}
+                  onSort={toggleSort}
+                  thClassName="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider align-bottom"
                   rowSpan={2}
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider align-bottom"
-                >
-                  World Rank
-                </th>
-                <th
+                />
+                <SortableHeader<RegionSortField>
+                  field="aggregate"
+                  label="Score"
+                  currentSort={sort}
+                  onSort={toggleSort}
+                  thClassName="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider align-bottom"
+                  numeric
                   rowSpan={2}
-                  scope="col"
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider align-bottom"
-                >
-                  Score
-                </th>
-                {/* Three base→current→Δ metric groups (Amy's request). */}
-                <th
+                />
+                {/* Three base→current→Δ metric groups (Amy's request). The
+                    group banner is the click target for sorting by the
+                    column's CURRENT value (#851) — Base/Δ stay non-sortable
+                    sub-headers below. */}
+                <SortableHeader<RegionSortField>
+                  field="clubs"
+                  label="Paid Clubs"
+                  currentSort={sort}
+                  onSort={toggleSort}
+                  thClassName="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-l border-[var(--line)]"
                   colSpan={3}
                   scope="colgroup"
-                  className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-l border-[var(--line)]"
-                >
-                  Paid Clubs
-                </th>
-                <th
+                />
+                <SortableHeader<RegionSortField>
+                  field="payments"
+                  label="Membership Payments"
+                  currentSort={sort}
+                  onSort={toggleSort}
+                  thClassName="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-l border-[var(--line)]"
                   colSpan={3}
                   scope="colgroup"
-                  className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-l border-[var(--line)]"
-                >
-                  Membership Payments
-                </th>
-                <th
+                />
+                <SortableHeader<RegionSortField>
+                  field="distinguished"
+                  label="Distinguished Clubs"
+                  currentSort={sort}
+                  onSort={toggleSort}
+                  thClassName="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-l border-[var(--line)]"
                   colSpan={3}
                   scope="colgroup"
-                  className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-l border-[var(--line)]"
-                >
-                  Distinguished Clubs
-                </th>
+                />
                 {/* Remaining-to-minimum-Distinguished columns (#688, epic
                     #683 F4). Replaces the former percentage-point gap
                     columns — Amy wants the absolute count, not the %.
@@ -533,8 +596,9 @@ const RegionPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {regionDistricts.map((d, i) => {
-                const rank = regionRanks[i]!
+              {regionDistricts.map(d => {
+                // Always-by-score rank, independent of the visible sort.
+                const rank = rankByDistrictId.get(d.districtId)!
                 return (
                   <tr
                     key={d.districtId}

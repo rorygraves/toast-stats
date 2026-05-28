@@ -16,6 +16,11 @@ export interface SortableHeaderProps<F extends string> {
   buttonClassName?: string
   /** Right-aligned numeric columns set this to true. */
   numeric?: boolean
+  /** Pass-through table-cell attributes for layouts with column groups. */
+  colSpan?: number
+  rowSpan?: number
+  /** Pass-through scope (default 'col'; use 'colgroup' for spanning groups). */
+  scope?: 'col' | 'colgroup'
 }
 
 /**
@@ -33,6 +38,9 @@ export function SortableHeader<F extends string>({
   thClassName,
   buttonClassName,
   numeric = false,
+  colSpan,
+  rowSpan,
+  scope = 'col',
 }: SortableHeaderProps<F>): React.JSX.Element {
   const isActive = currentSort.field === field
   const direction = isActive ? currentSort.direction : null
@@ -49,9 +57,11 @@ export function SortableHeader<F extends string>({
 
   return (
     <th
-      scope="col"
+      scope={scope}
       aria-sort={ariaSort}
       className={thClassName}
+      colSpan={colSpan}
+      rowSpan={rowSpan}
     >
       <button
         type="button"
