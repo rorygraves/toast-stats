@@ -2602,6 +2602,48 @@
     }
   }
 
+  /* #862 — defer the heavy 3-card Awards Race behind a compact link on mobile.
+     The section already has a canonical home at /awards, so <768px we hide the
+     full section (and its loading skeleton — both carry `.awards-race`) and
+     show the "See Awards →" link instead. At ≥768px the section returns and the
+     link is hidden, leaving desktop visually unchanged. Pure CSS `display`
+     toggle so both stay mounted (#750 reserved-skeleton CLS contract intact;
+     the hidden mobile section can't shift the page on its late data arrival). */
+  .awards-race-mobile-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 20px;
+    /* ≥44px touch target (Lesson 111): 16px vertical padding + 14px line-box
+       clears 44px unambiguously. */
+    padding: 16px;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-md);
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .awards-race-mobile-link:hover {
+    border-color: var(--ink-3);
+  }
+
+  @media (min-width: 768px) {
+    .awards-race-mobile-link {
+      display: none;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .awards-race {
+      display: none;
+    }
+  }
+
   .awards-race-card {
     display: flex;
     flex-direction: column;
