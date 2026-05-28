@@ -240,6 +240,39 @@ describe('DistrictsPage - Error Handling', () => {
       screen.queryByText('Welcome to Toast-Stats!')
     ).not.toBeInTheDocument()
   })
+
+  // #826 — Both isError branches must use the SAME outer geometry as the
+  // loaded page (.districts-page-root > .districts-page). The legacy
+  // wrapper (.container mx-auto px-4 py-8) re-introduced #488's CLS
+  // geometry swap whenever the CDN flaked into error (Lesson 125 / #811
+  // discovery, intermittent ~0.198 on PR #825).
+  it('should wrap the no-snapshot welcome state in stable .districts-page geometry', async () => {
+    mockedFetchCdnRankings.mockRejectedValueOnce(
+      new Error('CDN rankings fetch failed: 404')
+    )
+
+    const { container } = renderWithProviders(<DistrictsPage />)
+
+    const welcomeHeading = await screen.findByText('Welcome to Toast-Stats!')
+    expect(welcomeHeading.closest('.districts-page')).not.toBeNull()
+    expect(
+      container.querySelector('.districts-page-root .districts-page')
+    ).not.toBeNull()
+  })
+
+  it('should wrap the generic error state in stable .districts-page geometry', async () => {
+    mockedFetchCdnRankings.mockRejectedValueOnce(
+      new Error('Something went wrong')
+    )
+
+    const { container } = renderWithProviders(<DistrictsPage />)
+
+    const errorHeading = await screen.findByText('Error Loading Rankings')
+    expect(errorHeading.closest('.districts-page')).not.toBeNull()
+    expect(
+      container.querySelector('.districts-page-root .districts-page')
+    ).not.toBeNull()
+  })
 })
 
 describe('DistrictsPage - Table Cell Rendering', () => {
