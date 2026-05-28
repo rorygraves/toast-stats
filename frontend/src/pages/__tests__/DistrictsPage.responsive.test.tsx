@@ -178,3 +178,81 @@ describe('DistrictsPage rankings table — responsive + sticky (#811)', () => {
     expect(badge.textContent?.trim()).toBe('1')
   })
 })
+
+/**
+ * Landing hero hoist + KPI demotion (#861, epic #865 Sprint 1).
+ *
+ * Mobile-first triage: the "Find your district" hero search must sit above the
+ * fold at 375px, and the 4-card global KPI strip collapses to a single
+ * headline tile (Paid Clubs · Global) below 768px, restoring the full strip at
+ * ≥768px. jsdom has no layout/media queries (Lesson 66), so these assert the
+ * structural hooks the CSS keys off; the live per-breakpoint position + the
+ * single-visible-tile are proven on the PR preview channel (both engines).
+ *
+ * CLS guard (#826/#488, Lesson 125): the loaded state hoists the search above
+ * the KPI strip, so the shared shell (loading + both error states) must reserve
+ * the same slot, or the KPI strip shifts down on data-load and re-opens the
+ * ~0.2 CLS that lessons 79/107/125 closed.
+ */
+describe('DistrictsPage landing hero hoist + KPI demotion (#861)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('keeps Paid Clubs · Global as the primary tile and marks the other three secondary (hidden <768px)', async () => {
+    setupSingleRow()
+    renderWithProviders(<DistrictsPage />)
+    await screen.findByText('District 7')
+
+    const primary = screen
+      .getByTestId('kpi-paid-clubs')
+      .closest('.districts-kpi-card') as HTMLElement
+    expect(primary.className).not.toMatch(/districts-kpi-card--secondary/)
+
+    for (const tid of [
+      'kpi-total-payments',
+      'kpi-distinguished-clubs',
+      'kpi-districts-tracked',
+    ]) {
+      const card = screen
+        .getByTestId(tid)
+        .closest('.districts-kpi-card') as HTMLElement
+      expect(card.className).toMatch(/districts-kpi-card--secondary/)
+    }
+  })
+
+  it('wraps the hero search and the KPI strip in one reorder stack so the search can hoist on mobile', async () => {
+    setupSingleRow()
+    const { container } = renderWithProviders(<DistrictsPage />)
+    await screen.findByText('District 7')
+
+    const stack = container.querySelector('.districts-hero-stack')
+    expect(stack).not.toBeNull()
+    expect(
+      stack!.querySelector('.districts-toolbar__search--hero')
+    ).not.toBeNull()
+    expect(stack!.querySelector('.districts-kpi-strip')).not.toBeNull()
+  })
+
+  it('reserves the hoisted-search slot in the loading shell, before the KPI strip (CLS-stable swap)', async () => {
+    // Pending fetch → component stays in the isLoading shell.
+    mockedFetchCdnRankings.mockReturnValue(new Promise(() => {}) as never)
+    const { container } = renderWithProviders(<DistrictsPage />)
+    await screen.findByRole('status', { name: /loading district rankings/i })
+
+    const skel = container.querySelector('.districts-hero-search-skeleton')
+    const strip = container.querySelector('.districts-kpi-strip')
+    expect(skel).not.toBeNull()
+    expect(strip).not.toBeNull()
+    // Placeholder must precede the KPI strip in DOM so it sits above it on mobile.
+    expect(
+      skel!.compareDocumentPosition(strip!) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
+
+    // Lesson 125: the KPI demotion must apply to the loading state too.
+    const secondary = container.querySelectorAll(
+      '.districts-kpi-card--secondary'
+    )
+    expect(secondary.length).toBe(3)
+  })
+})
