@@ -50,22 +50,17 @@
     min-width: 0;
   }
 
+  /* 4 cards (#681, #866): 2-col (2×2) is the mobile base → 4-col (980).
+     #866 dropped the old 1-col base — a 1×4 vertical stack ate ~2 viewports
+     on a phone; 2×2 halves that footprint (mobile-ux-audit §Epic B Sprint 1).
+     A 3-col rule would orphan the 4th card on a second row; 2×2 then
+     4-across reads cleanly. #682: the 4-col threshold is the handoff's 980px
+     2-col-collapse point (HANDOFF §234), reconciled from the original 1024 so
+     the whole district surface shares one breakpoint system. */
   .district-kpi-strip__cards {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
-  }
-
-  /* 4 cards (#681): 1-col → 2-col (640) → 4-col (980). A 3-col rule would
-     orphan the 4th card on a second row; 2×2 then 4-across reads cleanly.
-     #682: the 4-col threshold is the handoff's 980px 2-col-collapse point
-     (HANDOFF §234), reconciled from the original 1024 so the whole district
-     surface shares one breakpoint system. The 640 intermediate stays — four
-     stacked cards on tablet would be needlessly tall. */
-  @media (min-width: 640px) {
-    .district-kpi-strip__cards {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
   }
 
   @media (min-width: 980px) {
@@ -119,8 +114,12 @@
 
   .district-kpi-strip__toggle {
     flex: 0 0 auto;
-    width: 36px;
-    height: 36px;
+    /* #866 — 44px floor meets the WCAG 2.5.5 / handoff touch-target minimum
+       on the strip's only interactive control. It's a real <button>, so
+       width/height apply directly (no native-control quirk — cf. lesson 111).
+       Hidden ≥980px where the strip is always expanded. */
+    width: 44px;
+    height: 44px;
     border-radius: 8px;
     border: 1px solid var(--line);
     background: transparent;
