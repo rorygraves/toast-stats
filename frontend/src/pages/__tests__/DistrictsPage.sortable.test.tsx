@@ -8,12 +8,7 @@
  * (?sort=&dir=) so reload / back-forward / share carry the sort state.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import {
-  cleanup,
-  fireEvent,
-  screen,
-  waitFor,
-} from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom/vitest'
 import DistrictsPage from '../DistrictsPage'
 import { fetchCdnRankings } from '../../services/cdn'
@@ -106,9 +101,7 @@ const rankings = [
 
 const getRowOrder = (): string[] => {
   const table = document.querySelector('.districts-rankings-table')
-  const rows = table?.querySelectorAll(
-    'tbody tr[data-testid^="district-row-"]'
-  )
+  const rows = table?.querySelectorAll('tbody tr[data-testid^="district-row-"]')
   return Array.from(rows ?? []).map(
     r => r.getAttribute('data-testid')?.replace('district-row-', '') ?? ''
   )

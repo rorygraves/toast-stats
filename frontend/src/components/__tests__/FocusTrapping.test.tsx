@@ -41,7 +41,9 @@ describe('Focus Trapping', () => {
     it('clicking the header button calls onSort directly — no popover opens', () => {
       const onSort = vi.fn()
       const { container } = renderHeader(onSort)
-      const headerButton = container.querySelector('button') as HTMLButtonElement
+      const headerButton = container.querySelector(
+        'button'
+      ) as HTMLButtonElement
       expect(headerButton).toBeTruthy()
       fireEvent.click(headerButton)
       expect(onSort).toHaveBeenCalledWith('name')

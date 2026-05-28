@@ -52,7 +52,9 @@ describe('Keyboard Accessibility', () => {
       )
 
       const headerButton = container.querySelector('button')
-      expect(headerButton?.getAttribute('aria-label')).toMatch(/Sort by Division/i)
+      expect(headerButton?.getAttribute('aria-label')).toMatch(
+        /Sort by Division/i
+      )
     })
 
     it('Enter triggers the native button click → onSort fires', () => {
@@ -66,7 +68,9 @@ describe('Keyboard Accessibility', () => {
           onSort={onSort}
         />
       )
-      const headerButton = container.querySelector('button') as HTMLButtonElement
+      const headerButton = container.querySelector(
+        'button'
+      ) as HTMLButtonElement
       // Native <button> handles Enter/Space as click via the browser; in jsdom
       // we just verify a click fires the handler. The native key behaviour is
       // browser-owned, not something this component needs to re-implement.

@@ -72,7 +72,14 @@ export function useUrlSort<F extends string>(
     }
     const direction = isDirection(rawDir) ? rawDir : defaultDirection
     return { field: rawField as F, direction }
-  }, [searchParams, fieldParam, dirParam, fields, defaultField, defaultDirection])
+  }, [
+    searchParams,
+    fieldParam,
+    dirParam,
+    fields,
+    defaultField,
+    defaultDirection,
+  ])
 
   const toggleSort = useCallback(
     (field: F) => {
@@ -84,7 +91,9 @@ export function useUrlSort<F extends string>(
         currentField && (fields as readonly string[]).includes(currentField)
           ? (currentField as F)
           : defaultField
-      const resolvedDir = isDirection(currentDir) ? currentDir : defaultDirection
+      const resolvedDir = isDirection(currentDir)
+        ? currentDir
+        : defaultDirection
 
       const nextField = field
       const nextDirection: SortDirection =

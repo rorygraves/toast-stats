@@ -30,7 +30,9 @@ describe('ColumnHeader', () => {
       const onSort = vi.fn()
       render(<ColumnHeader {...defaultProps} onSort={onSort} />)
 
-      fireEvent.click(screen.getByRole('button', { name: /Sort by Club Name/i }))
+      fireEvent.click(
+        screen.getByRole('button', { name: /Sort by Club Name/i })
+      )
       expect(onSort).toHaveBeenCalledWith('name')
     })
 
@@ -97,9 +99,9 @@ describe('ColumnHeader', () => {
 
     it('button aria-label is just "Sort by <label>" when inactive', () => {
       render(<ColumnHeader {...defaultProps} />)
-      expect(
-        screen.getByRole('button').getAttribute('aria-label')
-      ).toMatch(/^Sort by Club Name/i)
+      expect(screen.getByRole('button').getAttribute('aria-label')).toMatch(
+        /^Sort by Club Name/i
+      )
     })
   })
 })

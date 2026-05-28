@@ -98,9 +98,7 @@ const renderRegion = (region: string, initialPath?: string) => {
 }
 
 const getRowOrder = (): string[] => {
-  const rows = document.querySelectorAll(
-    '.districts-rankings-table tbody tr'
-  )
+  const rows = document.querySelectorAll('.districts-rankings-table tbody tr')
   return Array.from(rows).map(r => {
     const id = r
       .querySelector('[data-testid="region-district-cell"]')
@@ -132,9 +130,7 @@ describe('RegionPage — click-header sort (#851)', () => {
     renderRegion('1')
     await screen.findAllByTestId('region-district-cell')
 
-    fireEvent.click(
-      screen.getByRole('button', { name: /Sort by Paid Clubs/i })
-    )
+    fireEvent.click(screen.getByRole('button', { name: /Sort by Paid Clubs/i }))
     await waitFor(() => {
       // D86=50, D60=70, D74=90 → asc
       expect(getRowOrder()).toEqual(['86', '60', '74'])
