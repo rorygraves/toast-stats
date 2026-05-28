@@ -2,6 +2,8 @@
  * Utility functions for exporting data to CSV format
  */
 
+import type { SnapshotDiff } from '@toastmasters/shared-contracts'
+import { distinguishedTierName } from './distinguishedTier'
 import { logger } from './logger'
 
 /**
@@ -619,5 +621,108 @@ export const exportClubPerformance = (
 
   const csvContent = arrayToCSV(csvData)
   const filename = generateFilename('club_performance', districtId)
+  downloadCSV(csvContent, filename)
+}
+
+/**
+ * #795 (epic #821 Sprint 3) — export a snapshot-to-snapshot diff to CSV.
+ *
+ * A sibling of `exportClubPerformance` (current-snapshot fields), NOT an
+ * extension of it: the diff CSV is from/to/delta data across two dates
+ * (R6 / lesson 117 — the two datasets diverge, so they get distinct exporters).
+ * Both-present clubs get from/to/Δ columns + the distinguished transition;
+ * roster appear/disappear is a separate, status-classified section (lesson 118),
+ * never folded into the per-club delta rows.
+ */
+export const exportSnapshotDiff = (diff: SnapshotDiff): void => {
+  const { districtId, from, to } = diff
+
+  const deltaHeaders = [
+    'Club ID',
+    'Club Name',
+    'Division',
+    'Area',
+    'Members From',
+    'Members To',
+    'Δ Members',
+    'Payments From',
+    'Payments To',
+    'Δ Payments',
+    'DCP From',
+    'DCP To',
+    'Δ DCP',
+    'Distinguished From',
+    'Distinguished To',
+    'Distinguished Changed',
+  ]
+
+  const deltaRows = diff.clubs.bothPresent.map(c => [
+    c.clubId,
+    c.clubName,
+    c.divisionId,
+    c.areaId,
+    c.membership.from,
+    c.membership.to,
+    c.membership.delta,
+    c.payments.from,
+    c.payments.to,
+    c.payments.delta,
+    c.dcpGoals.from,
+    c.dcpGoals.to,
+    c.dcpGoals.delta,
+    distinguishedTierName(c.distinguishedFrom),
+    distinguishedTierName(c.distinguishedTo),
+    c.distinguishedChanged ? 'Yes' : 'No',
+  ])
+
+  const csvData: (string | number)[][] = [
+    [`District ${districtId} - What Changed`],
+    [`From: ${from.date}  To: ${to.date}`],
+    [`Export Date: ${new Date().toISOString()}`],
+    [],
+    ['Per-club changes'],
+    deltaHeaders,
+    ...deltaRows,
+  ]
+
+  // Roster changes — classified, not flagged as an error (lesson 118).
+  if (diff.clubs.onlyInTo.length > 0 || diff.clubs.onlyInFrom.length > 0) {
+    csvData.push([])
+    csvData.push(['Roster changes'])
+    csvData.push([
+      'Club ID',
+      'Club Name',
+      'Division',
+      'Area',
+      'Roster Change',
+      'Club Status',
+    ])
+    diff.clubs.onlyInTo.forEach(c => {
+      csvData.push([
+        c.clubId,
+        c.clubName,
+        c.divisionId,
+        c.areaId,
+        'Joined',
+        c.clubStatus ?? '',
+      ])
+    })
+    diff.clubs.onlyInFrom.forEach(c => {
+      csvData.push([
+        c.clubId,
+        c.clubName,
+        c.divisionId,
+        c.areaId,
+        'Left',
+        c.clubStatus ?? '',
+      ])
+    })
+  }
+
+  const csvContent = arrayToCSV(csvData)
+  const filename = generateFilename(
+    `what_changed_${from.date}_to_${to.date}`,
+    districtId
+  )
   downloadCSV(csvContent, filename)
 }
