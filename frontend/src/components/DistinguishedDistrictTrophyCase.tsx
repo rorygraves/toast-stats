@@ -1,4 +1,8 @@
 import React, { useState } from 'react'
+import {
+  deriveRemainingToTier,
+  type RemainingInputs,
+} from '../utils/distinguishedCountdown'
 
 export type DistinguishedDistrictTier =
   | 'NotDistinguished'
@@ -21,12 +25,8 @@ export interface DistinguishedDistrictGap {
   clubGrowthGap: number
   distinguishedPercentGap: number
   netClubGrowthGap: number
-  /**
-   * Program-year baseline values used to derive concrete unit counts
-   * from the gap percentages (#555). Optional during the rollout —
-   * downstream callers that don't populate them simply omit the
-   * secondary "~N units" line.
-   */
+  /** Program-year baselines, used as fallback inputs when canonical
+      `*Remaining` fields are absent (#840 / lesson 104). */
   paidClubBase?: number
   paymentBase?: number
 }
@@ -37,10 +37,21 @@ export interface DistinguishedDistrictStatus {
   allPrerequisitesMet: boolean
   prerequisites: DistinguishedDistrictPrerequisites
   nextTierGap: DistinguishedDistrictGap | null
+  /** Canonical absolute counts remaining to the minimum (Distinguished)
+      tier (#686). When `nextTierGap.tier === 'Distinguished'` these are
+      the same integers the region row consumes — preferred over any
+      ranking-row derivation. */
+  paidClubsRemaining?: number
+  paymentsRemaining?: number
+  distinguishedClubsRemaining?: number
 }
 
 interface DistinguishedDistrictTrophyCaseProps {
   status: DistinguishedDistrictStatus | null
+  /** Optional rankings row used to derive the absolute remaining counts
+      when the canonical fields are absent or the next tier is above
+      Distinguished. Matches the region page's data source. */
+  ranking?: RemainingInputs | null
   clubStrengthQualifies?: boolean | undefined
   clubStrengthGrowth?: number | null | undefined
   leadershipExcellenceQualifies?: boolean | undefined
@@ -91,27 +102,26 @@ const PREREQUISITE_KEYS = Object.keys(PREREQUISITE_LABELS) as Array<
 
 interface GapTileSpec {
   label: string
-  /** Headline gap value, in percent. */
-  gap: number
-  /**
-   * Concrete unit count derived from `gap × base`. `null` skips the
-   * secondary line (older snapshots without base values).
-   */
-  concreteCount: number | null
-  /** Unit noun used singular when concreteCount === 1. */
+  /** Canonical integer count remaining to the next tier. `null` skips
+      the headline integer (no canonical field, no rankings row). */
+  count: number | null
+  /** Sub-item: the same gap expressed as a percentage. */
+  gapPercent: number
   unitSingular: string
   unitPlural: string
 }
 
 const GapTile: React.FC<GapTileSpec> = ({
   label,
-  gap,
-  concreteCount,
+  count,
+  gapPercent,
   unitSingular,
   unitPlural,
 }) => {
-  const closed = gap === 0
-  const showConcrete = !closed && concreteCount != null && concreteCount > 0
+  // `count === 0` is the canonical "met" signal (lesson 103); only the
+  // un-evaluable case (no canonical, no ranking) leaves the headline blank.
+  const closed = count === 0
+  const noun = count === 1 ? unitSingular : unitPlural
   return (
     <div className="rounded-md border border-gray-200 theme-dark:border-gray-700 px-3 py-2">
       <div
@@ -128,37 +138,25 @@ const GapTile: React.FC<GapTileSpec> = ({
             : 'text-gray-900 theme-dark:text-gray-100'
         }`}
       >
-        {closed ? '✓' : `+${gap.toFixed(1)}%`}
+        {closed ? '✓' : count != null ? `${count} ${noun}` : '—'}
       </div>
-      {showConcrete && (
+      {!closed && count != null && (
         <div
-          data-testid="gap-tile-units"
+          data-testid="gap-tile-subitem"
           className="mt-0.5 text-[11px] text-gray-600 theme-dark:text-gray-400 font-tm-body tabular-nums"
         >
-          ~{concreteCount} {concreteCount === 1 ? unitSingular : unitPlural}
+          +{gapPercent.toFixed(1)}%
         </div>
       )}
     </div>
   )
 }
 
-/**
- * Convert a growth-percentage gap to a concrete unit count using the
- * program-year baseline. Returns `null` when base is unavailable so
- * the tile can omit the secondary line gracefully.
- */
-function concreteUnitsFromGap(
-  gapPercent: number,
-  base: number | undefined
-): number | null {
-  if (gapPercent <= 0 || base == null || base <= 0) return null
-  return Math.max(1, Math.round((base * gapPercent) / 100))
-}
-
 export const DistinguishedDistrictTrophyCase: React.FC<
   DistinguishedDistrictTrophyCaseProps
 > = ({
   status,
+  ranking,
   clubStrengthQualifies,
   clubStrengthGrowth,
   leadershipExcellenceQualifies,
@@ -184,6 +182,35 @@ export const DistinguishedDistrictTrophyCase: React.FC<
     leadershipExcellenceQualifies ||
     educationTrainingQualifies ||
     clubGrowthQualifies
+
+  /* Resolve the three headline integers via the SAME helper the region
+     row uses. Canonical analytics fields (#686) win when the target is
+     the Distinguished gate; otherwise (Select / Presidents / Smedley)
+     we derive from the rankings row against the appropriate tier
+     thresholds. (#840 / lessons 103, 104) */
+  let paidClubsCount: number | null = null
+  let paymentsCount: number | null = null
+  let distinguishedClubsCount: number | null = null
+  if (nextTierGap) {
+    if (nextTierGap.tier === 'Distinguished') {
+      paidClubsCount = status.paidClubsRemaining ?? null
+      paymentsCount = status.paymentsRemaining ?? null
+      distinguishedClubsCount = status.distinguishedClubsRemaining ?? null
+    }
+    if (
+      (paidClubsCount === null ||
+        paymentsCount === null ||
+        distinguishedClubsCount === null) &&
+      ranking &&
+      nextTierGap.tier !== 'NotDistinguished'
+    ) {
+      const derived = deriveRemainingToTier(nextTierGap.tier, ranking)
+      paidClubsCount = paidClubsCount ?? derived.paidClubsRemaining
+      paymentsCount = paymentsCount ?? derived.paymentsRemaining
+      distinguishedClubsCount =
+        distinguishedClubsCount ?? derived.distinguishedClubsRemaining
+    }
+  }
 
   return (
     <div className="redesign-panel">
@@ -281,36 +308,28 @@ export const DistinguishedDistrictTrophyCase: React.FC<
             data-testid="distinguished-gap-tiles"
             className="grid grid-cols-1 md:grid-cols-3 gap-2"
           >
-            {/* Order: Club growth → Payment growth → % Distinguished (#556).
-                Net Club Growth tile dropped — Club Growth % conveys the same
-                fact as the absolute count for any positive growth. */}
+            {/* Headline integer is the canonical countdown to the next tier,
+                matching the region row's "Remaining to Distinguished" cells.
+                Percentage demoted to a sub-item. Labels mirror the region
+                page exactly. (#840 / lesson 103) */}
             <GapTile
-              label="Club growth"
-              gap={nextTierGap.clubGrowthGap}
-              concreteCount={concreteUnitsFromGap(
-                nextTierGap.clubGrowthGap,
-                nextTierGap.paidClubBase
-              )}
+              label="Paid Clubs"
+              count={paidClubsCount}
+              gapPercent={nextTierGap.clubGrowthGap}
               unitSingular="club"
               unitPlural="clubs"
             />
             <GapTile
-              label="Payment growth"
-              gap={nextTierGap.paymentGrowthGap}
-              concreteCount={concreteUnitsFromGap(
-                nextTierGap.paymentGrowthGap,
-                nextTierGap.paymentBase
-              )}
+              label="Payments"
+              count={paymentsCount}
+              gapPercent={nextTierGap.paymentGrowthGap}
               unitSingular="payment"
               unitPlural="payments"
             />
             <GapTile
-              label="% Distinguished"
-              gap={nextTierGap.distinguishedPercentGap}
-              concreteCount={concreteUnitsFromGap(
-                nextTierGap.distinguishedPercentGap,
-                nextTierGap.paidClubBase
-              )}
+              label="Distinguished Clubs"
+              count={distinguishedClubsCount}
+              gapPercent={nextTierGap.distinguishedPercentGap}
               unitSingular="club"
               unitPlural="clubs"
             />
