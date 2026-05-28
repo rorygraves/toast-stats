@@ -319,7 +319,11 @@ const RegionPage: React.FC = () => {
   )
 
   return (
-    <div className="app-shell__page">
+    // #848 — data-grid surface (19-column rankings table); uses the wide
+    // --page-max-wide cap, same policy as .districts-page /
+    // .district-detail-page (ADR-006 §1). The empty-state branch above
+    // stays on .app-shell__page since it's prose, not a data grid.
+    <div className="districts-page">
       <header className="districts-page-header">
         <div className="districts-page-header__intro">
           <p className="districts-page-header__eyebrow">

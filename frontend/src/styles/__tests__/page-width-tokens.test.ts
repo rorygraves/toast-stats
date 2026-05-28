@@ -21,9 +21,11 @@ import { dirname, resolve } from 'node:path'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const redesignTokensPath = resolve(__dirname, '../tokens/redesign.css')
 const appShellPath = resolve(__dirname, '../components/app-shell.css')
+const regionPagePath = resolve(__dirname, '../../pages/RegionPage.tsx')
 
 const redesignCss = readFileSync(redesignTokensPath, 'utf-8')
 const appShellCss = readFileSync(appShellPath, 'utf-8')
+const regionPageTsx = readFileSync(regionPagePath, 'utf-8')
 
 describe('full-width data-table page policy (#810, ADR-006 §1)', () => {
   it('redesign.css declares --page-max-wide: 1600px in :root', () => {
@@ -41,6 +43,18 @@ describe('full-width data-table page policy (#810, ADR-006 §1)', () => {
   it('the district-detail (clubs) page uses the wide token', () => {
     expect(appShellCss).toMatch(
       /\.district-detail-page\s*\{[^}]*max-width:\s*var\(--page-max-wide\)/
+    )
+  })
+
+  it('the region landing page (RegionPage) uses the wide token (#848)', () => {
+    // #848 — the region rankings page renders a 19-column table; the
+    // 1280 prose cap forces horizontal scroll on every standard desktop.
+    // The data-grid wrapper around the rankings table must consume
+    // `--page-max-wide` (same policy as `.districts-page` /
+    // `.district-detail-page`). The empty-state branch (no districts in
+    // region) is prose and may keep the narrow cap.
+    expect(regionPageTsx).toMatch(
+      /<div className="(?:districts-page|district-detail-page|region-page)">\s*\n\s*<header className="districts-page-header">/
     )
   })
 

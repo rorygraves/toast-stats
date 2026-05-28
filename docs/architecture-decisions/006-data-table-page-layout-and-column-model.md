@@ -39,11 +39,28 @@ the B/C epics) apply it.
 Data-table pages use a wider cap; prose pages stay narrow.
 
 - **`--page-max-wide: 1600px`** — the new token. Applied to the data-table page
-  containers (`.districts-page`, `.district-detail-page`, and the club table
-  page) in Sprint 2 (#810).
+  containers in Sprint 2 (#810) and patched to cover the region landing in
+  #848.
 - **Prose / narrative pages keep `max-width: 1280px`** (the existing default).
   The 1280 cap is a readability rule for text columns and stays there; it is not
   the right cap for a data grid.
+
+**Wide-cap pages — the explicit list (amended 2026-05-28, #848).** The
+original Sprint 2 prose named two classes; per lesson 120 a `.foo-page` class
+may be shared chrome for a whole route family, so the contract is enumerated
+by surface, not by class, to keep the policy auditable as new pages land:
+
+| Surface                               | Wrapper class           | Rationale                                                                                 |
+| ------------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------- |
+| District landing (`DistrictsPage`)    | `.districts-page`       | 13+ column rankings table.                                                                |
+| Region landing (`RegionPage`)         | `.districts-page`       | 19-column region rankings table (#848). Reuses the districts chrome.                      |
+| District-detail family (7 sub-routes) | `.district-detail-page` | Shared chrome per lesson 120: clubs/rankings/divisions/trends/changes/analytics/overview. |
+
+The empty-state branch of `RegionPage` (no districts found in a region) stays
+on `.app-shell__page` — it is prose, not a data grid.
+
+Any future page added to this list **must** be guarded by
+`frontend/src/styles/__tests__/page-width-tokens.test.ts` so it cannot drift.
 
 A wider **capped** width was chosen over fluid/edge-to-edge (see Alternatives):
 1600px holds the club table's full column set without horizontal scroll on a
