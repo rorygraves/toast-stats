@@ -1,5 +1,33 @@
 # Changelog
 
+## [2.20.0](https://github.com/taverns-red/toast-stats/compare/toast-stats-v2.19.0...toast-stats-v2.20.0) (2026-05-28)
+
+
+### Features
+
+* **changes:** Phase 2 — arbitrary date-pair picker (from/to, URL-synced) ([#794](https://github.com/taverns-red/toast-stats/issues/794)) ([#807](https://github.com/taverns-red/toast-stats/issues/807)) ([97f5894](https://github.com/taverns-red/toast-stats/commit/97f589486767576ea066060f9ad24790cca42e92))
+* **clubs:** active-filters bar + zero-results state + URL-sync all filters ([#817](https://github.com/taverns-red/toast-stats/issues/817)) ([#831](https://github.com/taverns-red/toast-stats/issues/831)) ([e81fe16](https://github.com/taverns-red/toast-stats/commit/e81fe165090a2cdf40abaa40eb7535df315e7166))
+* **clubs:** adopt TanStack Table for the club table ([#835](https://github.com/taverns-red/toast-stats/issues/835)) ([#836](https://github.com/taverns-red/toast-stats/issues/836)) ([c6c7063](https://github.com/taverns-red/toast-stats/commit/c6c706363cfa56245af7ad3aa4bd1b298f5e0619))
+* **clubs:** column-group show/hide on TanStack columnVisibility ([#819](https://github.com/taverns-red/toast-stats/issues/819)) ([#837](https://github.com/taverns-red/toast-stats/issues/837)) ([9e925b1](https://github.com/taverns-red/toast-stats/commit/9e925b18c7f739bfc5af192df1a4867ec9ca5cb5))
+* **clubs:** dedicated Filters drawer with instant-apply ([#816](https://github.com/taverns-red/toast-stats/issues/816)) ([#830](https://github.com/taverns-red/toast-stats/issues/830)) ([e837673](https://github.com/taverns-red/toast-stats/commit/e8376730d023bc6a5d982498b4b4df69e9cf7676))
+* **clubs:** merge the two quick-filter sets into one preset row; kill hidden auto-sort ([#815](https://github.com/taverns-red/toast-stats/issues/815)) ([#829](https://github.com/taverns-red/toast-stats/issues/829)) ([806f338](https://github.com/taverns-red/toast-stats/commit/806f3388b33b57185afd3772fcf27b828a4c7ba9))
+* **clubs:** opt-in 'Changes' column group + diff CSV export ([#795](https://github.com/taverns-red/toast-stats/issues/795)) ([#838](https://github.com/taverns-red/toast-stats/issues/838)) ([b32773b](https://github.com/taverns-red/toast-stats/commit/b32773be71367c361775a801938e200ac75c37cc))
+* **clubs:** visible search box for the club table ([#814](https://github.com/taverns-red/toast-stats/issues/814)) ([#828](https://github.com/taverns-red/toast-stats/issues/828)) ([2e5e19c](https://github.com/taverns-red/toast-stats/commit/2e5e19c3aa2cb9c24b136da84dcf98c6f004d187))
+* **tables:** club table — priority-column responsive model + tablet tier ([#812](https://github.com/taverns-red/toast-stats/issues/812)) ([#827](https://github.com/taverns-red/toast-stats/issues/827)) ([58203b3](https://github.com/taverns-red/toast-stats/commit/58203b323f94aacbec8a4abc2f1ed767be3a432b))
+* **tables:** full-width (~1600) container policy for data-table pages ([#810](https://github.com/taverns-red/toast-stats/issues/810)) ([#824](https://github.com/taverns-red/toast-stats/issues/824)) ([c4869c1](https://github.com/taverns-red/toast-stats/commit/c4869c1c9be2b4add720746848fad6117fd87cb5))
+* **tables:** landing rankings table — priority-column responsive model + sticky fix ([#811](https://github.com/taverns-red/toast-stats/issues/811)) ([#825](https://github.com/taverns-red/toast-stats/issues/825)) ([1892f7b](https://github.com/taverns-red/toast-stats/commit/1892f7b6a6c31731483fbe8d641110562f95683e))
+
+
+### Bug Fixes
+
+* **area:** gate area recognition on club-visit requirement — deadline-aware provisional state ([#832](https://github.com/taverns-red/toast-stats/issues/832)) ([#839](https://github.com/taverns-red/toast-stats/issues/839)) ([3005ae0](https://github.com/taverns-red/toast-stats/commit/3005ae094094b7fa59b5f6c3b6acc9001ce0bfe2))
+
+
+### Documentation
+
+* **lessons:** lesson 119 — cited doc may be uncommitted in operator main checkout ([#809](https://github.com/taverns-red/toast-stats/issues/809)) ([#823](https://github.com/taverns-red/toast-stats/issues/823)) ([22e5db7](https://github.com/taverns-red/toast-stats/commit/22e5db712a1fe920b9275f3e8bd3606e32c35cf8))
+* **tables:** ADR-006 — data-table page layout & column-model standard ([#809](https://github.com/taverns-red/toast-stats/issues/809)) ([#822](https://github.com/taverns-red/toast-stats/issues/822)) ([8066847](https://github.com/taverns-red/toast-stats/commit/80668477a0c136decb4afec5e3c2cd6350537491))
+
 ## [2.19.0](https://github.com/taverns-red/toast-stats/compare/toast-stats-v2.18.0...toast-stats-v2.19.0) (2026-05-27)
 
 
