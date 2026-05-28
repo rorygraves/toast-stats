@@ -255,17 +255,23 @@ describe('DistrictsPage - Error Handling', () => {
 
     const welcomeHeading = await screen.findByText('Welcome to Toast-Stats!')
     expect(welcomeHeading.closest('.districts-page')).not.toBeNull()
-    expect(container.querySelector('.districts-page-root .districts-page')).not.toBeNull()
+    expect(
+      container.querySelector('.districts-page-root .districts-page')
+    ).not.toBeNull()
   })
 
   it('should wrap the generic error state in stable .districts-page geometry', async () => {
-    mockedFetchCdnRankings.mockRejectedValueOnce(new Error('Something went wrong'))
+    mockedFetchCdnRankings.mockRejectedValueOnce(
+      new Error('Something went wrong')
+    )
 
     const { container } = renderWithProviders(<DistrictsPage />)
 
     const errorHeading = await screen.findByText('Error Loading Rankings')
     expect(errorHeading.closest('.districts-page')).not.toBeNull()
-    expect(container.querySelector('.districts-page-root .districts-page')).not.toBeNull()
+    expect(
+      container.querySelector('.districts-page-root .districts-page')
+    ).not.toBeNull()
   })
 })
 

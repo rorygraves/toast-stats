@@ -506,9 +506,13 @@ const DistrictsPage: React.FC = () => {
       isCdn404 || legacyResponse?.code === 'NO_SNAPSHOT_AVAILABLE'
 
     if (isNoSnapshotError) {
+      // #826 — Wrap in the SAME .districts-page geometry as the loaded
+      // page (and the isLoading skeleton). The legacy `container mx-auto
+      // px-4 py-8` reintroduces #488's geometry-swap CLS (~0.198 on PR
+      // #825) whenever the CDN flakes into error and then resolves.
       return (
         <div className="districts-page-root">
-          <div className="container mx-auto px-4 py-8">
+          <div className="districts-page">
             <div
               className="bg-tm-happy-yellow bg-opacity-20 border border-tm-happy-yellow rounded-lg p-8 mx-auto"
               style={{ width: '100%', maxWidth: '42rem' }}
@@ -577,9 +581,10 @@ const DistrictsPage: React.FC = () => {
     }
 
     // Handle other types of errors
+    // #826 — Same stable .districts-page geometry as the loaded page.
     return (
       <div className="districts-page-root">
-        <div className="container mx-auto px-4 py-8">
+        <div className="districts-page">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
             <h2 className="text-xl font-bold text-red-800 mb-2">
               Error Loading Rankings
