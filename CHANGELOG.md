@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.20.1](https://github.com/taverns-red/toast-stats/compare/toast-stats-v2.20.0...toast-stats-v2.20.1) (2026-05-28)
+
+
+### Bug Fixes
+
+* **districts-page:** wrap isError branches in stable geometry ([#826](https://github.com/taverns-red/toast-stats/issues/826)) ([#846](https://github.com/taverns-red/toast-stats/issues/846)) ([084ba39](https://github.com/taverns-red/toast-stats/commit/084ba39d724dcdca79e27ba6cc6ecb4ed5aafc13))
+* **district:** use canonical countdown for Distinguished tiles ([#840](https://github.com/taverns-red/toast-stats/issues/840)) ([#844](https://github.com/taverns-red/toast-stats/issues/844)) ([90872cf](https://github.com/taverns-red/toast-stats/commit/90872cfe7ed7e470a2e3de38cba4d46511a04b1d))
+* **region:** RegionPage gets the wide --page-max-wide cap ([#848](https://github.com/taverns-red/toast-stats/issues/848)) ([#850](https://github.com/taverns-red/toast-stats/issues/850)) ([e08bcd2](https://github.com/taverns-red/toast-stats/commit/e08bcd2202b52d9000f3a6964ff25aad632d537e))
+* **sprint-runner:** auto-reap foreign CLOSED sessions ([#804](https://github.com/taverns-red/toast-stats/issues/804)) ([#847](https://github.com/taverns-red/toast-stats/issues/847)) ([1288f17](https://github.com/taverns-red/toast-stats/commit/1288f17d8306fa85e6bff6d540fab960a815829f))
+
 ## [2.20.0](https://github.com/taverns-red/toast-stats/compare/toast-stats-v2.19.0...toast-stats-v2.20.0) (2026-05-28)
 
 
