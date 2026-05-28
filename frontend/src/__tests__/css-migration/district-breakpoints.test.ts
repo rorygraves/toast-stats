@@ -30,10 +30,16 @@ describe('District breakpoint reconciliation (#682)', () => {
       expect(narrativeCss).not.toContain('min-width: 768px')
     })
 
-    it('keeps the 640px 2-col intermediate step (#681)', () => {
-      // The 4-card strip steps 1 → 2 (640) → 4 (980); the 640 intermediate
-      // avoids four tall stacked cards on tablet and is intentionally kept.
-      expect(narrativeCss).toContain('min-width: 640px')
+    it('makes 2-col (2×2) the mobile base, no 640px intermediate (#866)', () => {
+      // #866 collapsed the old 1-col mobile base into 2×2 (mobile-ux-audit
+      // §Epic B Sprint 1), so the strip now steps base-2-col → 4-col (980).
+      // The former `min-width: 640px` intermediate is gone — the base already
+      // delivers 2 columns, so the query was redundant. Desktop threshold (980)
+      // is unchanged (asserted above).
+      expect(narrativeCss).not.toContain('min-width: 640px')
+      expect(narrativeCss).toMatch(
+        /\.district-kpi-strip__cards\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/
+      )
     })
   })
 

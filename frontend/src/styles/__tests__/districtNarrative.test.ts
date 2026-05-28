@@ -48,6 +48,31 @@ describe('district-narrative.css (#572)', () => {
     )
   })
 
+  it('defaults the KPI card grid to 2 columns (2×2) on mobile (#866)', () => {
+    // #866 — at <768px the 4-card strip was a 1×4 vertical stack. The base
+    // grid (no min-width gate) must declare 2 columns so phones get 2×2,
+    // halving the strip's vertical footprint. The 4-across desktop layout is
+    // still gated behind the 980px threshold (asserted below).
+    const baseBlock = css.match(/\.district-kpi-strip__cards\s*\{[^}]*\}/)
+    expect(baseBlock).not.toBeNull()
+    expect(baseBlock?.[0]).toMatch(
+      /grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/
+    )
+  })
+
+  it('keeps the 4-across strip gated at the 980px threshold (#866, no regression)', () => {
+    expect(css).toMatch(
+      /@media\s*\(min-width:\s*980px\)[\s\S]*?\.district-kpi-strip__cards[\s\S]*?grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)/
+    )
+  })
+
+  it('gives the collapse toggle a ≥44px touch target (#866, WCAG 2.5.5)', () => {
+    const toggleBlock = css.match(/\.district-kpi-strip__toggle\s*\{[^}]*\}/)
+    expect(toggleBlock).not.toBeNull()
+    expect(toggleBlock?.[0]).toMatch(/width:\s*44px/)
+    expect(toggleBlock?.[0]).toMatch(/height:\s*44px/)
+  })
+
   it('no longer ships the anchor-TOC rail chrome (#679 — rail deleted)', () => {
     // The "On this page" right rail was removed when the hub went lean
     // (ADR-005 §5); DistrictSubnav now owns wayfinding at every width, so
