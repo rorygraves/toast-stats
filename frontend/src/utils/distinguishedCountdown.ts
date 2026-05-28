@@ -103,7 +103,9 @@ export function deriveRemainingToTier(
   distinguishedClubsRemaining: number
 } {
   const t = TIER_THRESHOLDS[tier]
-  const paymentTarget = Math.ceil(r.paymentBase * (1 + t.paymentGrowthMin / 100))
+  const paymentTarget = Math.ceil(
+    r.paymentBase * (1 + t.paymentGrowthMin / 100)
+  )
   const paidClubTarget = Math.ceil(r.paidClubBase * (1 + t.clubGrowthMin / 100))
   const distinguishedTarget = Math.ceil(
     r.paidClubBase * (t.distinguishedPercentMin / 100)
