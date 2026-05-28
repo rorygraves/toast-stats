@@ -69,8 +69,13 @@ const mockStandings: CompetitiveAwardStandings = {
   byDistrict: {},
 }
 
+// Mutable per-test result so we can exercise both the loaded and the
+// still-loading branch (the #750 reserved-skeleton path) on mobile.
+const { awardsResult } = vi.hoisted(() => ({
+  awardsResult: { current: null as unknown },
+}))
 vi.mock('../../hooks/useCompetitiveAwards', () => ({
-  useCompetitiveAwards: () => ({ data: mockStandings, isLoading: false }),
+  useCompetitiveAwards: () => awardsResult.current,
 }))
 
 const mockedFetchCdnRankings = vi.mocked(fetchCdnRankings)
@@ -107,6 +112,7 @@ const setupSingleRow = () => {
 describe('DistrictsPage — defer Awards Race behind a mobile link (#862)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    awardsResult.current = { data: mockStandings, isLoading: false }
   })
 
   it('renders a "See Awards →" link to /awards carrying the mobile-only class', async () => {
@@ -131,6 +137,24 @@ describe('DistrictsPage — defer Awards Race behind a mobile link (#862)', () =
     expect(section).not.toBeNull()
     expect(
       screen.getByRole('heading', { name: /awards race/i })
+    ).toBeInTheDocument()
+  })
+
+  it('keeps the reserved skeleton mounted while awards load (the #750 CLS slot survives the deferral)', async () => {
+    // The whole point of the deferral is that it does NOT touch the desktop
+    // render path: while the separate competitive-awards query is in flight the
+    // section must still mount its height-matched skeleton (carrying
+    // `.awards-race`), so the desktop slot reservation is intact. On mobile the
+    // CSS hides `.awards-race` outright, so the same skeleton can't shift.
+    awardsResult.current = { data: null, isLoading: true }
+    setupSingleRow()
+    renderWithProviders(<DistrictsPage />)
+    await screen.findByText('District 7')
+
+    expect(screen.getByTestId('awards-race-skeleton')).toBeInTheDocument()
+    // The mobile link is always mounted alongside it.
+    expect(
+      screen.getByRole('link', { name: /see awards/i })
     ).toBeInTheDocument()
   })
 

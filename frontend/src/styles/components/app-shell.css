@@ -2615,7 +2615,9 @@
     justify-content: space-between;
     gap: 8px;
     margin-bottom: 20px;
-    padding: 14px 16px;
+    /* ≥44px touch target (Lesson 111): 16px vertical padding + 14px line-box
+       clears 44px unambiguously. */
+    padding: 16px;
     background-color: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--rds-radius-md);
