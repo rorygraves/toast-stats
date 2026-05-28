@@ -13,8 +13,16 @@ import { useColumnFilters } from '../hooks/useColumnFilters'
 import { ColumnHeader } from './ColumnHeader'
 import { FiltersPanel } from './filters/FiltersPanel'
 import { ActiveFiltersBar } from './ActiveFiltersBar'
+import { ColumnGroupsMenu } from './ColumnGroupsMenu'
 import { describeActiveFilters } from '../utils/clubFilterDescribe'
-import { SortField, SortDirection, COLUMN_CONFIGS } from './filters/types'
+import {
+  SortField,
+  SortDirection,
+  COLUMN_CONFIGS,
+  COLUMN_GROUPS,
+  STICKY_COLUMN_FIELD,
+} from './filters/types'
+import { useColumnGroupVisibility } from '../hooks/useColumnGroupVisibility'
 import { CLOSE_TO_DISTINGUISHED_MAX_MEMBERS } from '../utils/closeToDistinguished'
 import ClubCard from './ClubCard'
 import { useIsMobile } from '../hooks/useIsMobile'
@@ -64,8 +72,10 @@ const DESKTOP_ONLY_FIELDS: ReadonlySet<SortField> = new Set([
 ])
 
 // The sticky key column — pinned at left:0 so the row stays labelled while the
-// metric columns scroll horizontally (Lesson 105). It is never hidden.
-const STICKY_FIELD: SortField = 'name'
+// metric columns scroll horizontally (Lesson 105). It is never hidden, by the
+// responsive model OR the column-group toggle (ADR-006 §3). Sourced from the
+// column model so the two stay in lockstep.
+const STICKY_FIELD: SortField = STICKY_COLUMN_FIELD
 
 /** Responsive priority class for a column header/cell, by field. */
 const colPriorityClass = (field: SortField): string =>
@@ -74,6 +84,13 @@ const colPriorityClass = (field: SortField): string =>
     : DESKTOP_ONLY_FIELDS.has(field)
       ? 'clubs-table__col--desktop'
       : ''
+
+// Groups offered in the show/hide menu: only those with at least one column in
+// the current table (so "Changes" stays out until #795 lands its delta cols).
+// COLUMN_CONFIGS is static, so this resolves once at module load.
+const AVAILABLE_COLUMN_GROUPS = COLUMN_GROUPS.filter(g =>
+  COLUMN_CONFIGS.some(c => c.group === g.id)
+)
 
 /** Row-tint key for the sticky cell, so it can repaint OPAQUE per row status
  *  (a sticky cell must be opaque or scrolled columns bleed through it). Mirrors
@@ -263,6 +280,21 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
   // (lesson 105) — but the old 640px value made the table→card swap a cliff
   // with no tablet tier. The tablet tier is what #812 adds.
   const isMobile = useIsMobile(768)
+
+  // Column-group show/hide (#819, ADR-006 §4). Persisted to localStorage so the
+  // selection survives reload. This is orthogonal to the responsive priority
+  // model above: the group toggle removes a column from the DOM entirely, while
+  // `colPriorityClass` governs the CSS-level responsive hiding of columns that
+  // ARE rendered — no parallel responsive logic.
+  const { isGroupHidden, toggleGroup } = useColumnGroupVisibility()
+  const visibleFields = useMemo(() => {
+    const set = new Set<SortField>()
+    for (const c of COLUMN_CONFIGS) {
+      // The sticky key column is the row's label — never hidden by a group.
+      if (c.field === STICKY_FIELD || !isGroupHidden(c.group)) set.add(c.field)
+    }
+    return set
+  }, [isGroupHidden])
 
   // Use column filters hook with optional URL-initialized state (#272)
   const {
@@ -623,6 +655,16 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
               </span>
             )}
           </button>
+          {/* Column-group show/hide (#819). Only meaningful for the desktop
+              table — the mobile card view carries the full record regardless,
+              so the control is hidden there. */}
+          {!isMobile && (
+            <ColumnGroupsMenu
+              groups={AVAILABLE_COLUMN_GROUPS}
+              isGroupHidden={isGroupHidden}
+              onToggle={toggleGroup}
+            />
+          )}
         </div>
 
         {/* Results Count and Quick Filters */}
@@ -981,7 +1023,9 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
             <table id="clubs-table" className="w-full table-auto">
               <thead className="clubs-table-sticky-head">
                 <tr>
-                  {COLUMN_CONFIGS.map(config => (
+                  {COLUMN_CONFIGS.filter(config =>
+                    visibleFields.has(config.field)
+                  ).map(config => (
                     <th
                       key={config.field}
                       className={`p-0 ${colPriorityClass(config.field)}`.trim()}
@@ -1025,161 +1069,185 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
                           {club.clubName}
                         </div>
                       </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm clubs-cell-muted text-center clubs-table__col--desktop">
-                        {club.divisionName}
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm clubs-cell-muted text-center clubs-table__col--desktop">
-                        {club.areaName}
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-center">
-                        <span
-                          className={`clubs-status-pill ${getStatusPillModifier(club.currentStatus)}`}
-                        >
-                          {getStatusLabel(club.currentStatus)}
-                        </span>
-                      </td>
+                      {visibleFields.has('division') && (
+                        <td className="px-2 py-3 whitespace-nowrap text-sm clubs-cell-muted text-center clubs-table__col--desktop">
+                          {club.divisionName}
+                        </td>
+                      )}
+                      {visibleFields.has('area') && (
+                        <td className="px-2 py-3 whitespace-nowrap text-sm clubs-cell-muted text-center clubs-table__col--desktop">
+                          {club.areaName}
+                        </td>
+                      )}
+                      {visibleFields.has('status') && (
+                        <td className="px-2 py-3 whitespace-nowrap text-center">
+                          <span
+                            className={`clubs-status-pill ${getStatusPillModifier(club.currentStatus)}`}
+                          >
+                            {getStatusLabel(club.currentStatus)}
+                          </span>
+                        </td>
+                      )}
                       {/* Members — current / base (#669). Base omitted when the
                       snapshot has no membershipBase (pre-merge data). */}
-                      <td className="px-2 py-3 whitespace-nowrap text-sm text-center clubs-members-cell">
-                        <span className="tabular-nums">
-                          {club.latestMembership}
-                        </span>
-                        {club.membershipBase !== undefined && (
-                          <span className="clubs-cell-muted tabular-nums">
-                            {' / '}
-                            {club.membershipBase}
+                      {visibleFields.has('membership') && (
+                        <td className="px-2 py-3 whitespace-nowrap text-sm text-center clubs-members-cell">
+                          <span className="tabular-nums">
+                            {club.latestMembership}
                           </span>
-                        )}
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center font-medium">
-                        {club.membersNeeded > 0 ? (
-                          <span className="text-tm-true-maroon">
-                            {club.membersNeeded}
-                          </span>
-                        ) : (
-                          <span className="clubs-cell-muted">—</span>
-                        )}
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center clubs-table__col--desktop">
-                        {club.newMembers !== undefined ? (
-                          <span
-                            className={
-                              club.newMembers === 0
-                                ? 'clubs-cell-muted'
-                                : undefined
-                            }
-                          >
-                            {club.newMembers}
-                          </span>
-                        ) : (
-                          <span className="clubs-cell-muted">—</span>
-                        )}
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center clubs-table__col--desktop">
-                        {club.octoberRenewals !== undefined ? (
-                          <span
-                            className={
-                              club.octoberRenewals === 0
-                                ? 'clubs-cell-muted'
-                                : undefined
-                            }
-                          >
-                            {club.octoberRenewals}
-                          </span>
-                        ) : (
-                          <span className="clubs-cell-muted">—</span>
-                        )}
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center clubs-table__col--desktop">
-                        {club.aprilRenewals !== undefined ? (
-                          <span
-                            className={
-                              club.aprilRenewals === 0
-                                ? 'clubs-cell-muted'
-                                : undefined
-                            }
-                          >
-                            {club.aprilRenewals}
-                          </span>
-                        ) : (
-                          <span className="clubs-cell-muted">—</span>
-                        )}
-                      </td>
+                          {club.membershipBase !== undefined && (
+                            <span className="clubs-cell-muted tabular-nums">
+                              {' / '}
+                              {club.membershipBase}
+                            </span>
+                          )}
+                        </td>
+                      )}
+                      {visibleFields.has('membersNeeded') && (
+                        <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center font-medium">
+                          {club.membersNeeded > 0 ? (
+                            <span className="text-tm-true-maroon">
+                              {club.membersNeeded}
+                            </span>
+                          ) : (
+                            <span className="clubs-cell-muted">—</span>
+                          )}
+                        </td>
+                      )}
+                      {visibleFields.has('newMembers') && (
+                        <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center clubs-table__col--desktop">
+                          {club.newMembers !== undefined ? (
+                            <span
+                              className={
+                                club.newMembers === 0
+                                  ? 'clubs-cell-muted'
+                                  : undefined
+                              }
+                            >
+                              {club.newMembers}
+                            </span>
+                          ) : (
+                            <span className="clubs-cell-muted">—</span>
+                          )}
+                        </td>
+                      )}
+                      {visibleFields.has('octoberRenewals') && (
+                        <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center clubs-table__col--desktop">
+                          {club.octoberRenewals !== undefined ? (
+                            <span
+                              className={
+                                club.octoberRenewals === 0
+                                  ? 'clubs-cell-muted'
+                                  : undefined
+                              }
+                            >
+                              {club.octoberRenewals}
+                            </span>
+                          ) : (
+                            <span className="clubs-cell-muted">—</span>
+                          )}
+                        </td>
+                      )}
+                      {visibleFields.has('aprilRenewals') && (
+                        <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center clubs-table__col--desktop">
+                          {club.aprilRenewals !== undefined ? (
+                            <span
+                              className={
+                                club.aprilRenewals === 0
+                                  ? 'clubs-cell-muted'
+                                  : undefined
+                              }
+                            >
+                              {club.aprilRenewals}
+                            </span>
+                          ) : (
+                            <span className="clubs-cell-muted">—</span>
+                          )}
+                        </td>
+                      )}
                       {/* DCP — inline progress bar over the canonical goals-achieved
                       count (0–10). Reads latestDcpGoals from the analytics
                       trend; no Goals-1-N inference (DCP-independence tripwire). */}
-                      <td className="px-2 py-3 whitespace-nowrap text-center">
-                        {(() => {
-                          const goals = Math.max(
-                            0,
-                            Math.min(10, club.latestDcpGoals)
-                          )
-                          const pct = (goals / 10) * 100
-                          return (
-                            <div className="clubs-dcp-cell">
-                              <span className="clubs-dcp-cell__val tabular-nums">
-                                {goals}/10
-                              </span>
-                              <div
-                                className="clubs-dcp-bar"
-                                role="progressbar"
-                                aria-valuenow={goals}
-                                aria-valuemin={0}
-                                aria-valuemax={10}
-                                aria-label="DCP goals achieved"
-                              >
+                      {visibleFields.has('dcpGoals') && (
+                        <td className="px-2 py-3 whitespace-nowrap text-center">
+                          {(() => {
+                            const goals = Math.max(
+                              0,
+                              Math.min(10, club.latestDcpGoals)
+                            )
+                            const pct = (goals / 10) * 100
+                            return (
+                              <div className="clubs-dcp-cell">
+                                <span className="clubs-dcp-cell__val tabular-nums">
+                                  {goals}/10
+                                </span>
                                 <div
-                                  className="clubs-dcp-bar__fill"
-                                  style={{ width: `${pct}%` }}
-                                />
+                                  className="clubs-dcp-bar"
+                                  role="progressbar"
+                                  aria-valuenow={goals}
+                                  aria-valuemin={0}
+                                  aria-valuemax={10}
+                                  aria-label="DCP goals achieved"
+                                >
+                                  <div
+                                    className="clubs-dcp-bar__fill"
+                                    style={{ width: `${pct}%` }}
+                                  />
+                                </div>
                               </div>
-                            </div>
-                          )
-                        })()}
-                      </td>
+                            )
+                          })()}
+                        </td>
+                      )}
                       {/* Tier — DCP recognition pill (#669). Color by tier; a
                       provisional tier shows the striped-yellow "projected"
                       treatment instead (membership unconfirmed pre-April). */}
-                      <td className="px-2 py-3 whitespace-nowrap text-center">
-                        {club.distinguishedLevel !== 'NotDistinguished' ? (
-                          (() => {
-                            const provisional =
-                              isProvisionallyDistinguished(club)
-                            const modifier = provisional
-                              ? 'clubs-tier-pill--projected'
-                              : TIER_MODIFIER[club.distinguishedLevel]
-                            return (
-                              <span
-                                className={`clubs-tier-pill ${modifier}`}
-                                title={
-                                  provisional
-                                    ? 'Provisional — membership not yet confirmed by April renewals'
-                                    : 'Confirmed — April renewals recorded'
-                                }
-                              >
-                                {TIER_DISPLAY[club.distinguishedLevel]}
-                                {provisional ? '*' : ''}
-                              </span>
-                            )
-                          })()
-                        ) : (
-                          <span className="text-sm clubs-cell-muted">—</span>
-                        )}
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm text-center clubs-table__col--desktop">
-                        {club.clubStatus ? (
-                          <span>{club.clubStatus}</span>
-                        ) : (
-                          <span className="clubs-cell-muted">—</span>
-                        )}
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center clubs-table__col--desktop">
-                        {club.yearsChartered !== null ? (
-                          <span>{club.yearsChartered}</span>
-                        ) : (
-                          <span className="clubs-cell-muted">—</span>
-                        )}
-                      </td>
+                      {visibleFields.has('distinguished') && (
+                        <td className="px-2 py-3 whitespace-nowrap text-center">
+                          {club.distinguishedLevel !== 'NotDistinguished' ? (
+                            (() => {
+                              const provisional =
+                                isProvisionallyDistinguished(club)
+                              const modifier = provisional
+                                ? 'clubs-tier-pill--projected'
+                                : TIER_MODIFIER[club.distinguishedLevel]
+                              return (
+                                <span
+                                  className={`clubs-tier-pill ${modifier}`}
+                                  title={
+                                    provisional
+                                      ? 'Provisional — membership not yet confirmed by April renewals'
+                                      : 'Confirmed — April renewals recorded'
+                                  }
+                                >
+                                  {TIER_DISPLAY[club.distinguishedLevel]}
+                                  {provisional ? '*' : ''}
+                                </span>
+                              )
+                            })()
+                          ) : (
+                            <span className="text-sm clubs-cell-muted">—</span>
+                          )}
+                        </td>
+                      )}
+                      {visibleFields.has('clubStatus') && (
+                        <td className="px-2 py-3 whitespace-nowrap text-sm text-center clubs-table__col--desktop">
+                          {club.clubStatus ? (
+                            <span>{club.clubStatus}</span>
+                          ) : (
+                            <span className="clubs-cell-muted">—</span>
+                          )}
+                        </td>
+                      )}
+                      {visibleFields.has('yearsChartered') && (
+                        <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center clubs-table__col--desktop">
+                          {club.yearsChartered !== null ? (
+                            <span>{club.yearsChartered}</span>
+                          ) : (
+                            <span className="clubs-cell-muted">—</span>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   )
                 })}
