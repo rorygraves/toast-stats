@@ -614,6 +614,72 @@
     color: var(--ink);
   }
 
+  /* #861 — Mobile hero zone. The KPI strip → AwardsRace → toolbar → hero
+     search live in a flex stack so the "Find your district" search can hoist
+     above the fold on small screens via `order`. Mobile-first: the hoist + KPI
+     demotion + reserved slot are the BASE state; the ≥768px block below
+     restores the desktop layout, so desktop stays visually byte-identical.
+
+     WCAG 2.4.3 note: the hoist is visual-only (DOM order is unchanged), so on
+     mobile keyboard focus reaches the search after the single KPI tile + region
+     toolbar. Deliberate responsive-reflow tradeoff — it keeps the desktop
+     surface unchanged (AC: "no desktop regression"); the reordered items are
+     non-sequential and the search stays operable + reachable via the '/'
+     shortcut. */
+  .districts-hero-stack {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* AC #1 — hoist the hero search to the top of the stack (above the fold). */
+  .districts-hero-stack .districts-toolbar__search--hero {
+    order: -1;
+  }
+
+  /* AC #2 — demote the global KPI strip to a single headline tile (Paid
+     Clubs · Global) on mobile. */
+  .districts-kpi-card--secondary {
+    display: none;
+  }
+
+  /* The lone visible tile must span full width. `.districts-kpi-strip` is
+     SHARED with RegionPage (Lesson 120), which keeps all 4 cards and relies on
+     its 2-col step at 640px — so scope this re-collapse to the landing stack:
+     in the 640–767 band only the landing strip (where 3 cards are --secondary)
+     drops back to a single column. The full strip returns at 768px (AC #2). */
+  @media (min-width: 640px) and (max-width: 767px) {
+    .districts-hero-stack .districts-kpi-strip {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Reserved slot for the hoisted search in the loading/error shell, so the
+     skeleton/error → loaded swap doesn't shift the KPI strip down (CLS,
+     #826/#488, Lesson 125). Height matches the rendered hero input
+     (14px padding ×2 + ~24px line box + 2px border ×2, border-box). */
+  .districts-hero-search-skeleton {
+    display: block;
+    height: 56px;
+    margin-bottom: 12px;
+    background-color: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-sm);
+  }
+
+  /* ≥768px — restore the full desktop layout: full KPI strip, search back in
+     source order, no reserved slot. */
+  @media (min-width: 768px) {
+    .districts-hero-stack .districts-toolbar__search--hero {
+      order: 0;
+    }
+    .districts-kpi-card--secondary {
+      display: block;
+    }
+    .districts-hero-search-skeleton {
+      display: none;
+    }
+  }
+
   /* Methodology callout */
   .districts-methodology-callout {
     margin-top: 24px;
