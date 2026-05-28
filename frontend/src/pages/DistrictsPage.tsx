@@ -418,68 +418,68 @@ const DistrictsPage: React.FC = () => {
     })
   }
 
+  // #826 / #488 — Shared shell: the loading skeleton, both isError
+  // branches, and the loaded page all sit inside .districts-page-root
+  // > .districts-page > [header + KPI strip] > [state-specific body].
+  // Holding the upper chrome (header text + KPI strip) constant across
+  // all three states means only the lower content area transitions —
+  // no upper geometry collapse like the 0.198 swap on PR #825.
+  const renderShell = (body: React.ReactNode) => (
+    <div className="districts-page-root">
+      <div className="districts-page">
+        <div className="districts-page-header">
+          <div className="districts-page-header__intro">
+            <p className="districts-page-header__eyebrow">
+              Program Year {selectedProgramYear.label.replace(/-/g, '–')}
+            </p>
+            <h1 className="districts-page-header__title">District Rankings</h1>
+            <p className="districts-page-header__lede">
+              Compare district performance across paid clubs, payments, and
+              distinguished clubs.
+            </p>
+            <p className="districts-page-header__orientation">
+              Each row below is one of the 117 Toastmasters districts worldwide.
+              Click a district to drill into its clubs, divisions, and trends.
+              Use the search bar (or press <kbd>/</kbd>) to jump to a district
+              by number or name. Star (★) a district to keep it pinned at the
+              top across visits.
+            </p>
+          </div>
+        </div>
+        <div className="districts-kpi-strip" aria-hidden="true">
+          {[
+            'Paid Clubs · Global',
+            'Total Payments',
+            'Distinguished Clubs',
+            'Districts Tracked',
+          ].map(label => (
+            <div key={label} className="districts-kpi-card">
+              <p className="districts-kpi-card__label">{label}</p>
+              <div
+                className="districts-kpi-card__value animate-pulse bg-gray-200 rounded-sm"
+                style={{ height: 30, width: '60%' }}
+              />
+            </div>
+          ))}
+        </div>
+        {body}
+      </div>
+    </div>
+  )
+
   if (isLoading) {
-    // #488 — Skeleton must use the SAME outer geometry as the loaded
-    // page (districts-page-root > districts-page > districts-page-header
-    // > districts-kpi-strip). Swapping a different wrapper (the prior
-    // `container mx-auto px-4 py-8`) for the real `.districts-page`
-    // wrapper on data-load was the dominant remaining CLS source — CI
-    // attributed score 0.1998 to that container alone. The static
-    // header text + KPI strip outer dimensions don't depend on the
-    // rankings query, so they can render immediately.
-    return (
-      <div className="districts-page-root">
-        <div className="districts-page">
-          <div className="districts-page-header">
-            <div className="districts-page-header__intro">
-              <p className="districts-page-header__eyebrow">
-                Program Year {selectedProgramYear.label.replace(/-/g, '–')}
-              </p>
-              <h1 className="districts-page-header__title">
-                District Rankings
-              </h1>
-              <p className="districts-page-header__lede">
-                Compare district performance across paid clubs, payments, and
-                distinguished clubs.
-              </p>
-              <p className="districts-page-header__orientation">
-                Each row below is one of the 117 Toastmasters districts
-                worldwide. Click a district to drill into its clubs, divisions,
-                and trends. Use the search bar (or press <kbd>/</kbd>) to jump
-                to a district by number or name. Star (★) a district to keep it
-                pinned at the top across visits.
-              </p>
-            </div>
-          </div>
-          <div className="districts-kpi-strip" aria-hidden="true">
-            {[
-              'Paid Clubs · Global',
-              'Total Payments',
-              'Distinguished Clubs',
-              'Districts Tracked',
-            ].map(label => (
-              <div key={label} className="districts-kpi-card">
-                <p className="districts-kpi-card__label">{label}</p>
-                <div
-                  className="districts-kpi-card__value animate-pulse bg-gray-200 rounded-sm"
-                  style={{ height: 30, width: '60%' }}
-                />
-              </div>
-            ))}
-          </div>
-          <div
-            className="animate-pulse"
-            role="status"
-            aria-label="Loading district rankings"
-          >
-            <div className="h-20 bg-gray-100 rounded-sm mb-3" />
-            <div className="h-12 bg-gray-100 rounded-sm mb-3" />
-            <div className="space-y-3">
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="h-16 bg-gray-200 rounded-sm" />
-              ))}
-            </div>
-          </div>
+    return renderShell(
+      <div
+        className="animate-pulse"
+        role="status"
+        aria-label="Loading district rankings"
+      >
+        <div className="h-20 bg-gray-100 rounded-sm mb-3" />
+        <div className="h-12 bg-gray-100 rounded-sm mb-3" />
+        <div className="space-y-3">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="h-16 bg-gray-200 rounded-sm" />
+          ))}
         </div>
       </div>
     )
@@ -506,74 +506,71 @@ const DistrictsPage: React.FC = () => {
       isCdn404 || legacyResponse?.code === 'NO_SNAPSHOT_AVAILABLE'
 
     if (isNoSnapshotError) {
-      // #826 — Wrap in the SAME .districts-page geometry as the loaded
-      // page (and the isLoading skeleton). The legacy `container mx-auto
-      // px-4 py-8` reintroduces #488's geometry-swap CLS (~0.198 on PR
-      // #825) whenever the CDN flakes into error and then resolves.
-      return (
-        <div className="districts-page-root">
-          <div className="districts-page">
-            <div
-              className="bg-tm-happy-yellow bg-opacity-20 border border-tm-happy-yellow rounded-lg p-8 mx-auto"
-              style={{ width: '100%', maxWidth: '42rem' }}
-            >
-              <div className="text-center">
-                <div className="w-16 h-16 mx-auto mb-4 bg-tm-loyal-blue rounded-full flex items-center justify-center">
-                  <svg
-                    className="w-8 h-8 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                </div>
-                <h2 className="text-2xl font-bold text-tm-black mb-3">
-                  Welcome to Toast-Stats!
-                </h2>
-                <p className="text-tm-black mb-6 text-lg">
-                  No data snapshots are available yet. To get started, you'll
-                  need to fetch data from the Toastmasters dashboard.
-                </p>
-
-                <div className="bg-white rounded-lg p-6 mb-6 text-left">
-                  <h3 className="font-semibold text-tm-black mb-3">
-                    What happens next:
-                  </h3>
-                  <ul className="space-y-2 text-tm-black">
-                    <li className="flex items-start">
-                      <span className="text-tm-loyal-blue mr-2">1.</span>
-                      The data pipeline will automatically collect data from the
-                      Toastmasters dashboard
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-tm-loyal-blue mr-2">2.</span>
-                      Once complete, district rankings and analytics will be
-                      available
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="flex justify-center">
-                  <button
-                    onClick={() => refetch()}
-                    className="px-6 py-3 text-lg bg-tm-loyal-blue text-white rounded-lg hover:bg-opacity-90 transition-colors font-medium"
-                  >
-                    Check Again
-                  </button>
-                </div>
-
-                <p className="text-sm text-tm-cool-gray mt-4">
-                  This is a one-time setup. Future visits will show your data
-                  immediately.
-                </p>
+      // #826 — Render inside the shared shell so the header chrome +
+      // KPI strip stay pinned (no upper-geometry collapse on the
+      // skeleton → error swap).
+      return renderShell(
+        <div className="districts-page__state-card">
+          <div
+            className="bg-tm-happy-yellow bg-opacity-20 border border-tm-happy-yellow rounded-lg p-8 mx-auto"
+            style={{ width: '100%', maxWidth: '42rem' }}
+          >
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-tm-loyal-blue rounded-full flex items-center justify-center">
+                <svg
+                  className="w-8 h-8 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
               </div>
+              <h2 className="text-2xl font-bold text-tm-black mb-3">
+                Welcome to Toast-Stats!
+              </h2>
+              <p className="text-tm-black mb-6 text-lg">
+                No data snapshots are available yet. To get started, you'll need
+                to fetch data from the Toastmasters dashboard.
+              </p>
+
+              <div className="bg-white rounded-lg p-6 mb-6 text-left">
+                <h3 className="font-semibold text-tm-black mb-3">
+                  What happens next:
+                </h3>
+                <ul className="space-y-2 text-tm-black">
+                  <li className="flex items-start">
+                    <span className="text-tm-loyal-blue mr-2">1.</span>
+                    The data pipeline will automatically collect data from the
+                    Toastmasters dashboard
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-tm-loyal-blue mr-2">2.</span>
+                    Once complete, district rankings and analytics will be
+                    available
+                  </li>
+                </ul>
+              </div>
+
+              <div className="flex justify-center">
+                <button
+                  onClick={() => refetch()}
+                  className="px-6 py-3 text-lg bg-tm-loyal-blue text-white rounded-lg hover:bg-opacity-90 transition-colors font-medium"
+                >
+                  Check Again
+                </button>
+              </div>
+
+              <p className="text-sm text-tm-cool-gray mt-4">
+                This is a one-time setup. Future visits will show your data
+                immediately.
+              </p>
             </div>
           </div>
         </div>
@@ -581,24 +578,22 @@ const DistrictsPage: React.FC = () => {
     }
 
     // Handle other types of errors
-    // #826 — Same stable .districts-page geometry as the loaded page.
-    return (
-      <div className="districts-page-root">
-        <div className="districts-page">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <h2 className="text-xl font-bold text-red-800 mb-2">
-              Error Loading Rankings
-            </h2>
-            <p className="text-red-600">
-              {(error as Error)?.message || 'Failed to load district rankings'}
-            </p>
-            <button
-              onClick={() => refetch()}
-              className="mt-4 px-4 py-2 bg-red-600 text-white rounded-sm hover:bg-red-700 transition-colors"
-            >
-              Try Again
-            </button>
-          </div>
+    // #826 — Same shared shell as loading + loaded states.
+    return renderShell(
+      <div className="districts-page__state-card">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <h2 className="text-xl font-bold text-red-800 mb-2">
+            Error Loading Rankings
+          </h2>
+          <p className="text-red-600">
+            {(error as Error)?.message || 'Failed to load district rankings'}
+          </p>
+          <button
+            onClick={() => refetch()}
+            className="mt-4 px-4 py-2 bg-red-600 text-white rounded-sm hover:bg-red-700 transition-colors"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     )
