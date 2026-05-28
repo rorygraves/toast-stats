@@ -633,8 +633,27 @@ mode_run() {
         exit 0
       fi
     else
-      log "Session $active: #$active_issue not found in epic #$EPIC body — leaving alone, skipping."
-      exit 0
+      # Foreign session — sub-issue not in the *active* epic's body. Common
+      # case: mid-epic reprioritization moved a different epic to the top of
+      # META_EPIC while this session was still in flight (#804). CLOSED is an
+      # epic-independent done-signal: reap and free the slot. OPEN means the
+      # session is genuinely in-flight on its (now non-active) epic — leave
+      # it, but log + notify clearly as the slot-holder so operators don't
+      # misread the prior "not found … skipping" message and reach for --reap
+      # on a live session.
+      local active_state
+      active_state=$(gh issue view "$active_issue" --json state --jq .state 2>/dev/null || echo UNKNOWN)
+      if [[ "$active_state" == "CLOSED" ]]; then
+        log "Foreign session $active: #$active_issue is CLOSED (work shipped) — auto-reaping to free slot."
+        notify "sprint-runner" "Auto-reaped done foreign session $active"
+        reap_screen_session "$active"
+        # Fall through: continue this tick and launch the active epic's
+        # next sprint (the cascade loop will re-resolve + re-evaluate).
+      else
+        log "Slot held by foreign session $active: #$active_issue belongs to a different epic and is $active_state — leaving alone. Operator can --reap to override."
+        notify "sprint-runner" "Slot held by foreign session $active (#$active_issue, $active_state)"
+        exit 0
+      fi
     fi
   fi
 
