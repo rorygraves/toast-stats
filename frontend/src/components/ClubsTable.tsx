@@ -1053,23 +1053,37 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
               <thead className="clubs-table-sticky-head">
                 {table.getHeaderGroups().map(headerGroup => (
                   <tr key={headerGroup.id}>
-                    {headerGroup.headers.map(header => (
-                      <th
-                        key={header.id}
-                        className={`p-0 ${clubColumnPriorityClass(header.column.id)}`.trim()}
-                      >
-                        <ColumnHeader
-                          field={header.column.id as SortField}
-                          label={header.column.columnDef.header as string}
-                          sortable={header.column.getCanSort()}
-                          currentSort={{
-                            field: sortField,
-                            direction: sortDirection,
-                          }}
-                          onSort={handleSort}
-                        />
-                      </th>
-                    ))}
+                    {headerGroup.headers.map(header => {
+                      const isSortable = header.column.getCanSort()
+                      const isActiveSort = sortField === header.column.id
+                      const ariaSort: React.AriaAttributes['aria-sort'] =
+                        !isSortable
+                          ? undefined
+                          : isActiveSort
+                            ? sortDirection === 'asc'
+                              ? 'ascending'
+                              : 'descending'
+                            : 'none'
+                      return (
+                        <th
+                          key={header.id}
+                          scope="col"
+                          aria-sort={ariaSort}
+                          className={`p-0 ${clubColumnPriorityClass(header.column.id)}`.trim()}
+                        >
+                          <ColumnHeader
+                            field={header.column.id as SortField}
+                            label={header.column.columnDef.header as string}
+                            sortable={isSortable}
+                            currentSort={{
+                              field: sortField,
+                              direction: sortDirection,
+                            }}
+                            onSort={handleSort}
+                          />
+                        </th>
+                      )
+                    })}
                   </tr>
                 ))}
               </thead>

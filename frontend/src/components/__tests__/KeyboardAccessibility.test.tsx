@@ -23,8 +23,8 @@ describe('Keyboard Accessibility', () => {
     direction: 'asc' as SortDirection,
   }
 
-  describe('ColumnHeader keyboard accessibility (sort-only since #816)', () => {
-    it('should have tabIndex=0 on header button for keyboard focus', () => {
+  describe('ColumnHeader keyboard accessibility (click-to-sort since #851)', () => {
+    it('renders a focusable native <button>', () => {
       const { container } = render(
         <ColumnHeader
           field="name"
@@ -35,12 +35,12 @@ describe('Keyboard Accessibility', () => {
         />
       )
 
-      const headerButton = container.querySelector('button[aria-expanded]')
+      const headerButton = container.querySelector('button')
       expect(headerButton).toBeTruthy()
-      expect(headerButton).toHaveAttribute('tabIndex', '0')
+      expect(headerButton?.tagName).toBe('BUTTON')
     })
 
-    it('should have descriptive aria-label with keyboard instructions', () => {
+    it('has a descriptive aria-label naming the column', () => {
       const { container } = render(
         <ColumnHeader
           field="division"
@@ -51,74 +51,31 @@ describe('Keyboard Accessibility', () => {
         />
       )
 
-      const headerButton = container.querySelector('button[aria-expanded]')
-      expect(headerButton).toBeTruthy()
-
-      const ariaLabel = headerButton?.getAttribute('aria-label') || ''
-      expect(ariaLabel).toContain('Press Enter or Space to open sort options')
-      expect(ariaLabel).toContain('Division')
+      const headerButton = container.querySelector('button')
+      expect(headerButton?.getAttribute('aria-label')).toMatch(
+        /Sort by Division/i
+      )
     })
 
-    it('should open the sort popover when Enter key is pressed', () => {
+    it('Enter triggers the native button click → onSort fires', () => {
+      const onSort = vi.fn()
       const { container } = render(
         <ColumnHeader
           field="membership"
           label="Members"
           sortable={true}
           currentSort={defaultSort}
-          onSort={vi.fn()}
+          onSort={onSort}
         />
       )
-
-      const headerButton = container.querySelector('button[aria-expanded]')
-      expect(headerButton).toHaveAttribute('aria-expanded', 'false')
-
-      fireEvent.keyDown(headerButton!, { key: 'Enter' })
-
-      expect(headerButton).toHaveAttribute('aria-expanded', 'true')
-    })
-
-    it('should open the sort popover when Space key is pressed', () => {
-      const { container } = render(
-        <ColumnHeader
-          field="status"
-          label="Status"
-          sortable={true}
-          currentSort={defaultSort}
-          onSort={vi.fn()}
-        />
-      )
-
-      const headerButton = container.querySelector('button[aria-expanded]')
-      expect(headerButton).toHaveAttribute('aria-expanded', 'false')
-
-      fireEvent.keyDown(headerButton!, { key: ' ' })
-
-      expect(headerButton).toHaveAttribute('aria-expanded', 'true')
-    })
-
-    it('should have keyboard-accessible interactive elements in the popover', () => {
-      const { container } = render(
-        <ColumnHeader
-          field="name"
-          label="Club Name"
-          sortable={true}
-          currentSort={defaultSort}
-          onSort={vi.fn()}
-        />
-      )
-
-      const headerButton = container.querySelector('button[aria-expanded]')
-      fireEvent.click(headerButton!)
-
-      const interactiveElements = container.querySelectorAll(
-        'button:not([tabindex="-1"]), input:not([tabindex="-1"]), [tabindex="0"]'
-      )
-
-      interactiveElements.forEach(element => {
-        const tabIndex = element.getAttribute('tabIndex')
-        expect(tabIndex === '0' || tabIndex === null).toBe(true)
-      })
+      const headerButton = container.querySelector(
+        'button'
+      ) as HTMLButtonElement
+      // Native <button> handles Enter/Space as click via the browser; in jsdom
+      // we just verify a click fires the handler. The native key behaviour is
+      // browser-owned, not something this component needs to re-implement.
+      fireEvent.click(headerButton)
+      expect(onSort).toHaveBeenCalledWith('membership')
     })
   })
 
@@ -350,7 +307,7 @@ describe('Keyboard Accessibility', () => {
 
     it('should handle Enter key without throwing errors', () => {
       const { container } = renderHeader('name', 'Club Name')
-      const headerButton = container.querySelector('button[aria-expanded]')
+      const headerButton = container.querySelector('button')
       expect(() => {
         fireEvent.keyDown(headerButton!, { key: 'Enter' })
       }).not.toThrow()
@@ -358,7 +315,7 @@ describe('Keyboard Accessibility', () => {
 
     it('should handle Space key without throwing errors', () => {
       const { container } = renderHeader('division', 'Division')
-      const headerButton = container.querySelector('button[aria-expanded]')
+      const headerButton = container.querySelector('button')
       expect(() => {
         fireEvent.keyDown(headerButton!, { key: ' ' })
       }).not.toThrow()
@@ -366,21 +323,10 @@ describe('Keyboard Accessibility', () => {
 
     it('should handle Tab key without throwing errors', () => {
       const { container } = renderHeader('area', 'Area')
-      const headerButton = container.querySelector('button[aria-expanded]')
+      const headerButton = container.querySelector('button')
       expect(() => {
         fireEvent.keyDown(headerButton!, { key: 'Tab' })
       }).not.toThrow()
-    })
-
-    it('should handle Escape key to close the sort popover', () => {
-      const { container } = renderHeader('status', 'Status')
-      const headerButton = container.querySelector('button[aria-expanded]')
-
-      fireEvent.click(headerButton!)
-      expect(headerButton).toHaveAttribute('aria-expanded', 'true')
-
-      fireEvent.keyDown(headerButton!, { key: 'Escape' })
-      expect(headerButton).toHaveAttribute('aria-expanded', 'false')
     })
   })
 })

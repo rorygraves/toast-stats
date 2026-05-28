@@ -18,6 +18,8 @@ import { DistrictChipAndName } from '../components/DistrictChipAndName'
 import { useMyDistrict } from '../hooks/useMyDistrict'
 import { usePersistedState } from '../hooks/usePersistedState'
 import { useLastVisit } from '../hooks/useLastVisit'
+import { useUrlSort } from '../hooks/useUrlSort'
+import { SortableHeader } from '../components/SortableHeader'
 import { LazyComparisonPanel as ComparisonPanel } from '../components/LazyCharts'
 import {
   getAvailableProgramYears,
@@ -29,10 +31,23 @@ import { arrayToCSV, downloadCSV } from '../utils/csvExport'
 
 const DistrictsPage: React.FC = () => {
   const navigate = useNavigate()
-  // sortBy persists across visits (#416). Default 'aggregate'.
-  const [sortBy, setSortBy] = usePersistedState<
-    'aggregate' | 'clubs' | 'payments' | 'distinguished'
-  >('districts-sort-by', 'aggregate')
+  // URL-synced click-header sort (#851). Replaces the prior persisted
+  // 4-option sortBy enum + dedicated toolbar buttons — sort now lives on
+  // the table headers and round-trips through the URL so reload, back/
+  // forward, and shared links carry the sort state.
+  const SORT_FIELDS = [
+    'aggregate',
+    'clubs',
+    'payments',
+    'distinguished',
+  ] as const
+  type SortFieldT = (typeof SORT_FIELDS)[number]
+  const { sort, toggleSort } = useUrlSort<SortFieldT>({
+    fields: SORT_FIELDS,
+    defaultField: 'aggregate',
+    defaultDirection: 'desc',
+  })
+  const sortBy = sort.field
   // Intentionally NOT persisted — search query should reset between visits.
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [pinnedDistrictIds, setPinnedDistrictIds] = useState<Set<string>>(
@@ -246,20 +261,28 @@ const DistrictsPage: React.FC = () => {
     return rankings.filter(r => selectedRegions.includes(r.region))
   }, [rankings, selectedRegions])
 
-  // Sort by selected column (before search, so ranks are stable)
+  // Sort by selected column. Each comparator's BASE form is ascending —
+  // dir flips to descending. For rank columns (clubsRank, paymentsRank,
+  // distinguishedRank) low value = best, so asc = #1 first. For aggregate
+  // (score) higher = better, so the user-visible default is desc.
   const sortedRankings = React.useMemo(() => {
     const sorted = [...filteredRankings]
+    const dir = sort.direction === 'asc' ? 1 : -1
     switch (sortBy) {
       case 'clubs':
-        return sorted.sort((a, b) => a.clubsRank - b.clubsRank)
+        return sorted.sort((a, b) => (a.clubsRank - b.clubsRank) * dir)
       case 'payments':
-        return sorted.sort((a, b) => a.paymentsRank - b.paymentsRank)
+        return sorted.sort((a, b) => (a.paymentsRank - b.paymentsRank) * dir)
       case 'distinguished':
-        return sorted.sort((a, b) => a.distinguishedRank - b.distinguishedRank)
+        return sorted.sort(
+          (a, b) => (a.distinguishedRank - b.distinguishedRank) * dir
+        )
       default:
-        return sorted.sort((a, b) => b.aggregateScore - a.aggregateScore)
+        return sorted.sort(
+          (a, b) => (a.aggregateScore - b.aggregateScore) * dir
+        )
     }
-  }, [filteredRankings, sortBy])
+  }, [filteredRankings, sortBy, sort.direction])
 
   // Use overallRank from CDN data — supports ties (#303)
   const rankedRankings = React.useMemo(
@@ -796,36 +819,10 @@ const DistrictsPage: React.FC = () => {
           isLoading={isLoadingAwards}
         />
 
-        {/* Sort Controls + Region Filter Toolbar — compact (#83) */}
+        {/* Region Filter Toolbar — compact (#83). The dedicated "Sort by:"
+            button row was retired in #851: sort now lives on the table
+            column headers (click to toggle, URL-synced). */}
         <div className="districts-toolbar">
-          <div className="districts-toolbar__row">
-            <span className="districts-toolbar__label">Sort by:</span>
-            <button
-              onClick={() => setSortBy('aggregate')}
-              className={`districts-toolbar__sort-btn${sortBy === 'aggregate' ? ' districts-toolbar__sort-btn--active' : ''}`}
-            >
-              Overall Score
-            </button>
-            <button
-              onClick={() => setSortBy('clubs')}
-              className={`districts-toolbar__sort-btn${sortBy === 'clubs' ? ' districts-toolbar__sort-btn--active' : ''}`}
-            >
-              Paid Clubs
-            </button>
-            <button
-              onClick={() => setSortBy('payments')}
-              className={`districts-toolbar__sort-btn${sortBy === 'payments' ? ' districts-toolbar__sort-btn--active' : ''}`}
-            >
-              Total Payments
-            </button>
-            <button
-              onClick={() => setSortBy('distinguished')}
-              className={`districts-toolbar__sort-btn${sortBy === 'distinguished' ? ' districts-toolbar__sort-btn--active' : ''}`}
-            >
-              Distinguished Clubs
-            </button>
-          </div>
-
           {/* Region Filter — solo-select pill bar (#434).
               Plain click = solo that region; click again = back to all.
               Shift-click = additive toggle. The "All" pill explicitly
@@ -1061,18 +1058,38 @@ const DistrictsPage: React.FC = () => {
                     <th className="districts-rankings-table__col--desktop px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Tier
                     </th>
-                    <th className="districts-rankings-table__col--tablet px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Paid Clubs
-                    </th>
-                    <th className="districts-rankings-table__col--tablet px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Total Payments
-                    </th>
-                    <th className="districts-rankings-table__col--tablet px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Distinguished
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Score
-                    </th>
+                    <SortableHeader<SortFieldT>
+                      field="clubs"
+                      label="Paid Clubs"
+                      currentSort={sort}
+                      onSort={toggleSort}
+                      thClassName="districts-rankings-table__col--tablet px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      numeric
+                    />
+                    <SortableHeader<SortFieldT>
+                      field="payments"
+                      label="Total Payments"
+                      currentSort={sort}
+                      onSort={toggleSort}
+                      thClassName="districts-rankings-table__col--tablet px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      numeric
+                    />
+                    <SortableHeader<SortFieldT>
+                      field="distinguished"
+                      label="Distinguished"
+                      currentSort={sort}
+                      onSort={toggleSort}
+                      thClassName="districts-rankings-table__col--tablet px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      numeric
+                    />
+                    <SortableHeader<SortFieldT>
+                      field="aggregate"
+                      label="Score"
+                      currentSort={sort}
+                      onSort={toggleSort}
+                      thClassName="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      numeric
+                    />
                   </tr>
                 </thead>
                 <tbody>

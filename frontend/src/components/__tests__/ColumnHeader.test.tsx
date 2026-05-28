@@ -1,17 +1,21 @@
-import { render, screen, fireEvent } from '@testing-library/react'
-import { describe, it, expect, vi } from 'vitest'
+/**
+ * @vitest-environment jsdom
+ */
+import { render, screen, fireEvent, cleanup } from '@testing-library/react'
+import { describe, it, expect, vi, afterEach } from 'vitest'
+import '@testing-library/jest-dom/vitest'
 import { ColumnHeader } from '../ColumnHeader'
 import { SortField } from '../filters/types'
 
 /**
- * Unit tests for ColumnHeader.
- *
- * Sort-only since #816 (epic #818 Sprint 3): filtering moved out of the hidden
- * per-column header dropdown into the dedicated FiltersPanel drawer. The header
- * now opens a small SORT popover only. The role-query churn here (the old filter
- * assertions are gone) is the tell that filtering was relocated, not that
- * anything broke — see Lesson 128.
+ * ColumnHeader is the ClubsTable's sortable column header (#851). Click
+ * toggles sort directly — no popover. Pre-#851 it opened a Sort A-Z /
+ * Sort Z-A popover; the popover was vestigial after #816 stripped
+ * filtering out, and the issue's "click to sort" acceptance retired it.
+ * See Lesson 128 (filtering migrated to FiltersPanel) for context.
  */
+afterEach(cleanup)
+
 describe('ColumnHeader', () => {
   const defaultProps = {
     field: 'name' as SortField,
@@ -21,35 +25,23 @@ describe('ColumnHeader', () => {
     onSort: vi.fn(),
   }
 
-  describe('sort popover', () => {
-    it('opens a Sort popover with A-Z / Z-A options when clicked', () => {
-      render(<ColumnHeader {...defaultProps} />)
-
-      const headerButton = screen.getByRole('button', { expanded: false })
-      fireEvent.click(headerButton)
-
-      expect(screen.getByRole('button', { expanded: true })).toBeInTheDocument()
-      expect(screen.getByText('Sort')).toBeInTheDocument()
-      expect(screen.getByText('Sort A-Z')).toBeInTheDocument()
-      expect(screen.getByText('Sort Z-A')).toBeInTheDocument()
-    })
-
-    it('has NO filter controls — filtering lives in the FiltersPanel now', () => {
-      render(<ColumnHeader {...defaultProps} />)
-      fireEvent.click(screen.getByRole('button', { expanded: false }))
-
-      expect(screen.queryByText('Filter')).not.toBeInTheDocument()
-      expect(screen.queryByText('Apply')).not.toBeInTheDocument()
-    })
-
-    it('calls onSort with the field when Sort A-Z is chosen', () => {
+  describe('click toggles sort directly (#851)', () => {
+    it('calls onSort(field) when the header button is clicked', () => {
       const onSort = vi.fn()
       render(<ColumnHeader {...defaultProps} onSort={onSort} />)
 
-      fireEvent.click(screen.getByRole('button', { expanded: false }))
-      fireEvent.click(screen.getByText('Sort A-Z'))
-
+      fireEvent.click(
+        screen.getByRole('button', { name: /Sort by Club Name/i })
+      )
       expect(onSort).toHaveBeenCalledWith('name')
+    })
+
+    it('does NOT open a popover or render Sort A-Z / Sort Z-A buttons', () => {
+      render(<ColumnHeader {...defaultProps} />)
+      fireEvent.click(screen.getByRole('button', { name: /Sort by/i }))
+
+      expect(screen.queryByText('Sort A-Z')).not.toBeInTheDocument()
+      expect(screen.queryByText('Sort Z-A')).not.toBeInTheDocument()
     })
 
     it('renders a non-interactive label for a non-sortable column', () => {
@@ -61,111 +53,55 @@ describe('ColumnHeader', () => {
   })
 
   describe('active sort indicator', () => {
-    it('shows a blue chevron when this column is the current sort key', () => {
-      render(
+    it('marks the active sort direction via data-sort-indicator', () => {
+      const { rerender } = render(
         <ColumnHeader
           {...defaultProps}
           currentSort={{ field: 'name', direction: 'asc' }}
         />
       )
-
-      const headerButton = screen.getByRole('button')
       expect(
-        headerButton.querySelector('svg[class*="text-tm-loyal-blue"]')
+        document.querySelector('[data-sort-indicator="asc"]')
+      ).toBeInTheDocument()
+
+      rerender(
+        <ColumnHeader
+          {...defaultProps}
+          currentSort={{ field: 'name', direction: 'desc' }}
+        />
+      )
+      expect(
+        document.querySelector('[data-sort-indicator="desc"]')
       ).toBeInTheDocument()
     })
 
-    it('shows a muted chevron when this column is not the sort key', () => {
+    it('shows a neutral indicator when this column is not the sort key', () => {
       render(<ColumnHeader {...defaultProps} />)
-
-      const headerButton = screen.getByRole('button')
       expect(
-        headerButton.querySelector('svg[class*="clubs-col-header__arrow"]')
-      ).toBeInTheDocument()
-    })
-
-    it('always renders the chevron for a sortable column', () => {
-      render(<ColumnHeader {...defaultProps} />)
-      const headerButton = screen.getByRole('button')
-      expect(
-        headerButton.querySelector('svg path[d*="M19 9l-7 7-7-7"]')
-      ).toBeInTheDocument()
-    })
-  })
-
-  describe('keyboard navigation', () => {
-    it('opens the popover on Enter', () => {
-      render(<ColumnHeader {...defaultProps} />)
-      fireEvent.keyDown(screen.getByRole('button', { expanded: false }), {
-        key: 'Enter',
-      })
-      expect(screen.getByRole('button', { expanded: true })).toBeInTheDocument()
-    })
-
-    it('opens the popover on Space', () => {
-      render(<ColumnHeader {...defaultProps} />)
-      fireEvent.keyDown(screen.getByRole('button', { expanded: false }), {
-        key: ' ',
-      })
-      expect(screen.getByRole('button', { expanded: true })).toBeInTheDocument()
-    })
-
-    it('opens the popover on ArrowDown', () => {
-      render(<ColumnHeader {...defaultProps} />)
-      fireEvent.keyDown(screen.getByRole('button', { expanded: false }), {
-        key: 'ArrowDown',
-      })
-      expect(screen.getByRole('button', { expanded: true })).toBeInTheDocument()
-    })
-
-    it('closes the popover on Escape', () => {
-      render(<ColumnHeader {...defaultProps} />)
-      const headerButton = screen.getByRole('button', { expanded: false })
-      fireEvent.click(headerButton)
-      expect(screen.getByRole('button', { expanded: true })).toBeInTheDocument()
-      fireEvent.keyDown(headerButton, { key: 'Escape' })
-      expect(
-        screen.getByRole('button', { expanded: false })
+        document.querySelector('[data-sort-indicator="none"]')
       ).toBeInTheDocument()
     })
   })
 
-  describe('accessibility & interactivity', () => {
-    it('exposes aria-expanded / aria-haspopup', () => {
-      render(<ColumnHeader {...defaultProps} />)
-      const headerButton = screen.getByRole('button')
-      expect(headerButton).toHaveAttribute('aria-expanded', 'false')
-      expect(headerButton).toHaveAttribute('aria-haspopup', 'true')
-      fireEvent.click(headerButton)
-      expect(headerButton).toHaveAttribute('aria-expanded', 'true')
-    })
-
-    it('has a descriptive sort aria-label (no filter language)', () => {
-      render(<ColumnHeader {...defaultProps} />)
-      const ariaLabel = screen.getByRole('button').getAttribute('aria-label')
-      expect(ariaLabel).toContain('Club Name')
-      expect(ariaLabel).toContain('Sortable')
-      expect(ariaLabel).not.toContain('Filterable')
-    })
-
-    it('includes sort state in aria-label when sorted', () => {
+  describe('a11y', () => {
+    it('button aria-label includes "Sort by" and current direction when active', () => {
       render(
         <ColumnHeader
           {...defaultProps}
-          currentSort={{ field: 'name', direction: 'asc' }}
+          currentSort={{ field: 'name', direction: 'desc' }}
         />
       )
-      const ariaLabel = screen.getByRole('button').getAttribute('aria-label')
-      expect(ariaLabel).toContain('Currently sorted')
-      expect(ariaLabel).toContain('ascending')
+      const btn = screen.getByRole('button')
+      expect(btn.getAttribute('aria-label')).toMatch(
+        /Sort by Club Name.*currently sorted descending/i
+      )
     })
 
-    it('carries the re-skinned header + focus-ring utility classes', () => {
+    it('button aria-label is just "Sort by <label>" when inactive', () => {
       render(<ColumnHeader {...defaultProps} />)
-      const buttonClasses = screen.getByRole('button').className
-      expect(buttonClasses).toMatch(/clubs-col-header/)
-      expect(buttonClasses).toMatch(/cursor-pointer/)
-      expect(buttonClasses).toMatch(/focus:ring-tm-loyal-blue/)
+      expect(screen.getByRole('button').getAttribute('aria-label')).toMatch(
+        /^Sort by Club Name/i
+      )
     })
   })
 })
