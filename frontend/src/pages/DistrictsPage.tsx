@@ -469,14 +469,21 @@ const DistrictsPage: React.FC = () => {
             </p>
           </div>
         </div>
+        {/* #861 — reserve the mobile-hoisted hero-search slot so the
+            skeleton/error → loaded swap is shift-free (CLS, #826/#488,
+            Lesson 125). Rendered only <768px via CSS. */}
+        <div className="districts-hero-search-skeleton" aria-hidden="true" />
         <div className="districts-kpi-strip" aria-hidden="true">
           {[
             'Paid Clubs · Global',
             'Total Payments',
             'Distinguished Clubs',
             'Districts Tracked',
-          ].map(label => (
-            <div key={label} className="districts-kpi-card">
+          ].map((label, i) => (
+            <div
+              key={label}
+              className={`districts-kpi-card${i > 0 ? ' districts-kpi-card--secondary' : ''}`}
+            >
               <p className="districts-kpi-card__label">{label}</p>
               <div
                 className="districts-kpi-card__value animate-pulse bg-gray-200 rounded-sm"
@@ -761,237 +768,244 @@ const DistrictsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Global KPI strip (#356, tooltips per #413) */}
-        <div className="districts-kpi-strip">
-          <div className="districts-kpi-card">
-            <p className="districts-kpi-card__label">
-              Paid Clubs · Global
-              <InfoTooltip text="Sum of paid clubs across every tracked district worldwide. A 'paid club' has met its renewal obligations for the program year." />
-            </p>
-            <div
-              className="districts-kpi-card__value"
-              data-testid="kpi-paid-clubs"
-            >
-              {kpiTotals.paidClubs.toLocaleString()}
+        {/* #861 — Mobile hero zone: wraps KPI strip → hero search in a flex
+            stack so the "Find your district" search can hoist above the fold
+            (order:-1) below 768px. At ≥768px the natural source order is kept,
+            so desktop is visually unchanged. */}
+        <div className="districts-hero-stack">
+          {/* Global KPI strip (#356, tooltips per #413) */}
+          <div className="districts-kpi-strip">
+            <div className="districts-kpi-card">
+              <p className="districts-kpi-card__label">
+                Paid Clubs · Global
+                <InfoTooltip text="Sum of paid clubs across every tracked district worldwide. A 'paid club' has met its renewal obligations for the program year." />
+              </p>
+              <div
+                className="districts-kpi-card__value"
+                data-testid="kpi-paid-clubs"
+              >
+                {kpiTotals.paidClubs.toLocaleString()}
+              </div>
+            </div>
+            <div className="districts-kpi-card districts-kpi-card--secondary">
+              <p className="districts-kpi-card__label">
+                Total Payments
+                <InfoTooltip text="Year-to-date membership payment count summed across every tracked district. Members typically pay twice/year so this approximately doubles total membership over a full program year." />
+              </p>
+              <div
+                className="districts-kpi-card__value"
+                data-testid="kpi-total-payments"
+              >
+                {kpiTotals.totalPayments.toLocaleString()}
+              </div>
+            </div>
+            <div className="districts-kpi-card districts-kpi-card--secondary">
+              <p className="districts-kpi-card__label">
+                Distinguished Clubs
+                <InfoTooltip text="Clubs at Distinguished tier or higher (Distinguished / Select / President's / Smedley). See How it works for tier definitions." />
+              </p>
+              <div
+                className="districts-kpi-card__value"
+                data-testid="kpi-distinguished-clubs"
+              >
+                {kpiTotals.distinguishedClubs.toLocaleString()}
+              </div>
+            </div>
+            <div className="districts-kpi-card districts-kpi-card--secondary">
+              <p className="districts-kpi-card__label">
+                Districts Tracked
+                <InfoTooltip text="Number of districts in the current snapshot. Toastmasters has 117 districts worldwide; this counts those with usable data in the most recent rankings file." />
+              </p>
+              <div
+                className="districts-kpi-card__value"
+                data-testid="kpi-districts-tracked"
+              >
+                {kpiTotals.tracked.toLocaleString()}
+              </div>
             </div>
           </div>
-          <div className="districts-kpi-card">
-            <p className="districts-kpi-card__label">
-              Total Payments
-              <InfoTooltip text="Year-to-date membership payment count summed across every tracked district. Members typically pay twice/year so this approximately doubles total membership over a full program year." />
-            </p>
-            <div
-              className="districts-kpi-card__value"
-              data-testid="kpi-total-payments"
-            >
-              {kpiTotals.totalPayments.toLocaleString()}
-            </div>
-          </div>
-          <div className="districts-kpi-card">
-            <p className="districts-kpi-card__label">
-              Distinguished Clubs
-              <InfoTooltip text="Clubs at Distinguished tier or higher (Distinguished / Select / President's / Smedley). See How it works for tier definitions." />
-            </p>
-            <div
-              className="districts-kpi-card__value"
-              data-testid="kpi-distinguished-clubs"
-            >
-              {kpiTotals.distinguishedClubs.toLocaleString()}
-            </div>
-          </div>
-          <div className="districts-kpi-card">
-            <p className="districts-kpi-card__label">
-              Districts Tracked
-              <InfoTooltip text="Number of districts in the current snapshot. Toastmasters has 117 districts worldwide; this counts those with usable data in the most recent rankings file." />
-            </p>
-            <div
-              className="districts-kpi-card__value"
-              data-testid="kpi-districts-tracked"
-            >
-              {kpiTotals.tracked.toLocaleString()}
-            </div>
-          </div>
-        </div>
 
-        {/* Awards Race — competitive district awards (#331) */}
-        <AwardsRaceSection
-          standings={competitiveAwards ?? null}
-          isLoading={isLoadingAwards}
-        />
+          {/* Awards Race — competitive district awards (#331) */}
+          <AwardsRaceSection
+            standings={competitiveAwards ?? null}
+            isLoading={isLoadingAwards}
+          />
 
-        {/* Region Filter Toolbar — compact (#83). The dedicated "Sort by:"
+          {/* Region Filter Toolbar — compact (#83). The dedicated "Sort by:"
             button row was retired in #851: sort now lives on the table
             column headers (click to toggle, URL-synced). */}
-        <div className="districts-toolbar">
-          {/* Region Filter — solo-select pill bar (#434).
+          <div className="districts-toolbar">
+            {/* Region Filter — solo-select pill bar (#434).
               Plain click = solo that region; click again = back to all.
               Shift-click = additive toggle. The "All" pill explicitly
               selects every region and is the active state when no
               filtering is happening. */}
-          {(() => {
-            const isAllActive =
-              regions.length > 0 &&
-              (selectedRegions.length === 0 ||
-                selectedRegions.length === regions.length)
-            const handleRegionClick = (region: string, shiftKey: boolean) => {
-              if (shiftKey) {
-                setSelectedRegions(
-                  selectedRegions.includes(region)
-                    ? selectedRegions.filter(r => r !== region)
-                    : [...selectedRegions, region]
-                )
-                return
-              }
-              const isSoloActive =
-                selectedRegions.length === 1 && selectedRegions[0] === region
-              setSelectedRegions(isSoloActive ? regions : [region])
-            }
-            const stateLabel = isAllActive
-              ? 'Showing all regions'
-              : selectedRegions.length === 1
-                ? `Showing region ${selectedRegions[0]} only`
-                : `Showing ${selectedRegions.length} of ${regions.length} regions`
-            return (
-              <div className="districts-toolbar__row">
-                <span className="districts-toolbar__label">Regions:</span>
-                <button
-                  type="button"
-                  onClick={() => setSelectedRegions(regions)}
-                  className={`districts-toolbar__region-chip${isAllActive ? ' districts-toolbar__region-chip--active' : ''}`}
-                  aria-pressed={isAllActive}
-                >
-                  All
-                </button>
-                {regions.map(region => {
-                  const isActive = selectedRegions.includes(region)
-                  return (
-                    <button
-                      key={region}
-                      type="button"
-                      onClick={e => handleRegionClick(region, e.shiftKey)}
-                      className={`districts-toolbar__region-chip${isActive && !isAllActive ? ' districts-toolbar__region-chip--active' : ''}`}
-                      aria-pressed={isActive && !isAllActive}
-                      aria-label={`Region ${region}`}
-                      title="Click to isolate · shift-click to add"
-                    >
-                      {region}
-                    </button>
+            {(() => {
+              const isAllActive =
+                regions.length > 0 &&
+                (selectedRegions.length === 0 ||
+                  selectedRegions.length === regions.length)
+              const handleRegionClick = (region: string, shiftKey: boolean) => {
+                if (shiftKey) {
+                  setSelectedRegions(
+                    selectedRegions.includes(region)
+                      ? selectedRegions.filter(r => r !== region)
+                      : [...selectedRegions, region]
                   )
-                })}
-                <span
-                  className="districts-toolbar__region-state"
-                  style={{
-                    fontSize: 12,
-                    color: 'var(--ink-3)',
-                    marginLeft: 4,
-                  }}
-                >
-                  {stateLabel}
-                </span>
-              </div>
-            )
-          })()}
-        </div>
-
-        {/* Search Bar — promoted to hero prominence (#435). Larger input,
-            type-ahead suggestions, '/' keyboard shortcut. */}
-        <div
-          className="districts-toolbar__search districts-toolbar__search--hero"
-          style={{ marginBottom: 12 }}
-        >
-          <div className="districts-toolbar__search-icon">
-            <svg
-              width="20"
-              height="20"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
+                  return
+                }
+                const isSoloActive =
+                  selectedRegions.length === 1 && selectedRegions[0] === region
+                setSelectedRegions(isSoloActive ? regions : [region])
+              }
+              const stateLabel = isAllActive
+                ? 'Showing all regions'
+                : selectedRegions.length === 1
+                  ? `Showing region ${selectedRegions[0]} only`
+                  : `Showing ${selectedRegions.length} of ${regions.length} regions`
+              return (
+                <div className="districts-toolbar__row">
+                  <span className="districts-toolbar__label">Regions:</span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRegions(regions)}
+                    className={`districts-toolbar__region-chip${isAllActive ? ' districts-toolbar__region-chip--active' : ''}`}
+                    aria-pressed={isAllActive}
+                  >
+                    All
+                  </button>
+                  {regions.map(region => {
+                    const isActive = selectedRegions.includes(region)
+                    return (
+                      <button
+                        key={region}
+                        type="button"
+                        onClick={e => handleRegionClick(region, e.shiftKey)}
+                        className={`districts-toolbar__region-chip${isActive && !isAllActive ? ' districts-toolbar__region-chip--active' : ''}`}
+                        aria-pressed={isActive && !isAllActive}
+                        aria-label={`Region ${region}`}
+                        title="Click to isolate · shift-click to add"
+                      >
+                        {region}
+                      </button>
+                    )
+                  })}
+                  <span
+                    className="districts-toolbar__region-state"
+                    style={{
+                      fontSize: 12,
+                      color: 'var(--ink-3)',
+                      marginLeft: 4,
+                    }}
+                  >
+                    {stateLabel}
+                  </span>
+                </div>
+              )
+            })()}
           </div>
-          <input
-            ref={searchInputRef}
-            type="text"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => {
-              // Delay so click on a suggestion can register before blur hides
-              window.setTimeout(() => setSearchFocused(false), 150)
-            }}
-            placeholder="Search by district number or name… (press /)"
-            aria-label="Search districts by number or name"
-            aria-controls="district-search-suggestions"
-            aria-expanded={searchFocused && searchSuggestions.length > 0}
-            className="districts-toolbar__search-input"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              aria-label="Clear search"
-              onClick={() => setSearchQuery('')}
-              style={{
-                position: 'absolute',
-                right: 12,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'transparent',
-                border: 0,
-                color: 'var(--ink-3)',
-                cursor: 'pointer',
-              }}
-            >
+
+          {/* Search Bar — promoted to hero prominence (#435). Larger input,
+            type-ahead suggestions, '/' keyboard shortcut. */}
+          <div
+            className="districts-toolbar__search districts-toolbar__search--hero"
+            style={{ marginBottom: 12 }}
+          >
+            <div className="districts-toolbar__search-icon">
               <svg
-                className="w-5 h-5"
+                width="20"
+                height="20"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
               </svg>
-            </button>
-          )}
-          {searchFocused && searchSuggestions.length > 0 && (
-            <ul
-              id="district-search-suggestions"
-              role="listbox"
-              aria-label="District search suggestions"
-              className="districts-toolbar__search-suggestions"
-            >
-              {searchSuggestions.map(s => (
-                <li key={s.districtId} role="option" aria-selected={false}>
-                  <Link
-                    to={`/district/${s.districtId}`}
-                    role="option"
-                    aria-selected={false}
-                    className="districts-toolbar__search-suggestion"
-                  >
-                    <DistrictChipAndName
-                      districtId={s.districtId}
-                      name={s.districtName}
-                      chipClassName="districts-toolbar__search-suggestion-num"
-                      nameClassName="districts-toolbar__search-suggestion-name"
-                    />
-                    <span className="districts-toolbar__search-suggestion-rank">
-                      #{s.displayRank}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
+            </div>
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => {
+                // Delay so click on a suggestion can register before blur hides
+                window.setTimeout(() => setSearchFocused(false), 150)
+              }}
+              placeholder="Search by district number or name… (press /)"
+              aria-label="Search districts by number or name"
+              aria-controls="district-search-suggestions"
+              aria-expanded={searchFocused && searchSuggestions.length > 0}
+              className="districts-toolbar__search-input"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                aria-label="Clear search"
+                onClick={() => setSearchQuery('')}
+                style={{
+                  position: 'absolute',
+                  right: 12,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'transparent',
+                  border: 0,
+                  color: 'var(--ink-3)',
+                  cursor: 'pointer',
+                }}
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            )}
+            {searchFocused && searchSuggestions.length > 0 && (
+              <ul
+                id="district-search-suggestions"
+                role="listbox"
+                aria-label="District search suggestions"
+                className="districts-toolbar__search-suggestions"
+              >
+                {searchSuggestions.map(s => (
+                  <li key={s.districtId} role="option" aria-selected={false}>
+                    <Link
+                      to={`/district/${s.districtId}`}
+                      role="option"
+                      aria-selected={false}
+                      className="districts-toolbar__search-suggestion"
+                    >
+                      <DistrictChipAndName
+                        districtId={s.districtId}
+                        name={s.districtName}
+                        chipClassName="districts-toolbar__search-suggestion-num"
+                        nameClassName="districts-toolbar__search-suggestion-name"
+                      />
+                      <span className="districts-toolbar__search-suggestion-rank">
+                        #{s.displayRank}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          {/* /.districts-hero-stack (#861) */}
         </div>
 
         {/* Comparison Panel (#93) */}

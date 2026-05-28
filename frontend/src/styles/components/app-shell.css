@@ -614,6 +614,46 @@
     color: var(--ink);
   }
 
+  /* #861 — Mobile hero zone. The KPI strip → AwardsRace → toolbar → hero
+     search live in a flex stack so the "Find your district" search can hoist
+     above the fold on small screens via `order`, without reordering the DOM
+     (keeps desktop source order, so desktop is visually unchanged). */
+  .districts-hero-stack {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Reserved slot for the hoisted search in the loading/error shell, so the
+     skeleton/error → loaded swap doesn't shift the KPI strip down (CLS,
+     #826/#488, Lesson 125). Hidden at ≥768px, where there is no hoist. */
+  .districts-hero-search-skeleton {
+    display: none;
+  }
+
+  @media (max-width: 767px) {
+    /* AC #2 — demote the global KPI strip to a single headline tile (Paid
+       Clubs · Global); the full strip returns at ≥768px. */
+    .districts-kpi-card--secondary {
+      display: none;
+    }
+
+    /* AC #1 — hoist the hero search to the top of the stack (above the fold). */
+    .districts-hero-stack .districts-toolbar__search--hero {
+      order: -1;
+    }
+
+    /* Match the hoisted hero-search footprint (≈50px input + 12px gap) so the
+       shell reserves the same space the loaded search lands in. */
+    .districts-hero-search-skeleton {
+      display: block;
+      height: 50px;
+      margin-bottom: 12px;
+      background-color: var(--surface-2);
+      border: 1px solid var(--line);
+      border-radius: var(--rds-radius-sm);
+    }
+  }
+
   /* Methodology callout */
   .districts-methodology-callout {
     margin-top: 24px;
