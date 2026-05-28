@@ -6,6 +6,7 @@
  * lives in `deriveAreaRecognitionState`; this module is cosmetic only.
  */
 import type { AreaRecognitionState, PendingRound } from './areaRecognitionState'
+import { formatShortDate } from './dateFormatting'
 
 export interface BadgePresentation {
   label: string
@@ -33,23 +34,11 @@ const PROVISIONAL_CLASS = 'bg-amber-100 text-amber-800 border-amber-300'
 const NOT_DISTINGUISHED_CLASS = 'bg-gray-100 text-gray-600 border-gray-300'
 const NET_LOSS_CLASS = 'bg-red-100 text-red-800 border-red-300'
 
-function formatDeadline(deadline: string): string {
-  // YYYY-MM-DD → "MMM D" (e.g. "Nov 30", "May 31"). Parse as UTC so the
-  // month doesn't shift in timezones west of UTC.
-  const [, mm, dd] = deadline.split('-').map(s => Number.parseInt(s, 10))
-  const date = new Date(Date.UTC(2000, (mm ?? 1) - 1, dd ?? 1))
-  const month = date.toLocaleString('en-US', {
-    month: 'short',
-    timeZone: 'UTC',
-  })
-  return `${month} ${dd}`
-}
-
 export function pendingRoundsTooltip(rounds: PendingRound[]): string {
   if (rounds.length === 0) return ''
   const labels = rounds.map(({ round, deadline }) => {
     const ordinal = round === 1 ? '1st' : '2nd'
-    return `${ordinal}-round visits due ${formatDeadline(deadline)}`
+    return `${ordinal}-round visits due ${formatShortDate(deadline)}`
   })
   return `Pending: ${labels.join('; ')}`
 }

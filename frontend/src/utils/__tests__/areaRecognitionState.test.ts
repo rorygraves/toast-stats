@@ -225,6 +225,30 @@ describe('deriveAreaRecognitionState — earned tier × deadline-aware visits', 
     })
   })
 
+  describe('Snapshot date format normalisation', () => {
+    it('treats an ISO timestamp on the deadline day as still-pending (not hard-fail)', () => {
+      // Without normalisation, `'2026-11-30T15:00:00Z' > '2026-11-30'` is
+      // lexically true and the area would hard-fail mid-deadline-day.
+      const s = deriveAreaRecognitionState(
+        input({
+          firstRoundVisitMet: false,
+          secondRoundVisitMet: false,
+          snapshotDate: '2026-11-30T15:00:00Z',
+        })
+      )
+      expect(s.status).toBe('provisional')
+      expect(s.failureReason).toBeNull()
+    })
+
+    it('anchors the PY correctly for an ISO timestamp around the Jul 1 boundary', () => {
+      // '2026-07-01T05:00:00Z' must anchor to PY 2026-2027, not 2025-2026.
+      expect(getAreaVisitDeadlines('2026-07-01T05:00:00Z')).toEqual({
+        r1: '2026-11-30',
+        r2: '2027-05-31',
+      })
+    })
+  })
+
   describe('Edge cases', () => {
     it('handles zero clubBase as Not Distinguished', () => {
       const s = deriveAreaRecognitionState(

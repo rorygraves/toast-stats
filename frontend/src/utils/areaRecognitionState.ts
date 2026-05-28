@@ -66,13 +66,29 @@ export interface AreaRecognitionInput {
 }
 
 /**
+ * Normalise any ISO-shaped input to `YYYY-MM-DD`. Date-only strings pass
+ * through; full ISO timestamps (`'2025-11-30T15:00:00Z'`) get sliced so
+ * the lexical `snapshotDate > deadline` comparison below holds the
+ * "deadline day itself is not yet passed" invariant — without the slice,
+ * any time-of-day suffix lexically sorts after the bare date and flips
+ * the comparison on the deadline day itself.
+ */
+function toIsoDate(dateStr: string): string {
+  return dateStr.slice(0, 10)
+}
+
+/**
  * Program-year anchor: Jul 1 starts a new PY.
  * Returns the 4-digit start year for the PY containing `dateStr`.
+ *
+ * String-slice parsing is intentional — `new Date(yyyy-mm-dd).getFullYear()`
+ * is timezone-sensitive (UTC midnight in `Date` parses to the prior local
+ * day west of UTC), so we side-step the JS `Date` constructor entirely.
  */
 function programYearStartYear(dateStr: string): number {
-  // Parse YYYY-MM-DD without timezone drift — string slice is sufficient.
-  const year = Number.parseInt(dateStr.slice(0, 4), 10)
-  const month = Number.parseInt(dateStr.slice(5, 7), 10)
+  const iso = toIsoDate(dateStr)
+  const year = Number.parseInt(iso.slice(0, 4), 10)
+  const month = Number.parseInt(iso.slice(5, 7), 10)
   return month >= 7 ? year : year - 1
 }
 
@@ -133,9 +149,12 @@ export function deriveAreaRecognitionState(
   }
 
   const { r1, r2 } = getAreaVisitDeadlines(snapshotDate)
-  // Strict `>` per the operator spec: the deadline day itself is still "not yet passed".
-  const r1Passed = snapshotDate > r1
-  const r2Passed = snapshotDate > r2
+  // Strict `>` on date-only strings. Normalising via `toIsoDate` guards
+  // against ISO-timestamp callers (`'2025-11-30T15:00:00Z' > '2025-11-30'`
+  // would otherwise be true and silently flip the deadline-day case).
+  const isoSnapshot = toIsoDate(snapshotDate)
+  const r1Passed = isoSnapshot > r1
+  const r2Passed = isoSnapshot > r2
 
   const hardFailR1 = r1Passed && !firstRoundVisitMet
   const hardFailR2 = r2Passed && !secondRoundVisitMet
