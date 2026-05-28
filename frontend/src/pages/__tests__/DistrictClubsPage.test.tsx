@@ -273,6 +273,31 @@ describe('DistrictClubsPage (#570 — Phase 2)', () => {
     ).toBe('?status=vulnerable')
   })
 
+  it('URL-syncs a non-status column filter: ?division=B filters to Division B on load (#817)', async () => {
+    renderAt('/district/61/clubs?division=B')
+
+    // Division B clubs survive; Division A clubs are excluded.
+    expect(await screen.findByText(/gamma communicators/i)).toBeInTheDocument()
+    expect(screen.getByText(/delta orators/i)).toBeInTheDocument()
+    expect(screen.queryByText(/alpha toastmasters/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/beta speakers/i)).not.toBeInTheDocument()
+  })
+
+  it("writes ?distinguished= when the President's-tier preset is activated (#817)", async () => {
+    const user = userEvent.setup()
+    const { router } = renderAt('/district/61/clubs')
+    await screen.findByText(/alpha toastmasters/i)
+
+    await user.click(
+      screen.getByRole('button', { name: /President's tier only/i })
+    )
+
+    await waitFor(() => {
+      const params = new URLSearchParams(router.state.location.search)
+      expect(params.get('distinguished')).toBe('President')
+    })
+  })
+
   it('applies ?status=vulnerable to filter clubs on load', async () => {
     renderAt('/district/61/clubs?status=vulnerable')
 

@@ -2242,6 +2242,105 @@
     color: var(--maroon-500);
   }
 
+  /* Active-filters summary bar (#817, epic #818 Sprint 4). Sits between the
+     toolbar and the table: one removable chip per active filter (drawer +
+     presets + search), so the full filter set is legible and droppable without
+     reopening the drawer. Token-driven for dark mode (R10, lessons 093/096);
+     the active accent matches the chip family — --link on --loyal-50. */
+  .clubs-active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0 2px;
+  }
+
+  .clubs-active-filters__label {
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  .clubs-active-filters__list {
+    display: contents;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .clubs-active-filters__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px 4px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--loyal-200);
+    background-color: var(--loyal-50);
+    color: var(--link);
+    font-family: var(--sans);
+    font-size: 12px;
+    line-height: 1;
+  }
+
+  .clubs-active-filters__chip-label {
+    font-weight: 600;
+  }
+
+  .clubs-active-filters__chip-value {
+    font-weight: 500;
+  }
+
+  .clubs-active-filters__remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    border: none;
+    background-color: transparent;
+    color: var(--link);
+    cursor: pointer;
+    transition: background-color 150ms, color 150ms;
+  }
+
+  .clubs-active-filters__remove:hover {
+    background-color: var(--loyal-100);
+    /* --link (not --loyal-600) — the latter has no dark remap and would go
+       navy-on-navy on the dark --loyal-100 fill (R10, lessons 093/096). */
+    color: var(--link);
+  }
+
+  .clubs-active-filters__remove:focus-visible {
+    outline: 2px solid var(--link);
+    outline-offset: 1px;
+  }
+
+  .clubs-active-filters__clear-all {
+    border: none;
+    background-color: transparent;
+    color: var(--maroon-500);
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm, 6px);
+    transition: background-color 150ms;
+  }
+
+  .clubs-active-filters__clear-all:hover {
+    background-color: rgba(123, 24, 40, 0.06);
+  }
+
+  .clubs-active-filters__clear-all:focus-visible {
+    outline: 2px solid var(--maroon-500);
+    outline-offset: 1px;
+  }
+
   /* ── Clubs column-filter popover re-skin (#670, epic #665 Sprint 4) ──
      The open filter popover (ColumnHeader dropdown + Text/Numeric/Categorical
      filters) was the last legacy-gray surface on the clubs table; #668 parked

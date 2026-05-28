@@ -12,6 +12,8 @@ import {
 import { useColumnFilters } from '../hooks/useColumnFilters'
 import { ColumnHeader } from './ColumnHeader'
 import { FiltersPanel } from './filters/FiltersPanel'
+import { ActiveFiltersBar } from './ActiveFiltersBar'
+import { describeActiveFilters } from '../utils/clubFilterDescribe'
 import { SortField, SortDirection, COLUMN_CONFIGS } from './filters/types'
 import { CLOSE_TO_DISTINGUISHED_MAX_MEMBERS } from '../utils/closeToDistinguished'
 import ClubCard from './ClubCard'
@@ -114,10 +116,14 @@ const ClubSearchBox: React.FC<{
     setInput(value)
   }
 
-  // Push the settled input outward (filter + URL) when it diverges.
+  // Push the settled input outward (filter + URL) when it diverges. Only push
+  // once the debounce has SETTLED to the current input (`debounced === input`):
+  // when an external clear (Clear-all) resets `value`→'' the render-phase sync
+  // above sets `input`→'' while `debounced` still lags at the old text — pushing
+  // that stale `debounced` would re-apply the filter we just cleared (#817).
   useEffect(() => {
-    if (debounced !== value) onSearchChange(debounced)
-  }, [debounced, value, onSearchChange])
+    if (debounced === input && debounced !== value) onSearchChange(debounced)
+  }, [debounced, input, value, onSearchChange])
 
   return (
     <div className="clubs-search">
@@ -820,6 +826,17 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
         </div>
       </div>
 
+      {/* Active-filters summary bar (#817). Visible, removable summary of the
+          full filter set — including drawer-only filters the preset chips
+          don't surface. Same filter state, another entry point (R11). */}
+      <div className="px-6">
+        <ActiveFiltersBar
+          filterState={filterState}
+          setFilter={setFilter}
+          clearAllFilters={clearAllFilters}
+        />
+      </div>
+
       {/* Loading State */}
       {isLoading && <LoadingSkeleton variant="table" count={5} />}
 
@@ -870,9 +887,25 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
           <p className="clubs-text-muted font-medium">
             No clubs match your filters
           </p>
-          <p className="clubs-text-muted text-sm mt-1">
-            Try adjusting your column filters
-          </p>
+          {/* Name the filters doing the excluding (#817) — a dead "adjust your
+              filters" leaves the user guessing which one to loosen. */}
+          {describeActiveFilters(filterState).length > 0 && (
+            <p className="clubs-text-muted text-sm mt-1">
+              Active:{' '}
+              {describeActiveFilters(filterState)
+                .map(d => `${d.label} ${d.value}`)
+                .join(' · ')}
+            </p>
+          )}
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={clearAllFilters}
+              className="clubs-quick-filter-chip clubs-quick-filter-chip__clear mt-4 mx-auto"
+            >
+              Clear all filters
+            </button>
+          )}
         </div>
       )}
 

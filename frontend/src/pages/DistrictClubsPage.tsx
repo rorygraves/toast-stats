@@ -23,86 +23,28 @@ import { ClubsTable } from '../components/ClubsTable'
 import { ProspectiveClubsPanel } from '../components/ProspectiveClubsPanel'
 import ErrorBoundary from '../components/ErrorBoundary'
 import { LoadingSkeleton } from '../components/LoadingSkeleton'
-import type {
-  FilterState,
-  SortDirection,
-  SortField,
-} from '../components/filters/types'
+import type { SortDirection, SortField } from '../components/filters/types'
+import type { FilterState } from '../components/filters/types'
+import {
+  paramsToFilterState,
+  filterStateToParams,
+  FILTER_PARAM_KEYS,
+} from '../utils/clubFilterUrl'
 
-/* District Clubs Page (#570, epic #568 Phase 2).
+/* District Clubs Page (#570, epic #568 Phase 2; URL-sync generalised #817).
    Dedicated route for the clubs subview. URL params (clean spec):
-     ?status=<thriving|vulnerable|intervention>
-     ?search=<q>
-     ?sort=<field>&dir=<asc|desc>
+     ?status=<thriving|vulnerable|intervention>   (health band)
+     ?search=<q>                                   (club name)
+     ?sort=<field>&dir=<asc|desc>                  (sort)
+     ?<column>=<value>                             (every other filter, #817)
+   Since #817 EVERY filterable column round-trips through the URL (numeric as
+   `min..max`, categorical comma-joined) via `clubFilterUrl` — so a filtered
+   club list is shareable/bookmarkable, not just the status/search subset.
    Pagination was removed in #667 (epic #665) — all clubs render in one
    sticky-header scroll container, so there is no `?page=` param. A stale
    legacy `?page=` is harmless (ignored on load; the legacy `?tab=clubs`
-   redirect strips it).
-   Other column filters (Distinguished, Members range, etc.) stay
-   in-session — they're discoverable through the table UI but no
-   longer survive a reload. The router-level redirect from the legacy
-   `?tab=clubs` URL lives in App.tsx and translates `f_status`/`f_name`
-   into the new names. */
-
-const statusUrlToInternal = (raw: string | null): string | null => {
-  switch (raw) {
-    case 'thriving':
-    case 'vulnerable':
-      return raw
-    case 'intervention':
-      return 'intervention-required'
-    default:
-      return null
-  }
-}
-
-const statusInternalToUrl = (raw: string): string | null => {
-  if (raw === 'thriving' || raw === 'vulnerable') return raw
-  if (raw === 'intervention-required') return 'intervention'
-  return null
-}
-
-const buildFilterStateFromUrl = (params: URLSearchParams): FilterState => {
-  const state: FilterState = {}
-  const status = statusUrlToInternal(params.get('status'))
-  if (status) {
-    state['status'] = {
-      field: 'status',
-      type: 'categorical',
-      value: [status],
-      operator: 'in',
-    }
-  }
-  const search = params.get('search')
-  if (search) {
-    state['name'] = {
-      field: 'name',
-      type: 'text',
-      value: search,
-      operator: 'contains',
-    }
-  }
-  return state
-}
-
-const filterStateToUrlPatch = (
-  state: FilterState
-): { status: string | null; search: string | null } => {
-  const statusFilter = state['status']
-  let status: string | null = null
-  if (statusFilter && Array.isArray(statusFilter.value)) {
-    const values = statusFilter.value as string[]
-    if (values.length === 1 && values[0]) {
-      status = statusInternalToUrl(values[0])
-    }
-  }
-  const nameFilter = state['name']
-  const search =
-    nameFilter && typeof nameFilter.value === 'string' && nameFilter.value
-      ? (nameFilter.value as string)
-      : null
-  return { status, search }
-}
+   redirect strips it). The router-level redirect from the legacy `?tab=clubs`
+   URL lives in App.tsx and translates `f_status`/`f_name` into the new names. */
 
 const DistrictClubsPage: React.FC = () => {
   const { districtId } = useParams<{ districtId: string }>()
@@ -120,7 +62,7 @@ const DistrictClubsPage: React.FC = () => {
     (searchParams.get('dir') as SortDirection | null) || undefined
 
   const initialFilterState = useMemo(
-    () => buildFilterStateFromUrl(searchParams),
+    () => paramsToFilterState(searchParams),
     // Intentionally only computed once on mount — URL is the source of
     // truth for INITIAL state; later updates flow through callbacks
     // instead of re-reading.
@@ -150,20 +92,17 @@ const DistrictClubsPage: React.FC = () => {
 
   const handleFilterChange = useCallback(
     (state: FilterState) => {
-      const patch = filterStateToUrlPatch(state)
+      // Wholesale reconcile: drop EVERY filter param this module owns, then set
+      // the ones present in `state`. Reconciling the full set (rather than
+      // incrementally set/delete one key) sidesteps the same-batch prev-snapshot
+      // race in lesson 070 — the result is the same regardless of write order —
+      // and leaves reserved params (py/date/sort/dir) untouched.
       setSearchParams(
         prev => {
           const next = new URLSearchParams(prev)
-          if (patch.status) {
-            next.set('status', patch.status)
-          } else {
-            next.delete('status')
-          }
-          if (patch.search) {
-            next.set('search', patch.search)
-          } else {
-            next.delete('search')
-          }
+          for (const key of FILTER_PARAM_KEYS) next.delete(key)
+          for (const [key, value] of filterStateToParams(state))
+            next.set(key, value)
           return next
         },
         { replace: true }
