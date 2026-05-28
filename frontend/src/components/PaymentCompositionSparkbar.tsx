@@ -11,6 +11,7 @@ import {
   buildPaymentSegments,
   type PaymentCompositionInputs,
 } from '../utils/paymentComposition'
+import PaymentCompositionHeader from './PaymentCompositionHeader'
 
 interface PaymentCompositionSparkbarProps extends PaymentCompositionInputs {
   /** Currently-paid members (the cohort — for the eyebrow tooltip only). */
@@ -34,20 +35,11 @@ const PaymentCompositionSparkbar: React.FC<PaymentCompositionSparkbarProps> = ({
       aria-labelledby="payment-composition-sparkbar-heading"
       data-testid="payment-composition-sparkbar"
     >
-      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <h2
-          id="payment-composition-sparkbar-heading"
-          className="text-lg font-semibold text-gray-900 font-tm-headline"
-        >
-          Payment Composition
-        </h2>
-        <span
-          className="text-sm text-gray-600 font-tm-body"
-          title={`${totalPayments.toLocaleString()} payment events across ${totalMembership.toLocaleString()} current members`}
-        >
-          {totalPayments.toLocaleString()} payment events
-        </span>
-      </div>
+      <PaymentCompositionHeader
+        headingId="payment-composition-sparkbar-heading"
+        totalPayments={totalPayments}
+        totalMembership={totalMembership}
+      />
 
       <div
         className="flex w-full h-7 rounded-md overflow-hidden border border-gray-200"

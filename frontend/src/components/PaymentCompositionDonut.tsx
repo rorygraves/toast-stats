@@ -9,6 +9,7 @@ import {
   buildPaymentSegments,
   type PaymentCompositionInputs,
 } from '../utils/paymentComposition'
+import PaymentCompositionHeader from './PaymentCompositionHeader'
 
 interface PaymentCompositionDonutProps extends PaymentCompositionInputs {
   /** Number of currently-paid members (the cohort — for the tooltip only). */
@@ -56,20 +57,11 @@ const PaymentCompositionDonut: React.FC<PaymentCompositionDonutProps> = ({
       aria-labelledby="payment-composition-heading"
       data-testid="payment-composition"
     >
-      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <h2
-          id="payment-composition-heading"
-          className="text-lg font-semibold text-gray-900 font-tm-headline"
-        >
-          Payment Composition
-        </h2>
-        <span
-          className="text-sm text-gray-600 font-tm-body"
-          title={`${totalPayments.toLocaleString()} payment events across ${totalMembership.toLocaleString()} current members`}
-        >
-          {totalPayments.toLocaleString()} payment events
-        </span>
-      </div>
+      <PaymentCompositionHeader
+        headingId="payment-composition-heading"
+        totalPayments={totalPayments}
+        totalMembership={totalMembership}
+      />
 
       <div className="flex items-center gap-6 flex-wrap">
         <svg
