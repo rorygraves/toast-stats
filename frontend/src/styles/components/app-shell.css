@@ -1093,10 +1093,13 @@
     min-height: 44px;
     margin-top: 0.5rem;
     padding: 0.625rem 1rem;
-    border: 1px solid var(--border, #d1d5db);
+    border: 1px solid var(--line, #e5e7eb);
     border-radius: 0.5rem;
-    background: var(--surface, #fff);
-    color: var(--rt-stats, #d4873f);
+    background: var(--surface, #ffffff);
+    /* Label is primary ink (AA on --surface in both themes); the --rt-stats
+       amber accent is reserved for the hover border so the label never falls
+       below 4.5:1 (amber-on-white is ~2.4:1 — Lesson 112). */
+    color: var(--ink, #0f1720);
     font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
