@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, screen, cleanup } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 
@@ -92,6 +92,51 @@ describe('NotableDatesSection (#551)', () => {
     expect(
       screen.queryByRole('heading', { name: /Upcoming anniversaries/i })
     ).not.toBeInTheDocument()
+  })
+
+  it('folds the milestones panel behind a collapsed disclosure on mobile (#867)', () => {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn().mockImplementation((query: string) => ({
+        matches: true,
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }))
+    )
+    const clubs = [
+      mkClub({
+        clubId: '1',
+        clubName: 'Anniversary Club',
+        charterDate: UPCOMING_CHARTER,
+      }),
+      mkClub({
+        clubId: '2',
+        clubName: 'Decade Club',
+        charterDate: MILESTONE_CHARTER,
+      }),
+    ]
+    const { container } = renderSection(clubs)
+
+    // Milestones is folded: a collapsed <details> whose <summary> labels it.
+    const summary = screen.getByText(/Milestones/i, { selector: 'summary' })
+    const details = summary.closest('details')
+    expect(details).not.toBeNull()
+    expect(details?.hasAttribute('open')).toBe(false)
+
+    // Upcoming anniversaries stays visible — only Milestones folds (audit
+    // §Epic B names the Milestones list, not anniversaries).
+    expect(
+      screen.getByRole('heading', { name: /Upcoming anniversaries/i })
+    ).toBeInTheDocument()
+    // Anniversaries is not itself wrapped in a disclosure.
+    expect(container.querySelectorAll('details')).toHaveLength(1)
+
+    vi.unstubAllGlobals()
   })
 
   it('renders both panels side-by-side when both have data', () => {
