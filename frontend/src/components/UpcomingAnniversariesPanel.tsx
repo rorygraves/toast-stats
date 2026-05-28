@@ -7,6 +7,7 @@ import {
   type ClubAnniversary,
 } from '../utils/clubAnniversary'
 import { ordinalSuffix } from '../utils/ordinal'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 /* UpcomingAnniversariesPanel (#446 / #511) — district-level recognition
    planner. Tight, dense rows of clubs whose next anniversary is within
@@ -14,6 +15,10 @@ import { ordinalSuffix } from '../utils/ordinal'
 
 export const UPCOMING_WINDOW_DAYS = 60
 const DEFAULT_ROW_LIMIT = 5
+// Below 768px the full list runs ~6 viewports (audit §Epic B), so mobile
+// caps to the Next 3 with a "Show all →" disclosure (#869). Desktop keeps
+// DEFAULT_ROW_LIMIT unchanged.
+const MOBILE_ROW_LIMIT = 3
 
 export interface UpcomingAnniversariesPanelProps {
   clubs: ClubTrend[]
@@ -69,6 +74,7 @@ export const UpcomingAnniversariesPanel: React.FC<
   initialRowLimit = DEFAULT_ROW_LIMIT,
 }) => {
   const [expanded, setExpanded] = useState(false)
+  const isMobile = useIsMobile(768)
 
   const { upcoming, nextBeyondWindow } = useMemo(() => {
     const all = buildRows(clubs, referenceDate)
@@ -120,7 +126,8 @@ export const UpcomingAnniversariesPanel: React.FC<
     )
   }
 
-  const visible = expanded ? upcoming : upcoming.slice(0, initialRowLimit)
+  const effectiveLimit = isMobile ? MOBILE_ROW_LIMIT : initialRowLimit
+  const visible = expanded ? upcoming : upcoming.slice(0, effectiveLimit)
   const hidden = upcoming.length - visible.length
 
   return (
@@ -204,7 +211,13 @@ export const UpcomingAnniversariesPanel: React.FC<
           onClick={() => setExpanded(true)}
           className="mt-2 text-xs font-semibold text-tm-loyal-blue hover:underline font-tm-body"
         >
-          Show all ({upcoming.length})
+          {isMobile ? (
+            <>
+              Show all <span aria-hidden="true">→</span>
+            </>
+          ) : (
+            `Show all (${upcoming.length})`
+          )}
         </button>
       )}
     </section>
