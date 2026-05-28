@@ -2,33 +2,52 @@ import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { AreaPerformanceRow } from '../AreaPerformanceRow'
 import { AreaPerformance } from '../../utils/divisionStatus'
+import { deriveAreaRecognitionState } from '../../utils/areaRecognitionState'
 
 describe('AreaPerformanceRow', () => {
   const createMockArea = (
     overrides: Partial<AreaPerformance> = {}
-  ): AreaPerformance => ({
-    areaId: 'A1',
-    status: 'distinguished',
-    clubBase: 10,
-    paidClubs: 10,
-    netGrowth: 0,
-    distinguishedClubs: 5,
-    requiredDistinguishedClubs: 5,
-    firstRoundVisits: {
-      completed: 8,
-      required: 8,
-      percentage: 80,
-      meetsThreshold: true,
-    },
-    secondRoundVisits: {
-      completed: 8,
-      required: 8,
-      percentage: 80,
-      meetsThreshold: true,
-    },
-    isQualified: true,
-    ...overrides,
-  })
+  ): AreaPerformance => {
+    const base: Omit<AreaPerformance, 'recognitionState'> = {
+      areaId: 'A1',
+      status: 'distinguished',
+      clubBase: 10,
+      paidClubs: 10,
+      netGrowth: 0,
+      distinguishedClubs: 5,
+      requiredDistinguishedClubs: 5,
+      firstRoundVisits: {
+        completed: 8,
+        required: 8,
+        percentage: 80,
+        meetsThreshold: true,
+      },
+      secondRoundVisits: {
+        completed: 8,
+        required: 8,
+        percentage: 80,
+        meetsThreshold: true,
+      },
+      isQualified: true,
+      ...overrides,
+    }
+    return {
+      ...base,
+      recognitionState: deriveAreaRecognitionState({
+        clubBase: base.clubBase,
+        paidClubs: base.paidClubs,
+        distinguishedClubs: base.distinguishedClubs,
+        firstRoundVisitMet: base.firstRoundVisits.meetsThreshold,
+        secondRoundVisitMet: base.secondRoundVisits.meetsThreshold,
+        // Mid-PY snapshot — R1 deadline has passed, R2 has not. An R2-unmet
+        // case yields Provisional (label still contains the tier name), so
+        // pre-gate assertions like `toContain("President's Distinguished")`
+        // remain valid. Visits-met cases are Confirmed regardless of date.
+        snapshotDate: '2026-03-15',
+      }),
+      ...overrides,
+    }
+  }
 
   describe('Requirement 9.1: Column Order - Area Identifier Display', () => {
     it('should display the area identifier in the first column', () => {
@@ -577,7 +596,7 @@ describe('AreaPerformanceRow', () => {
 
   describe('Data Integrity', () => {
     it('should display all input values in the rendered output', () => {
-      const area: AreaPerformance = {
+      const area = createMockArea({
         areaId: 'D7',
         status: 'not-qualified',
         clubBase: 8,
@@ -598,7 +617,7 @@ describe('AreaPerformanceRow', () => {
           meetsThreshold: false,
         },
         isQualified: false,
-      }
+      })
 
       const { container } = render(
         <table>

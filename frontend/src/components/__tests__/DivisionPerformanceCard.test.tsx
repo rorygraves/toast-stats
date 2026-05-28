@@ -12,6 +12,7 @@ import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { DivisionPerformanceCard } from '../DivisionPerformanceCard'
 import type { DivisionPerformance } from '../../utils/divisionStatus'
+import { withRecognitionState } from '../../test-utils/areaFixture'
 
 describe('DivisionPerformanceCard', () => {
   const mockDivision: DivisionPerformance = {
@@ -23,7 +24,7 @@ describe('DivisionPerformanceCard', () => {
     distinguishedClubs: 26,
     requiredDistinguishedClubs: 25,
     areas: [
-      {
+      withRecognitionState({
         areaId: 'A1',
         status: 'distinguished',
         clubBase: 10,
@@ -44,8 +45,8 @@ describe('DivisionPerformanceCard', () => {
           meetsThreshold: true,
         },
         isQualified: true,
-      },
-      {
+      }),
+      withRecognitionState({
         areaId: 'A2',
         status: 'not-qualified',
         clubBase: 8,
@@ -66,7 +67,7 @@ describe('DivisionPerformanceCard', () => {
           meetsThreshold: true,
         },
         isQualified: false,
-      },
+      }),
     ],
   }
 

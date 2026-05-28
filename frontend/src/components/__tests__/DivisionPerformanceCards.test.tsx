@@ -32,6 +32,7 @@ vi.mock('../../utils/dateFormatting', () => ({
 
 import { extractDivisionPerformance } from '../../utils/extractDivisionPerformance'
 import type { DivisionPerformance } from '../../utils/divisionStatus'
+import { withRecognitionState } from '../../test-utils/areaFixture'
 
 describe('DivisionPerformanceCards', () => {
   const mockDivisions: DivisionPerformance[] = [
@@ -44,7 +45,7 @@ describe('DivisionPerformanceCards', () => {
       distinguishedClubs: 26,
       requiredDistinguishedClubs: 25,
       areas: [
-        {
+        withRecognitionState({
           areaId: 'A1',
           status: 'distinguished',
           clubBase: 10,
@@ -65,7 +66,7 @@ describe('DivisionPerformanceCards', () => {
             meetsThreshold: true,
           },
           isQualified: true,
-        },
+        }),
       ],
     },
     {
@@ -77,7 +78,7 @@ describe('DivisionPerformanceCards', () => {
       distinguishedClubs: 21,
       requiredDistinguishedClubs: 20,
       areas: [
-        {
+        withRecognitionState({
           areaId: 'B1',
           status: 'select-distinguished',
           clubBase: 8,
@@ -98,7 +99,7 @@ describe('DivisionPerformanceCards', () => {
             meetsThreshold: true,
           },
           isQualified: true,
-        },
+        }),
       ],
     },
   ]
@@ -328,7 +329,13 @@ describe('DivisionPerformanceCards', () => {
         />
       )
 
-      expect(extractDivisionPerformance).toHaveBeenCalledWith(mockSnapshot)
+      // Snapshot date is forwarded so the source-of-truth gate is
+      // snapshot-relative, not wall-clock (#832). Undefined when no
+      // `snapshotTimestamp` prop is provided.
+      expect(extractDivisionPerformance).toHaveBeenCalledWith(
+        mockSnapshot,
+        undefined
+      )
       expect(extractDivisionPerformance).toHaveBeenCalledTimes(1)
     })
   })

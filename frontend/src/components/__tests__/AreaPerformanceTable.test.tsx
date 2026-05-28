@@ -2,6 +2,28 @@ import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { AreaPerformanceTable } from '../AreaPerformanceTable'
 import { AreaPerformance } from '../../utils/divisionStatus'
+import { deriveAreaRecognitionState } from '../../utils/areaRecognitionState'
+
+/**
+ * Add a derived `recognitionState` to a partially-constructed AreaPerformance
+ * fixture. Year-end snapshot keeps legacy "visits met → confirmed" assertions
+ * valid; the deadline-aware gate is verified in `areaRecognitionState.test.ts`.
+ */
+function withState(
+  fixture: Omit<AreaPerformance, 'recognitionState'>
+): AreaPerformance {
+  return {
+    ...fixture,
+    recognitionState: deriveAreaRecognitionState({
+      clubBase: fixture.clubBase,
+      paidClubs: fixture.paidClubs,
+      distinguishedClubs: fixture.distinguishedClubs,
+      firstRoundVisitMet: fixture.firstRoundVisits.meetsThreshold,
+      secondRoundVisitMet: fixture.secondRoundVisits.meetsThreshold,
+      snapshotDate: '2026-06-15',
+    }),
+  }
+}
 
 /**
  * Unit tests for AreaPerformanceTable component
@@ -19,7 +41,7 @@ import { AreaPerformance } from '../../utils/divisionStatus'
  * - Requirement 9.6: Gap columns show number of additional distinguished clubs needed
  */
 describe('AreaPerformanceTable', () => {
-  const mockArea1: AreaPerformance = {
+  const mockArea1: AreaPerformance = withState({
     areaId: 'A1',
     status: 'distinguished',
     clubBase: 10,
@@ -40,9 +62,9 @@ describe('AreaPerformanceTable', () => {
       meetsThreshold: true,
     },
     isQualified: true,
-  }
+  })
 
-  const mockArea2: AreaPerformance = {
+  const mockArea2: AreaPerformance = withState({
     areaId: 'A2',
     status: 'not-qualified',
     clubBase: 8,
@@ -63,9 +85,9 @@ describe('AreaPerformanceTable', () => {
       meetsThreshold: false,
     },
     isQualified: false,
-  }
+  })
 
-  const mockArea3: AreaPerformance = {
+  const mockArea3: AreaPerformance = withState({
     areaId: 'B1',
     status: 'presidents-distinguished',
     clubBase: 12,
@@ -86,7 +108,7 @@ describe('AreaPerformanceTable', () => {
       meetsThreshold: true,
     },
     isQualified: true,
-  }
+  })
 
   describe('Requirement 6.1: Display one row for each area', () => {
     it('should render one row for each area in the areas array', () => {
@@ -433,13 +455,13 @@ describe('AreaPerformanceTable', () => {
     it('should display Select Distinguished badge when criteria met', () => {
       // Create area that meets Select Distinguished criteria
       // paidClubs >= clubBase AND distinguishedClubs >= 50% of clubBase + 1
-      const selectArea: AreaPerformance = {
+      const selectArea: AreaPerformance = withState({
         ...mockArea1,
         areaId: 'S1',
         clubBase: 10,
         paidClubs: 10, // >= clubBase (10) but not clubBase + 1
         distinguishedClubs: 6, // >= 50% of 10 + 1 = 6
-      }
+      })
       render(<AreaPerformanceTable areas={[selectArea]} />)
 
       const badge = screen.getByLabelText(
@@ -452,13 +474,13 @@ describe('AreaPerformanceTable', () => {
     it('should display Distinguished badge when criteria met', () => {
       // Create area that meets Distinguished criteria
       // paidClubs >= clubBase AND distinguishedClubs >= 50% of clubBase
-      const distinguishedArea: AreaPerformance = {
+      const distinguishedArea: AreaPerformance = withState({
         ...mockArea1,
         areaId: 'D1',
         clubBase: 10,
         paidClubs: 10, // >= clubBase (10)
         distinguishedClubs: 5, // >= 50% of 10 = 5
-      }
+      })
       render(<AreaPerformanceTable areas={[distinguishedArea]} />)
 
       const badge = screen.getByLabelText(/Recognition status: Distinguished/i)
@@ -471,13 +493,13 @@ describe('AreaPerformanceTable', () => {
 
     it('should display Not Distinguished badge when no criteria met', () => {
       // Create area that doesn't meet any criteria
-      const notDistinguishedArea: AreaPerformance = {
+      const notDistinguishedArea: AreaPerformance = withState({
         ...mockArea1,
         areaId: 'N1',
         clubBase: 10,
         paidClubs: 10, // >= clubBase (10)
         distinguishedClubs: 4, // < 50% of 10 = 5
-      }
+      })
       render(<AreaPerformanceTable areas={[notDistinguishedArea]} />)
 
       const badge = screen.getByLabelText(

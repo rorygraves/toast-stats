@@ -38,6 +38,7 @@ const cleanupAllResources = () => cleanup()
 import '@testing-library/jest-dom'
 import { DivisionAreaRecognitionPanel } from '../DivisionAreaRecognitionPanel'
 import { DivisionPerformance } from '../../utils/divisionStatus'
+import { withRecognitionState } from '../../test-utils/areaFixture'
 /**
  * Test data factory for creating division performance data
  */
@@ -46,7 +47,7 @@ const createDivision = (
 ): DivisionPerformance => ({
   divisionId: 'A',
   areas: [
-    {
+    withRecognitionState({
       areaId: 'A1',
       clubBase: 4,
       paidClubs: 3,
@@ -67,7 +68,7 @@ const createDivision = (
       },
       status: 'distinguished',
       isQualified: true,
-    },
+    }),
   ],
   clubBase: 4,
   paidClubs: 3,
@@ -86,28 +87,30 @@ const createDivisionWithAreas = (
   areaIds: string[]
 ): DivisionPerformance => ({
   divisionId,
-  areas: areaIds.map(areaId => ({
-    areaId,
-    clubBase: 4,
-    paidClubs: 3,
-    distinguishedClubs: 2,
-    netGrowth: 0,
-    requiredDistinguishedClubs: 2,
-    firstRoundVisits: {
-      completed: 4,
-      required: 3,
-      percentage: 100,
-      meetsThreshold: true,
-    },
-    secondRoundVisits: {
-      completed: 2,
-      required: 3,
-      percentage: 50,
-      meetsThreshold: false,
-    },
-    status: 'distinguished' as const,
-    isQualified: true,
-  })),
+  areas: areaIds.map(areaId =>
+    withRecognitionState({
+      areaId,
+      clubBase: 4,
+      paidClubs: 3,
+      distinguishedClubs: 2,
+      netGrowth: 0,
+      requiredDistinguishedClubs: 2,
+      firstRoundVisits: {
+        completed: 4,
+        required: 3,
+        percentage: 100,
+        meetsThreshold: true,
+      },
+      secondRoundVisits: {
+        completed: 2,
+        required: 3,
+        percentage: 50,
+        meetsThreshold: false,
+      },
+      status: 'distinguished' as const,
+      isQualified: true,
+    })
+  ),
   clubBase: 4 * areaIds.length,
   paidClubs: 3 * areaIds.length,
   distinguishedClubs: 2 * areaIds.length,
@@ -599,7 +602,7 @@ describe('DivisionAreaRecognitionPanel', () => {
           ...createDivision(),
           divisionId: 'A',
           areas: [
-            {
+            withRecognitionState({
               areaId: 'A1',
               clubBase: 5,
               paidClubs: 4,
@@ -620,7 +623,7 @@ describe('DivisionAreaRecognitionPanel', () => {
               },
               status: 'select-distinguished' as const,
               isQualified: true,
-            },
+            }),
           ],
         },
       ]
@@ -734,7 +737,7 @@ describe('DivisionAreaRecognitionPanel', () => {
           ...createDivision(),
           divisionId: 'A',
           areas: [
-            {
+            withRecognitionState({
               areaId: 'A1',
               clubBase: 4,
               paidClubs: 4,
@@ -755,7 +758,7 @@ describe('DivisionAreaRecognitionPanel', () => {
               },
               status: 'distinguished' as const,
               isQualified: true,
-            },
+            }),
           ],
         },
       ]
@@ -827,7 +830,7 @@ describe('DivisionAreaRecognitionPanel', () => {
           divisionId: 'A',
           areas: [
             // Distinguished area
-            {
+            withRecognitionState({
               areaId: 'A1',
               clubBase: 4,
               paidClubs: 4,
@@ -848,7 +851,7 @@ describe('DivisionAreaRecognitionPanel', () => {
               },
               status: 'distinguished' as const,
               isQualified: true,
-            },
+            }),
           ],
         },
       ]

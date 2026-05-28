@@ -31,10 +31,8 @@
 
 import React, { useMemo } from 'react'
 import { DivisionPerformance, AreaPerformance } from '../utils/divisionStatus'
-import {
-  calculateAreaGapAnalysis,
-  RecognitionLevel,
-} from '../utils/areaGapAnalysis'
+import { calculateAreaGapAnalysis } from '../utils/areaGapAnalysis'
+import { renderRecognitionBadge } from '../utils/areaRecognitionBadge'
 import {
   generateAreaProgressText,
   AreaProgressText,
@@ -96,32 +94,6 @@ interface DivisionGroup {
 }
 
 /**
- * Get badge styling for area recognition level
- * Uses Toastmasters brand colors
- *
- * Requirements: 7.1, 7.2
- */
-const getRecognitionBadgeClass = (
-  level: RecognitionLevel,
-  meetsNoNetLossRequirement: boolean
-): string => {
-  if (!meetsNoNetLossRequirement) {
-    return 'bg-red-100 text-red-800 border-red-300'
-  }
-
-  switch (level) {
-    case 'presidents':
-      return 'bg-tm-happy-yellow text-gray-900 border-yellow-500 font-semibold'
-    case 'select':
-      return 'bg-tm-cool-gray text-gray-900 border-gray-400'
-    case 'distinguished':
-      return 'bg-tm-true-maroon text-white border-tm-true-maroon'
-    default:
-      return 'bg-gray-100 text-gray-600 border-gray-300'
-  }
-}
-
-/**
  * Get badge styling for division recognition level
  * Uses Toastmasters brand colors with visual distinction from area badges
  *
@@ -144,29 +116,6 @@ const getDivisionRecognitionBadgeClass = (
       return 'bg-tm-true-maroon text-white border-tm-true-maroon'
     default:
       return 'bg-gray-100 text-gray-600 border-gray-300'
-  }
-}
-
-/**
- * Get display label for recognition level
- */
-const getRecognitionLabel = (
-  level: RecognitionLevel,
-  meetsNoNetLossRequirement: boolean
-): string => {
-  if (!meetsNoNetLossRequirement) {
-    return 'Net Loss'
-  }
-
-  switch (level) {
-    case 'presidents':
-      return "President's Distinguished"
-    case 'select':
-      return 'Select Distinguished'
-    case 'distinguished':
-      return 'Distinguished'
-    default:
-      return 'Not Distinguished'
   }
 }
 
@@ -451,37 +400,10 @@ export const DivisionAreaProgressSummary: React.FC<
               {/* Area Articles - Requirements: 11.3 */}
               <div className="space-y-4">
                 {group.areas.map(({ area, progressText }) => {
-                  const gapAnalysis = calculateAreaGapAnalysis({
-                    clubBase: area.clubBase,
-                    paidClubs: area.paidClubs,
-                    distinguishedClubs: area.distinguishedClubs,
-                  })
-
-                  // Check if visits gate the recognition (#325)
-                  const visitsComplete =
-                    area.firstRoundVisits.completed >=
-                      area.firstRoundVisits.required &&
-                    area.secondRoundVisits.completed >=
-                      area.secondRoundVisits.required
-                  const isDistinguishedLevel =
-                    progressText.currentLevel !== 'none'
-                  const isProvisionalArea =
-                    isDistinguishedLevel && !visitsComplete
-
-                  const badgeClass = isProvisionalArea
-                    ? 'bg-amber-100 text-amber-800 border-amber-300'
-                    : getRecognitionBadgeClass(
-                        progressText.currentLevel,
-                        gapAnalysis.meetsNoNetLossRequirement
-                      )
-
-                  const baseLabel = getRecognitionLabel(
-                    progressText.currentLevel,
-                    gapAnalysis.meetsNoNetLossRequirement
-                  )
-                  const badgeLabel = isProvisionalArea
-                    ? `${baseLabel} (Provisional)`
-                    : baseLabel
+                  // Source-of-truth recognition badge (#832) — deadline-aware
+                  // visit gate lives in `deriveAreaRecognitionState`; this is
+                  // a pure presenter.
+                  const badge = renderRecognitionBadge(area.recognitionState)
 
                   return (
                     <article
@@ -498,10 +420,11 @@ export const DivisionAreaProgressSummary: React.FC<
                           Area {area.areaId}
                         </h5>
                         <span
-                          className={`px-2 py-1 text-xs font-medium rounded-full border ${badgeClass}`}
-                          aria-label={`Recognition status: ${badgeLabel}`}
+                          className={`px-2 py-1 text-xs font-medium rounded-full border ${badge.className}`}
+                          aria-label={`Recognition status: ${badge.label}`}
+                          title={badge.tooltip}
                         >
-                          {badgeLabel}
+                          {badge.label}
                         </span>
                       </div>
 

@@ -28,6 +28,7 @@ import type {
   AreaPerformance,
   VisitStatus,
 } from '../../utils/divisionStatus'
+import { deriveAreaRecognitionState } from '../../utils/areaRecognitionState'
 
 /**
  * Generator for division identifiers (A-Z, AA-ZZ)
@@ -264,6 +265,16 @@ export const areaPerformanceArb = (options?: {
             firstRoundVisits,
             secondRoundVisits,
             isQualified,
+            recognitionState: deriveAreaRecognitionState({
+              clubBase,
+              paidClubs,
+              distinguishedClubs,
+              firstRoundVisitMet: firstRoundVisits.meetsThreshold,
+              secondRoundVisitMet: secondRoundVisits.meetsThreshold,
+              // Mid-year snapshot so the generator yields a stable mix of
+              // confirmed/provisional/not-distinguished states.
+              snapshotDate: '2026-03-15',
+            }),
           }
         })
     })
