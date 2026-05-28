@@ -3165,6 +3165,48 @@
     color: var(--ink);
   }
 
+  /* MobileDisclosure (#867) — folds a secondary district-overview panel
+     behind a collapsed-by-default native <details> on mobile. The wrapper
+     stays chrome-less because the folded child already carries its own
+     .redesign-panel surface; the <summary> is the visible collapsed state,
+     so it gets the panel-card look + a >=44px touch target. */
+  .mobile-disclosure {
+    margin: 0;
+  }
+
+  .mobile-disclosure__summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 12px 18px;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-md);
+    box-shadow: var(--rds-shadow-sm);
+    cursor: pointer;
+    user-select: none;
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: -0.005em;
+    color: var(--ink);
+  }
+
+  .mobile-disclosure__summary:hover {
+    color: var(--link);
+  }
+
+  /* The native marker triangle is the affordance the audit asked for
+     ("Milestones (PY 25–26) ▾"); keep it, push the label off it. */
+  .mobile-disclosure__summary::-webkit-details-marker {
+    order: 1;
+  }
+
+  .mobile-disclosure[open] > .mobile-disclosure__content {
+    margin-top: 8px;
+  }
+
   /* Clubs table single-scroll container (#667, epic #665). Pagination was
      removed; the full sorted+filtered set renders in one capped-height
      container so the header stays in view while the body scrolls. The
