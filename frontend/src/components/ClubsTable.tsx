@@ -1,79 +1,43 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
+import {
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  flexRender,
+  type SortingState,
+  type ColumnPinningState,
+  type VisibilityState,
+} from '@tanstack/react-table'
 import { ClubTrend } from '../hooks/useDistrictAnalytics'
-import type { ClubHealthStatus } from '../hooks/useDistrictAnalytics'
 import { ExportButton } from './ExportButton'
 import { exportClubPerformance } from '../utils/csvExport'
 import { LoadingSkeleton } from './LoadingSkeleton'
-import { isProvisionallyDistinguished } from '../utils/provisionalDistinguished'
-import {
-  getClubHealthStatusLabel,
-  getClubHealthStatusPillModifier,
-} from '../utils/clubHealthStatus'
 import { useColumnFilters } from '../hooks/useColumnFilters'
 import { ColumnHeader } from './ColumnHeader'
 import { FiltersPanel } from './filters/FiltersPanel'
 import { ActiveFiltersBar } from './ActiveFiltersBar'
 import { describeActiveFilters } from '../utils/clubFilterDescribe'
-import { SortField, SortDirection, COLUMN_CONFIGS } from './filters/types'
+import {
+  SortField,
+  SortDirection,
+  COLUMN_CONFIGS,
+  type ProcessedClubTrend,
+} from './filters/types'
+import {
+  clubsColumns,
+  clubColumnPriorityClass,
+  clubColumnTdClass,
+} from './clubsColumns'
 import { CLOSE_TO_DISTINGUISHED_MAX_MEMBERS } from '../utils/closeToDistinguished'
 import ClubCard from './ClubCard'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { useDebounce } from '../hooks/useDebounce'
 
-// DCP tier pill maps (#669). Confirmed tiers carry their HANDOFF §256 color
-// (Smedley maroon, President's loyal-500, Select loyal-400, Distinguished
-// green); a provisional tier shows the striped-yellow "projected" stripe
-// instead, since the membership isn't yet confirmed by April renewals.
-// NotDistinguished has no pill — a muted em-dash (neutral "not yet").
-// Module-scope: these are constant, so they don't re-allocate per render.
-type ConfirmedTier = Exclude<
-  ClubTrend['distinguishedLevel'],
-  'NotDistinguished'
->
-
-const TIER_DISPLAY: Record<ConfirmedTier, string> = {
-  Distinguished: 'Distinguished',
-  Select: 'Select',
-  President: "President's",
-  Smedley: 'Smedley',
-}
-
-const TIER_MODIFIER: Record<ConfirmedTier, string> = {
-  Distinguished: 'clubs-tier-pill--distinguished',
-  Select: 'clubs-tier-pill--select',
-  President: 'clubs-tier-pill--presidents',
-  Smedley: 'clubs-tier-pill--smedley',
-}
-
-// Per-column responsive priority (ADR-006 §3, #812). The table renders only at
-// the tablet tier and up (≥768px; below that is the card view). Two visibility
-// levels:
-//   • Core (always shown when the table renders): Club (sticky key), Status,
-//     Members, Needed, DCP, Tier — the triage set a leader scans first.
-//   • Detail (clubs-table__col--desktop — hidden 768–1279, revealed ≥1280):
-//     Div, Area, New, Oct Renew, Apr Renew, Club Status, Years.
-// The card view at true mobile carries the full record, so nothing is lost.
-const DESKTOP_ONLY_FIELDS: ReadonlySet<SortField> = new Set([
-  'division',
-  'area',
-  'newMembers',
-  'octoberRenewals',
-  'aprilRenewals',
-  'clubStatus',
-  'yearsChartered',
-])
-
-// The sticky key column — pinned at left:0 so the row stays labelled while the
-// metric columns scroll horizontally (Lesson 105). It is never hidden.
-const STICKY_FIELD: SortField = 'name'
-
-/** Responsive priority class for a column header/cell, by field. */
-const colPriorityClass = (field: SortField): string =>
-  field === STICKY_FIELD
-    ? 'clubs-table__sticky-col'
-    : DESKTOP_ONLY_FIELDS.has(field)
-      ? 'clubs-table__col--desktop'
-      : ''
+// The column model — order, headers, responsive priority (sticky key column +
+// tablet-tier hiding), per-cell render, and the sort fns — lives in
+// `clubsColumns.tsx` (the TanStack migration, #835). The DCP tier pill maps,
+// status-rank sort key, and sticky/desktop priority that ClubsTable used to own
+// inline moved there. ClubsTable keeps only the row-level concerns below.
 
 /** Row-tint key for the sticky cell, so it can repaint OPAQUE per row status
  *  (a sticky cell must be opaque or scrolled columns bleed through it). Mirrors
@@ -367,13 +331,6 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
     return counts
   }, [clubs])
 
-  // Status-pill modifier + label come from the shared clubHealthStatus helpers
-  // so the desktop row and the mobile ClubCard render the same datum
-  // identically (lesson 052). Token-driven via the CSS layer so dark mode
-  // "just works" (R10); the label carries meaning too (never color-alone).
-  const getStatusPillModifier = getClubHealthStatusPillModifier
-  const getStatusLabel = getClubHealthStatusLabel
-
   // Get row background color based on status
   const getRowColor = (
     status: 'thriving' | 'vulnerable' | 'intervention-required'
@@ -390,109 +347,57 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
     }
   }
 
-  // Sort the filtered clubs
-  const sortedClubs = useMemo(() => {
-    const sorted = [...filteredClubs].sort((a, b) => {
-      let aValue: string | number | undefined
-      let bValue: string | number | undefined
+  // TanStack Table owns sort / sizing / pinning / visibility (#835, epic #821
+  // Sprint 1). The filter pipeline (useColumnFilters → filteredClubs) and its
+  // metadata (COLUMN_CONFIGS) are unchanged (R11) — the table presents over it.
+  //
+  // Feed the table a name-ascending base order so its STABLE sort reproduces the
+  // pre-migration "secondary sort by club name (always ascending)" tiebreak in
+  // both directions (see clubsColumns.tsx). Memoized on filteredClubs.
+  const nameSortedClubs = useMemo(
+    () =>
+      [...filteredClubs].sort((a, b) =>
+        a.clubName.toLowerCase().localeCompare(b.clubName.toLowerCase())
+      ),
+    [filteredClubs]
+  )
 
-      switch (sortField) {
-        case 'name':
-          aValue = a.clubName.toLowerCase()
-          bValue = b.clubName.toLowerCase()
-          break
-        case 'membership':
-          aValue = a.latestMembership
-          bValue = b.latestMembership
-          break
-        case 'dcpGoals':
-          aValue = a.latestDcpGoals
-          bValue = b.latestDcpGoals
-          break
-        case 'status': {
-          const statusOrder: Record<ClubHealthStatus, number> = {
-            'intervention-required': 0,
-            vulnerable: 1,
-            thriving: 2,
-          }
-          aValue = statusOrder[a.currentStatus]
-          bValue = statusOrder[b.currentStatus]
-          break
-        }
-        case 'division':
-          aValue = a.divisionName.toLowerCase()
-          bValue = b.divisionName.toLowerCase()
-          break
-        case 'area':
-          aValue = a.areaName.toLowerCase()
-          bValue = b.areaName.toLowerCase()
-          break
-        case 'distinguished': {
-          // Use the custom sort order for Distinguished column
-          aValue = a.distinguishedOrder
-          bValue = b.distinguishedOrder
-          break
-        }
-        case 'octoberRenewals':
-          aValue = a.octoberRenewals
-          bValue = b.octoberRenewals
-          break
-        case 'aprilRenewals':
-          aValue = a.aprilRenewals
-          bValue = b.aprilRenewals
-          break
-        case 'newMembers':
-          aValue = a.newMembers
-          bValue = b.newMembers
-          break
-        case 'membersNeeded':
-          aValue = a.membersNeeded
-          bValue = b.membersNeeded
-          break
-        case 'clubStatus':
-          aValue = a.clubStatus?.toLowerCase()
-          bValue = b.clubStatus?.toLowerCase()
-          break
-        case 'yearsChartered':
-          // null (missing charterDate) falls through to the
-          // undefined-handling below, sorting to end either direction.
-          aValue = a.yearsChartered ?? undefined
-          bValue = b.yearsChartered ?? undefined
-          break
-        default:
-          return 0
-      }
+  // Sort state is CONTROLLED by sortField/sortDirection — the URL-synced source
+  // of truth that ColumnHeader drives via handleSort. The table derives the row
+  // order from it; nothing calls the table's own sort API, so no onSortingChange.
+  const sorting: SortingState = useMemo(
+    () => [{ id: sortField, desc: sortDirection === 'desc' }],
+    [sortField, sortDirection]
+  )
 
-      // Handle undefined values - treat as lowest value (sort to end)
-      const aIsUndefined = aValue === undefined
-      const bIsUndefined = bValue === undefined
+  // The sticky key column ('name') is the left-pinned column (ADR-006 §3,
+  // Lesson 105); the existing CSS (.clubs-table__sticky-col) renders the
+  // stickiness, the pinning state is the model of record. columnVisibility is
+  // wired empty here — Sprint 2 (#819) drives it from the column-group toggles;
+  // the tablet-tier hiding stays CSS-@media-driven (.clubs-table__col--desktop).
+  const columnPinning: ColumnPinningState = useMemo(
+    () => ({ left: ['name'], right: [] }),
+    []
+  )
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
 
-      if (aIsUndefined && bIsUndefined) {
-        // Both undefined - use secondary sort by club name
-        return a.clubName.toLowerCase().localeCompare(b.clubName.toLowerCase())
-      }
-      if (aIsUndefined) {
-        // a is undefined, sort to end regardless of direction
-        return 1
-      }
-      if (bIsUndefined) {
-        // b is undefined, sort to end regardless of direction
-        return -1
-      }
+  const table = useReactTable<ProcessedClubTrend>({
+    data: nameSortedClubs,
+    columns: clubsColumns,
+    state: { sorting, columnPinning, columnVisibility },
+    onColumnVisibilityChange: setColumnVisibility,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    enableSortingRemoval: false,
+  })
 
-      // Both values are defined - compare normally
-      // TypeScript needs explicit assertion after undefined checks
-      const aVal = aValue as string | number
-      const bVal = bValue as string | number
-      if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1
-      if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1
-
-      // Equal values - use secondary sort by club name
-      return a.clubName.toLowerCase().localeCompare(b.clubName.toLowerCase())
-    })
-
-    return sorted
-  }, [filteredClubs, sortField, sortDirection])
+  const rowModel = table.getRowModel()
+  // The ordered ProcessedClubTrend[] backing CSV export, the count line, the
+  // card view, and the scroll-cue effect — mirrors the displayed row order.
+  const sortedClubs = useMemo(
+    () => rowModel.rows.map(r => r.original),
+    [rowModel]
+  )
 
   // No pagination (#667): the full sorted+filtered set renders in a single
   // sticky-header scroll container. Sort / filter / search span every row;
@@ -980,28 +885,31 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
           >
             <table id="clubs-table" className="w-full table-auto">
               <thead className="clubs-table-sticky-head">
-                <tr>
-                  {COLUMN_CONFIGS.map(config => (
-                    <th
-                      key={config.field}
-                      className={`p-0 ${colPriorityClass(config.field)}`.trim()}
-                    >
-                      <ColumnHeader
-                        field={config.field}
-                        label={config.label}
-                        sortable={config.sortable}
-                        currentSort={{
-                          field: sortField,
-                          direction: sortDirection,
-                        }}
-                        onSort={handleSort}
-                      />
-                    </th>
-                  ))}
-                </tr>
+                {table.getHeaderGroups().map(headerGroup => (
+                  <tr key={headerGroup.id}>
+                    {headerGroup.headers.map(header => (
+                      <th
+                        key={header.id}
+                        className={`p-0 ${clubColumnPriorityClass(header.column.id)}`.trim()}
+                      >
+                        <ColumnHeader
+                          field={header.column.id as SortField}
+                          label={header.column.columnDef.header as string}
+                          sortable={header.column.getCanSort()}
+                          currentSort={{
+                            field: sortField,
+                            direction: sortDirection,
+                          }}
+                          onSort={handleSort}
+                        />
+                      </th>
+                    ))}
+                  </tr>
+                ))}
               </thead>
               <tbody>
-                {sortedClubs.map(club => {
+                {rowModel.rows.map(row => {
+                  const club = row.original
                   const tint = rowTint(club.currentStatus)
                   return (
                     <tr
@@ -1009,177 +917,26 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
                       onClick={() => onClubClick?.(club)}
                       className={`${getRowColor(club.currentStatus)} cursor-pointer transition-colors`}
                     >
-                      {/* Cell order MUST match COLUMN_CONFIGS (filters/types.ts):
+                      {/* Cells render in the column-model order (clubsColumns.tsx):
                       Club, Div, Area, Status, Members, Needed, New, Oct Renew,
-                      Apr Renew, DCP, Tier, Club Status, Years (#669). The
-                      responsive priority class on each cell MUST match its
-                      header above (colPriorityClass, #812). */}
-                      {/* Club — the sticky key column. data-row-tint lets the CSS
-                        repaint it opaque to match the row's status bg so the
-                        scrolled columns don't bleed through (Lesson 105). */}
-                      <td
-                        className="px-2 py-3 whitespace-nowrap clubs-table__sticky-col"
-                        data-row-tint={tint}
-                      >
-                        <div className="font-medium text-sm">
-                          {club.clubName}
-                        </div>
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm clubs-cell-muted text-center clubs-table__col--desktop">
-                        {club.divisionName}
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm clubs-cell-muted text-center clubs-table__col--desktop">
-                        {club.areaName}
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-center">
-                        <span
-                          className={`clubs-status-pill ${getStatusPillModifier(club.currentStatus)}`}
+                      Apr Renew, DCP, Tier, Club Status, Years. Each td's class
+                      (base + responsive priority) comes from clubColumnTdClass;
+                      only the sticky key column ('name') carries data-row-tint so
+                      the CSS repaints it opaque to the row status bg (Lesson 105). */}
+                      {row.getVisibleCells().map(cell => (
+                        <td
+                          key={cell.id}
+                          className={clubColumnTdClass(cell.column.id)}
+                          data-row-tint={
+                            cell.column.id === 'name' ? tint : undefined
+                          }
                         >
-                          {getStatusLabel(club.currentStatus)}
-                        </span>
-                      </td>
-                      {/* Members — current / base (#669). Base omitted when the
-                      snapshot has no membershipBase (pre-merge data). */}
-                      <td className="px-2 py-3 whitespace-nowrap text-sm text-center clubs-members-cell">
-                        <span className="tabular-nums">
-                          {club.latestMembership}
-                        </span>
-                        {club.membershipBase !== undefined && (
-                          <span className="clubs-cell-muted tabular-nums">
-                            {' / '}
-                            {club.membershipBase}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center font-medium">
-                        {club.membersNeeded > 0 ? (
-                          <span className="text-tm-true-maroon">
-                            {club.membersNeeded}
-                          </span>
-                        ) : (
-                          <span className="clubs-cell-muted">—</span>
-                        )}
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center clubs-table__col--desktop">
-                        {club.newMembers !== undefined ? (
-                          <span
-                            className={
-                              club.newMembers === 0
-                                ? 'clubs-cell-muted'
-                                : undefined
-                            }
-                          >
-                            {club.newMembers}
-                          </span>
-                        ) : (
-                          <span className="clubs-cell-muted">—</span>
-                        )}
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center clubs-table__col--desktop">
-                        {club.octoberRenewals !== undefined ? (
-                          <span
-                            className={
-                              club.octoberRenewals === 0
-                                ? 'clubs-cell-muted'
-                                : undefined
-                            }
-                          >
-                            {club.octoberRenewals}
-                          </span>
-                        ) : (
-                          <span className="clubs-cell-muted">—</span>
-                        )}
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center clubs-table__col--desktop">
-                        {club.aprilRenewals !== undefined ? (
-                          <span
-                            className={
-                              club.aprilRenewals === 0
-                                ? 'clubs-cell-muted'
-                                : undefined
-                            }
-                          >
-                            {club.aprilRenewals}
-                          </span>
-                        ) : (
-                          <span className="clubs-cell-muted">—</span>
-                        )}
-                      </td>
-                      {/* DCP — inline progress bar over the canonical goals-achieved
-                      count (0–10). Reads latestDcpGoals from the analytics
-                      trend; no Goals-1-N inference (DCP-independence tripwire). */}
-                      <td className="px-2 py-3 whitespace-nowrap text-center">
-                        {(() => {
-                          const goals = Math.max(
-                            0,
-                            Math.min(10, club.latestDcpGoals)
-                          )
-                          const pct = (goals / 10) * 100
-                          return (
-                            <div className="clubs-dcp-cell">
-                              <span className="clubs-dcp-cell__val tabular-nums">
-                                {goals}/10
-                              </span>
-                              <div
-                                className="clubs-dcp-bar"
-                                role="progressbar"
-                                aria-valuenow={goals}
-                                aria-valuemin={0}
-                                aria-valuemax={10}
-                                aria-label="DCP goals achieved"
-                              >
-                                <div
-                                  className="clubs-dcp-bar__fill"
-                                  style={{ width: `${pct}%` }}
-                                />
-                              </div>
-                            </div>
-                          )
-                        })()}
-                      </td>
-                      {/* Tier — DCP recognition pill (#669). Color by tier; a
-                      provisional tier shows the striped-yellow "projected"
-                      treatment instead (membership unconfirmed pre-April). */}
-                      <td className="px-2 py-3 whitespace-nowrap text-center">
-                        {club.distinguishedLevel !== 'NotDistinguished' ? (
-                          (() => {
-                            const provisional =
-                              isProvisionallyDistinguished(club)
-                            const modifier = provisional
-                              ? 'clubs-tier-pill--projected'
-                              : TIER_MODIFIER[club.distinguishedLevel]
-                            return (
-                              <span
-                                className={`clubs-tier-pill ${modifier}`}
-                                title={
-                                  provisional
-                                    ? 'Provisional — membership not yet confirmed by April renewals'
-                                    : 'Confirmed — April renewals recorded'
-                                }
-                              >
-                                {TIER_DISPLAY[club.distinguishedLevel]}
-                                {provisional ? '*' : ''}
-                              </span>
-                            )
-                          })()
-                        ) : (
-                          <span className="text-sm clubs-cell-muted">—</span>
-                        )}
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm text-center clubs-table__col--desktop">
-                        {club.clubStatus ? (
-                          <span>{club.clubStatus}</span>
-                        ) : (
-                          <span className="clubs-cell-muted">—</span>
-                        )}
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center clubs-table__col--desktop">
-                        {club.yearsChartered !== null ? (
-                          <span>{club.yearsChartered}</span>
-                        ) : (
-                          <span className="clubs-cell-muted">—</span>
-                        )}
-                      </td>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </td>
+                      ))}
                     </tr>
                   )
                 })}
