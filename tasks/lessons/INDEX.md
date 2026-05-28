@@ -85,6 +85,7 @@
 - **118** [data-pipeline, analytics, collector-cli, find-a-club] — "Missing from Find-A-Club" is a registry-visibility signal, not a data gap (#490, #757)
 - **119** [automation, sprint-runner, prompts, process] — An issue's cited doc may be uncommitted in the operator's main checkout, not missing (#809, #813)
 - **119** [ci, tests, seo, frontend, verification, performance] — Before gating a Lighthouse SEO audit at `error`, verify which audits survive the localhost/preview host (#778, #785)
+- **119** [frontend, scope, refactor, dcp] — When removing a UI bandaid, grep for its _shape_, not just its named site (#832, #833)
 - **120** [css, frontend, scope, router, architecture] — A CSS class named like "a page" may be shared chrome for a whole route family (#810, #813)
 - **120** [frontend, react, refactor, tests, tanstack] — Reproduce a hand-rolled comparator's tiebreak + undefined rules with a headless table's native options, not a negation-fighting comparator (#835, #821)
 - **120** [tests, vitest, flaky, react, frontend] — `await waitFor` for an already-flushed effect leaks a deferred render into the next test (#780, #785)
