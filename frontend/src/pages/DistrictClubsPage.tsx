@@ -9,6 +9,7 @@ import { useDistricts } from '../hooks/useDistricts'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useDistrictAnalytics, ClubTrend } from '../hooks/useDistrictAnalytics'
 import { useDistrictCachedDates } from '../hooks/useDistrictData'
+import { previousRecordedDate, useSnapshotDiff } from '../hooks/useSnapshotDiff'
 import { useUrlProgramYear } from '../hooks/useUrlProgramYear'
 import {
   getAvailableProgramYears,
@@ -187,6 +188,29 @@ const DistrictClubsPage: React.FC = () => {
 
   const allClubs = analytics?.allClubs || []
 
+  // Default snapshot-diff pair = (previous recorded date → latest recorded
+  // date) for this district (#795, epic #821 Sprint 3). The diff feeds the
+  // opt-in "Changes" column group ON the clubs table — independent of the
+  // dedicated "What Changed" page (`/district/:id/changes`), which owns its
+  // own URL-synced arbitrary date pair (#794). The pair is owned here and
+  // passed as props (R3 — never re-derive from response data). When fewer
+  // than two snapshots exist the hook is disabled (`enabled: !!from && !!to`)
+  // and ClubsTable gets `snapshotDiff: undefined` — the Changes group simply
+  // doesn't surface, matching the same precondition the changes page uses.
+  const sortedRecordedDates = useMemo(
+    () => [...allCachedDates].sort((a, b) => a.localeCompare(b)),
+    [allCachedDates]
+  )
+  const defaultDiffPair = useMemo(
+    () => previousRecordedDate(sortedRecordedDates),
+    [sortedRecordedDates]
+  )
+  const { data: snapshotDiff } = useSnapshotDiff(
+    districtId,
+    defaultDiffPair?.from,
+    defaultDiffPair?.to
+  )
+
   const rawName = selectedDistrict?.name || districtId || ''
   const districtName = /^\d+$/.test(rawName) ? `District ${rawName}` : rawName
   useDocumentTitle(districtName ? `${districtName} Clubs` : null)
@@ -249,6 +273,7 @@ const DistrictClubsPage: React.FC = () => {
                   onSortChange={handleSortChange}
                   initialFilterState={initialFilterState}
                   onFilterChange={handleFilterChange}
+                  snapshotDiff={snapshotDiff}
                 />
                 <ProspectiveClubsPanel clubs={analytics?.prospectiveClubs} />
               </>

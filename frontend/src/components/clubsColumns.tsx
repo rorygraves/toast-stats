@@ -115,6 +115,14 @@ const TD_BASE_CLASS: Record<string, string> = {
   clubStatus: 'px-2 py-3 whitespace-nowrap text-sm text-center',
   yearsChartered:
     'px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center',
+  // Opt-in "Changes" group delta cells (#795). Same vertical rhythm as the
+  // core numeric cells; ChangeIndicator owns the colour + sign + arrow.
+  deltaMembership:
+    'px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center',
+  deltaPayments: 'px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center',
+  deltaDcpGoals: 'px-2 py-3 whitespace-nowrap text-sm tabular-nums text-center',
+  tierTransition: 'px-2 py-3 whitespace-nowrap text-sm text-center',
+  distinguishedFlip: 'px-2 py-3 whitespace-nowrap text-sm text-center',
 }
 
 /** Exact `<td>` className for a column: base + responsive priority class. */

@@ -8,9 +8,10 @@ import {
   type ColumnPinningState,
   type VisibilityState,
 } from '@tanstack/react-table'
+import type { SnapshotDiff } from '@toastmasters/shared-contracts'
 import { ClubTrend } from '../hooks/useDistrictAnalytics'
 import { ExportButton } from './ExportButton'
-import { exportClubPerformance } from '../utils/csvExport'
+import { exportClubPerformance, exportSnapshotDiff } from '../utils/csvExport'
 import { LoadingSkeleton } from './LoadingSkeleton'
 import { useColumnFilters } from '../hooks/useColumnFilters'
 import { ColumnHeader } from './ColumnHeader'
@@ -34,6 +35,10 @@ import {
   clubColumnPriorityClass,
   clubColumnTdClass,
 } from './clubsColumns'
+import {
+  buildClubsDeltaColumns,
+  CLUBS_DELTA_COLUMN_IDS,
+} from './clubsDeltaColumns'
 import { CLOSE_TO_DISTINGUISHED_MAX_MEMBERS } from '../utils/closeToDistinguished'
 import ClubCard from './ClubCard'
 import { useIsMobile } from '../hooks/useIsMobile'
@@ -49,6 +54,10 @@ import { useDebounce } from '../hooks/useDebounce'
  *  Passed to the versioned localStorage primitive (#420), which prefixes it
  *  with `toast-stats:v<N>:` so it migrates with every other persisted key. */
 const HIDDEN_GROUPS_STORAGE_NAME = 'clubs-table:hidden-groups'
+/** Persisted opt-in toggle for the Changes group (#795). Stored independently
+ *  of HIDDEN_GROUPS so the default (off) is honoured even for users whose
+ *  hidden-groups store predates the group's existence. */
+const CHANGES_VISIBLE_STORAGE_NAME = 'clubs-table:changes-visible'
 
 const VALID_GROUPS = new Set<ColumnGroup>(COLUMN_GROUP_IDS)
 /** A stale/corrupt store must never hide phantom groups or wedge the table
@@ -57,13 +66,6 @@ const sanitizeHiddenGroups = (raw: unknown): ColumnGroup[] =>
   Array.isArray(raw)
     ? raw.filter((g): g is ColumnGroup => VALID_GROUPS.has(g as ColumnGroup))
     : []
-
-// Groups offered in the show/hide menu: only those with at least one column in
-// the current table (so "Changes" stays out until #795 lands its delta cols).
-// COLUMN_CONFIGS is static, so this resolves once at module load.
-const AVAILABLE_COLUMN_GROUPS = COLUMN_GROUPS.filter(g =>
-  COLUMN_CONFIGS.some(c => c.group === g.id)
-)
 
 /** Row-tint key for the sticky cell, so it can repaint OPAQUE per row status
  *  (a sticky cell must be opaque or scrolled columns bleed through it). Mirrors
@@ -182,6 +184,14 @@ interface ClubsTableProps {
   /** Reference date for anniversary computation. Defaults to `new Date()`.
    *  Tests inject a fixed date to keep year counts deterministic (#448). */
   referenceDate?: Date
+  /**
+   * Snapshot-to-snapshot diff for the opt-in "Changes" column group (#795).
+   * When provided, ClubsTable surfaces the five delta columns under the Changes
+   * group (hidden by default, opt-in via the Columns menu) AND offers a sibling
+   * CSV export of the diff. Absent ⇒ no Changes group, no diff export — the
+   * table is byte-identical to its pre-#795 self.
+   */
+  snapshotDiff?: SnapshotDiff | undefined
 }
 
 /**
@@ -228,6 +238,7 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
   initialFilterState,
   onFilterChange,
   referenceDate,
+  snapshotDiff,
 }) => {
   const [sortField, setSortField] = useState<SortField>(
     initialSortField ?? 'name'
@@ -417,16 +428,30 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
   const [storedHiddenGroups, setStoredHiddenGroups] = usePersistedState<
     ColumnGroup[]
   >(HIDDEN_GROUPS_STORAGE_NAME, [])
-  const hiddenGroups = useMemo(
-    () => new Set(sanitizeHiddenGroups(storedHiddenGroups)),
-    [storedHiddenGroups]
+  // Opt-in show for the Changes group (#795). Stored as a boolean (default
+  // false) so the Changes columns stay hidden until the user toggles them on,
+  // independently of the hide-on-toggle behaviour the other groups use. The
+  // pre-existing `hiddenGroups` store can be `[]` for users who saved it before
+  // 'changes' existed — without a separate flag, they'd be opted IN by default.
+  const [changesVisible, setChangesVisible] = usePersistedState<boolean>(
+    CHANGES_VISIBLE_STORAGE_NAME,
+    false
   )
+  const hiddenGroups = useMemo(() => {
+    const s = new Set(sanitizeHiddenGroups(storedHiddenGroups))
+    if (!changesVisible) s.add('changes')
+    return s
+  }, [storedHiddenGroups, changesVisible])
   const isGroupHidden = useCallback(
     (group: ColumnGroup) => hiddenGroups.has(group),
     [hiddenGroups]
   )
   const toggleGroup = useCallback(
     (group: ColumnGroup) => {
+      if (group === 'changes') {
+        setChangesVisible(v => !v)
+        return
+      }
       setStoredHiddenGroups(prev => {
         const next = new Set(sanitizeHiddenGroups(prev))
         if (next.has(group)) next.delete(group)
@@ -434,7 +459,47 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
         return [...next]
       })
     },
-    [setStoredHiddenGroups]
+    [setStoredHiddenGroups, setChangesVisible]
+  )
+
+  // The 'changes' group is offered ONLY when a snapshot diff is provided —
+  // toggling a column set with nothing in it would be a dead control. The other
+  // groups are offered when at least one column claims them (so 'identity',
+  // 'membership', 'renewals', 'recognition' are always offered today; this
+  // shape is forward-compatible if any of them ever empties out).
+  const availableColumnGroups = useMemo(
+    () =>
+      COLUMN_GROUPS.filter(
+        g =>
+          (g.id === 'changes' && !!snapshotDiff) ||
+          (g.id !== 'changes' && COLUMN_CONFIGS.some(c => c.group === g.id))
+      ),
+    [snapshotDiff]
+  )
+
+  // ClubDiff lookup keyed by clubId, recomputed only when the diff changes.
+  // The delta column defs close over this Map so each cell can render its
+  // row's own diff without re-walking `snapshotDiff.clubs.bothPresent`.
+  const clubDiffsById = useMemo(() => {
+    const m = new Map<
+      string,
+      import('@toastmasters/shared-contracts').ClubDiff
+    >()
+    if (snapshotDiff) {
+      for (const c of snapshotDiff.clubs.bothPresent) m.set(c.clubId, c)
+    }
+    return m
+  }, [snapshotDiff])
+
+  // Delta column defs (#795). Only appended when a diff is provided — absent ⇒
+  // the table is byte-identical to its pre-#795 self. The 'changes' group's
+  // visibility is driven by `hiddenGroups` (opt-in, default hidden).
+  const tableColumns = useMemo(
+    () =>
+      snapshotDiff
+        ? [...clubsColumns, ...buildClubsDeltaColumns(clubDiffsById)]
+        : clubsColumns,
+    [snapshotDiff, clubDiffsById]
   )
 
   const columnVisibility = useMemo<VisibilityState>(() => {
@@ -444,12 +509,19 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
       if (c.field === STICKY_COLUMN_FIELD) continue
       if (hiddenGroups.has(c.group)) vis[c.field] = false
     }
+    // Delta columns belong to the 'changes' group; hide the whole set when the
+    // group is hidden. They live outside COLUMN_CONFIGS (they're display-only
+    // columns, no filter or sort metadata to register) so the loop above
+    // doesn't reach them.
+    if (hiddenGroups.has('changes')) {
+      for (const id of CLUBS_DELTA_COLUMN_IDS) vis[id] = false
+    }
     return vis
   }, [hiddenGroups])
 
   const table = useReactTable<ProcessedClubTrend>({
     data: nameSortedClubs,
-    columns: clubsColumns,
+    columns: tableColumns,
     state: { sorting, columnPinning, columnVisibility },
     // columnVisibility is fully controlled by hiddenGroups above — TanStack
     // never writes it directly, so onColumnVisibilityChange is intentionally
@@ -523,29 +595,46 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
       <div className="p-6 clubs-panel-header">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-bold clubs-panel-title">All Clubs</h3>
-          <ExportButton
-            onExport={() =>
-              exportClubPerformance(
-                sortedClubs.map(club => ({
-                  clubId: club.clubId,
-                  clubName: club.clubName,
-                  divisionName: club.divisionName,
-                  areaName: club.areaName,
-                  membershipTrend: club.membershipTrend,
-                  dcpGoalsTrend: club.dcpGoalsTrend,
-                  currentStatus: club.currentStatus,
-                  distinguishedLevel: club.distinguishedLevel,
-                  riskFactors: club.riskFactors,
-                  octoberRenewals: club.octoberRenewals,
-                  aprilRenewals: club.aprilRenewals,
-                  newMembers: club.newMembers,
-                })),
-                districtId
-              )
-            }
-            label="Export Clubs"
-            disabled={sortedClubs.length === 0}
-          />
+          <div className="clubs-export-group">
+            <ExportButton
+              onExport={() =>
+                exportClubPerformance(
+                  sortedClubs.map(club => ({
+                    clubId: club.clubId,
+                    clubName: club.clubName,
+                    divisionName: club.divisionName,
+                    areaName: club.areaName,
+                    membershipTrend: club.membershipTrend,
+                    dcpGoalsTrend: club.dcpGoalsTrend,
+                    currentStatus: club.currentStatus,
+                    distinguishedLevel: club.distinguishedLevel,
+                    riskFactors: club.riskFactors,
+                    octoberRenewals: club.octoberRenewals,
+                    aprilRenewals: club.aprilRenewals,
+                    newMembers: club.newMembers,
+                  })),
+                  districtId
+                )
+              }
+              label="Export Clubs"
+              disabled={sortedClubs.length === 0}
+            />
+            {/* Diff CSV export (#795). A SIBLING of the clubs export — the diff
+                rows are from/to/Δ across two snapshots, not current-snapshot
+                fields, so a single combined CSV would conflate two datasets
+                (lesson 117). Shown only when a snapshot diff is loaded. */}
+            {snapshotDiff && (
+              <ExportButton
+                onExport={() => exportSnapshotDiff(snapshotDiff)}
+                label="Export Changes"
+                disabled={
+                  snapshotDiff.clubs.bothPresent.length === 0 &&
+                  snapshotDiff.clubs.onlyInFrom.length === 0 &&
+                  snapshotDiff.clubs.onlyInTo.length === 0
+                }
+              />
+            )}
+          </div>
         </div>
 
         {/* Visible name search (#814, epic #818 Sprint 1). Recognition over
@@ -601,7 +690,7 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
               uses the same .clubs-filters-trigger styling for a single visual
               language. */}
           <ColumnGroupsMenu
-            groups={AVAILABLE_COLUMN_GROUPS}
+            groups={availableColumnGroups}
             isGroupHidden={isGroupHidden}
             onToggle={toggleGroup}
           />
