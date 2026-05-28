@@ -25,6 +25,7 @@ import {
 import { DistrictOverview } from '../components/DistrictOverview'
 import { NotableDatesSection } from '../components/NotableDatesSection'
 import { LongestServingClubsLeaderboard } from '../components/LongestServingClubsLeaderboard'
+import { MobileDisclosure } from '../components/MobileDisclosure'
 import { DistinguishedDistrictTrophyCase } from '../components/DistinguishedDistrictTrophyCase'
 import { useCompetitiveAwards } from '../hooks/useCompetitiveAwards'
 import { useDistrictRanking } from '../hooks/useDistrictRanking'
@@ -539,11 +540,15 @@ const DistrictDetailPageInner: React.FC = () => {
                   })}
                 />
 
-                {/* Longest-serving clubs leaderboard (#449) */}
-                <LongestServingClubsLeaderboard
-                  clubs={allClubs}
-                  {...(districtId !== undefined && { districtId })}
-                />
+                {/* Longest-serving clubs — secondary detail, folded behind a
+                    disclosure below 768 px (audit §Epic B, #867). On desktop
+                    MobileDisclosure renders the leaderboard directly. */}
+                <MobileDisclosure summaryLabel="Longest-serving clubs">
+                  <LongestServingClubsLeaderboard
+                    clubs={allClubs}
+                    {...(districtId !== undefined && { districtId })}
+                  />
+                </MobileDisclosure>
               </section>
             )}
 

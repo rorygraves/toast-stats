@@ -12,6 +12,7 @@ import {
   MilestonesCallout,
   hasProgramYearMilestones,
 } from './MilestonesCallout'
+import { MobileDisclosure } from './MobileDisclosure'
 
 export interface NotableDatesSectionProps {
   clubs: ClubTrend[]
@@ -90,6 +91,15 @@ export const NotableDatesSection: React.FC<NotableDatesSectionProps> = ({
 
   const sideBySide = upcomingPresent && milestonesPresent
 
+  // The Milestones list is a low "what do I do next" panel on a phone, so
+  // it folds behind a disclosure below 768 px (audit §Epic B). The label
+  // mirrors the panel's own "Milestones · PY …" header. On desktop
+  // MobileDisclosure renders the panel directly, so the side-by-side grid
+  // is unchanged. Upcoming anniversaries stays unfolded (#867).
+  const milestonesPyLabel = formatProgramYearShort(
+    programYearStart ?? getCurrentProgramYear().year
+  )
+
   return (
     <div
       className={
@@ -100,7 +110,9 @@ export const NotableDatesSection: React.FC<NotableDatesSectionProps> = ({
         <UpcomingAnniversariesPanel clubs={clubs} {...upcomingProps} />
       )}
       {milestonesPresent && (
-        <MilestonesCallout clubs={clubs} {...milestoneProps} />
+        <MobileDisclosure summaryLabel={`Milestones · PY ${milestonesPyLabel}`}>
+          <MilestonesCallout clubs={clubs} {...milestoneProps} />
+        </MobileDisclosure>
       )}
     </div>
   )
