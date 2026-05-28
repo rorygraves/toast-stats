@@ -28,6 +28,17 @@ import {
 } from '../utils/programYear'
 import { DistrictRanking } from '../types/districts'
 import { arrayToCSV, downloadCSV } from '../utils/csvExport'
+import { useIsMobile } from '../hooks/useIsMobile'
+
+// On mobile (<768px) the rankings render only the top slice by default,
+// followed by a "Show all <n>" disclosure. The user landed on `/` to find
+// THEIR district, not to read a 138-row leaderboard on a phone (mobile-ux-audit
+// 2026-05-28 §Epic A, #863). 20 keeps the strongest performers — plus any
+// pinned "my district", which displayRankings hoists to the top — visible in a
+// thumb-scroll or two before the disclosure. Desktop is unaffected: it always
+// renders the full list. The cap also yields off when a search is active, so a
+// query never hides its own matches.
+const MOBILE_RANKINGS_CAP = 20
 
 const DistrictsPage: React.FC = () => {
   const navigate = useNavigate()
@@ -336,6 +347,25 @@ const DistrictsPage: React.FC = () => {
     )
     return [myRow, ...rest]
   }, [filteredRankingsBySearch, myDistrictId])
+
+  // Mobile top-N cap (#863). Below 768px, default to the top
+  // MOBILE_RANKINGS_CAP rows and reveal the rest behind a disclosure. Held off
+  // while a search is active (the result set is already narrowed and capping it
+  // would hide matches) and when the list is already at/under the cap.
+  const isMobile = useIsMobile(768)
+  const [showAllMobile, setShowAllMobile] = useState(false)
+  const isSearching = searchQuery.trim().length > 0
+  // The cap features (the disclosure toggle and the row-slice) both apply only
+  // on mobile, off-search, and when there are more rows than the cap.
+  const mobileCapEligible =
+    isMobile && !isSearching && displayRankings.length > MOBILE_RANKINGS_CAP
+  // The slice is active until the user expands; the disclosure stays visible in
+  // the expanded state so it offers a way back to the capped view.
+  const mobileCapActive = mobileCapEligible && !showAllMobile
+  const visibleRankings = mobileCapActive
+    ? displayRankings.slice(0, MOBILE_RANKINGS_CAP)
+    : displayRankings
+  const showMobileDisclosure = mobileCapEligible
 
   // Type-ahead suggestions for the search bar (#435). Top 5 matches.
   const searchSuggestions = React.useMemo(() => {
@@ -1118,7 +1148,7 @@ const DistrictsPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {displayRankings.map(district => {
+                  {visibleRankings.map(district => {
                     const rank = district.displayRank
                     const isPinned = pinnedDistrictIds.has(district.districtId)
                     const pinDisabled =
@@ -1413,6 +1443,23 @@ const DistrictsPage: React.FC = () => {
               aria-hidden="true"
             />
           </div>
+          {/* Mobile-only top-N disclosure (#863). Sits outside the horizontal
+              scroller so it spans the full width and its focus ring is visible
+              (Lesson 58). Hidden on desktop and while searching via the
+              showMobileDisclosure gate above. */}
+          {showMobileDisclosure && (
+            <button
+              type="button"
+              data-testid="mobile-show-all-districts"
+              className="districts-rankings-table__show-all"
+              aria-expanded={showAllMobile}
+              onClick={() => setShowAllMobile(v => !v)}
+            >
+              {showAllMobile
+                ? `Show top ${MOBILE_RANKINGS_CAP}`
+                : `Show all ${displayRankings.length} districts`}
+            </button>
+          )}
         </div>
 
         {/* Historical Rank Progression — collapsed by default (#83) */}
