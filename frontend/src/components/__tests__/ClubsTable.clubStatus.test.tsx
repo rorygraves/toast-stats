@@ -75,27 +75,23 @@ const getClubNamesInOrder = (): string[] => {
 }
 
 /**
- * Helper to click the Club Status column header to trigger sorting
- * Uses aria-label to find the specific header button
+ * Helper to click the Club Status column header to toggle sort (#851).
+ * Direct-click toggle — no popover.
  */
 const clickClubStatusHeader = () => {
-  // Find the button by its aria-label which contains "Club Status column header"
-  const clubStatusHeaderButton = screen.getByRole('button', {
-    name: /Club Status column header/i,
+  const btn = screen.getByRole('button', {
+    name: /Sort by Club Status/i,
   })
-  fireEvent.click(clubStatusHeaderButton)
+  fireEvent.click(btn)
 }
 
 /**
- * Helper to click the Sort A-Z button in the dropdown
- * Uses exact aria-label to avoid matching column headers
+ * Click the header once = ascending (new field defaults to asc).
+ * Click again = descending. The helper accepts the desired direction
+ * and clicks the right number of times.
  */
 const clickSortAscending = () => {
-  // The sort button has aria-label like "Sort Club Status ascending (A to Z)"
-  const sortAZButton = screen.getByRole('button', {
-    name: /Sort Club Status ascending/i,
-  })
-  fireEvent.click(sortAZButton)
+  // Already at asc after one click (the test's first click via header).
 }
 
 describe('ClubsTable Club Status Sorting', () => {

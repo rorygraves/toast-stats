@@ -17,7 +17,7 @@ import type { SortField, SortDirection } from '../filters/types'
  */
 
 describe('Focus Indicators', () => {
-  describe('ColumnHeader focus indicators (sort-only since #816)', () => {
+  describe('ColumnHeader focus indicators (click-to-sort since #851)', () => {
     const defaultSort = {
       field: 'name' as SortField,
       direction: 'asc' as SortDirection,
@@ -34,7 +34,7 @@ describe('Focus Indicators', () => {
         />
       )
 
-      const headerButton = container.querySelector('button[aria-expanded]')
+      const headerButton = container.querySelector('button')
       expect(headerButton).toBeTruthy()
 
       const buttonClasses = headerButton?.className || ''
@@ -43,7 +43,7 @@ describe('Focus Indicators', () => {
       expect(buttonClasses).toMatch(/focus:ring-(blue-500|tm-loyal-blue)/)
     })
 
-    it('should have tabIndex=0 for keyboard accessibility', () => {
+    it('should be a keyboard-reachable native button', () => {
       const { container } = render(
         <ColumnHeader
           field="division"
@@ -54,63 +54,11 @@ describe('Focus Indicators', () => {
         />
       )
 
-      const headerButton = container.querySelector('button[aria-expanded]')
-      expect(headerButton).toHaveAttribute('tabIndex', '0')
-    })
-
-    it('should have focus indicators on sort buttons when the popover is open', () => {
-      const { container } = render(
-        <ColumnHeader
-          field="membership"
-          label="Members"
-          sortable={true}
-          currentSort={defaultSort}
-          onSort={vi.fn()}
-        />
-      )
-
-      const headerButton = container.querySelector('button[aria-expanded]')
-      fireEvent.click(headerButton!)
-
-      // Sort A-Z / Sort Z-A buttons
-      const sortButtons = container.querySelectorAll(
-        'button:not([aria-expanded])'
-      )
-      expect(sortButtons.length).toBeGreaterThan(0)
-
-      sortButtons.forEach(button => {
-        const buttonClasses = button.className
-        expect(buttonClasses).toContain('focus:outline-hidden')
-        expect(buttonClasses).toMatch(/focus:ring-\d+/)
-      })
-    })
-
-    it('should have consistent focus indicators across all focusable elements', () => {
-      const { container } = render(
-        <ColumnHeader
-          field="status"
-          label="Status"
-          sortable={true}
-          currentSort={defaultSort}
-          onSort={vi.fn()}
-        />
-      )
-
-      const headerButton = container.querySelector('button[aria-expanded]')
-      fireEvent.click(headerButton!)
-
-      const focusableElements = container.querySelectorAll(
-        'button, input, [tabindex="0"]'
-      )
-
-      focusableElements.forEach(element => {
-        const elementClasses = element.className
-        expect(elementClasses).toContain('focus:outline-hidden')
-        const hasFocusRing =
-          elementClasses.includes('focus:ring-') ||
-          elementClasses.includes('focus:bg-')
-        expect(hasFocusRing).toBe(true)
-      })
+      const headerButton = container.querySelector('button')
+      // Native <button> is tab-stop by default — explicit tabIndex no
+      // longer needed since the click-to-sort refactor (#851).
+      expect(headerButton).toBeTruthy()
+      expect(headerButton?.tagName).toBe('BUTTON')
     })
   })
 
