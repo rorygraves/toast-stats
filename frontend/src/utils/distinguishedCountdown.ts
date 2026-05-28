@@ -1,4 +1,7 @@
-import type { CompetitiveAwardStandings } from '../services/cdn'
+import type {
+  CompetitiveAwardStandings,
+  DistinguishedDistrictTier,
+} from '../services/cdn'
 
 /* Per-district countdown to the *minimum* Distinguished District tier.
    Folds three absolute "remaining" counts (paid clubs, payments,
@@ -35,23 +38,48 @@ export interface DistinguishedCountdown {
   clubGrowth: CountdownCell
 }
 
-/* The MINIMUM (Distinguished) tier thresholds. These MUST stay in lockstep
-   with the Distinguished entry of `TIER_THRESHOLDS` in
-   packages/analytics-core/src/rankings/DistinguishedDistrictCalculator.ts —
-   they are the gate this countdown counts down to. If the program rules
-   change, update both (lesson 103). The equivalence test pins the derived
-   counts to the canonical analytics values for several real districts. */
-const MIN_DISTINGUISHED = {
-  /** +1% net payment growth vs program-year base. */
-  paymentGrowthMin: 1,
-  /** +1% net paid-club growth vs program-year base. */
-  clubGrowthMin: 1,
-  /** ≥45% of paid-club BASE are Distinguished (denominator is the base,
-      not active clubs — lesson 60). */
-  distinguishedPercentMin: 45,
-} as const
+/* Tier thresholds — frontend twin of the analytics-core
+   TIER_THRESHOLDS in
+   packages/analytics-core/src/rankings/DistinguishedDistrictCalculator.ts.
+   These MUST stay in lockstep with the calculator: they are the gates the
+   countdown counts down to. If the program rules change, update both
+   (lesson 103). The equivalence test pins the derived counts to the
+   canonical analytics values for several real districts. */
+export type DistinguishedTier = Exclude<
+  DistinguishedDistrictTier,
+  'NotDistinguished'
+>
 
-/** Inputs needed to derive the remaining-to-minimum counts from a
+interface TierThreshold {
+  paymentGrowthMin: number
+  clubGrowthMin: number
+  distinguishedPercentMin: number
+}
+
+const TIER_THRESHOLDS: Record<DistinguishedTier, TierThreshold> = {
+  Distinguished: {
+    paymentGrowthMin: 1,
+    clubGrowthMin: 1,
+    distinguishedPercentMin: 45,
+  },
+  Select: {
+    paymentGrowthMin: 3,
+    clubGrowthMin: 3,
+    distinguishedPercentMin: 50,
+  },
+  Presidents: {
+    paymentGrowthMin: 5,
+    clubGrowthMin: 5,
+    distinguishedPercentMin: 55,
+  },
+  Smedley: {
+    paymentGrowthMin: 8,
+    clubGrowthMin: 8,
+    distinguishedPercentMin: 60,
+  },
+}
+
+/** Inputs needed to derive the remaining-to-tier counts from a
     rankings row, when the canonical analytics fields are absent. */
 export interface RemainingInputs {
   paidClubBase: number
@@ -61,22 +89,26 @@ export interface RemainingInputs {
   distinguishedClubs: number
 }
 
-/* Frontend twin of DistinguishedDistrictCalculator.computeRemainingToMinimum
-   (#686). Same targets, same denominators, same clamp — so the derived
-   value equals the canonical `*Remaining` field for any snapshot. */
-export function deriveRemainingToMinimum(r: RemainingInputs): {
+/* Frontend twin of the analytics-core countdown formula. Same targets,
+   same denominators, same clamp — so the derived value equals the
+   canonical `*Remaining` field for any snapshot. Generalised over tier
+   so the district trophy case can count down to whichever tier the
+   district is targeting next (#840). */
+export function deriveRemainingToTier(
+  tier: DistinguishedTier,
+  r: RemainingInputs
+): {
   paidClubsRemaining: number
   paymentsRemaining: number
   distinguishedClubsRemaining: number
 } {
+  const t = TIER_THRESHOLDS[tier]
   const paymentTarget = Math.ceil(
-    r.paymentBase * (1 + MIN_DISTINGUISHED.paymentGrowthMin / 100)
+    r.paymentBase * (1 + t.paymentGrowthMin / 100)
   )
-  const paidClubTarget = Math.ceil(
-    r.paidClubBase * (1 + MIN_DISTINGUISHED.clubGrowthMin / 100)
-  )
+  const paidClubTarget = Math.ceil(r.paidClubBase * (1 + t.clubGrowthMin / 100))
   const distinguishedTarget = Math.ceil(
-    r.paidClubBase * (MIN_DISTINGUISHED.distinguishedPercentMin / 100)
+    r.paidClubBase * (t.distinguishedPercentMin / 100)
   )
   return {
     paidClubsRemaining: Math.max(0, paidClubTarget - r.paidClubs),
@@ -86,6 +118,17 @@ export function deriveRemainingToMinimum(r: RemainingInputs): {
       distinguishedTarget - r.distinguishedClubs
     ),
   }
+}
+
+/** Count down to the minimum (Distinguished) tier. Kept as a thin
+    wrapper so the region-table path and its equivalence-pinned tests
+    stay unchanged. */
+export function deriveRemainingToMinimum(r: RemainingInputs): {
+  paidClubsRemaining: number
+  paymentsRemaining: number
+  distinguishedClubsRemaining: number
+} {
+  return deriveRemainingToTier('Distinguished', r)
 }
 
 const countCell = (value: number): CountdownCell =>

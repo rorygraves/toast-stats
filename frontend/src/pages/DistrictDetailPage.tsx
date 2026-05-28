@@ -27,6 +27,7 @@ import { NotableDatesSection } from '../components/NotableDatesSection'
 import { LongestServingClubsLeaderboard } from '../components/LongestServingClubsLeaderboard'
 import { DistinguishedDistrictTrophyCase } from '../components/DistinguishedDistrictTrophyCase'
 import { useCompetitiveAwards } from '../hooks/useCompetitiveAwards'
+import { useDistrictRanking } from '../hooks/useDistrictRanking'
 
 import {
   DistrictKpiStrip,
@@ -249,6 +250,21 @@ const DistrictDetailPageInner: React.FC = () => {
     if (!districtId || !competitiveAwards?.distinguishedDistrict) return null
     return competitiveAwards.distinguishedDistrict[districtId] ?? null
   }, [districtId, competitiveAwards])
+
+  // Rankings row supplies the raw integer counts used to derive the
+  // trophy-case tile integers when the canonical `*Remaining` fields
+  // are absent or the target tier is above Distinguished (#840).
+  const { ranking: districtRanking } = useDistrictRanking(districtId)
+  const distinguishedRankingInputs = React.useMemo(() => {
+    if (!districtRanking) return null
+    return {
+      paidClubBase: districtRanking.paidClubBase,
+      paymentBase: districtRanking.paymentBase,
+      paidClubs: districtRanking.paidClubs,
+      totalPayments: districtRanking.totalPayments,
+      distinguishedClubs: districtRanking.distinguishedClubs,
+    }
+  }, [districtRanking])
 
   // Extract threshold + officer award results for this district (#333)
   const clubStrengthResult = React.useMemo(() => {
@@ -497,6 +513,7 @@ const DistrictDetailPageInner: React.FC = () => {
                 {/* Distinguished District Trophy Case (#332) */}
                 <DistinguishedDistrictTrophyCase
                   status={distinguishedDistrictStatus}
+                  ranking={distinguishedRankingInputs}
                   clubStrengthQualifies={clubStrengthResult?.qualifies}
                   clubStrengthGrowth={clubStrengthResult?.growthPercent}
                   leadershipExcellenceQualifies={

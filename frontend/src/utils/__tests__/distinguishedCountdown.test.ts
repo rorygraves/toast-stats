@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   getDistinguishedCountdown,
   deriveRemainingToMinimum,
+  deriveRemainingToTier,
   type DistinguishedCountdown,
   type RemainingInputs,
 } from '../distinguishedCountdown'
@@ -116,6 +117,90 @@ describe('deriveRemainingToMinimum — matches the canonical analytics field (#6
   it('clamps to 0 when a metric minimum is already met or exceeded', () => {
     expect(
       deriveRemainingToMinimum({
+        paidClubBase: 100,
+        paidClubs: 120,
+        paymentBase: 5000,
+        totalPayments: 6000,
+        distinguishedClubs: 60,
+      })
+    ).toEqual({
+      paidClubsRemaining: 0,
+      paymentsRemaining: 0,
+      distinguishedClubsRemaining: 0,
+    })
+  })
+})
+
+describe('deriveRemainingToTier — same gate, any tier (#840)', () => {
+  /* Generalises deriveRemainingToMinimum to all four tiers above
+     NotDistinguished. Targets/denominators must match the analytics-core
+     TIER_THRESHOLDS row exactly — same gate the tier badge counts down
+     to. Lesson 103. */
+
+  // paidClubBase 161, paidClubs 152, paymentBase 5605, totalPayments 5493,
+  // distinguishedClubs 53 — D61-ish synthetic where the bug renders 19 and
+  // the canonical computation renders 20 distinguished clubs to go.
+  const D61: RemainingInputs = {
+    paidClubBase: 161,
+    paidClubs: 152,
+    paymentBase: 5605,
+    totalPayments: 5493,
+    distinguishedClubs: 53,
+  }
+
+  it('matches deriveRemainingToMinimum when tier is Distinguished', () => {
+    expect(deriveRemainingToTier('Distinguished', D61)).toEqual(
+      deriveRemainingToMinimum(D61)
+    )
+  })
+
+  it('counts down to the Distinguished gate (+1% growth, 45% distinguished)', () => {
+    // paid:    ceil(161 × 1.01) − 152 = 163 − 152 = 11
+    // payments: ceil(5605 × 1.01) − 5493 = 5662 − 5493 = 169
+    // dist:    ceil(161 × 0.45) − 53 = 73 − 53 = 20  ← the canonical 20, not the rounded-% 19.
+    expect(deriveRemainingToTier('Distinguished', D61)).toEqual({
+      paidClubsRemaining: 11,
+      paymentsRemaining: 169,
+      distinguishedClubsRemaining: 20,
+    })
+  })
+
+  it('counts down to the Select gate (+3% growth, 50% distinguished, plus-one)', () => {
+    // paid:    ceil(161 × 1.03) − 152 = 166 − 152 = 14
+    // payments: ceil(5605 × 1.03) − 5493 = 5774 − 5493 = 281
+    // dist:    ceil(161 × 0.50) − 53 = 81 − 53 = 28
+    expect(deriveRemainingToTier('Select', D61)).toEqual({
+      paidClubsRemaining: 14,
+      paymentsRemaining: 281,
+      distinguishedClubsRemaining: 28,
+    })
+  })
+
+  it('counts down to the Presidents gate (+5% growth, 55% distinguished)', () => {
+    // paid:    ceil(161 × 1.05) − 152 = 170 − 152 = 18
+    // payments: ceil(5605 × 1.05) − 5493 = 5886 − 5493 = 393
+    // dist:    ceil(161 × 0.55) − 53 = 89 − 53 = 36
+    expect(deriveRemainingToTier('Presidents', D61)).toEqual({
+      paidClubsRemaining: 18,
+      paymentsRemaining: 393,
+      distinguishedClubsRemaining: 36,
+    })
+  })
+
+  it('counts down to the Smedley gate (+8% growth, 60% distinguished)', () => {
+    // paid:    ceil(161 × 1.08) − 152 = 174 − 152 = 22
+    // payments: ceil(5605 × 1.08) − 5493 = 6054 − 5493 = 561
+    // dist:    ceil(161 × 0.60) − 53 = 97 − 53 = 44
+    expect(deriveRemainingToTier('Smedley', D61)).toEqual({
+      paidClubsRemaining: 22,
+      paymentsRemaining: 561,
+      distinguishedClubsRemaining: 44,
+    })
+  })
+
+  it('clamps to 0 once the tier-specific minimum is met', () => {
+    expect(
+      deriveRemainingToTier('Distinguished', {
         paidClubBase: 100,
         paidClubs: 120,
         paymentBase: 5000,
