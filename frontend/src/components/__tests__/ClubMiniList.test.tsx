@@ -11,11 +11,7 @@
  */
 import type { ReactElement } from 'react'
 import { describe, it, expect, afterEach } from 'vitest'
-import {
-  render as rtlRender,
-  screen,
-  cleanup,
-} from '@testing-library/react'
+import { render as rtlRender, screen, cleanup } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import '@testing-library/jest-dom'
 import { ClubMiniList } from '../ClubMiniList'
@@ -47,9 +43,7 @@ const CLUBS: ClubTrend[] = [
 
 describe('ClubMiniList (#871 CC-4)', () => {
   it('renders one card per club with a StatusChip (not raw enum)', () => {
-    const { container } = render(
-      <ClubMiniList clubs={CLUBS} clubTo={clubTo} />
-    )
+    const { container } = render(<ClubMiniList clubs={CLUBS} clubTo={clubTo} />)
     const card = container.querySelector('.clubs-card')
     expect(card).not.toBeNull()
     expect(screen.getByText('Limestone City Club')).toBeInTheDocument()

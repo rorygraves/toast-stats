@@ -63,7 +63,12 @@ export interface DivisionPerformanceCardsProps {
  */
 export const DivisionPerformanceCards: React.FC<
   DivisionPerformanceCardsProps
-> = ({ districtSnapshot, isLoading = false, snapshotTimestamp, districtId }) => {
+> = ({
+  districtSnapshot,
+  isLoading = false,
+  snapshotTimestamp,
+  districtId,
+}) => {
   // Extract division performance data from snapshot
   const divisions = React.useMemo(() => {
     if (isLoading || !districtSnapshot) {

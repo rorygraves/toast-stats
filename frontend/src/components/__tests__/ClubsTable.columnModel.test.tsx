@@ -20,7 +20,12 @@
  */
 
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { render as rtlRender, cleanup, within, screen } from '@testing-library/react'
+import {
+  render as rtlRender,
+  cleanup,
+  within,
+  screen,
+} from '@testing-library/react'
 import type { ReactElement } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 
