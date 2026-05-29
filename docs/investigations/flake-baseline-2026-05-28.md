@@ -77,11 +77,24 @@ first green-runner result** — read it from the job's step summary / the
 `flake-metric.json` artifact on the first PR/branch run after this lands, and
 record it under §4.
 
-## 4. Calibrated CI baseline (to be filled from the first CI run)
+## 4. Calibrated CI baseline
 
-| Date      | Commit                         | Flake rate | p50 | p95 | Source       |
-| --------- | ------------------------------ | ---------- | --- | --- | ------------ |
-| _pending_ | _PR #\_\_ flake-detection job_ |            |     |     | step summary |
+The clean, calibrated number — `flake-detection` job, suspect set ×8 on a
+dedicated `ubuntu-latest` runner:
+
+| Date       | Commit     | Flake rate | p50    | p95    | Source                      |
+| ---------- | ---------- | ---------- | ------ | ------ | --------------------------- |
+| 2026-05-29 | `8a672b7b` | **0.0%**   | 31.4 s | 31.9 s | PR #919 flake-detection job |
+
+**Reading:** on a clean, non-oversubscribed CI runner the suspect set is **not
+flaky** (0/8) and its duration is tight (31.3–31.9 s, p95/p50 ≈ 1.02 — no
+variance run-up). This confirms the deep-dive's core conclusion: the flake is
+**contention-induced**, surfacing only when the runner is oversubscribed (the
+§2.2/§3 workstation, where the same set hit 100% with a 30.9→171.9 s spread).
+The clean-runner 0% is the **floor** to defend; the workstation result is the
+**stress ceiling**. Sprint 3's explicit CI `maxWorkers` cap (V8) is what keeps a
+busy/oversubscribed runner from drifting up toward that ceiling — and this
+harness is how S3 proves it.
 
 ## 5. Comparison protocol for Sprints 3–4
 
