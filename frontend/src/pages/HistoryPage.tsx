@@ -28,10 +28,12 @@ const HistoryPage: React.FC = () => {
         Archive · {PROGRAM_YEARS_ON_FILE.length} program years on file
       </p>
       <h1 className="placeholder-page__title">Program Year History</h1>
-      <p className="placeholder-page__body">
-        Final standings and headline metrics for each completed Toastmasters
-        program year. Data is frozen at June 30; each year is preserved as it
-        stood when the year closed — no retroactive corrections.
+      {/* "What does this page answer?" lede (#879, epic #880 Sprint 3). The
+          other doc-style route; one scannable sentence above the year strip. */}
+      <p className="long-text-lede" data-testid="history-lede">
+        How each completed Toastmasters program year finished — final standings
+        frozen at June 30, no retroactive corrections — and which years are on
+        file here versus the TI archive.
       </p>
 
       <div className="history-page-year-strip" role="list">
