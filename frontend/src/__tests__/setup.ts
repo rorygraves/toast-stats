@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
 import 'jest-axe/extend-expect'
-import { beforeEach, vi } from 'vitest'
+import { afterEach, beforeEach, vi } from 'vitest'
 
 // Import brand CSS to make design tokens available in tests
 import '../styles/brand.css'
@@ -89,4 +89,17 @@ Object.defineProperty(window, 'localStorage', {
 // localStorage on the Districts page.
 beforeEach(() => {
   Object.keys(store).forEach(k => delete store[k])
+})
+
+// Global mock-reset safety net (V5, #914, epic #917 S3). Clear every mock's
+// call/instance/return history after each test so a file that forgets its own
+// `vi.clearAllMocks()` can't leak a mock's state into the next test — the
+// cross-test contamination behind the `mockReturnValueOnce`-consumed-two-tests-
+// away failures (L120). `clearAllMocks` (not `resetAllMocks`) is deliberate: it
+// wipes call history but PRESERVES implementations, so a stray/leaked render
+// landing after a test ends still hits a valid mock impl instead of `undefined`
+// (the `undefined.dates` footgun, V2) — and a file's `vi.mock(...)` factories
+// stay intact across the suite.
+afterEach(() => {
+  vi.clearAllMocks()
 })
