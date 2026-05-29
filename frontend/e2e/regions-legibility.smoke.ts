@@ -1,16 +1,18 @@
 import { test, expect, type Page } from '@playwright/test'
 
-/* Regions leaderboard legibility guard (#710).
+/* Regions card-grid legibility guard (#710, retargeted #881).
  *
- * Regression guard for Amy's bug: the /regions leaderboard rows went
- * near-invisible when the OS preferred dark but the app showed light mode,
- * because Tailwind `dark:` utilities fire on @media(prefers-color-scheme)
- * not the app's [data-theme] toggle. #685 verified Chromium-at-rest only
- * and missed it — this smoke runs in BOTH engines (see playwright.config)
- * and across all four theme/OS quadrants, at rest AND on hover.
+ * Regression guard for Amy's bug: /regions content went near-invisible when
+ * the OS preferred dark but the app showed light mode, because Tailwind
+ * `dark:` utilities fire on @media(prefers-color-scheme) not the app's
+ * [data-theme] toggle. #685 verified Chromium-at-rest only and missed it —
+ * this smoke runs in BOTH engines (see playwright.config) and across all four
+ * theme/OS quadrants, at rest AND on hover.
  *
- * Asserts every sampled leaderboard cell clears WCAG AA (4.5:1) against the
- * background actually rendered behind it. */
+ * #881 deleted the duplicate leaderboard table (CC-9); the region cards are
+ * now the sole surface, so this guard samples the card text. Asserts every
+ * sampled card cell clears WCAG AA (4.5:1) against the background actually
+ * rendered behind it. */
 
 // sRGB relative luminance + WCAG contrast ratio.
 function luminance(r: number, g: number, b: number): number {
@@ -43,22 +45,21 @@ const QUADRANTS = [
 ]
 
 async function sampleRowContrasts(page: Page, hover: boolean) {
-  const table = page.locator('table[aria-label="Region rankings"]')
-  await table.waitFor({ state: 'visible', timeout: 20_000 })
-  const rows = table.locator('tbody tr')
-  const n = await rows.count()
+  const cards = page.locator('a[href^="/region/"]')
+  await cards.first().waitFor({ state: 'visible', timeout: 20_000 })
+  const n = await cards.count()
   const results: { label: string; ratio: number }[] = []
   for (let i = 0; i < n; i++) {
-    if (hover) await rows.nth(i).hover()
-    // chip text, a numeric column, the score column
-    const row = rows.nth(i)
-    const chip = row.locator('span').first()
-    const num = row.locator('td').nth(1)
-    const score = row.locator('td').last()
+    if (hover) await cards.nth(i).hover()
+    // eyebrow region label, the leader heading, a numeric metric value
+    const card = cards.nth(i)
+    const eyebrow = card.locator('header p').first()
+    const leader = card.locator('header h3').first()
+    const num = card.locator('li span.tabular-nums').first()
     for (const [label, loc] of [
-      ['chip', chip],
+      ['eyebrow', eyebrow],
+      ['leader', leader],
       ['num', num],
-      ['score', score],
     ] as const) {
       const { color, bg } = await loc.evaluate(el => {
         const fg = getComputedStyle(el).color
@@ -86,7 +87,7 @@ async function sampleRowContrasts(page: Page, hover: boolean) {
         }
         return { color: fg, bg: resolved }
       })
-      results.push({ label: `row${i}.${label}`, ratio: contrast(color, bg) })
+      results.push({ label: `card${i}.${label}`, ratio: contrast(color, bg) })
     }
   }
   return results
@@ -94,7 +95,7 @@ async function sampleRowContrasts(page: Page, hover: boolean) {
 
 for (const q of QUADRANTS) {
   const label = `app-${q.store}_OS-${q.os}`
-  test(`regions leaderboard is AA-legible (${label})`, async ({ browser }) => {
+  test(`regions card grid is AA-legible (${label})`, async ({ browser }) => {
     const ctx = await browser.newContext({ colorScheme: q.os })
     const page = await ctx.newPage()
     await page.addInitScript(store => {

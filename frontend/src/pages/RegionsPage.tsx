@@ -2,7 +2,6 @@ import React, { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchCdnRankings } from '../services/cdn'
 import { aggregateRegions } from '../utils/aggregateRegions'
-import { RegionsLeaderboard } from '../components/RegionsLeaderboard'
 import { RegionGrid } from '../components/RegionGrid'
 import { RegionFinder } from '../components/RegionFinder'
 import { LoadingSkeleton } from '../components/LoadingSkeleton'
@@ -16,9 +15,8 @@ import { EmptyState } from '../components/ErrorDisplay'
    per-district feed.
 
    DNAR (District-Not-Assigned-Region) districts are filtered OUT of
-   both the leaderboard and the grid. When non-zero, they're surfaced
-   as a small footnote so the count is visible without polluting the
-   leaderboard. */
+   the grid. When non-zero, they're surfaced as a small footnote so the
+   count is visible without polluting the card grid. */
 
 const RegionsPage: React.FC = () => {
   const { data, isLoading, error } = useQuery({
@@ -45,13 +43,13 @@ const RegionsPage: React.FC = () => {
 
   // Derive (don't sync) the effective selection: a stale selection that a
   // refetch dropped self-heals to "All" at render time, so the user is never
-  // stranded on an empty leaderboard + grid — and no setState-in-effect.
+  // stranded on an empty grid — and no setState-in-effect.
   const effectiveRegion =
     selectedRegion && regionIds.includes(selectedRegion) ? selectedRegion : null
 
   // Filter step (R11): "All" (null) shows every region; a selection isolates
-  // one across both the leaderboard and the grid so the user can jump
-  // straight to it instead of scanning all 14 rows (#685).
+  // one in the grid so the user can jump straight to it instead of scanning
+  // all 14 cards (#685).
   const displayedRollups = useMemo(
     () =>
       effectiveRegion
@@ -100,18 +98,8 @@ const RegionsPage: React.FC = () => {
         onSelect={setSelectedRegion}
       />
 
-      <section className="my-6" aria-labelledby="regions-leaderboard-heading">
-        <h2 id="regions-leaderboard-heading" className="sr-only">
-          Region leaderboard
-        </h2>
-        <RegionsLeaderboard rollups={displayedRollups} />
-      </section>
-
-      <section className="my-8" aria-labelledby="regions-grid-heading">
-        <h2
-          id="regions-grid-heading"
-          className="text-lg font-tm-headline text-gray-900 theme-dark:text-gray-50 mb-3"
-        >
+      <section className="my-6" aria-labelledby="regions-grid-heading">
+        <h2 id="regions-grid-heading" className="sr-only">
           Region cards
         </h2>
         <RegionGrid rollups={displayedRollups} />

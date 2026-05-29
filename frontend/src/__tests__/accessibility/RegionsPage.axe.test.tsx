@@ -90,20 +90,20 @@ afterEach(() => {
 describe('RegionsPage axe scan (#685)', () => {
   it('has no structural a11y violations in light mode', async () => {
     const { container } = renderPage()
-    await screen.findByRole('table', { name: /region rankings/i })
+    await screen.findByRole('link', { name: /^region 01/i })
     expect(await axe(container)).toHaveNoViolations()
   })
 
   it('has no structural a11y violations in dark mode', async () => {
     document.documentElement.setAttribute('data-theme', 'dark')
     const { container } = renderPage()
-    await screen.findByRole('table', { name: /region rankings/i })
+    await screen.findByRole('link', { name: /^region 01/i })
     expect(await axe(container)).toHaveNoViolations()
   })
 
   it('stays axe-clean after a region is isolated via the finder', async () => {
     const { container } = renderPage()
-    await screen.findByRole('table', { name: /region rankings/i })
+    await screen.findByRole('link', { name: /^region 01/i })
     await userEvent.click(screen.getByRole('button', { name: /^region 07$/i }))
     expect(await axe(container)).toHaveNoViolations()
   })
