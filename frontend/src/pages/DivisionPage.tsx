@@ -8,6 +8,8 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useDistrictAnalytics } from '../hooks/useDistrictAnalytics'
 import { LoadingSkeleton } from '../components/LoadingSkeleton'
 import { EmptyState } from '../components/ErrorDisplay'
+import { StatusChip } from '../components/StatusChip'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 const DivisionPage: React.FC = () => {
   const { districtId, divId } = useParams<{
@@ -15,6 +17,7 @@ const DivisionPage: React.FC = () => {
     divId: string
   }>()
   const navigate = useNavigate()
+  const isMobile = useIsMobile()
 
   const { data, isLoading, error } = useDistrictAnalytics(
     districtId ?? '',
@@ -208,7 +211,13 @@ const DivisionPage: React.FC = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          {c.currentStatus}
+                          {/* CC-4 (#871): chip at <768px so the status label
+                              never truncates; desktop unchanged. */}
+                          {isMobile ? (
+                            <StatusChip status={c.currentStatus} />
+                          ) : (
+                            c.currentStatus
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 tabular-nums">
                           {last?.count ?? '—'}
