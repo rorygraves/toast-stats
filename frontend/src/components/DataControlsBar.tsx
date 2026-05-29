@@ -15,8 +15,14 @@ export interface DataControlsBarProps {
   onDateChange: (date: string | undefined) => void
 }
 
+// min-h-[44px]: the WCAG 2.5.5 / handoff 44px touch-target floor (#886, epic
+// #888 Sprint 2). The chip is a <label> with an inset-0 opacity-0 <select>
+// overlay, so the overlay inherits the label's height — lifting the label to
+// 44px lifts the real touch target in both engines (L111 family). Shared with
+// the non-interactive freshness pill too, which keeps the control row at a
+// uniform height.
 const CHIP_BASE =
-  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border bg-white border-gray-200 text-gray-700 theme-dark:bg-gray-800 theme-dark:border-gray-700 theme-dark:text-gray-200'
+  'inline-flex items-center gap-1.5 min-h-[44px] px-3 py-1.5 rounded-full text-xs font-medium border bg-white border-gray-200 text-gray-700 theme-dark:bg-gray-800 theme-dark:border-gray-700 theme-dark:text-gray-200'
 
 const FreshnessPill: React.FC<{ date: string }> = ({ date }) => (
   <div
@@ -60,7 +66,13 @@ const ChipSelect: React.FC<{
         aria-label={currentLabel ? `${ariaLabel}: ${currentLabel}` : ariaLabel}
         value={value}
         onChange={e => onChange(e.target.value)}
-        className="absolute inset-0 opacity-0 cursor-pointer"
+        // appearance-none + min-h-[44px]: the <select> IS the touch target, and
+        // inset-0 sizes it to the label's PADDING box (44px − 2px border = 42px,
+        // measured in both engines on PR #943). The floor must live on the
+        // select; appearance-none opts out of native sizing so WebKit honours
+        // min-height (Lesson 111). opacity-0 keeps it invisible — the ▾ caret
+        // above is the affordance.
+        className="absolute inset-0 opacity-0 cursor-pointer appearance-none min-h-[44px]"
       >
         {options.map(o => (
           <option key={o.value} value={o.value}>

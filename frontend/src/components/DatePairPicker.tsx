@@ -18,8 +18,12 @@ export interface DatePairPickerProps {
   onToChange: (date: string) => void
 }
 
+// min-h-[44px]: the WCAG 2.5.5 / handoff 44px touch-target floor (#886, epic
+// #888 Sprint 2). The label is the touch target (an inset-0 opacity-0 <select>
+// overlays it), so lifting the label to 44px lifts the real target in both
+// engines (L111 family) — audit #885 measured these chips at 34px.
 const CHIP_BASE =
-  'inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium border bg-white border-gray-200 text-gray-700 theme-dark:bg-gray-800 theme-dark:border-gray-700 theme-dark:text-gray-200'
+  'inline-flex items-center gap-1.5 min-h-[44px] px-3 py-2 rounded-full text-xs font-medium border bg-white border-gray-200 text-gray-700 theme-dark:bg-gray-800 theme-dark:border-gray-700 theme-dark:text-gray-200'
 
 const DateChipSelect: React.FC<{
   testId: string
@@ -44,7 +48,12 @@ const DateChipSelect: React.FC<{
       }
       value={value ?? ''}
       onChange={e => onChange(e.target.value)}
-      className="absolute inset-0 opacity-0 cursor-pointer"
+      // appearance-none + min-h-[44px]: the <select> IS the touch target, and
+      // inset-0 sizes it to the label's PADDING box (44px − 2px border = 42px,
+      // measured in both engines on PR #943). The floor must live on the
+      // select; appearance-none opts out of native sizing so WebKit honours
+      // min-height (Lesson 111). opacity-0 keeps it invisible.
+      className="absolute inset-0 opacity-0 cursor-pointer appearance-none min-h-[44px]"
     >
       {options.map(d => (
         <option key={d} value={d}>

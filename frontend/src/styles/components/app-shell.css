@@ -786,7 +786,11 @@
     border-radius: 999px;
     cursor: pointer;
     transition: background-color 150ms, border-color 150ms, color 150ms;
-    min-width: 36px;
+    /* 44px: WCAG 2.5.5 / handoff touch-target floor (#886, epic #888 Sprint 2).
+       Audit #885 measured these chips 36px wide (width was the short side;
+       height already cleared 44). text-align:center keeps the single-digit
+       "01" centred at the wider min-width. */
+    min-width: 44px;
     text-align: center;
   }
 
@@ -839,7 +843,10 @@
     border-radius: 999px;
     cursor: pointer;
     transition: background-color 150ms, border-color 150ms, color 150ms;
-    min-width: 40px;
+    /* 44px: WCAG 2.5.5 / handoff touch-target floor (#886, epic #888 Sprint 2).
+       Audit #885 measured these chips 40–41px wide — same width-short shape as
+       .districts-toolbar__region-chip. */
+    min-width: 44px;
     text-align: center;
   }
 

@@ -94,4 +94,23 @@ describe('DataControlsBar (#529 #528)', () => {
     expect(bar).toContainElement(screen.getByTestId('py-chip'))
     expect(bar).toContainElement(screen.getByTestId('date-chip'))
   })
+
+  // #886 (epic #888 Sprint 2) — Family A touch-target floor. The <select> IS
+  // the tap target (a full-bleed inset-0 opacity-0 overlay). inset-0 sizes it
+  // to the label's PADDING box (44px − 2px border = 42px), so the floor must
+  // live on the select itself: min-h-[44px] + appearance-none (the latter opts
+  // out of native sizing so WebKit honours min-height — L111). The visible
+  // label also carries min-h-[44px] so the chip matches the tap area. jsdom
+  // can't measure geometry (L66) — this asserts the class contract; live
+  // per-engine geometry is proven by the dual-engine preview smoke.
+  it('declares the 44px touch-target floor on the PY and date chip selects', () => {
+    render(<DataControlsBar {...baseProps} />)
+    expect(screen.getByTestId('py-chip').className).toContain('min-h-[44px]')
+    expect(screen.getByTestId('date-chip').className).toContain('min-h-[44px]')
+    for (const id of ['py-chip-select', 'date-chip-select']) {
+      const cls = screen.getByTestId(id).className
+      expect(cls, `${id} floor`).toContain('min-h-[44px]')
+      expect(cls, `${id} appearance-none`).toContain('appearance-none')
+    }
+  })
 })
