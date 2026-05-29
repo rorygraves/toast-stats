@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 
 export interface SparklineProps {
   /** The series to plot. Each value is one point, evenly spaced on x. */
@@ -34,11 +34,10 @@ export const Sparkline: React.FC<SparklineProps> = ({
 }) => {
   // Inset the stroke so the rounded caps aren't clipped at the edges.
   const pad = 2
-  const innerW = width - pad * 2
-  const innerH = height - pad * 2
-
-  const points = (() => {
+  const points = useMemo(() => {
     if (data.length === 0) return ''
+    const innerW = width - pad * 2
+    const innerH = height - pad * 2
     const min = Math.min(...data)
     const max = Math.max(...data)
     const range = max - min
@@ -54,7 +53,7 @@ export const Sparkline: React.FC<SparklineProps> = ({
         return `${x.toFixed(2)},${y.toFixed(2)}`
       })
       .join(' ')
-  })()
+  }, [data, width, height])
 
   return (
     <svg

@@ -18,8 +18,6 @@ export interface ChartSparklineExpandProps {
   expandLabel?: string
   /** Class on the collapsed-mobile wrapper (Lesson 077 — override, no variant). */
   className?: string
-  /** Class on the <svg> sparkline. */
-  sparklineClassName?: string
 }
 
 /**
@@ -45,7 +43,6 @@ export const ChartSparklineExpand: React.FC<ChartSparklineExpandProps> = ({
   breakpoint = 768,
   expandLabel,
   className,
-  sparklineClassName,
 }) => {
   const isMobile = useIsMobile(breakpoint)
   const [isOpen, setIsOpen] = useState(false)
@@ -65,7 +62,7 @@ export const ChartSparklineExpand: React.FC<ChartSparklineExpandProps> = ({
         <Sparkline
           data={sparklineData}
           ariaLabel={`${title} sparkline`}
-          className={sparklineClassName ?? 'chart-spark__sparkline'}
+          className="chart-spark__sparkline"
         />
         <span className="chart-spark__hint" aria-hidden="true">
           Tap to expand
