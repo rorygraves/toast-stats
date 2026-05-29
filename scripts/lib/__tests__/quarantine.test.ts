@@ -16,6 +16,7 @@ import {
   parseQuarantine,
   validateQuarantine,
   formatQuarantineReport,
+  quarantineExcludeGlobs,
   type QuarantineEntry,
 } from '../quarantine'
 
@@ -109,5 +110,25 @@ describe('formatQuarantineReport', () => {
     expect(report).toContain('914') // the tracking issue is surfaced
     // count is reported so a growing list is visible at a glance
     expect(report).toMatch(/1/)
+  })
+})
+
+describe('quarantineExcludeGlobs', () => {
+  it('returns no excludes for an empty list — a runtime no-op', () => {
+    expect(quarantineExcludeGlobs([])).toEqual([])
+  })
+
+  it('excludes each quarantined file from the gating suite at file granularity', () => {
+    // A quarantined test is isolated from the BLOCKING run (never silently
+    // blocks the queue) — the flake harness still runs it (never silently
+    // ignored). Exclusion is file-level even when `test` narrows to one case.
+    const entries: QuarantineEntry[] = [
+      { file: 'src/a/Foo.test.tsx', reason: 'x', issue: 1 },
+      { file: 'src/b/Bar.test.tsx', test: 'one case', reason: 'y', issue: 2 },
+    ]
+    expect(quarantineExcludeGlobs(entries)).toEqual([
+      'src/a/Foo.test.tsx',
+      'src/b/Bar.test.tsx',
+    ])
   })
 })

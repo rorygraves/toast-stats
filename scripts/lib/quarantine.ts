@@ -89,6 +89,21 @@ export function validateQuarantine(entries: QuarantineEntry[]): string[] {
 }
 
 /**
+ * Map quarantined entries to vitest `exclude` patterns (file granularity).
+ *
+ * Folding these into the shared `baseExclude` (vitest.shared.mjs) removes them
+ * from the BLOCKING run consistently across ALL / unit / integration, so a
+ * quarantined flake never silently blocks the queue — while the partition guard
+ * (R20) stays exhaustive because the file disappears from every set at once.
+ * The flake-detection harness still exercises the file explicitly, so it is
+ * never silently ignored. Exclusion is file-level even when `test` narrows to a
+ * single case (the rest of the file rides along into the non-gating harness).
+ */
+export function quarantineExcludeGlobs(entries: QuarantineEntry[]): string[] {
+  return entries.map(e => e.file)
+}
+
+/**
  * Render a report for the CI step / console. Calm all-clear when empty; LOUD
  * (banner + per-entry file/reason/issue) when non-empty, so a growing list is
  * impossible to miss.

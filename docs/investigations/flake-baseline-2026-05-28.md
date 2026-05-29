@@ -39,7 +39,9 @@ repeats via `FLAKE_REPEATS` (default 10; CI job uses 8).
 
 ## 3. Recorded baseline (local, §2.2 machine-noise caveat carried forward)
 
-Suspect set ×5, `CI=true` + coverage + unbounded workers, on the **same
+Suspect set ×5 (a quick local probe; the code default is 10 and the CI job uses
+8 to bound per-PR time — all three are the same metric at different sample
+counts), `CI=true` + coverage + unbounded workers, on the **same
 heavily-loaded developer workstation** the deep-dive flagged in §2.2 (sprint
 runner + parent agent session resident; load average well above a clean CI
 runner):
@@ -88,8 +90,21 @@ record it under §4.
 ## 6. Quarantine
 
 `frontend/test-quarantine.json` starts **empty** — no test is bypassing the
-gate. `npm run test:quarantine:check` fails CI if any future entry lacks a
-reason or tracking issue (quarantine ≠ silent skip, R1). Confirmed flakes
-should be **fixed at the source in Sprint 3**, not parked here; the list is the
-escape valve for a flake that must be isolated _while_ its root-cause sprint is
-in flight, never a permanent home.
+gate. The mechanism is two-sided, so a quarantined flake is neither a queue
+blocker nor a silent skip (the issue's stated property, R1):
+
+- **Never blocks the queue:** each entry's `file` is folded into the shared
+  `baseExclude` (`frontend/vitest.shared.mjs`), so it leaves the BLOCKING run.
+  Because `baseExclude` is the single source of truth the R20 partition guard
+  also reads, the file leaves ALL / unit / integration at once — the partition
+  stays exhaustive (no orphan). Empty list → no-op (verified: guard still
+  reports 236 = 173 + 63).
+- **Never silently ignored:** the non-gating flake-detection harness still
+  exercises the file, and `npm run test:quarantine:check` fails CI if an entry
+  lacks a reason or tracking issue.
+
+Exclusion is **file-level** even when an entry's `test` field narrows to one
+case (the rest of the file rides along into the non-gating harness). Confirmed
+flakes should be **fixed at the source in Sprint 3**, not parked here; the list
+is the escape valve for a flake that must be isolated _while_ its root-cause
+sprint is in flight, never a permanent home.
