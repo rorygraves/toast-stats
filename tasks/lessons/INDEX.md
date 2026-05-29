@@ -102,3 +102,4 @@
 - **131** [css, frontend, scope, responsive, architecture] — The class-cardinality check must cover EVERY shared class your CSS diff touches, not just the headline one (#861, #865)
 - **132** [css, dark-mode, frontend, tailwind] — A `var(--undefined-token, #hex)` fallback is a permanent literal, not a theme (#863, #865)
 - **133** [verification, playwright, frontend, cls, tests] — To measure a before/after UX delta locally, proxy the prod CDN and give each git state its own served dir (#864, #865)
+- **134** [css, frontend, responsive, mobile, tables, verification, playwright] — Chipping a status cell doesn't fix mobile truncation while the table still overflows; de-table the row, and verify "unclipped" by bounding box, not `toBeVisible` (#871, #873)
