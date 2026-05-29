@@ -9,22 +9,27 @@
  * Members / Distinguished as a muted meta line so no column data is lost.
  *
  * Reuses the themed `.clubs-card` chrome (--surface / --line / --ink) so dark
- * mode just works (R10). Cards navigate via onSelect (parity with the existing
- * table-row onClick); the <Link> conversion is CC-7 / Sprint 2. */
+ * mode just works (R10). CC-7 (#872, epic #873 Sprint 2): each card is now a
+ * real `<Link>` (was a JS-navigating `<button>` via onSelect), so long-press /
+ * open-in-new-tab work on mobile — the surface this list serves — and the
+ * destination is announced to assistive tech. The caller supplies `clubTo` to
+ * build the href (the pages own the districtId). */
 
 import React from 'react'
+import { Link } from 'react-router-dom'
 import type { ClubTrend } from '../hooks/useDistrictAnalytics'
 import { getClubHealthStatusLabel } from '../utils/clubHealthStatus'
 import { StatusChip } from './StatusChip'
 
 interface ClubMiniListProps {
   clubs: ClubTrend[]
-  onSelect: (clubId: string) => void
+  /** Build the club-detail href for a club (e.g. `/district/61/club/123`). */
+  clubTo: (club: ClubTrend) => string
 }
 
 export const ClubMiniList: React.FC<ClubMiniListProps> = ({
   clubs,
-  onSelect,
+  clubTo,
 }) => (
   <div className="flex flex-col gap-3">
     {clubs.map(c => {
@@ -34,11 +39,10 @@ export const ClubMiniList: React.FC<ClubMiniListProps> = ({
           ? null
           : c.distinguishedLevel
       return (
-        <button
+        <Link
           key={c.clubId}
-          type="button"
+          to={clubTo(c)}
           className="clubs-card"
-          onClick={() => onSelect(c.clubId)}
           aria-label={`${c.clubName} — ${getClubHealthStatusLabel(
             c.currentStatus
           )}, ${members ?? 0} members`}
@@ -51,7 +55,7 @@ export const ClubMiniList: React.FC<ClubMiniListProps> = ({
             {members ?? '—'} member{members === 1 ? '' : 's'}
             {distinguished ? ` · ${distinguished}` : ''}
           </div>
-        </button>
+        </Link>
       )
     })}
   </div>
