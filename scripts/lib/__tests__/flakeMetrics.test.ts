@@ -18,6 +18,9 @@ import {
   formatFlakeSummary,
   resolveHarnessConfig,
   buildVitestArgs,
+  resolveMaxRate,
+  evaluateFlakeGate,
+  formatGateVerdict,
   DEFAULT_SUSPECT_SET,
   type RunResult,
   type FlakeMetric,
@@ -26,6 +29,19 @@ import {
 const run = (passed: boolean, durationMs: number): RunResult => ({
   passed,
   durationMs,
+})
+
+/** A minimal metric with a given flake rate, for gate tests. */
+const metricWithRate = (flakeRate: number): FlakeMetric => ({
+  totalRuns: 10,
+  failedRuns: Math.round(flakeRate * 10),
+  flakeRate,
+  passRate: 1 - flakeRate,
+  durationMsMin: 1000,
+  durationMsMax: 1000,
+  durationMsP50: 1000,
+  durationMsP95: 1000,
+  runs: [],
 })
 
 describe('computeFlakeMetric', () => {
@@ -182,5 +198,61 @@ describe('buildVitestArgs', () => {
     // contention regression. Pinning 100% keeps it running one-fork-per-core —
     // the original §2.3 amplifier — decoupled from the gate's stability cap.
     expect(args).toContain('--maxWorkers=100%')
+  })
+})
+
+// Regression guard on the standing sentinel's gating logic (#916). The sentinel
+// only catches a recurrence if FLAKE_MAX_RATE actually flips the exit code; if a
+// future edit makes the gate non-gating or mis-parses the threshold, the
+// sentinel would report a reassuring green forever (the L135/L136 failure mode).
+describe('resolveMaxRate — gate threshold parsing (#916)', () => {
+  it('returns null (NON-GATING) when FLAKE_MAX_RATE is unset/empty', () => {
+    expect(resolveMaxRate({})).toBeNull()
+    expect(resolveMaxRate({ FLAKE_MAX_RATE: '' })).toBeNull()
+    expect(resolveMaxRate({ FLAKE_MAX_RATE: '   ' })).toBeNull()
+  })
+
+  it('parses a valid fraction in [0,1] — including 0 (the sentinel setting)', () => {
+    expect(resolveMaxRate({ FLAKE_MAX_RATE: '0' })).toBe(0)
+    expect(resolveMaxRate({ FLAKE_MAX_RATE: '0.05' })).toBe(0.05)
+    expect(resolveMaxRate({ FLAKE_MAX_RATE: '1' })).toBe(1)
+  })
+
+  it('treats non-numeric or out-of-range as null, never silently picking a surprise threshold', () => {
+    expect(resolveMaxRate({ FLAKE_MAX_RATE: 'abc' })).toBeNull()
+    expect(resolveMaxRate({ FLAKE_MAX_RATE: '-0.1' })).toBeNull()
+    expect(resolveMaxRate({ FLAKE_MAX_RATE: '5' })).toBeNull() // 5% fat-fingered as 500%
+  })
+})
+
+describe('evaluateFlakeGate — non-gating vs gating (#916)', () => {
+  it('non-gating (maxRate null): never exceeded, even at a high flake rate', () => {
+    const gate = evaluateFlakeGate(metricWithRate(0.5), null)
+    expect(gate.gated).toBe(false)
+    expect(gate.exceeded).toBe(false)
+  })
+
+  it('maxRate 0: a 0% rate passes (0 > 0 is false), any flake fails', () => {
+    expect(evaluateFlakeGate(metricWithRate(0), 0).exceeded).toBe(false)
+    expect(evaluateFlakeGate(metricWithRate(0.1), 0).exceeded).toBe(true)
+  })
+
+  it('maxRate 0.1: strictly-greater trips it (at-threshold passes)', () => {
+    expect(evaluateFlakeGate(metricWithRate(0.1), 0.1).exceeded).toBe(false)
+    expect(evaluateFlakeGate(metricWithRate(0.2), 0.1).exceeded).toBe(true)
+  })
+})
+
+describe('formatGateVerdict', () => {
+  it('labels the non-gating, pass, and fail states distinctly', () => {
+    expect(
+      formatGateVerdict(evaluateFlakeGate(metricWithRate(0.2), null))
+    ).toMatch(/non-gating/)
+    expect(formatGateVerdict(evaluateFlakeGate(metricWithRate(0), 0))).toMatch(
+      /PASS/
+    )
+    expect(
+      formatGateVerdict(evaluateFlakeGate(metricWithRate(0.3), 0))
+    ).toMatch(/FAIL/)
   })
 })

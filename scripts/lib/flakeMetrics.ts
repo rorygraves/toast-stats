@@ -172,6 +172,79 @@ function pct(fraction: number): string {
   return `${(fraction * 100).toFixed(1)}%`
 }
 
+/**
+ * Resolve the gate threshold from `FLAKE_MAX_RATE` (a fraction in [0,1]).
+ *
+ * UNSET / empty / non-numeric / out-of-range ⇒ `null` = NON-GATING (the
+ * baseline default, #913: a measured flake is data, not a build break, so the
+ * per-PR `flake-detection` job stays informational). A value of `0` means "any
+ * flake fails" — the standing sentinel's setting (#916): the suite was proven
+ * 0% on a clean runner, so a single failure over N runs is a real regression.
+ * Out-of-range is treated as unset rather than clamped, so a fat-fingered `5`
+ * (meant as 5% but read as 500%) doesn't silently disable the gate at a
+ * surprising threshold.
+ */
+export function resolveMaxRate(
+  env: Record<string, string | undefined>
+): number | null {
+  const raw = env.FLAKE_MAX_RATE?.trim()
+  if (!raw) return null
+  const n = Number(raw)
+  if (!Number.isFinite(n) || n < 0 || n > 1) return null
+  return n
+}
+
+/** The outcome of applying a gate threshold to a computed metric. */
+export interface FlakeGate {
+  /** Was a threshold supplied (gating mode on)? */
+  gated: boolean
+  /** Did the measured flake rate exceed the threshold? (false when non-gating) */
+  exceeded: boolean
+  /** The resolved threshold, or null when non-gating. */
+  maxRate: number | null
+  /** The measured flake rate carried through for reporting. */
+  flakeRate: number
+}
+
+/**
+ * Decide whether a metric trips the gate. NON-GATING when `maxRate` is null:
+ * `gated:false, exceeded:false` regardless of the rate (data, not a break).
+ * GATING when a threshold is set: `exceeded` is true iff the measured flake
+ * rate is STRICTLY greater than the threshold — so `maxRate=0` fails on the
+ * first flake, while `maxRate=0` against a 0% measured rate passes (0 > 0 is
+ * false). The orchestrator maps `exceeded` to a non-zero exit code.
+ */
+export function evaluateFlakeGate(
+  metric: FlakeMetric,
+  maxRate: number | null
+): FlakeGate {
+  if (maxRate === null) {
+    return {
+      gated: false,
+      exceeded: false,
+      maxRate: null,
+      flakeRate: metric.flakeRate,
+    }
+  }
+  return {
+    gated: true,
+    exceeded: metric.flakeRate > maxRate,
+    maxRate,
+    flakeRate: metric.flakeRate,
+  }
+}
+
+/** One-line human verdict for the gate, for the console + CI step summary. */
+export function formatGateVerdict(gate: FlakeGate): string {
+  if (!gate.gated) {
+    return `Gate: non-gating (FLAKE_MAX_RATE unset) — flake rate ${pct(gate.flakeRate)} recorded as data.`
+  }
+  if (gate.exceeded) {
+    return `Gate: ❌ FAIL — flake rate ${pct(gate.flakeRate)} exceeds the ${pct(gate.maxRate as number)} ceiling.`
+  }
+  return `Gate: ✅ PASS — flake rate ${pct(gate.flakeRate)} within the ${pct(gate.maxRate as number)} ceiling.`
+}
+
 function secs(ms: number): string {
   return `${(ms / 1000).toFixed(1)}s`
 }

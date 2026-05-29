@@ -17,11 +17,17 @@
  *   FLAKE_REPEATS=20 npm run test:flake   # more samples
  *   FLAKE_TARGETS='src/foo' npm run test:flake   # custom target
  *
- * NON-GATING by design: this sprint sets the baseline before tightening. The
- * process exits 0 even when the flake rate is non-zero — a flake here is a
- * *measurement*, not a build break. It exits non-zero only on a harness failure
- * (e.g. a run could not be spawned), which is a real "the metric is unreliable"
- * signal. All human-facing logging goes to stderr (R4).
+ * GATING is OPT-IN via `FLAKE_MAX_RATE` (a fraction in [0,1]; #916):
+ *   - UNSET (the per-PR baseline job, #913): NON-GATING — exits 0 even when the
+ *     flake rate is non-zero. A flake here is a *measurement*, not a build break,
+ *     and the detector runs at `--maxWorkers=100%` so it is sensitive *by
+ *     design* (L136) — gating it per-PR would re-introduce flaky CI, the exact
+ *     thing this epic eradicated.
+ *   - SET (the standing nightly sentinel, FLAKE_MAX_RATE=0): GATING — exits
+ *     non-zero when the measured rate exceeds the ceiling, so a recurrence on a
+ *     clean runner is caught within a day.
+ * Either way it exits non-zero on a harness failure (e.g. a run could not be
+ * spawned), a real "the metric is unreliable" signal. Logging → stderr (R4).
  */
 
 import { spawnSync } from 'node:child_process'
@@ -31,8 +37,11 @@ import { fileURLToPath } from 'node:url'
 import {
   buildVitestArgs,
   computeFlakeMetric,
+  evaluateFlakeGate,
   formatFlakeSummary,
+  formatGateVerdict,
   resolveHarnessConfig,
+  resolveMaxRate,
   type RunResult,
 } from './lib/flakeMetrics'
 
@@ -76,13 +85,15 @@ function main(): void {
   }
 
   const metric = computeFlakeMetric(runs)
-  const summary = formatFlakeSummary(metric, {
+  const gate = evaluateFlakeGate(metric, resolveMaxRate(process.env))
+  const verdict = formatGateVerdict(gate)
+  const summary = `${formatFlakeSummary(metric, {
     label: cfg.label,
     repeats: cfg.repeats,
-  })
+  })}\n\n${verdict}`
 
   // JSON artifact (uploaded by CI; diffable across runs for the S3–S4 comparison).
-  writeFileSync(ARTIFACT, JSON.stringify(metric, null, 2) + '\n')
+  writeFileSync(ARTIFACT, JSON.stringify({ ...metric, gate }, null, 2) + '\n')
   console.error(`\n${summary}\n\nMetric written to ${ARTIFACT}`)
 
   // CI step summary.
@@ -96,8 +107,12 @@ function main(): void {
     appendFileSync(stepSummary, `\n${summary}\n`)
   }
 
-  // Non-gating: a measured flake is data, not a build break.
-  process.exit(0)
+  // Gating is OPT-IN via FLAKE_MAX_RATE (the standing sentinel sets it to 0).
+  // Unset ⇒ non-gating: a measured flake is data, not a build break (#913), so
+  // the per-PR baseline job never fails on a contention blip. When a threshold
+  // IS set and the measured rate exceeds it, exit non-zero so the sentinel goes
+  // red and a recurrence is caught immediately (#916).
+  process.exit(gate.exceeded ? 1 : 0)
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
