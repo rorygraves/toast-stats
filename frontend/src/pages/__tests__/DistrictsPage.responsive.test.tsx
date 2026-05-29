@@ -329,7 +329,7 @@ describe('DistrictsPage mobile sub-line collapse (#890)', () => {
     const { container } = renderWithProviders(<DistrictsPage />)
     await screen.findByText('District 7')
 
-    const suffix = container.querySelector('.districts-page-header__title-py')
+    const suffix = container.querySelector('.page-header__title-py')
     expect(suffix).not.toBeNull()
     expect(suffix!.textContent).toMatch(/·\s*PY\s*\d{4}-\d{2}/)
 

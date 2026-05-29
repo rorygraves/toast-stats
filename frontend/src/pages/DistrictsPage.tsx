@@ -26,8 +26,8 @@ import {
   getAvailableProgramYears,
   filterDatesByProgramYear,
   getMostRecentDateInProgramYear,
-  formatProgramYearShort,
 } from '../utils/programYear'
+import { ProgramYearTitleSuffix } from '../components/ProgramYearTitleSuffix'
 import { DistrictRanking } from '../types/districts'
 import { arrayToCSV, downloadCSV } from '../utils/csvExport'
 import { useIsMobile } from '../hooks/useIsMobile'
@@ -501,10 +501,7 @@ const DistrictsPage: React.FC = () => {
             </p>
             <h1 className="districts-page-header__title">
               District Rankings
-              <span className="districts-page-header__title-py">
-                {' · PY '}
-                {formatProgramYearShort(selectedProgramYear.year)}
-              </span>
+              <ProgramYearTitleSuffix programYear={selectedProgramYear} />
             </h1>
             <p className="districts-page-header__lede">
               Compare district performance across paid clubs, payments, and
@@ -693,10 +690,7 @@ const DistrictsPage: React.FC = () => {
             </p>
             <h1 className="districts-page-header__title">
               District Rankings
-              <span className="districts-page-header__title-py">
-                {' · PY '}
-                {formatProgramYearShort(selectedProgramYear.year)}
-              </span>
+              <ProgramYearTitleSuffix programYear={selectedProgramYear} />
             </h1>
             <p className="districts-page-header__lede">
               Compare district performance across paid clubs, payments, and

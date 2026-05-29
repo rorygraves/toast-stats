@@ -521,11 +521,12 @@
   }
 
   /* #890 — mobile collapse of the Program Year eyebrow onto the title line.
-     Hidden by default (desktop shows the eyebrow); revealed <768px where the
-     `--py` eyebrow is hidden. Subordinate size/weight so the title never wraps
-     to a 2nd line. The dark remap mirrors the eyebrow's #609 fix — --maroon-500
-     is 1.69:1 on the dark surface, so the suffix borrows the same #e8879a. */
-  .districts-page-header__title-py {
+     Shared by the landing and district-detail headers (see ProgramYearTitleSuffix).
+     Hidden by default (desktop shows the eyebrow); revealed <768px. Subordinate
+     size/weight so the title never wraps to a 2nd line. The dark remap mirrors
+     the eyebrow's #609 fix — --maroon-500 is 1.69:1 on the dark surface, so the
+     suffix borrows the same #e8879a. */
+  .page-header__title-py {
     display: none;
     font-size: 0.6em;
     font-weight: 700;
@@ -534,16 +535,19 @@
     white-space: nowrap;
   }
 
-  [data-theme='dark'] .districts-page-header__title-py {
+  [data-theme='dark'] .page-header__title-py {
     color: #e8879a;
   }
 
   @media (max-width: 767px) {
+    /* `--py` scopes the hide to the landing eyebrow only — the shared
+       .districts-page-header__eyebrow rule (Region/Division/Area pages) is
+       left untouched (Lesson 120/131). */
     .districts-page-header__eyebrow--py {
       display: none;
     }
 
-    .districts-page-header__title-py {
+    .page-header__title-py {
       display: inline;
     }
   }
@@ -3049,32 +3053,13 @@
     color: var(--ink);
   }
 
-  /* #890 — the title-line PY suffix is the mobile collapse of the eyebrow.
-     Hidden by default (desktop shows the full eyebrow above the title);
-     revealed <768px where the eyebrow is hidden. Sized down and muted so it
-     reads as a subordinate suffix and never pushes the title to a 2nd line. */
-  .district-detail-page-header__title-py {
-    display: none;
-    font-size: 0.6em;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    color: var(--maroon-500);
-    white-space: nowrap;
-  }
-
-  /* --maroon-500 is 1.69:1 on the dark surface (#609); lift to the same
-     #e8879a the dark eyebrow uses so the mobile suffix clears AA. */
-  [data-theme='dark'] .district-detail-page-header__title-py {
-    color: #e8879a;
-  }
-
+  /* #890 — mobile collapse of the eyebrow onto the title line. The shared
+     `.page-header__title-py` rule (defined with the landing header) styles and
+     reveals the suffix; here we only hide this header's (unshared) eyebrow
+     <768px. */
   @media (max-width: 767px) {
     .district-detail-page-header__eyebrow {
       display: none;
-    }
-
-    .district-detail-page-header__title-py {
-      display: inline;
     }
   }
 

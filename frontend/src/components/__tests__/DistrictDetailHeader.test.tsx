@@ -46,7 +46,7 @@ describe('DistrictDetailHeader DataControlsBar adoption (#531 #528)', () => {
 describe('DistrictDetailHeader mobile sub-line collapse (#890)', () => {
   it('renders a compact PY suffix inside the title (shown on mobile via CSS)', () => {
     renderHeader()
-    const suffix = screen.getByTestId('district-detail-title-py')
+    const suffix = screen.getByTestId('page-header-title-py')
     // Lives inside the H1 title so it collapses onto the title line on mobile.
     const title = screen.getByRole('heading', { level: 1 })
     expect(title).toContainElement(suffix)
