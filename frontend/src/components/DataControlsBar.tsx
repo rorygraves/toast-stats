@@ -66,7 +66,13 @@ const ChipSelect: React.FC<{
         aria-label={currentLabel ? `${ariaLabel}: ${currentLabel}` : ariaLabel}
         value={value}
         onChange={e => onChange(e.target.value)}
-        className="absolute inset-0 opacity-0 cursor-pointer"
+        // appearance-none + min-h-[44px]: the <select> IS the touch target, and
+        // inset-0 sizes it to the label's PADDING box (44px − 2px border = 42px,
+        // measured in both engines on PR #943). The floor must live on the
+        // select; appearance-none opts out of native sizing so WebKit honours
+        // min-height (Lesson 111). opacity-0 keeps it invisible — the ▾ caret
+        // above is the affordance.
+        className="absolute inset-0 opacity-0 cursor-pointer appearance-none min-h-[44px]"
       >
         {options.map(o => (
           <option key={o.value} value={o.value}>

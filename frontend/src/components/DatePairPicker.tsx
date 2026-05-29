@@ -48,7 +48,12 @@ const DateChipSelect: React.FC<{
       }
       value={value ?? ''}
       onChange={e => onChange(e.target.value)}
-      className="absolute inset-0 opacity-0 cursor-pointer"
+      // appearance-none + min-h-[44px]: the <select> IS the touch target, and
+      // inset-0 sizes it to the label's PADDING box (44px − 2px border = 42px,
+      // measured in both engines on PR #943). The floor must live on the
+      // select; appearance-none opts out of native sizing so WebKit honours
+      // min-height (Lesson 111). opacity-0 keeps it invisible.
+      className="absolute inset-0 opacity-0 cursor-pointer appearance-none min-h-[44px]"
     >
       {options.map(d => (
         <option key={d} value={d}>
