@@ -33,6 +33,7 @@ import { createServer } from 'node:http'
 import { readFile, stat } from 'node:fs/promises'
 import { join, relative, isAbsolute, extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { gzipSync } from 'node:zlib'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const PORT = Number(process.env.PORT || 4173)
@@ -77,19 +78,42 @@ async function tryFile(path) {
   return null
 }
 
+// Text resources are served gzipped to match how production (Firebase Hosting /
+// the CDN) transfers them — Lighthouse's `resource-summary:script:size` budget
+// is calibrated in *gzipped* bytes (lighthouserc.js), so serving raw would
+// inflate the measured transfer ~3.4× and red the bundle gate on an artifact of
+// this server rather than a real regression. woff2/png/etc. are already
+// compressed, so they're sent as-is.
+const COMPRESSIBLE = /^(text\/|application\/(javascript|json)|image\/svg)/
+
+// Unified responder: gzips compressible bodies when the client accepts it.
+function send(req, res, status, body, contentType, extraHeaders = {}) {
+  const buf = Buffer.isBuffer(body) ? body : Buffer.from(body)
+  const acceptsGzip = (req.headers['accept-encoding'] || '').includes('gzip')
+  const headers = { 'content-type': contentType, ...extraHeaders }
+  if (acceptsGzip && COMPRESSIBLE.test(contentType)) {
+    const gz = gzipSync(buf)
+    headers['content-encoding'] = 'gzip'
+    headers['vary'] = 'Accept-Encoding'
+    res.writeHead(status, headers)
+    res.end(gz)
+    return
+  }
+  res.writeHead(status, headers)
+  res.end(buf)
+}
+
+const CORS = { 'access-control-allow-origin': '*' }
+
 const server = createServer(async (req, res) => {
   const urlPath = (req.url || '/').split('?')[0]
 
   // 1) CDN fixture? (e.g. /v1/rankings.json, /snapshots/<date>/…)
+  //    Keep CORS permissive so the server also works when the build points
+  //    VITE_CDN_BASE_URL at it cross-origin (Lesson 133).
   const fixture = await tryFile(safeJoin(FIXTURE_DIR, urlPath))
   if (fixture) {
-    res.writeHead(200, {
-      'content-type': MIME['.json'],
-      // Same-origin in CI, but keep this permissive so the server also works
-      // when the build points VITE_CDN_BASE_URL at it cross-origin (Lesson 133).
-      'access-control-allow-origin': '*',
-    })
-    res.end(fixture)
+    send(req, res, 200, fixture, MIME['.json'], CORS)
     return
   }
 
@@ -97,10 +121,13 @@ const server = createServer(async (req, res) => {
   const assetPath = urlPath === '/' ? '/index.html' : urlPath
   const asset = await tryFile(safeJoin(DIST_DIR, assetPath))
   if (asset) {
-    res.writeHead(200, {
-      'content-type': MIME[extname(assetPath)] || 'application/octet-stream',
-    })
-    res.end(asset)
+    send(
+      req,
+      res,
+      200,
+      asset,
+      MIME[extname(assetPath)] || 'application/octet-stream'
+    )
     return
   }
 
@@ -113,24 +140,18 @@ const server = createServer(async (req, res) => {
     urlPath.startsWith('/snapshots/') ||
     urlPath.startsWith('/config/')
   ) {
-    res.writeHead(404, {
-      'content-type': MIME['.json'],
-      'access-control-allow-origin': '*',
-    })
-    res.end('{"error":"fixture not found"}')
+    send(req, res, 404, '{"error":"fixture not found"}', MIME['.json'], CORS)
     return
   }
 
   // 4) SPA client-side route → index.html fallback.
   const index = await tryFile(join(DIST_DIR, 'index.html'))
   if (index) {
-    res.writeHead(200, { 'content-type': MIME['.html'] })
-    res.end(index)
+    send(req, res, 200, index, MIME['.html'])
     return
   }
 
-  res.writeHead(404, { 'content-type': MIME['.txt'] })
-  res.end('not found')
+  send(req, res, 404, 'not found', MIME['.txt'])
 })
 
 server.listen(PORT, () => {
