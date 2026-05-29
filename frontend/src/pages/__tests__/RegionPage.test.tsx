@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { cleanup, render, screen, within } from '@testing-library/react'
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import RegionPage from '../RegionPage'
@@ -61,6 +67,80 @@ const renderRegion = (region: string) => {
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
+})
+
+// Render with a sibling /regions route so a CTA navigation can be asserted
+// by the destination it lands on (the regions overview card grid).
+const renderRegionWithRegionsRoute = (region: string) => {
+  const qc = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+  return render(
+    <QueryClientProvider client={qc}>
+      <MemoryRouter initialEntries={[`/region/${region}`]}>
+        <Routes>
+          <Route path="/region/:n" element={<RegionPage />} />
+          <Route
+            path="/regions"
+            element={<div data-testid="regions-overview">All regions</div>}
+          />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>
+  )
+}
+
+describe('RegionPage empty & error recovery affordances (#883)', () => {
+  // Sprint 3 (epic #884, Epic F): kill the bare-prose empty state on
+  // /region/:n. A sparse region (no matching districts) must render the
+  // shared card-based EmptyState with a real CTA button, not a prose
+  // paragraph + inline <Link>.
+  it('renders a card EmptyState (not prose) for a region with no districts', async () => {
+    mockedFetchCdnRankings.mockResolvedValueOnce({
+      // Only region "1" exists; region "99" is empty.
+      rankings: [mkRanking({ districtId: '1', region: '1' })],
+      date: '2026-05-12',
+    })
+    renderRegionWithRegionsRoute('99')
+
+    // The shared EmptyState renders a tm-card. The old prose block used
+    // .placeholder-page__body with an inline <Link>. Wait on the
+    // distinguishing copy first — the loading skeleton also uses
+    // role="status", so we can't key off the role alone.
+    const heading = await screen.findByText(/no districts in region 99/i)
+    expect(heading.closest('.tm-card')).not.toBeNull()
+    expect(
+      document.querySelector('.placeholder-page__body')
+    ).not.toBeInTheDocument()
+  })
+
+  it('offers a "View all regions" CTA that navigates to /regions', async () => {
+    mockedFetchCdnRankings.mockResolvedValueOnce({
+      rankings: [mkRanking({ districtId: '1', region: '1' })],
+      date: '2026-05-12',
+    })
+    renderRegionWithRegionsRoute('99')
+
+    const cta = await screen.findByRole('button', {
+      name: /view all regions/i,
+    })
+    fireEvent.click(cta)
+    expect(await screen.findByTestId('regions-overview')).toBeInTheDocument()
+  })
+
+  it('renders a card EmptyState with a recovery CTA when the rankings fetch fails', async () => {
+    mockedFetchCdnRankings.mockRejectedValueOnce(new Error('boom'))
+    renderRegionWithRegionsRoute('2')
+
+    const heading = await screen.findByText(/could not load region/i)
+    const card = heading.closest('.tm-card')!
+    expect(card).not.toBeNull()
+    const cta = within(card as HTMLElement).getByRole('button', {
+      name: /view all regions/i,
+    })
+    fireEvent.click(cta)
+    expect(await screen.findByTestId('regions-overview')).toBeInTheDocument()
+  })
 })
 
 describe('RegionPage tier column (#517 #513)', () => {
