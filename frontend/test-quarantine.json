@@ -1,0 +1,4 @@
+{
+  "$comment": "Known-flaky tests, isolated but NOT skipped/deleted (R1). Every entry needs a reason + tracking issue (the root-cause sprint that will un-quarantine it). Validated and loudly reported by `npm run test:quarantine:check` (scripts/check-quarantine.ts). Sprint 2 (#913) sets this up empty; Sprint 3 (#914) is where confirmed flakes get fixed at the source rather than quarantined long-term.",
+  "quarantined": []
+}
