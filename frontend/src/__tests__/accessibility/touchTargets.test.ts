@@ -6,6 +6,15 @@
  *
  * Feature: toastmasters-brand-compliance, Property 4: For any interactive element,
  * the minimum touch target size should be 44px in both width and height
+ *
+ * §4.2 re-confirmation (#916): the deep-dive flagged this as a possible
+ * mock→mock tautology, but on re-read it is REAL — the mocked
+ * getBoundingClientRect is the *controlled input* to `useTouchTarget`, and the
+ * assertions verify the hook's *classification logic* (passes/fails the 44px
+ * threshold, recommendation text, margin-inclusion math) plus
+ * `isInteractiveElement`, which inspects real DOM with no geometry mock at all.
+ * Kept as a unit test of the hook; live geometry is covered by Playwright
+ * elsewhere (L66/L134).
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
