@@ -9,7 +9,13 @@
 
 import React, { Suspense } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react'
 import {
   createMemoryRouter,
   RouterProvider,
@@ -249,6 +255,66 @@ describe('DistrictTrendsPage (#680 — ADR-005)', () => {
     const { router } = renderAt('/district/61?tab=trends')
     await waitFor(() => {
       expect(router.state.location.pathname).toBe('/district/61/trends')
+    })
+  })
+
+  // #875 (epic #876 Sprint 2): at <768px the multi-series charts collapse to a
+  // sparkline-then-expand wrapper (CC-3). Only the max-width media query is
+  // mobile so DarkModeProvider's prefers-color-scheme probe is unaffected.
+  describe('mobile chart collapse (#875)', () => {
+    const stubViewport = (mobile: boolean) =>
+      vi.stubGlobal(
+        'matchMedia',
+        vi.fn().mockImplementation((query: string) => ({
+          matches: /max-width/.test(query) ? mobile : false,
+          media: query,
+          onchange: null,
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+          addListener: vi.fn(),
+          removeListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+        }))
+      )
+    afterEach(() => vi.unstubAllGlobals())
+
+    it('collapses membership + payments behind expand triggers', async () => {
+      stubViewport(true)
+      renderAt('/district/61/trends')
+      await screen.findByRole('navigation', { name: 'District sections' })
+      expect(
+        screen.queryByTestId('membership-trend-chart')
+      ).not.toBeInTheDocument()
+      expect(
+        screen.getByRole('button', { name: /expand membership trend chart/i })
+      ).toBeInTheDocument()
+      expect(
+        screen.getByRole('button', { name: /expand payments trend chart/i })
+      ).toBeInTheDocument()
+    })
+
+    it('opens the membership chart in a sheet when tapped, closes on Esc', async () => {
+      stubViewport(true)
+      renderAt('/district/61/trends')
+      const trigger = await screen.findByRole('button', {
+        name: /expand membership trend chart/i,
+      })
+      fireEvent.click(trigger)
+      expect(screen.getByRole('dialog')).toBeInTheDocument()
+      expect(screen.getByTestId('membership-trend-chart')).toBeInTheDocument()
+      fireEvent.keyDown(document, { key: 'Escape' })
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
+
+    it('renders charts directly at desktop widths (no trigger)', async () => {
+      stubViewport(false)
+      renderAt('/district/61/trends')
+      expect(
+        await screen.findByTestId('membership-trend-chart')
+      ).toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: /expand .* chart/i })
+      ).not.toBeInTheDocument()
     })
   })
 })

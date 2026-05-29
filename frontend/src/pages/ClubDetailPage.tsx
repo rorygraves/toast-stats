@@ -34,6 +34,7 @@ import {
 import { LoadingSkeleton } from '../components/LoadingSkeleton'
 import { EmptyState } from '../components/ErrorDisplay'
 import ErrorBoundary from '../components/ErrorBoundary'
+import { ChartSparklineExpand } from '../components/ChartSparklineExpand'
 import { useDistrictStatistics } from '../hooks/useMembershipData'
 import { ClubDCPGoalsPanel } from '../components/ClubDCPGoalsPanel'
 import { useClubGoalTimeline } from '../hooks/useClubGoalTimeline'
@@ -347,6 +348,13 @@ const ClubDetailPage: React.FC = () => {
   const membershipChangePct =
     baseMembership > 0 ? (membershipChange / baseMembership) * 100 : null
 
+  // #875 (epic #876, CC-3): collapsed-mobile sparkline series for the
+  // membership trend — the same counts the hand-rolled .mem-chart plots.
+  const membershipSparkline = useMemo(
+    () => filteredMembershipTrend.map(p => p.count),
+    [filteredMembershipTrend]
+  )
+
   // Membership chart geometry — pixel-mapped to club-reference.html (#619).
   // viewBox 800×260 with PL36/PR14/PT14/PB26 padding → 750×220 plot area.
   const CHART = { W: 800, H: 260, PT: 14, PR: 14, PB: 26, PL: 36 }
@@ -652,150 +660,162 @@ const ClubDetailPage: React.FC = () => {
               </div>
               <div className="club-panel__body">
                 {filteredMembershipTrend.length > 0 ? (
-                  <>
-                    <div className="chart-stats">
-                      <div className="chart-stats__row">
-                        <span className="chart-stats__label">Base</span>
-                        <span className="chart-stats__val">
-                          {baseMembership}
-                        </span>
+                  <ChartSparklineExpand
+                    title="Membership Trend"
+                    sparklineData={membershipSparkline}
+                    headline={
+                      <>
+                        {latestMembership} members
+                        {membershipChange !== 0 &&
+                          ` (${membershipChange > 0 ? '+' : ''}${membershipChange})`}
+                      </>
+                    }
+                  >
+                    <>
+                      <div className="chart-stats">
+                        <div className="chart-stats__row">
+                          <span className="chart-stats__label">Base</span>
+                          <span className="chart-stats__val">
+                            {baseMembership}
+                          </span>
+                        </div>
+                        <div className="chart-stats__row">
+                          <span className="chart-stats__label">Current</span>
+                          <span className="chart-stats__val">
+                            {latestMembership}
+                          </span>
+                        </div>
+                        <div className="chart-stats__row">
+                          <span className="chart-stats__label">Change</span>
+                          <span
+                            className={
+                              'chart-stats__val' +
+                              (membershipChange > 0
+                                ? ' chart-stats__val--pos'
+                                : membershipChange < 0
+                                  ? ' chart-stats__val--neg'
+                                  : '')
+                            }
+                          >
+                            {membershipChange >= 0 ? '+' : ''}
+                            {membershipChange}
+                            {membershipChangePct !== null &&
+                              ` (${membershipChangePct >= 0 ? '+' : ''}${membershipChangePct.toFixed(1)}%)`}
+                          </span>
+                        </div>
                       </div>
-                      <div className="chart-stats__row">
-                        <span className="chart-stats__label">Current</span>
-                        <span className="chart-stats__val">
-                          {latestMembership}
-                        </span>
-                      </div>
-                      <div className="chart-stats__row">
-                        <span className="chart-stats__label">Change</span>
-                        <span
-                          className={
-                            'chart-stats__val' +
-                            (membershipChange > 0
-                              ? ' chart-stats__val--pos'
-                              : membershipChange < 0
-                                ? ' chart-stats__val--neg'
-                                : '')
-                          }
-                        >
-                          {membershipChange >= 0 ? '+' : ''}
-                          {membershipChange}
-                          {membershipChangePct !== null &&
-                            ` (${membershipChangePct >= 0 ? '+' : ''}${membershipChangePct.toFixed(1)}%)`}
-                        </span>
-                      </div>
-                    </div>
 
-                    <svg
-                      className="mem-chart"
-                      viewBox={`0 0 ${CHART.W} ${CHART.H}`}
-                      preserveAspectRatio="none"
-                      role="img"
-                      aria-label={`Membership trend for program year ${programYearLabelDisplay}`}
-                    >
-                      {/* Y grid + labels (4 ticks) */}
-                      {[0, 1, 2, 3].map(i => {
-                        const v = yMin + yRange * (i / 3)
-                        const y = yScale(v)
-                        return (
-                          <g key={`grid-${i}`}>
-                            <line
-                              className="grid"
-                              x1={CHART.PL}
-                              y1={y}
-                              x2={CHART.W - CHART.PR}
-                              y2={y}
-                            />
-                            <text
-                              className="axis-text"
-                              x={CHART.PL - 6}
-                              y={y + 4}
-                              textAnchor="end"
-                            >
-                              {Math.round(v)}
-                            </text>
-                          </g>
-                        )
-                      })}
-
-                      {/* Key-date verticals (Jul 1 / Oct 1 / Apr 1 / Jun 30) */}
-                      {keyDates.map(kd => {
-                        const x = xScale(kd.day)
-                        return (
-                          <g key={kd.label}>
-                            <line
-                              className="key-line"
-                              x1={x}
-                              y1={CHART.PT}
-                              x2={x}
-                              y2={CHART.H - CHART.PB}
-                            >
-                              <title>{kd.description}</title>
-                            </line>
-                            <text
-                              className="key-text"
-                              x={x}
-                              y={CHART.H - 10}
-                              textAnchor="middle"
-                            >
-                              {kd.label}
-                            </text>
-                          </g>
-                        )
-                      })}
-
-                      {/* Area fill + line */}
-                      {(() => {
-                        const pts = filteredMembershipTrend
-                          .map(
-                            p =>
-                              `${xScale(calculateProgramYearDay(p.date)).toFixed(1)},${yScale(p.count).toFixed(1)}`
-                          )
-                          .join(' ')
-                        const baseY = (CHART.PT + innerH).toFixed(1)
-                        const firstX = xScale(
-                          calculateProgramYearDay(
-                            filteredMembershipTrend[0]!.date
-                          )
-                        ).toFixed(1)
-                        const lastX = xScale(
-                          calculateProgramYearDay(
-                            filteredMembershipTrend[
-                              filteredMembershipTrend.length - 1
-                            ]!.date
-                          )
-                        ).toFixed(1)
-                        return (
-                          <>
-                            {filteredMembershipTrend.length > 1 && (
-                              <polygon
-                                className="area"
-                                points={`${pts} ${lastX},${baseY} ${firstX},${baseY}`}
+                      <svg
+                        className="mem-chart"
+                        viewBox={`0 0 ${CHART.W} ${CHART.H}`}
+                        preserveAspectRatio="none"
+                        role="img"
+                        aria-label={`Membership trend for program year ${programYearLabelDisplay}`}
+                      >
+                        {/* Y grid + labels (4 ticks) */}
+                        {[0, 1, 2, 3].map(i => {
+                          const v = yMin + yRange * (i / 3)
+                          const y = yScale(v)
+                          return (
+                            <g key={`grid-${i}`}>
+                              <line
+                                className="grid"
+                                x1={CHART.PL}
+                                y1={y}
+                                x2={CHART.W - CHART.PR}
+                                y2={y}
                               />
-                            )}
-                            {filteredMembershipTrend.length > 1 && (
-                              <polyline className="line" points={pts} />
-                            )}
-                          </>
-                        )
-                      })()}
+                              <text
+                                className="axis-text"
+                                x={CHART.PL - 6}
+                                y={y + 4}
+                                textAnchor="end"
+                              >
+                                {Math.round(v)}
+                              </text>
+                            </g>
+                          )
+                        })}
 
-                      {/* Dots + tooltips */}
-                      {filteredMembershipTrend.map((point, index) => (
-                        <circle
-                          key={index}
-                          className="dot"
-                          cx={xScale(calculateProgramYearDay(point.date))}
-                          cy={yScale(point.count)}
-                          r="3"
-                        >
-                          <title>
-                            {formatDate(point.date)}: {point.count} members
-                          </title>
-                        </circle>
-                      ))}
-                    </svg>
-                  </>
+                        {/* Key-date verticals (Jul 1 / Oct 1 / Apr 1 / Jun 30) */}
+                        {keyDates.map(kd => {
+                          const x = xScale(kd.day)
+                          return (
+                            <g key={kd.label}>
+                              <line
+                                className="key-line"
+                                x1={x}
+                                y1={CHART.PT}
+                                x2={x}
+                                y2={CHART.H - CHART.PB}
+                              >
+                                <title>{kd.description}</title>
+                              </line>
+                              <text
+                                className="key-text"
+                                x={x}
+                                y={CHART.H - 10}
+                                textAnchor="middle"
+                              >
+                                {kd.label}
+                              </text>
+                            </g>
+                          )
+                        })}
+
+                        {/* Area fill + line */}
+                        {(() => {
+                          const pts = filteredMembershipTrend
+                            .map(
+                              p =>
+                                `${xScale(calculateProgramYearDay(p.date)).toFixed(1)},${yScale(p.count).toFixed(1)}`
+                            )
+                            .join(' ')
+                          const baseY = (CHART.PT + innerH).toFixed(1)
+                          const firstX = xScale(
+                            calculateProgramYearDay(
+                              filteredMembershipTrend[0]!.date
+                            )
+                          ).toFixed(1)
+                          const lastX = xScale(
+                            calculateProgramYearDay(
+                              filteredMembershipTrend[
+                                filteredMembershipTrend.length - 1
+                              ]!.date
+                            )
+                          ).toFixed(1)
+                          return (
+                            <>
+                              {filteredMembershipTrend.length > 1 && (
+                                <polygon
+                                  className="area"
+                                  points={`${pts} ${lastX},${baseY} ${firstX},${baseY}`}
+                                />
+                              )}
+                              {filteredMembershipTrend.length > 1 && (
+                                <polyline className="line" points={pts} />
+                              )}
+                            </>
+                          )
+                        })()}
+
+                        {/* Dots + tooltips */}
+                        {filteredMembershipTrend.map((point, index) => (
+                          <circle
+                            key={index}
+                            className="dot"
+                            cx={xScale(calculateProgramYearDay(point.date))}
+                            cy={yScale(point.count)}
+                            r="3"
+                          >
+                            <title>
+                              {formatDate(point.date)}: {point.count} members
+                            </title>
+                          </circle>
+                        ))}
+                      </svg>
+                    </>
+                  </ChartSparklineExpand>
                 ) : (
                   <EmptyState
                     title="No Membership Data"

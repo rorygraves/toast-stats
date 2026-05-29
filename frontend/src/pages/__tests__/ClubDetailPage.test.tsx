@@ -2,7 +2,13 @@
  * Tests for ClubDetailPage (#208) — full subpage with routing.
  */
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
-import { screen, render, cleanup, within } from '@testing-library/react'
+import {
+  screen,
+  render,
+  cleanup,
+  within,
+  fireEvent,
+} from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query'
@@ -129,6 +135,56 @@ function renderWithRoute(
 describe('ClubDetailPage (#208)', () => {
   afterEach(() => {
     cleanup()
+  })
+
+  // #875 (epic #876 Sprint 2, CC-3): the membership trend collapses to a
+  // sparkline-then-expand wrapper below 768px. The page's matchMedia mock is
+  // writable, so flip the max-width query to mobile for this block only.
+  describe('mobile membership-trend collapse (#875)', () => {
+    const setMobile = (mobile: boolean) => {
+      ;(window.matchMedia as unknown as ReturnType<typeof vi.fn>) = vi
+        .fn()
+        .mockImplementation((query: string) => ({
+          matches: /max-width/.test(query) ? mobile : false,
+          media: query,
+          onchange: null,
+          addListener: vi.fn(),
+          removeListener: vi.fn(),
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+        }))
+    }
+    afterEach(() => setMobile(false))
+
+    it('collapses the mem-chart behind an expand trigger', () => {
+      setMobile(true)
+      const { container } = renderWithRoute()
+      expect(container.querySelector('svg.mem-chart')).toBeNull()
+      expect(
+        screen.getByRole('button', { name: /expand membership trend chart/i })
+      ).toBeInTheDocument()
+    })
+
+    it('opens the mem-chart in a sheet when tapped', () => {
+      setMobile(true)
+      renderWithRoute()
+      fireEvent.click(
+        screen.getByRole('button', { name: /expand membership trend chart/i })
+      )
+      expect(screen.getByRole('dialog')).toBeInTheDocument()
+      // The sheet is portalled to document.body, not inside `container`.
+      expect(document.querySelector('svg.mem-chart')).not.toBeNull()
+    })
+
+    it('renders the mem-chart directly at desktop widths', () => {
+      setMobile(false)
+      const { container } = renderWithRoute()
+      expect(container.querySelector('svg.mem-chart')).not.toBeNull()
+      expect(
+        screen.queryByRole('button', { name: /expand .* chart/i })
+      ).not.toBeInTheDocument()
+    })
   })
 
   it('renders club name and breadcrumbs', () => {

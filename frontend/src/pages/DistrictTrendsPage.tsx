@@ -31,6 +31,7 @@ import {
 } from '../components/LazyCharts'
 import { LoadingSkeleton } from '../components/LoadingSkeleton'
 import ErrorBoundary from '../components/ErrorBoundary'
+import { ChartSparklineExpand } from '../components/ChartSparklineExpand'
 
 /* District Trends Page (#680, epic #674 Sprint 6, ADR-005 §1).
    Dedicated deep-linkable route for the membership / payments / YoY trend
@@ -133,6 +134,33 @@ const DistrictTrendsPage: React.FC = () => {
       performanceTargets ?? null
     )
 
+  // #875 (epic #876, CC-3): the membership/payments charts are multi-series
+  // Recharts that smear at 375px. Derive the collapsed-mobile sparkline series
+  // from the SAME points the charts plot, so the sparkline-then-expand wrapper
+  // (ChartSparklineExpand) previews the real trend. Desktop is untouched — the
+  // wrapper renders its children verbatim at and above the 768px breakpoint.
+  const membershipTrendPoints = useMemo(
+    () =>
+      timeSeries?.years[timeSeries.currentProgramYear]?.dataPoints.map(dp => ({
+        date: dp.date,
+        count: dp.membership,
+      })) ??
+      aggregatedAnalytics?.trends.membership ??
+      [],
+    [timeSeries, aggregatedAnalytics]
+  )
+  const membershipSparkline = useMemo(
+    () => membershipTrendPoints.map(p => p.count),
+    [membershipTrendPoints]
+  )
+  const latestMembership =
+    membershipTrendPoints[membershipTrendPoints.length - 1]?.count ?? null
+  const paymentsSparkline = useMemo(
+    () => (paymentsTrendData?.currentYearTrend ?? []).map(p => p.payments),
+    [paymentsTrendData]
+  )
+  const latestPayments = paymentsSparkline[paymentsSparkline.length - 1] ?? null
+
   const rawName = selectedDistrict?.name || districtId || ''
   const districtName = /^\d+$/.test(rawName) ? `District ${rawName}` : rawName
   useDocumentTitle(districtName ? `${districtName} Trends` : null)
@@ -178,37 +206,40 @@ const DistrictTrendsPage: React.FC = () => {
               // #675: charts are React.lazy code-split; reserve space with a
               // fixed-height div but do NOT gate rendering on viewport
               // intersection.
-              <div style={{ minHeight: '400px' }}>
-                <MembershipTrendChart
-                  membershipTrend={
-                    // #170: prefer time-series monthly data over the inline
-                    // 1-point trend.
-                    timeSeries?.years[
-                      timeSeries.currentProgramYear
-                    ]?.dataPoints.map(dp => ({
-                      date: dp.date,
-                      count: dp.membership,
-                    })) ?? aggregatedAnalytics.trends.membership
-                  }
-                  isLoading={isLoadingAggregated}
-                  priorYearTrends={
-                    // #238: overlay prior years for YoY comparison
-                    timeSeries
-                      ? timeSeries.availableYears
-                          .filter(y => y !== timeSeries.currentProgramYear)
-                          .map(y => ({
-                            label: y,
-                            data:
-                              timeSeries.years[y]?.dataPoints.map(dp => ({
-                                date: dp.date,
-                                count: dp.membership,
-                              })) ?? [],
-                          }))
-                          .filter(yt => yt.data.length > 0)
-                      : undefined
-                  }
-                />
-              </div>
+              <ChartSparklineExpand
+                title="Membership trend"
+                sparklineData={membershipSparkline}
+                headline={
+                  <>
+                    {latestMembership !== null
+                      ? `${latestMembership.toLocaleString()} members`
+                      : 'Membership trend'}
+                  </>
+                }
+              >
+                <div style={{ minHeight: '400px' }}>
+                  <MembershipTrendChart
+                    membershipTrend={membershipTrendPoints}
+                    isLoading={isLoadingAggregated}
+                    priorYearTrends={
+                      // #238: overlay prior years for YoY comparison
+                      timeSeries
+                        ? timeSeries.availableYears
+                            .filter(y => y !== timeSeries.currentProgramYear)
+                            .map(y => ({
+                              label: y,
+                              data:
+                                timeSeries.years[y]?.dataPoints.map(dp => ({
+                                  date: dp.date,
+                                  count: dp.membership,
+                                })) ?? [],
+                            }))
+                            .filter(yt => yt.data.length > 0)
+                        : undefined
+                    }
+                  />
+                </div>
+              </ChartSparklineExpand>
             ) : (
               isLoadingAggregated && (
                 <LoadingSkeleton variant="chart" height="400px" />
@@ -217,71 +248,89 @@ const DistrictTrendsPage: React.FC = () => {
 
             {/* Membership Payments Chart (#243) */}
             {paymentsTrendData ? (
-              <div style={{ minHeight: '450px' }}>
-                <MembershipPaymentsChart
-                  paymentsTrend={paymentsTrendData.currentYearTrend}
-                  multiYearData={
-                    // #243: Build multi-year payment data from time-series CDN
-                    // (analytics CDN only has current year payments)
-                    timeSeries
-                      ? ((): MultiYearPaymentData => {
-                          const currentPY = timeSeries.currentProgramYear
-                          const currentData =
-                            timeSeries.years[currentPY]?.dataPoints.map(dp => ({
-                              date: dp.date,
-                              payments: dp.payments,
-                              programYearDay: calculateProgramYearDay(dp.date),
-                            })) ?? []
-                          const previousYears = timeSeries.availableYears
-                            .filter(y => y !== currentPY)
-                            .map(y => ({
-                              label: y,
-                              data:
-                                timeSeries.years[y]?.dataPoints.map(dp => ({
+              <ChartSparklineExpand
+                title="Payments trend"
+                sparklineData={paymentsSparkline}
+                headline={
+                  <>
+                    {latestPayments !== null
+                      ? `${latestPayments.toLocaleString()} payments`
+                      : 'Payments trend'}
+                  </>
+                }
+              >
+                <div style={{ minHeight: '450px' }}>
+                  <MembershipPaymentsChart
+                    paymentsTrend={paymentsTrendData.currentYearTrend}
+                    multiYearData={
+                      // #243: Build multi-year payment data from time-series CDN
+                      // (analytics CDN only has current year payments)
+                      timeSeries
+                        ? ((): MultiYearPaymentData => {
+                            const currentPY = timeSeries.currentProgramYear
+                            const currentData =
+                              timeSeries.years[currentPY]?.dataPoints.map(
+                                dp => ({
                                   date: dp.date,
                                   payments: dp.payments,
                                   programYearDay: calculateProgramYearDay(
                                     dp.date
                                   ),
-                                })) ?? [],
-                            }))
-                            .filter(yt => yt.data.length > 0)
+                                })
+                              ) ?? []
+                            const previousYears = timeSeries.availableYears
+                              .filter(y => y !== currentPY)
+                              .map(y => ({
+                                label: y,
+                                data:
+                                  timeSeries.years[y]?.dataPoints.map(dp => ({
+                                    date: dp.date,
+                                    payments: dp.payments,
+                                    programYearDay: calculateProgramYearDay(
+                                      dp.date
+                                    ),
+                                  })) ?? [],
+                              }))
+                              .filter(yt => yt.data.length > 0)
+                            return {
+                              currentYear: {
+                                label: currentPY,
+                                data: currentData,
+                              },
+                              previousYears,
+                            }
+                          })()
+                        : paymentsTrendData.multiYearData
+                    }
+                    statistics={
+                      // #269: Override YoY when time-series data provides
+                      // multi-year payment history (analytics CDN is
+                      // current-year-only)
+                      (() => {
+                        const tsYoY = computePaymentYoYFromTimeSeries(
+                          timeSeries ?? null
+                        )
+                        if (tsYoY) {
+                          // Use time-series payments for consistency (#319)
+                          const tsPayments = getLatestPayments(
+                            timeSeries ?? null
+                          )
                           return {
-                            currentYear: {
-                              label: currentPY,
-                              data: currentData,
-                            },
-                            previousYears,
+                            ...paymentsTrendData.statistics,
+                            ...(tsPayments !== null && {
+                              currentPayments: tsPayments,
+                            }),
+                            yearOverYearChange: tsYoY.yearOverYearChange,
+                            trendDirection: tsYoY.trendDirection,
                           }
-                        })()
-                      : paymentsTrendData.multiYearData
-                  }
-                  statistics={
-                    // #269: Override YoY when time-series data provides
-                    // multi-year payment history (analytics CDN is
-                    // current-year-only)
-                    (() => {
-                      const tsYoY = computePaymentYoYFromTimeSeries(
-                        timeSeries ?? null
-                      )
-                      if (tsYoY) {
-                        // Use time-series payments for consistency (#319)
-                        const tsPayments = getLatestPayments(timeSeries ?? null)
-                        return {
-                          ...paymentsTrendData.statistics,
-                          ...(tsPayments !== null && {
-                            currentPayments: tsPayments,
-                          }),
-                          yearOverYearChange: tsYoY.yearOverYearChange,
-                          trendDirection: tsYoY.trendDirection,
                         }
-                      }
-                      return paymentsTrendData.statistics
-                    })()
-                  }
-                  isLoading={isLoadingPaymentsTrend}
-                />
-              </div>
+                        return paymentsTrendData.statistics
+                      })()
+                    }
+                    isLoading={isLoadingPaymentsTrend}
+                  />
+                </div>
+              </ChartSparklineExpand>
             ) : (
               isLoadingPaymentsTrend && (
                 <LoadingSkeleton variant="chart" height="450px" />
