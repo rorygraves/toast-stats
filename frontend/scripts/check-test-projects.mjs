@@ -19,45 +19,15 @@
  *
  * Exits non-zero with the offending files listed on any violation.
  */
-import { execFileSync } from 'node:child_process'
-import { fileURLToPath } from 'node:url'
+import {
+  listVitestFiles,
+  relFromFrontend as rel,
+} from './lib/listVitestFiles.mjs'
 
 const PROJECTS = ['unit', 'integration']
-const FRONTEND_DIR = fileURLToPath(new URL('..', import.meta.url))
 
-function listFiles(project) {
-  const args = ['vitest', 'list', '--json']
-  if (project) args.push(`--project=${project}`)
-  let out
-  try {
-    out = execFileSync('npx', args, {
-      cwd: FRONTEND_DIR,
-      encoding: 'utf8',
-      maxBuffer: 64 * 1024 * 1024,
-      stdio: ['ignore', 'pipe', 'ignore'],
-    })
-  } catch (err) {
-    out = err.stdout ? String(err.stdout) : ''
-  }
-  let cases
-  try {
-    cases = JSON.parse(out)
-  } catch {
-    throw new Error(
-      `vitest list ${project ? `--project=${project}` : '(all)'} produced no parseable JSON. ` +
-        `Is the "${project}" project configured?`
-    )
-  }
-  return new Set(cases.map((c) => c.file))
-}
-
-function rel(f) {
-  const i = f.indexOf('/frontend/')
-  return i === -1 ? f : f.slice(i + 1)
-}
-
-const all = listFiles(null)
-const sets = Object.fromEntries(PROJECTS.map((p) => [p, listFiles(p)]))
+const all = listVitestFiles(null)
+const sets = Object.fromEntries(PROJECTS.map((p) => [p, listVitestFiles(p)]))
 
 const [unit, integration] = [sets.unit, sets.integration]
 const errors = []

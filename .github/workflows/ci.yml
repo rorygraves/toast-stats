@@ -192,6 +192,12 @@ jobs:
       - name: Check vitest project partition (#482)
         run: npm run test:projects:check --workspace=frontend
 
+      - name: Check no unit test full-page-mounts (V12 / sprint 916)
+        # A page mount in the fast unit project re-introduces the L53 contention
+        # surface into the pre-push gate. Sourced from vitest's own unit-project
+        # resolution, like the partition guard.
+        run: npm run test:no-page-mounts:check --workspace=frontend
+
       - name: Check test quarantine is justified (#913)
         # Quarantine != skip (R1): fails only if an entry lacks a reason/issue
         # or the file is malformed. An empty list passes loudly.

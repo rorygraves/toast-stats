@@ -91,6 +91,14 @@ _Trigger:_ starting work in a spawned/automation worktree, or before opening a P
 A file matching no project's include/exclude stops running in every gate, silently — coverage dips, a regression sails through weeks later, nothing points at the cause. Assert the partition is disjoint _and_ exhaustive using the tool's own resolution (`vitest list --json`), never a re-implemented glob walk that can drift. (Lesson 090 / #482)
 _Trigger:_ splitting a test suite into projects/shards, or adding a top-level test directory.
 
+**R21 — An instrument that measures a failure class must not inherit the stabilization it measures.**
+When you add a guard that suppresses a failure (a worker cap, a retry, a timeout, a coverage threshold), check whether the _detector_ for that class shares the same config — and decouple it if so. The flake detector pins `--maxWorkers=100%` while the blocking gate is capped at 50%; the harness keeps coverage _instrumentation_ but zeroes the _thresholds_. A detector that only ever runs the safe configuration reports a reassuring green forever while the very class it exists to catch drifts back in. Corollary: gate = capped/stable, detector = unbounded/sensitive — so a sensitive detector belongs on a scheduled sentinel, never as a per-PR gate (it would re-introduce the flake it hunts). (Lessons 135, 136 / #913, #914, #916)
+_Trigger:_ sourcing a worker/retry/timeout/threshold policy from shared config; deciding whether a flake/health detector should gate per-PR.
+
+**R22 — A unit test must not full-page-mount; page mounts belong in the integration project.**
+`render(<SomePage/>)` drags in QueryClientProvider + router + lazy children + hook mocks — the L53 contention surface — into the fast unit project that also gates pre-push. Keep mounts in `src/pages/__tests__/` or `src/__tests__/integration/` (or name the file `*.integration.test.tsx`). Enforced by `npm run test:no-page-mounts:check`, sourced from vitest's own unit-project resolution (R20 spirit). (Deep-dive V1/V12 / #916)
+_Trigger:_ writing a test that imports a `pages/*Page` component or `<App/>`.
+
 ---
 
 ## ⚠️ Active Tripwires

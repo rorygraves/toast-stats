@@ -105,3 +105,4 @@
 - **134** [css, frontend, responsive, mobile, tables, verification, playwright] — Chipping a status cell doesn't fix mobile truncation while the table still overflows; de-table the row, and verify "unclipped" by bounding box, not `toBeVisible` (#871, #873)
 - **135** [tests, flaky, vitest, ci, coverage, verification] — A global coverage threshold deterministically fails a filtered subset run; a flake harness must keep instrumentation but zero thresholds (#913, #917)
 - **136** [tests, flaky, vitest, ci, contention] — A flake detector must not inherit the stability cap it measures; cap the gate, pin the detector to max parallelism (#914, #917)
+- **137** [tests, flaky, vitest, process, verification, tdd] — An audit's "false-confidence" list is a per-file hypothesis; re-confirm before deleting, because the first-pass classification over-flags (#916, #917)

@@ -5,26 +5,18 @@
  * **Validates: Requirements 3.1, 3.2**
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 import { ErrorDisplay, EmptyState } from '../../components/ErrorDisplay'
 
-describe('Component Migrations - Brand Compliance Tests', () => {
-  beforeEach(() => {
-    // Mock getBoundingClientRect for consistent testing
-    Element.prototype.getBoundingClientRect = vi.fn(() => ({
-      width: 44,
-      height: 44,
-      top: 0,
-      left: 0,
-      bottom: 44,
-      right: 44,
-      x: 0,
-      y: 0,
-      toJSON: () => ({}),
-    }))
-  })
+// NOTE (#916, §4.2): these tests assert real className / click-handler / a11y
+// behaviour of ErrorDisplay & EmptyState. A former `beforeEach` that stubbed
+// `Element.prototype.getBoundingClientRect → 44×44` was removed — no assertion
+// here reads geometry, so the stub was pure footgun (a jsdom geometry lie that
+// a future geometry assertion would silently trust). jsdom proves what ships
+// (class/role/handler); live geometry belongs in a Playwright check (L66/L134).
 
+describe('Component Migrations - Brand Compliance Tests', () => {
   afterEach(() => {
     cleanup()
     vi.restoreAllMocks()

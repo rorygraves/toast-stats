@@ -140,3 +140,44 @@ case (the rest of the file rides along into the non-gating harness). Confirmed
 flakes should be **fixed at the source in Sprint 3**, not parked here; the list
 is the escape valve for a flake that must be isolated _while_ its root-cause
 sprint is in flight, never a permanent home.
+
+## 7. Sprint 5 (#916) — Lock-in & close-out
+
+The epic's eradication work (S3 contention/isolation, S4 Lighthouse/CDN) is
+done; S5 makes ~zero **stay** ~zero and acts on the deep-dive's §4.2/V4/V12
+backlog:
+
+| Lock-in piece                                                                                                                                                   | Where                                                                                                                                                                        |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Standing stress sentinel** — suspect set ×30 nightly, **gating on a 0% ceiling**, files a deduped `flake-regression` alert on a non-zero rate                 | `.github/workflows/flake-sentinel.yml`                                                                                                                                       |
+| **Opt-in gating mode** for the harness (`FLAKE_MAX_RATE`) + regression guard on the gating logic                                                                | `scripts/lib/flakeMetrics.ts` (`resolveMaxRate`/`evaluateFlakeGate`), `scripts/lib/__tests__/flakeMetrics.test.ts`                                                           |
+| **V12 guard** — no unit-project test full-page-mounts (sourced from `vitest list --project=unit`)                                                               | `frontend/scripts/check-no-page-mounts.mjs`, CI step, `npm run test:no-page-mounts:check`                                                                                    |
+| **V4 tripwire** — sort & filter URL writes preserve each other (L070)                                                                                           | `frontend/src/hooks/__tests__/urlConcurrentWrites.tripwire.test.tsx`                                                                                                         |
+| **§4.2 false-confidence cleanup** — delete the one tautological suite; drop a vestigial geometry mock; re-confirm + keep the two that were actually real (L137) | `responsive/designCompliance.test.ts` (deleted), `components/componentMigrations.test.tsx`, `accessibility/touchTargets.test.ts`, `integration/routing.test.tsx` (relocated) |
+| New rules **R21** (detector ≠ its own stabilization) + **R22** (unit must not page-mount); lesson **137**                                                       | `tasks/rules.md`, `tasks/lessons/137-*`                                                                                                                                      |
+
+### Why the gate is on the SENTINEL, not per-PR (the key design call)
+
+The detector pins `--maxWorkers=100%` and is sensitive **by design** (L136) — a
+contention blip on a shared PR runner would red an unrelated PR. So the per-PR
+`flake-detection` job stays **non-gating/informational**; the **0% gate lives
+on the nightly sentinel**, a dedicated runner where red = a genuine clean-runner
+regression. The blocking per-PR protection is the **capped** `test` job (V8,
+50% workers) — gate stable, detector sensitive.
+
+### Evidence (statistically-significant ~zero)
+
+- **Calibrated CI baseline:** 0.0% over 8 runs on a clean runner (§4, PR #919),
+  p95/p50 ≈ 1.02 (no variance run-up).
+- **This PR's `flake-detection` job** (suspect set ×8, clean runner): _record
+  the flake rate + p50/p95 from the PR CI here on merge._
+- **Standing proof:** the nightly sentinel runs the suspect set **×30 gating on
+  0%** — the ongoing statistically-significant demonstration that the rate stays
+  ~zero (L78: enough trials that a non-zero result is conclusive, not luck). A
+  single flake over the 30 fails the job and alerts within a day.
+- **Quarantine:** empty (`frontend/test-quarantine.json`) — no test bypasses the
+  gate.
+
+The workstation stress ceiling (§3, 100% / 30.9→171.9 s) remains the
+_reproduction_ of the failure mode; the clean-runner 0% is the floor the V8 cap
+and this sentinel defend.

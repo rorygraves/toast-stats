@@ -1,7 +1,16 @@
 /* Routing scaffolding (#355) — verifies the new /history and /methodology
    routes exist and render a placeholder, while the existing routes
    (/, /district/:id, /clubs/:id) keep working. The full pages for
-   /history and /methodology ship in #367 and #368. */
+   /history and /methodology ship in #367 and #368.
+
+   Moved here from __tests__/components/ (#916, V12): it full-page-mounts
+   HistoryPage/MethodologyPage, so by the partition's own convention (page
+   mounts → integration) it belongs in the CI-only integration project, not the
+   fast pre-push unit gate. The no-page-mounts guard (check-no-page-mounts.mjs)
+   enforces this. §4.2 re-confirmation: the deep-dive flagged the
+   `toContain('LIVE')` assertion as a possible L110 text-transform blind spot —
+   re-checked, "LIVE" is LITERAL JSX in HistoryPage (`· LIVE`), not a
+   CSS-uppercased "live", so the assertion is real, not false-confidence. */
 
 import React from 'react'
 import { describe, it, expect } from 'vitest'
