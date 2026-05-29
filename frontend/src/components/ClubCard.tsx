@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import type { ProcessedClubTrend } from './filters/types'
 import {
   getClubHealthStatusLabel,
@@ -14,23 +15,32 @@ import {
  * lessons 092/093/096), and the health badge reuses the desktop table's
  * `.clubs-status-pill` classes + shared label/modifier helpers so the same
  * datum reads identically on both surfaces (lesson 052 — one definition).
+ *
+ * CC-7 (#872, epic #873 Sprint 2): the card is a real `<Link>`, not a
+ * JS-navigating `<button>`. That restores middle-click / ⌘-click / open-in-new-
+ * tab / mobile long-press and announces the destination to assistive tech.
+ * `state` round-trips the caller's filter context (e.g. `fromClubsSearch`) so
+ * the club page's breadcrumb can return to the exact filtered list (#577).
  */
 
 interface ClubCardProps {
   club: ProcessedClubTrend
-  onClick?: ((club: ProcessedClubTrend) => void) | undefined
+  /** Destination club-detail route (e.g. `/district/61/club/123`). */
+  to: string
+  /** Optional router location state to carry to the destination. */
+  state?: unknown
 }
 
-const ClubCard: React.FC<ClubCardProps> = ({ club, onClick }) => {
+const ClubCard: React.FC<ClubCardProps> = ({ club, to, state }) => {
   const label = getClubHealthStatusLabel(club.currentStatus)
   const modifier = getClubHealthStatusPillModifier(club.currentStatus)
   const memberChange =
     club.latestMembership - (club.membershipBase ?? club.latestMembership)
 
   return (
-    <button
-      type="button"
-      onClick={() => onClick?.(club)}
+    <Link
+      to={to}
+      state={state}
       className="clubs-card"
       data-testid="club-card"
       aria-label={`${club.clubName} — ${label}, ${club.latestMembership} members`}
@@ -66,7 +76,7 @@ const ClubCard: React.FC<ClubCardProps> = ({ club, onClick }) => {
           <div className="clubs-card__stat-label">DCP Goals</div>
         </div>
       </div>
-    </button>
+    </Link>
   )
 }
 

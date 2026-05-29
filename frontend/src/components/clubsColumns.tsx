@@ -23,7 +23,8 @@
  */
 
 import React from 'react'
-import { createColumnHelper } from '@tanstack/react-table'
+import { Link } from 'react-router-dom'
+import { createColumnHelper, type RowData } from '@tanstack/react-table'
 import type { ProcessedClubTrend } from './filters/types'
 import type { ClubTrend, ClubHealthStatus } from '../hooks/useDistrictAnalytics'
 import { isProvisionallyDistinguished } from '../utils/provisionalDistinguished'
@@ -64,6 +65,25 @@ const STATUS_RANK: Record<ClubHealthStatus, number> = {
  *  column (never hidden); `desktop` = revealed only ≥1280px (hidden at the
  *  768–1279 tablet tier); `core` = always shown when the table renders. */
 export type ClubColumnPriority = 'sticky' | 'desktop' | 'core'
+
+/** Table-level context the column model reads via `table.options.meta`.
+ *  CC-7 (#872): lets the sticky `name` cell render a real <Link> to the club
+ *  detail route without turning the static `clubsColumns` array into a factory.
+ *  When `clubLinkTo` is absent the cell falls back to plain text. */
+export interface ClubsTableMeta {
+  /** Build the club-detail href for a row (e.g. `/district/61/club/123`). */
+  clubLinkTo?: (club: ProcessedClubTrend) => string
+  /** Router location state to carry to the destination (e.g. fromClubsSearch). */
+  clubLinkState?: unknown
+}
+
+// Augment TanStack's table meta so `useReactTable({ meta })` typechecks and the
+// `name` cell reads `table.options.meta` with full types (the documented
+// react-table pattern for typed meta).
+declare module '@tanstack/react-table' {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface TableMeta<TData extends RowData> extends ClubsTableMeta {}
+}
 
 const STICKY_FIELD = 'name'
 const DESKTOP_ONLY_FIELDS: ReadonlySet<string> = new Set([
@@ -150,9 +170,27 @@ export const clubsColumns = [
     id: 'name',
     header: 'Club',
     sortingFn: 'basic',
-    cell: info => (
-      <div className="font-medium text-sm">{info.row.original.clubName}</div>
-    ),
+    cell: info => {
+      const club = info.row.original
+      const meta = info.table.options.meta as ClubsTableMeta | undefined
+      const to = meta?.clubLinkTo?.(club)
+      // CC-7 (#872): a real <Link> on the club name restores middle-click /
+      // ⌘-click / open-in-new-tab and announces the destination to AT. The row
+      // itself is also clickable (mouse convenience), so stop the click from
+      // bubbling — otherwise a name-click would navigate twice.
+      return to ? (
+        <Link
+          to={to}
+          state={meta?.clubLinkState}
+          className="clubs-name-link font-medium text-sm"
+          onClick={e => e.stopPropagation()}
+        >
+          {club.clubName}
+        </Link>
+      ) : (
+        <div className="font-medium text-sm">{club.clubName}</div>
+      )
+    },
   }),
   colHelper.accessor(c => c.divisionName.toLowerCase(), {
     id: 'division',

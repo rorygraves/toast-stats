@@ -268,6 +268,7 @@ const DistrictClubsPage: React.FC = () => {
                   districtId={districtId}
                   isLoading={isLoading}
                   onClubClick={handleClubClick}
+                  clubLinkState={{ fromClubsSearch: location.search }}
                   initialSortField={initialSortField}
                   initialSortDirection={initialSortDir}
                   onSortChange={handleSortChange}
