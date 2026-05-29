@@ -439,6 +439,66 @@ describe('GlobalRankingsTab', () => {
       expect(screen.getByText('Multi-Year Comparison')).toBeInTheDocument()
     })
 
+    // #875 (epic #876 Sprint 2, CC-3): the Ranking Progression chart collapses
+    // to a sparkline-then-expand wrapper below 768px. setup.ts's matchMedia
+    // mock is writable; flip only the max-width query to mobile.
+    describe('mobile chart collapse (#875)', () => {
+      const setMobile = (mobile: boolean) => {
+        ;(window.matchMedia as unknown as ReturnType<typeof vi.fn>) = vi
+          .fn()
+          .mockImplementation((query: string) => ({
+            matches: /max-width/.test(query) ? mobile : false,
+            media: query,
+            onchange: null,
+            addListener: vi.fn(),
+            removeListener: vi.fn(),
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+            dispatchEvent: vi.fn(),
+          }))
+      }
+      afterEach(() => setMobile(false))
+
+      it('collapses Ranking Progression behind an expand trigger', () => {
+        setMobile(true)
+        mockUseGlobalRankings.mockReturnValue(createMockHookResult())
+        renderWithProviders(<GlobalRankingsTab {...baseProps} />)
+        expect(
+          screen.queryByText('Ranking Progression')
+        ).not.toBeInTheDocument()
+        expect(
+          screen.getByRole('button', {
+            name: /expand ranking progression chart/i,
+          })
+        ).toBeInTheDocument()
+        // siblings stay rendered — only the chart collapses
+        expect(screen.getByText('End-of-Year Rankings')).toBeInTheDocument()
+      })
+
+      it('opens the ranking chart in a sheet when tapped', () => {
+        setMobile(true)
+        mockUseGlobalRankings.mockReturnValue(createMockHookResult())
+        renderWithProviders(<GlobalRankingsTab {...baseProps} />)
+        fireEvent.click(
+          screen.getByRole('button', {
+            name: /expand ranking progression chart/i,
+          })
+        )
+        expect(screen.getByRole('dialog')).toBeInTheDocument()
+        expect(screen.getByText('Ranking Progression')).toBeInTheDocument()
+      })
+
+      it('renders the chart directly at desktop widths', () => {
+        setMobile(false)
+        mockUseGlobalRankings.mockReturnValue(createMockHookResult())
+        renderWithProviders(<GlobalRankingsTab {...baseProps} />)
+        expect(screen.getByText('Ranking Progression')).toBeInTheDocument()
+        expect(
+          screen.queryByRole('button', { name: /expand .* chart/i })
+        ).not.toBeInTheDocument()
+      })
+    })
+
     it('does not render its own ProgramYearSelector', () => {
       mockUseGlobalRankings.mockReturnValue(createMockHookResult())
 
