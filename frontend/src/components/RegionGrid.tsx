@@ -28,9 +28,20 @@ const REQUIREMENT_LABELS: ReadonlyArray<{
 export const RegionGrid: React.FC<RegionGridProps> = ({ rollups }) => {
   if (rollups.length === 0) return null
 
+  // Default sort (#882): region number ascending. Chosen over a data-driven
+  // order (e.g. paid clubs descending) because a navigation grid of the 14
+  // fixed regions reads best in a stable, predictable sequence that matches
+  // the RegionFinder's numeric order — a metric-ranked order would reshuffle
+  // the cards as the season's data shifts. The grid owns this sort so it holds
+  // regardless of the order rollups arrive in (don't lean on aggregateRegions'
+  // incidental ordering — see RegionGrid.test.tsx #882).
+  const sorted = [...rollups].sort(
+    (a, b) => Number(a.region) - Number(b.region)
+  )
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      {rollups.map(r => (
+      {sorted.map(r => (
         <Link
           key={r.region}
           to={`/region/${r.region}`}
