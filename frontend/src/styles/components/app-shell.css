@@ -4140,8 +4140,20 @@
     color: var(--ink);
     /* The anchor id lives on this wrapper, so the TOC-jump offset must be
        here — not on the child title (#877). Otherwise a #section jump lands
-       the heading under the fixed header. */
+       the heading under the fixed header. 80px clears the 56px sticky top bar
+       with breathing room. */
     scroll-margin-top: 80px;
+  }
+
+  /* On mobile the sticky "Jump to ▾" chip bar (#878) stacks below the 56px
+     top bar (~61px tall), so a #section jump offset of only 80px would land
+     the heading behind the chip. Clear both here so the jumped-to heading is
+     fully visible — the chip is rendered only at <768px (useIsMobile), the
+     same breakpoint this query matches. */
+  @media (max-width: 767px) {
+    .methodology-section {
+      scroll-margin-top: 124px;
+    }
   }
 
   .methodology-section p,
