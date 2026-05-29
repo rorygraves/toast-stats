@@ -14,10 +14,17 @@
  * classes ship — which is exactly what this criterion is about.
  */
 
+import type { ReactElement } from 'react'
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { render, cleanup } from '@testing-library/react'
+import { render as rtlRender, cleanup } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { ClubsTable } from '../ClubsTable'
 import { ClubTrend } from '../../hooks/useDistrictAnalytics'
+
+// CC-7 (#872): ClubsTable renders real <Link>s now — wrap every render in a
+// router context.
+const render = (ui: ReactElement, options?: Parameters<typeof rtlRender>[1]) =>
+  rtlRender(<MemoryRouter>{ui}</MemoryRouter>, options)
 
 const createMockClub = (overrides: Partial<ClubTrend> = {}): ClubTrend => ({
   clubId: 'club-1',
