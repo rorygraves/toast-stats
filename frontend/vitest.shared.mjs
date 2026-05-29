@@ -1,3 +1,7 @@
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
+
 // Single source of truth for the vitest unit/integration partition (#482).
 //
 // Imported by BOTH vitest.config.ts (to define the projects) and
@@ -37,9 +41,33 @@ export const integrationGlobs = [
   'src/__tests__/utils/examples/AccessibilityTestingExamples.test.tsx',
 ]
 
+// Quarantined tests (#913, epic #917 S2) are excluded from the BLOCKING run so
+// a known-flaky test never silently blocks the queue. Folding them into the
+// shared baseExclude removes them from ALL / unit / integration consistently,
+// so the partition guard (R20) stays exhaustive — the file leaves every set at
+// once rather than orphaning. They are NOT silently ignored: the non-gating
+// flake-detection harness (scripts/run-flake-detection.ts) still runs them, and
+// `npm run test:quarantine:check` fails CI if an entry lacks a reason/issue
+// (quarantine != skip, R1). Empty list → no-op.
+function quarantinedExcludes() {
+  const file = join(
+    dirname(fileURLToPath(import.meta.url)),
+    'test-quarantine.json'
+  )
+  try {
+    const { quarantined } = JSON.parse(readFileSync(file, 'utf8'))
+    return Array.isArray(quarantined) ? quarantined.map(e => e.file) : []
+  } catch {
+    // A malformed/absent file is surfaced loudly by the quarantine gate; here
+    // we fail safe to "exclude nothing" so a typo can't silently drop coverage.
+    return []
+  }
+}
+
 // Shared base exclude (mirrors vitest defaults we care about + repo artifacts).
 export const baseExclude = [
   '**/node_modules/**',
   '**/dist/**',
   '**/test-dir/**',
+  ...quarantinedExcludes(),
 ]

@@ -82,3 +82,6 @@ logs.txt
 
 # Data (local-only)
 data/
+
+# Flake-detection harness artifact (#913)
+flake-metric.json

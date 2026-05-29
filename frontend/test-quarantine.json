@@ -1,0 +1,4 @@
+{
+  "$comment": "Known-flaky tests, isolated but NOT skipped/deleted (R1). Each entry's `file` is folded into vitest's baseExclude (frontend/vitest.shared.mjs) so it leaves the BLOCKING run without blocking the queue — the flake harness still runs it, so it's never silently ignored. Every entry needs a reason + tracking issue (the root-cause sprint that will un-quarantine it). Validated + loudly reported by `npm run test:quarantine:check`. Sprint 2 (#913) sets this up empty; Sprint 3 (#914) fixes confirmed flakes at the source rather than quarantining long-term.",
+  "quarantined": []
+}
