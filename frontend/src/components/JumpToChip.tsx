@@ -82,7 +82,10 @@ const JumpToChip: React.FC<JumpToChipProps> = ({ sections, onJump }) => {
     sheet?.addEventListener('keydown', handleTab)
     return () => {
       sheet?.removeEventListener('keydown', handleTab)
-      chip?.focus()
+      // preventScroll: restoring focus to the chip must NOT scroll the page
+      // back to the chip's resting position — that would clobber a jump's
+      // scroll-into-view (the chip sits near the top of the document flow).
+      chip?.focus({ preventScroll: true })
     }
   }, [open])
 
