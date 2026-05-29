@@ -35,23 +35,36 @@ expect.extend(toHaveNoViolations)
 vi.setConfig({ testTimeout: 15000 })
 
 // IntersectionObserver mock (lazy children need to flush). Mirrors the
-// shape from DistrictDetailPage.AnalyticsTab.test.tsx — note Lesson 72:
-// callbacks consuming `entry.target` must guard with `?.`.
+// shape from DistrictDetailPage.AnalyticsTab.test.tsx and the global
+// setup.ts mock — fires from observe() with a real `target` (Lesson 72).
 class MockIntersectionObserver implements IntersectionObserver {
   readonly root: Element | null = null
   readonly rootMargin: string = ''
   readonly thresholds: ReadonlyArray<number> = []
+  private readonly callback: (
+    entries: IntersectionObserverEntry[],
+    observer: IntersectionObserver
+  ) => void
   constructor(
     callback: (
       entries: IntersectionObserverEntry[],
       observer: IntersectionObserver
     ) => void
   ) {
+    this.callback = callback
+  }
+  // Fire from observe() (deferred, so lazy children still flush) WITH the
+  // observed `target` — conforming to the global setup.ts mock's shape. The
+  // old version fired from the constructor with no target, so any callback
+  // reading `entry.target` would throw asynchronously (Lesson 72 / V3, #914).
+  observe(target: Element): void {
     setTimeout(() => {
-      callback([{ isIntersecting: true } as IntersectionObserverEntry], this)
+      this.callback(
+        [{ isIntersecting: true, target } as IntersectionObserverEntry],
+        this
+      )
     }, 0)
   }
-  observe(): void {}
   unobserve(): void {}
   disconnect(): void {}
   takeRecords(): IntersectionObserverEntry[] {
