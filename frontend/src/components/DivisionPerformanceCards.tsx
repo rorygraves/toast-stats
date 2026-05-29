@@ -33,6 +33,9 @@ export interface DivisionPerformanceCardsProps {
   isLoading?: boolean
   /** Optional snapshot timestamp for display */
   snapshotTimestamp?: string
+  /** District id — threaded to each card so its heading links to the division
+   *  page (CC-7, #872). */
+  districtId?: string | undefined
 }
 
 /**
@@ -60,7 +63,7 @@ export interface DivisionPerformanceCardsProps {
  */
 export const DivisionPerformanceCards: React.FC<
   DivisionPerformanceCardsProps
-> = ({ districtSnapshot, isLoading = false, snapshotTimestamp }) => {
+> = ({ districtSnapshot, isLoading = false, snapshotTimestamp, districtId }) => {
   // Extract division performance data from snapshot
   const divisions = React.useMemo(() => {
     if (isLoading || !districtSnapshot) {
@@ -215,6 +218,7 @@ export const DivisionPerformanceCards: React.FC<
           <DivisionPerformanceCard
             key={division.divisionId}
             division={division}
+            districtId={districtId}
           />
         ))}
       </div>

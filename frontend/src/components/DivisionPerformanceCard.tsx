@@ -26,6 +26,9 @@ import { Card } from './ui/Card/Card'
 export interface DivisionPerformanceCardProps {
   /** Division performance data including summary metrics and area details */
   division: DivisionPerformance
+  /** District id — when set, the card heading links to the division page
+   *  (CC-7, #872). */
+  districtId?: string | undefined
 }
 
 /**
@@ -60,7 +63,7 @@ export interface DivisionPerformanceCardProps {
  */
 export const DivisionPerformanceCard: React.FC<
   DivisionPerformanceCardProps
-> = ({ division }) => {
+> = ({ division, districtId }) => {
   // Calculate gap analysis for the division
   // Requirements: 9.1, 9.2, 9.3, 9.4
   const gapAnalysis = calculateDivisionGapAnalysis({
@@ -86,6 +89,11 @@ export const DivisionPerformanceCard: React.FC<
         distinguishedClubs={division.distinguishedClubs}
         requiredDistinguishedClubs={division.requiredDistinguishedClubs}
         gapAnalysis={gapAnalysis}
+        to={
+          districtId
+            ? `/district/${districtId}/division/${division.divisionId}`
+            : undefined
+        }
       />
 
       {/* Area Performance Table - displays detailed area metrics */}
