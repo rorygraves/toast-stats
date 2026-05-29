@@ -387,11 +387,7 @@ const GlobalRankingsTab: React.FC<GlobalRankingsTabProps> = ({
       <ChartSparklineExpand
         title="Ranking Progression"
         sparklineData={rankSparkline}
-        headline={
-          <span className="chart-spark__headline-text">
-            {latestRank !== null ? `Rank #${latestRank}` : 'Rank trend'}
-          </span>
-        }
+        headline={latestRank !== null ? `Rank #${latestRank}` : 'Rank trend'}
       >
         <FullYearRankingChart
           data={currentYearHistory}

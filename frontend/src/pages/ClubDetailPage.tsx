@@ -664,11 +664,11 @@ const ClubDetailPage: React.FC = () => {
                     title="Membership Trend"
                     sparklineData={membershipSparkline}
                     headline={
-                      <span className="chart-spark__headline-text">
+                      <>
                         {latestMembership} members
                         {membershipChange !== 0 &&
                           ` (${membershipChange > 0 ? '+' : ''}${membershipChange})`}
-                      </span>
+                      </>
                     }
                   >
                     <>

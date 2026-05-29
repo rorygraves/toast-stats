@@ -1557,13 +1557,11 @@ const DistrictsPage: React.FC = () => {
               title="Historical Rank Progression"
               sparklineData={rankHistorySparkline}
               headline={
-                <span className="chart-spark__headline-text">
-                  {(rankHistoryData?.length ?? 0) > 0
-                    ? `${rankHistoryData!.length} district${
-                        rankHistoryData!.length === 1 ? '' : 's'
-                      }`
-                    : 'Rank trend'}
-                </span>
+                (rankHistoryData?.length ?? 0) > 0
+                  ? `${rankHistoryData!.length} district${
+                      rankHistoryData!.length === 1 ? '' : 's'
+                    }`
+                  : 'Rank trend'
               }
             >
               <HistoricalRankChart
