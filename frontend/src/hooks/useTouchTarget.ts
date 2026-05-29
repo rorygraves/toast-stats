@@ -8,6 +8,7 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { INTERACTIVE_SELECTORS } from '../utils/touchTargetUtils'
 
 export interface TouchTargetResult {
   width: number
@@ -91,22 +92,8 @@ export function useTouchTarget(options: TouchTargetValidationOptions = {}) {
    */
   const validateAllTouchTargets = useCallback(
     (container: HTMLElement = document.body): TouchTargetResult[] => {
-      const interactiveSelectors = [
-        'button',
-        'a[href]',
-        'input:not([type="hidden"])',
-        'select',
-        'textarea',
-        '[tabindex]:not([tabindex="-1"])',
-        '[role="button"]',
-        '[role="link"]',
-        '[role="menuitem"]',
-        '[role="tab"]',
-        '[onclick]',
-      ]
-
       const elements = container.querySelectorAll(
-        interactiveSelectors.join(', ')
+        INTERACTIVE_SELECTORS.join(', ')
       )
       const results: TouchTargetResult[] = []
 

@@ -6,6 +6,29 @@
  */
 
 /**
+ * The single selector set defining what counts as an interactive (tappable)
+ * element. Exported as the one source of truth so every consumer agrees:
+ * `getAllInteractiveElements` (runtime audit), `useTouchTarget`
+ * (`validateAllTouchTargets`), AND the dual-engine 44px touch-target tripwire
+ * smoke (`frontend/e2e/touch-targets.smoke.ts`, #887) all import this array.
+ * Drift between the product and its guard is the failure mode this prevents
+ * (R20 spirit — source the partition from the tool itself, not a re-typed glob).
+ */
+export const INTERACTIVE_SELECTORS = [
+  'button',
+  'a[href]',
+  'input:not([type="hidden"])',
+  'select',
+  'textarea',
+  '[tabindex]:not([tabindex="-1"])',
+  '[role="button"]',
+  '[role="link"]',
+  '[role="menuitem"]',
+  '[role="tab"]',
+  '[onclick]',
+] as const
+
+/**
  * Utility function to check if an element is interactive
  */
 export function isInteractiveElement(element: HTMLElement): boolean {
@@ -32,21 +55,7 @@ export function isInteractiveElement(element: HTMLElement): boolean {
 export function getAllInteractiveElements(
   container: HTMLElement = document.body
 ): HTMLElement[] {
-  const interactiveSelectors = [
-    'button',
-    'a[href]',
-    'input:not([type="hidden"])',
-    'select',
-    'textarea',
-    '[tabindex]:not([tabindex="-1"])',
-    '[role="button"]',
-    '[role="link"]',
-    '[role="menuitem"]',
-    '[role="tab"]',
-    '[onclick]',
-  ]
-
-  const elements = container.querySelectorAll(interactiveSelectors.join(', '))
+  const elements = container.querySelectorAll(INTERACTIVE_SELECTORS.join(', '))
   return Array.from(elements).filter(element => {
     const htmlElement = element as HTMLElement
     const computedStyle = window.getComputedStyle(htmlElement)
