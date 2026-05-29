@@ -1,6 +1,7 @@
 import React from 'react'
 import { DataControlsBar } from './DataControlsBar'
 import { HeaderActionsMenu } from './HeaderActionsMenu'
+import { formatProgramYearShort } from '../utils/programYear'
 import type { ProgramYear } from '../utils/programYear'
 
 /* District detail page header (#358). Extracted from DistrictDetailPage so
@@ -47,7 +48,20 @@ export const DistrictDetailHeader: React.FC<DistrictDetailHeaderProps> = ({
           <p className="district-detail-page-header__eyebrow">
             Program Year {selectedProgramYear.label.replace(/-/g, '–')}
           </p>
-          <h1 className="district-detail-page-header__title">{districtName}</h1>
+          <h1 className="district-detail-page-header__title">
+            {districtName}
+            {/* #890 — mobile collapses the Program Year eyebrow into this
+                title-line suffix to recover ~80px above the fold. Hidden on
+                desktop via CSS (the eyebrow shows there instead); the full
+                label stays in the program-year picker (py-chip). */}
+            <span
+              className="district-detail-page-header__title-py"
+              data-testid="district-detail-title-py"
+            >
+              {' · PY '}
+              {formatProgramYearShort(selectedProgramYear.year)}
+            </span>
+          </h1>
           <p
             className="district-detail-page-header__lede"
             data-testid="district-detail-lede"

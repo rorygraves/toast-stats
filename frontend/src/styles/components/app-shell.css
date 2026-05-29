@@ -3021,6 +3021,29 @@
     color: var(--ink);
   }
 
+  /* #890 — the title-line PY suffix is the mobile collapse of the eyebrow.
+     Hidden by default (desktop shows the full eyebrow above the title);
+     revealed <768px where the eyebrow is hidden. Sized down and muted so it
+     reads as a subordinate suffix and never pushes the title to a 2nd line. */
+  .district-detail-page-header__title-py {
+    display: none;
+    font-size: 0.6em;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--maroon-500);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 767px) {
+    .district-detail-page-header__eyebrow {
+      display: none;
+    }
+
+    .district-detail-page-header__title-py {
+      display: inline;
+    }
+  }
+
   .district-detail-page-header__lede {
     margin: 0;
     font-family: var(--sans);
