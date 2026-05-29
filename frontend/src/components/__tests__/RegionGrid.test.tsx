@@ -129,4 +129,21 @@ describe('RegionGrid (#495)', () => {
     const { container } = renderWithRouter(<RegionGrid rollups={[]} />)
     expect(container.firstChild).toBeNull()
   })
+
+  // #882 — the card grid owns its documented default sort (region number
+  // ascending), independent of the order its rollups arrive in. Pinned here
+  // so an upstream reorder (e.g. aggregateRegions switching to leaderboard
+  // order) can't silently re-sequence the cards.
+  it('sorts cards by region number ascending regardless of input order (#882)', () => {
+    const outOfOrder: RegionRollup[] = [
+      mkRollup({ region: '14', leadingDistrictName: 'District 14' }),
+      mkRollup({ region: '02', leadingDistrictName: 'District 02' }),
+      mkRollup({ region: '07', leadingDistrictName: 'District 57' }),
+    ]
+    renderWithRouter(<RegionGrid rollups={outOfOrder} />)
+    const hrefs = screen
+      .getAllByRole('link', { name: /region/i })
+      .map(a => a.getAttribute('href'))
+    expect(hrefs).toEqual(['/region/02', '/region/07', '/region/14'])
+  })
 })
