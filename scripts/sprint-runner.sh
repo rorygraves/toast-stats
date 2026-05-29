@@ -749,10 +749,18 @@ mode_run() {
   local session_name="sprint-runner-$target_issue"
   log "Launching detached screen session $session_name (Sprint $target_n of epic #$EPIC, work #$target_issue)"
 
+  # Spawned sprint sessions run at ultracode (effortLevel "ultracode" = xhigh
+  # reasoning + standing dynamic workflow orchestration). Passed per-launch via
+  # --settings (an *additional* settings overlay) so it scopes to the runner's
+  # sessions ONLY — the operator's own interactive `claude` keeps its configured
+  # effortLevel. "ultracode" is not a valid --effort flag choice; it must come
+  # through settings. Single-quoted so the inner bash passes the JSON literally.
+  local ultracode_settings='{"effortLevel":"ultracode"}'
+
   # `screen -dmS` allocates a PTY so claude's interactive UI works.
   screen -dmS "$session_name" bash -c "
     cd '$worktree' && \
-    claude --remote-control 'sprint-$target_issue' \"\$(cat '$PROMPT_FILE')\";
+    claude --settings '$ultracode_settings' --remote-control 'sprint-$target_issue' \"\$(cat '$PROMPT_FILE')\";
     EXIT_CODE=\$?;
     rm -f '$PROMPT_FILE';
     echo \"[sprint-runner] claude exited with code \$EXIT_CODE — session ending.\"
