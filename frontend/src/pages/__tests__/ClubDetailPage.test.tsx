@@ -168,12 +168,13 @@ describe('ClubDetailPage (#208)', () => {
 
     it('opens the mem-chart in a sheet when tapped', () => {
       setMobile(true)
-      const { container } = renderWithRoute()
+      renderWithRoute()
       fireEvent.click(
         screen.getByRole('button', { name: /expand membership trend chart/i })
       )
       expect(screen.getByRole('dialog')).toBeInTheDocument()
-      expect(container.querySelector('svg.mem-chart')).not.toBeNull()
+      // The sheet is portalled to document.body, not inside `container`.
+      expect(document.querySelector('svg.mem-chart')).not.toBeNull()
     })
 
     it('renders the mem-chart directly at desktop widths', () => {
