@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useId, useRef } from 'react'
 import { createPortal } from 'react-dom'
 
 export interface ChartExpandSheetProps {
@@ -27,6 +27,7 @@ export const ChartExpandSheet: React.FC<ChartExpandSheetProps> = ({
 }) => {
   const sheetRef = useRef<HTMLDivElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const titleId = useId()
 
   // Esc-to-close (document-level, so it works before focus lands inside).
   useEffect(() => {
@@ -38,9 +39,11 @@ export const ChartExpandSheet: React.FC<ChartExpandSheetProps> = ({
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [isOpen, onClose])
 
-  // Move focus into the sheet on open; keep Tab inside it while open.
+  // Move focus into the sheet on open; restore it to the opener on close so
+  // keyboard/AT users return to the trigger, not the document top.
   useEffect(() => {
     if (!isOpen) return
+    const opener = document.activeElement as HTMLElement | null
     closeButtonRef.current?.focus()
 
     const handleTab = (e: KeyboardEvent) => {
@@ -61,7 +64,10 @@ export const ChartExpandSheet: React.FC<ChartExpandSheetProps> = ({
     }
     const sheet = sheetRef.current
     sheet?.addEventListener('keydown', handleTab)
-    return () => sheet?.removeEventListener('keydown', handleTab)
+    return () => {
+      sheet?.removeEventListener('keydown', handleTab)
+      opener?.focus?.()
+    }
   }, [isOpen])
 
   // Lock background scroll while the sheet is open.
@@ -88,10 +94,12 @@ export const ChartExpandSheet: React.FC<ChartExpandSheetProps> = ({
         className="chart-expand-sheet"
         role="dialog"
         aria-modal="true"
-        aria-label={title}
+        aria-labelledby={titleId}
       >
         <div className="chart-expand-sheet__header">
-          <h2 className="chart-expand-sheet__title">{title}</h2>
+          <h2 id={titleId} className="chart-expand-sheet__title">
+            {title}
+          </h2>
           <button
             ref={closeButtonRef}
             type="button"
