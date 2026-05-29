@@ -88,29 +88,28 @@ describe('RegionsPage (#496)', () => {
     ).toBeInTheDocument()
   })
 
-  it('renders the leaderboard table + grid sections', async () => {
+  it('renders the region card grid and NOT a table (CC-9, #881)', async () => {
     renderPage()
-    // Wait for data to land
-    await screen.findByRole('table', { name: /region rankings/i })
-    // Leaderboard
-    expect(
-      screen.getByRole('table', { name: /region rankings/i })
-    ).toBeInTheDocument()
-    // Grid (find by Region label appearing in card eyebrow context)
+    // Wait for data to land (grid card link is the loaded marker now that
+    // the duplicate leaderboard table is gone).
+    await screen.findByRole('link', { name: /^region 01/i })
+    // The redundant leaderboard table must be gone.
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+    // Grid cards remain (find by Region label in card eyebrow context).
     expect(screen.getAllByText(/Region 01/).length).toBeGreaterThan(0)
     expect(screen.getAllByText(/Region 07/).length).toBeGreaterThan(0)
   })
 
-  it('excludes DNAR districts from the leaderboard', async () => {
+  it('excludes DNAR districts from the grid', async () => {
     renderPage()
-    await screen.findByRole('table', { name: /region rankings/i })
+    await screen.findByRole('link', { name: /^region 01/i })
     // DNAR (region "DNAR") must not appear
     expect(screen.queryByText(/Region DNAR/)).not.toBeInTheDocument()
   })
 
   it('shows a DNAR footnote when DNAR districts exist in the data', async () => {
     renderPage()
-    await screen.findByRole('table', { name: /region rankings/i })
+    await screen.findByRole('link', { name: /^region 01/i })
     // 1 DNAR district in the fixture → footnote should appear
     expect(
       screen.getByText(/1 district.*not.*assigned to a region/i)
@@ -119,7 +118,7 @@ describe('RegionsPage (#496)', () => {
 
   it('renders a "Find a region" filter bar with the available regions (#685)', async () => {
     renderPage()
-    await screen.findByRole('table', { name: /region rankings/i })
+    await screen.findByRole('link', { name: /^region 01/i })
     const group = screen.getByRole('group', { name: /find a region/i })
     expect(group).toBeInTheDocument()
     expect(
@@ -133,10 +132,10 @@ describe('RegionsPage (#496)', () => {
     ).toBeInTheDocument()
   })
 
-  it('isolates a single region across leaderboard + grid when selected (#685)', async () => {
+  it('isolates a single region in the grid when selected (#685)', async () => {
     renderPage()
-    await screen.findByRole('table', { name: /region rankings/i })
-    // Both regions visible initially (leaderboard chip + grid eyebrow).
+    await screen.findByRole('link', { name: /^region 01/i })
+    // Both regions visible initially (grid card eyebrows).
     expect(screen.getAllByText(/Region 01/).length).toBeGreaterThan(0)
     expect(screen.getAllByText(/Region 07/).length).toBeGreaterThan(0)
 
@@ -149,7 +148,7 @@ describe('RegionsPage (#496)', () => {
 
   it('restores all regions when "All regions" is clicked (#685)', async () => {
     renderPage()
-    await screen.findByRole('table', { name: /region rankings/i })
+    await screen.findByRole('link', { name: /^region 01/i })
     await userEvent.click(screen.getByRole('button', { name: /^region 07$/i }))
     expect(screen.queryByText(/Region 01/)).not.toBeInTheDocument()
 
