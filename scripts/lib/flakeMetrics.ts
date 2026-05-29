@@ -40,6 +40,50 @@ export interface FlakeMetric {
   runs: RunResult[]
 }
 
+/**
+ * Default "suspect set" — the §2.3 hot files the Sprint 1 deep-dive named as
+ * most contention-sensitive. These are vitest path filters (substring match),
+ * run from the frontend workspace. Keeping the harness scoped to this set keeps
+ * per-PR CI fast while still exercising the tests that actually flaked.
+ */
+export const DEFAULT_SUSPECT_SET: readonly string[] = [
+  'src/components/__tests__/DateSelector.integration.test.tsx',
+  'src/__tests__/integration/journeys/',
+  'src/pages/__tests__/DistrictsPage',
+]
+
+/** Default repeat count — enough samples for a meaningful rate without blowing CI time. */
+export const DEFAULT_REPEATS = 10
+
+/** Resolved harness configuration: what to run, how many times, under what label. */
+export interface HarnessConfig {
+  targets: string[]
+  repeats: number
+  label: string
+}
+
+/**
+ * Resolve the harness config from the environment. `FLAKE_TARGETS` (whitespace-
+ * separated) overrides the suspect set and relabels the run "custom";
+ * `FLAKE_REPEATS` overrides the repeat count (a non-numeric / non-positive value
+ * falls back to the default rather than running zero times).
+ */
+export function resolveHarnessConfig(
+  env: Record<string, string | undefined>
+): HarnessConfig {
+  const rawTargets = env.FLAKE_TARGETS?.trim()
+  const targets = rawTargets
+    ? rawTargets.split(/\s+/)
+    : [...DEFAULT_SUSPECT_SET]
+  const label = rawTargets ? 'custom' : 'suspect-set'
+
+  const parsed = Number(env.FLAKE_REPEATS)
+  const repeats =
+    Number.isInteger(parsed) && parsed > 0 ? parsed : DEFAULT_REPEATS
+
+  return { targets, repeats, label }
+}
+
 /** Context for rendering a human/markdown summary. */
 export interface SummaryContext {
   /** What was repeated (e.g. "suspect-set", "full-suite"). */

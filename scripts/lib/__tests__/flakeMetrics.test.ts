@@ -16,6 +16,8 @@ import { describe, it, expect } from 'vitest'
 import {
   computeFlakeMetric,
   formatFlakeSummary,
+  resolveHarnessConfig,
+  DEFAULT_SUSPECT_SET,
   type RunResult,
   type FlakeMetric,
 } from '../flakeMetrics'
@@ -117,5 +119,40 @@ describe('formatFlakeSummary', () => {
     // p50 and p95 in seconds — the 41s vs 200s swing is the variance signal.
     expect(md).toContain('41.0s')
     expect(md).toContain('200.0s')
+  })
+})
+
+describe('resolveHarnessConfig', () => {
+  it('defaults to the suspect set and a sane repeat count with no env', () => {
+    const cfg = resolveHarnessConfig({})
+    expect(cfg.targets).toEqual(DEFAULT_SUSPECT_SET)
+    expect(cfg.repeats).toBeGreaterThanOrEqual(2)
+    expect(cfg.label).toBe('suspect-set')
+  })
+
+  it('honours FLAKE_REPEATS', () => {
+    expect(resolveHarnessConfig({ FLAKE_REPEATS: '20' }).repeats).toBe(20)
+  })
+
+  it('ignores a non-numeric / non-positive FLAKE_REPEATS and falls back to the default', () => {
+    const def = resolveHarnessConfig({}).repeats
+    expect(resolveHarnessConfig({ FLAKE_REPEATS: 'abc' }).repeats).toBe(def)
+    expect(resolveHarnessConfig({ FLAKE_REPEATS: '0' }).repeats).toBe(def)
+    expect(resolveHarnessConfig({ FLAKE_REPEATS: '-3' }).repeats).toBe(def)
+  })
+
+  it('splits FLAKE_TARGETS on whitespace and relabels as custom', () => {
+    const cfg = resolveHarnessConfig({
+      FLAKE_TARGETS: 'src/a.test.tsx  src/b.test.tsx',
+    })
+    expect(cfg.targets).toEqual(['src/a.test.tsx', 'src/b.test.tsx'])
+    expect(cfg.label).toBe('custom')
+  })
+
+  it('the default suspect set targets the §2.3 hot files (DateSelector, journeys, DistrictsPage)', () => {
+    const joined = DEFAULT_SUSPECT_SET.join(' ')
+    expect(joined).toMatch(/DateSelector/)
+    expect(joined).toMatch(/journeys/)
+    expect(joined).toMatch(/DistrictsPage/)
   })
 })

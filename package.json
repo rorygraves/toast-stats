@@ -30,6 +30,8 @@
     "test:projects:check": "npm run test:projects:check --workspace=frontend",
     "test:coverage": "npm run test --workspaces -- --coverage",
     "test:scripts": "vitest run --config scripts/vitest.config.ts",
+    "test:quarantine:check": "npx tsx scripts/check-quarantine.ts",
+    "test:flake": "npx tsx scripts/run-flake-detection.ts",
     "test:watch": "npm run test:watch --workspaces --if-present",
     "lint": "npm run lint --workspaces",
     "lint:yaml": "yamllint -c .yamllint.yml .github/ docs/",
