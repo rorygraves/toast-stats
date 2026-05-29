@@ -256,3 +256,56 @@ describe('DistrictsPage landing hero hoist + KPI demotion (#861)', () => {
     expect(secondary.length).toBe(3)
   })
 })
+
+/**
+ * Terminal-state CLS-slot reservation (#915, epic #917 Sprint 4 — V9; Lesson 125).
+ *
+ * #826 unified the OUTER geometry across loading / both error branches / loaded
+ * (`.districts-page-root > .districts-page`), and the test above proves the
+ * LOADING shell reserves the hoisted-search slot + KPI strip + 3-card demotion.
+ * But the deep-dive (§3 V9) flagged that only the *loading* slot was covered —
+ * a CDN flake renders the **error/empty** state, whose reserved-slot geometry
+ * was unverified. If a future refactor lets an error branch bypass `renderShell`
+ * (or drop the demotion), the loaded↔error swap re-opens the ~0.2 CLS that
+ * lessons 79/107/125 closed, and it only ever fires when the CDN flakes — green
+ * most days, red on luck. These lock the error terminal states to the SAME
+ * reserved geometry, so the Lighthouse CLS gate can't be ambushed by which
+ * terminal state the run happened to render.
+ */
+describe('DistrictsPage terminal-state CLS slot (#915 V9, Lesson 125)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  const expectReservedShell = (container: HTMLElement) => {
+    const skel = container.querySelector('.districts-hero-search-skeleton')
+    const strip = container.querySelector('.districts-kpi-strip')
+    expect(skel).not.toBeNull()
+    expect(strip).not.toBeNull()
+    // Same DOM order as loading + loaded: hero-search slot precedes the strip.
+    expect(
+      skel!.compareDocumentPosition(strip!) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
+    // Same KPI demotion (3 secondary cards) so the strip's mobile height
+    // matches loading + loaded — no shift on whichever swap the run takes.
+    expect(
+      container.querySelectorAll('.districts-kpi-card--secondary').length
+    ).toBe(3)
+  }
+
+  it('reserves the hero-search slot + KPI strip in the no-snapshot welcome state', async () => {
+    mockedFetchCdnRankings.mockRejectedValue(
+      new Error('CDN rankings fetch failed: 404')
+    )
+    const { container } = renderWithProviders(<DistrictsPage />)
+    await screen.findByText('Welcome to Toast-Stats!')
+    expectReservedShell(container)
+  })
+
+  it('reserves the hero-search slot + KPI strip in the generic error state', async () => {
+    mockedFetchCdnRankings.mockRejectedValue(new Error('Something went wrong'))
+    const { container } = renderWithProviders(<DistrictsPage />)
+    await screen.findByText('Error Loading Rankings')
+    expectReservedShell(container)
+  })
+})
