@@ -2,7 +2,6 @@ import React, { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchCdnRankings } from '../services/cdn'
 import { aggregateRegions } from '../utils/aggregateRegions'
-import { RegionsLeaderboard } from '../components/RegionsLeaderboard'
 import { RegionGrid } from '../components/RegionGrid'
 import { RegionFinder } from '../components/RegionFinder'
 import { LoadingSkeleton } from '../components/LoadingSkeleton'
@@ -100,18 +99,8 @@ const RegionsPage: React.FC = () => {
         onSelect={setSelectedRegion}
       />
 
-      <section className="my-6" aria-labelledby="regions-leaderboard-heading">
-        <h2 id="regions-leaderboard-heading" className="sr-only">
-          Region leaderboard
-        </h2>
-        <RegionsLeaderboard rollups={displayedRollups} />
-      </section>
-
-      <section className="my-8" aria-labelledby="regions-grid-heading">
-        <h2
-          id="regions-grid-heading"
-          className="text-lg font-tm-headline text-gray-900 theme-dark:text-gray-50 mb-3"
-        >
+      <section className="my-6" aria-labelledby="regions-grid-heading">
+        <h2 id="regions-grid-heading" className="sr-only">
           Region cards
         </h2>
         <RegionGrid rollups={displayedRollups} />

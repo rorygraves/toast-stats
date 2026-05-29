@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import { Tooltip } from './Tooltip'
 import type { RegionRollup } from '../utils/aggregateRegions'
 
-/* RegionGrid (#495) — 14 region KPI cards below the leaderboard.
+/* RegionGrid (#495) — 14 region KPI cards; the sole representation on
+   /regions since the duplicate leaderboard table was removed (CC-9, #881).
    Each card is a single clickable link to /region/:n. The
    requirements ribbon surfaces TI's 5 region-level requirements
    (DSP / Training / Mkt Plan / Comm Plan / RA Mtgs) with a small
