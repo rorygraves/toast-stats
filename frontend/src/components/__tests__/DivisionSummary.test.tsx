@@ -11,6 +11,7 @@
 
 import { describe, it, expect, afterEach } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 
 // Provider-free unit-test render (#473): the component under test
 // uses no router / no React Query, so wrapping each render in a
@@ -40,6 +41,30 @@ describe('DivisionSummary', () => {
       )
 
       expect(screen.getByText('Division A')).toBeInTheDocument()
+    })
+
+    // CC-7 (#872, epic #873 Sprint 2): when a `to` is supplied, the division
+    // heading becomes a real <Link> to the division detail page — the division
+    // performance card was previously a dead end (no link to the route that
+    // exists). Restores middle-click / ⌘-click / open-in-new-tab.
+    it('renders the heading as a link to the division page when `to` is set', () => {
+      render(
+        <MemoryRouter>
+          <DivisionSummary
+            divisionId="A"
+            to="/district/61/division/A"
+            status="distinguished"
+            paidClubs={10}
+            clubBase={10}
+            netGrowth={0}
+            distinguishedClubs={5}
+            requiredDistinguishedClubs={5}
+          />
+        </MemoryRouter>
+      )
+
+      const link = screen.getByRole('link', { name: /Division A/ })
+      expect(link).toHaveAttribute('href', '/district/61/division/A')
     })
 
     it('should display different division identifiers', () => {
