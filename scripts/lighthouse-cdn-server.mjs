@@ -31,7 +31,7 @@
  */
 import { createServer } from 'node:http'
 import { readFile, stat } from 'node:fs/promises'
-import { join, normalize, extname } from 'node:path'
+import { join, relative, isAbsolute, extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -56,13 +56,14 @@ const MIME = {
 }
 
 // Resolve a request path to a file *inside* `base`, rejecting traversal.
+// Obvious-by-construction: join, then confirm the result is still under `base`
+// via `relative()` (no leading `..`, not re-absolutized) rather than a string
+// prefix that can be fooled by sibling dirs sharing a prefix.
 function safeJoin(base, urlPath) {
-  const clean = normalize(decodeURIComponent(urlPath)).replace(
-    /^(\.\.[/\\])+/,
-    ''
-  )
-  const full = join(base, clean)
-  return full.startsWith(base) ? full : null
+  const full = join(base, decodeURIComponent(urlPath))
+  const rel = relative(base, full)
+  if (rel === '' || (!rel.startsWith('..') && !isAbsolute(rel))) return full
+  return null
 }
 
 async function tryFile(path) {

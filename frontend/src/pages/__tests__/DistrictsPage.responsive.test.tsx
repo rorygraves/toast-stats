@@ -88,6 +88,28 @@ const headerByText = (re: RegExp): HTMLElement => {
   return match
 }
 
+/**
+ * The CLS-stable shell invariant (#826/#488/#861, Lesson 125): every terminal
+ * state (loading + both error branches + loaded) reserves the hero-search slot
+ * ABOVE a KPI strip whose mobile height is fixed by the 3-card demotion. Shared
+ * by the loading-slot test (#861) and the error-state tests (#915 V9) so the
+ * invariant has one definition.
+ */
+const expectReservedShell = (container: HTMLElement) => {
+  const skel = container.querySelector('.districts-hero-search-skeleton')
+  const strip = container.querySelector('.districts-kpi-strip')
+  expect(skel).not.toBeNull()
+  expect(strip).not.toBeNull()
+  // Hero-search slot precedes the KPI strip in DOM so it sits above on mobile.
+  expect(
+    skel!.compareDocumentPosition(strip!) & Node.DOCUMENT_POSITION_FOLLOWING
+  ).toBeTruthy()
+  // 3 secondary KPI cards → the strip's mobile height matches across states.
+  expect(
+    container.querySelectorAll('.districts-kpi-card--secondary').length
+  ).toBe(3)
+}
+
 describe('DistrictsPage rankings table — responsive + sticky (#811)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -240,20 +262,8 @@ describe('DistrictsPage landing hero hoist + KPI demotion (#861)', () => {
     const { container } = renderWithProviders(<DistrictsPage />)
     await screen.findByRole('status', { name: /loading district rankings/i })
 
-    const skel = container.querySelector('.districts-hero-search-skeleton')
-    const strip = container.querySelector('.districts-kpi-strip')
-    expect(skel).not.toBeNull()
-    expect(strip).not.toBeNull()
-    // Placeholder must precede the KPI strip in DOM so it sits above it on mobile.
-    expect(
-      skel!.compareDocumentPosition(strip!) & Node.DOCUMENT_POSITION_FOLLOWING
-    ).toBeTruthy()
-
-    // Lesson 125: the KPI demotion must apply to the loading state too.
-    const secondary = container.querySelectorAll(
-      '.districts-kpi-card--secondary'
-    )
-    expect(secondary.length).toBe(3)
+    // Lesson 125: the loading shell reserves the same slot as loaded + error.
+    expectReservedShell(container)
   })
 })
 
@@ -276,22 +286,6 @@ describe('DistrictsPage terminal-state CLS slot (#915 V9, Lesson 125)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
-
-  const expectReservedShell = (container: HTMLElement) => {
-    const skel = container.querySelector('.districts-hero-search-skeleton')
-    const strip = container.querySelector('.districts-kpi-strip')
-    expect(skel).not.toBeNull()
-    expect(strip).not.toBeNull()
-    // Same DOM order as loading + loaded: hero-search slot precedes the strip.
-    expect(
-      skel!.compareDocumentPosition(strip!) & Node.DOCUMENT_POSITION_FOLLOWING
-    ).toBeTruthy()
-    // Same KPI demotion (3 secondary cards) so the strip's mobile height
-    // matches loading + loaded — no shift on whichever swap the run takes.
-    expect(
-      container.querySelectorAll('.districts-kpi-card--secondary').length
-    ).toBe(3)
-  }
 
   it('reserves the hero-search slot + KPI strip in the no-snapshot welcome state', async () => {
     mockedFetchCdnRankings.mockRejectedValue(
