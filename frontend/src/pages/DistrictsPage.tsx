@@ -9,6 +9,7 @@ import {
 import { useCompetitiveAwards } from '../hooks/useCompetitiveAwards'
 import { AwardsRaceSection } from '../components/AwardsRaceSection'
 import { LazyHistoricalRankChart as HistoricalRankChart } from '../components/LazyCharts'
+import { ChartSparklineExpand } from '../components/ChartSparklineExpand'
 import { useUrlProgramYear } from '../hooks/useUrlProgramYear'
 import { DataControlsBar } from '../components/DataControlsBar'
 import { useRankHistory } from '../hooks/useRankHistory'
@@ -250,6 +251,15 @@ const DistrictsPage: React.FC = () => {
     startDate: selectedProgramYear.startDate,
     endDate: selectedProgramYear.endDate,
   })
+
+  // #875 (epic #876, CC-3): collapsed-mobile sparkline for the multi-district
+  // Historical Rank Progression chart. A single line can only preview one
+  // series, so use the first selected district's aggregate-score history; the
+  // headline names how many districts the expanded chart compares.
+  const rankHistorySparkline = React.useMemo(
+    () => (rankHistoryData?.[0]?.history ?? []).map(p => p.aggregateScore),
+    [rankHistoryData]
+  )
 
   // Get unique regions for filter
   const regions = React.useMemo(() => {
@@ -1543,13 +1553,27 @@ const DistrictsPage: React.FC = () => {
             </div>
 
             {/* Historical Rank Chart */}
-            <HistoricalRankChart
-              data={rankHistoryData || []}
-              isLoading={isLoadingRankHistory}
-              isError={isErrorRankHistory}
-              error={rankHistoryError}
-              selectedProgramYear={selectedProgramYear}
-            />
+            <ChartSparklineExpand
+              title="Historical Rank Progression"
+              sparklineData={rankHistorySparkline}
+              headline={
+                <span className="chart-spark__headline-text">
+                  {(rankHistoryData?.length ?? 0) > 0
+                    ? `${rankHistoryData!.length} district${
+                        rankHistoryData!.length === 1 ? '' : 's'
+                      }`
+                    : 'Rank trend'}
+                </span>
+              }
+            >
+              <HistoricalRankChart
+                data={rankHistoryData || []}
+                isLoading={isLoadingRankHistory}
+                isError={isErrorRankHistory}
+                error={rankHistoryError}
+                selectedProgramYear={selectedProgramYear}
+              />
+            </ChartSparklineExpand>
           </div>
         </details>
 
