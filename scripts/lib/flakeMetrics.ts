@@ -119,8 +119,8 @@ export function computeFlakeMetric(runs: RunResult[]): FlakeMetric {
   }
   const totalRuns = runs.length
   const failedRuns = runs.filter(r => !r.passed).length
-  const durations = runs.map(r => r.durationMs)
-  const sorted = [...durations].sort((a, b) => a - b)
+  // `.map` already returns a fresh array, so sorting it in place can't mutate `runs`.
+  const sorted = runs.map(r => r.durationMs).sort((a, b) => a - b)
 
   return {
     totalRuns,
