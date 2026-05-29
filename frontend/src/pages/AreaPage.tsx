@@ -120,9 +120,7 @@ const AreaPage: React.FC = () => {
       {isMobile ? (
         <ClubMiniList
           clubs={clubs}
-          onSelect={clubId =>
-            navigate(`/district/${districtId}/club/${clubId}`)
-          }
+          clubTo={c => `/district/${districtId}/club/${c.clubId}`}
         />
       ) : (
         <div className="districts-rankings-table-wrap">
@@ -156,9 +154,16 @@ const AreaPage: React.FC = () => {
                       }
                     >
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm font-medium text-gray-900">
+                        {/* CC-7 (#872): real <Link> on the club name; whole-row
+                            click kept as a mouse convenience (stop the bubble so
+                            a name-click navigates once). */}
+                        <Link
+                          to={`/district/${districtId}/club/${c.clubId}`}
+                          onClick={e => e.stopPropagation()}
+                          className="clubs-name-link text-sm font-medium text-gray-900"
+                        >
                           {c.clubName}
-                        </span>
+                        </Link>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         {c.currentStatus}

@@ -5,7 +5,14 @@
  * your column filters" dead end.
  */
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
+import { render as rtlRender, screen, cleanup } from '@testing-library/react'
+import type { ReactElement } from 'react'
+import { MemoryRouter } from 'react-router-dom'
+
+// CC-7 (#872): ClubsTable now renders <Link>s — wrap every render in a router
+// context (wrapper option persists across rerender).
+const render = (ui: ReactElement, options?: Parameters<typeof rtlRender>[1]) =>
+  rtlRender(ui, { wrapper: MemoryRouter, ...options })
 import userEvent from '@testing-library/user-event'
 import { ClubsTable } from '../ClubsTable'
 import { ClubTrend } from '../../hooks/useDistrictAnalytics'

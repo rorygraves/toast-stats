@@ -20,7 +20,19 @@
  */
 
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { render, cleanup, within, screen } from '@testing-library/react'
+import {
+  render as rtlRender,
+  cleanup,
+  within,
+  screen,
+} from '@testing-library/react'
+import type { ReactElement } from 'react'
+import { MemoryRouter } from 'react-router-dom'
+
+// CC-7 (#872): ClubsTable now renders <Link>s — wrap every render in a router
+// context (wrapper option persists across rerender).
+const render = (ui: ReactElement, options?: Parameters<typeof rtlRender>[1]) =>
+  rtlRender(ui, { wrapper: MemoryRouter, ...options })
 import { ClubsTable } from '../ClubsTable'
 import { ClubTrend } from '../../hooks/useDistrictAnalytics'
 

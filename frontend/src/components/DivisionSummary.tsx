@@ -22,6 +22,7 @@
  */
 
 import React from 'react'
+import { Link } from 'react-router-dom'
 import type { DistinguishedStatus } from '../utils/divisionStatus'
 import type { DivisionGapAnalysis } from '../utils/divisionGapAnalysis'
 
@@ -42,6 +43,9 @@ export interface DivisionSummaryProps {
   requiredDistinguishedClubs: number
   /** Gap analysis for recognition levels (optional) */
   gapAnalysis?: DivisionGapAnalysis
+  /** When set, the "Division X" heading is a real <Link> to the division page
+   *  (CC-7, #872). Absent ⇒ plain heading text (backward compatible). */
+  to?: string | undefined
 }
 
 /**
@@ -266,6 +270,7 @@ const DivisionSummary: React.FC<DivisionSummaryProps> = ({
   distinguishedClubs,
   requiredDistinguishedClubs,
   gapAnalysis,
+  to,
 }) => {
   const statusLabel = getRecognitionBadgeLabel(status, gapAnalysis)
   const statusBadgeClasses = getStatusBadgeClasses(status, gapAnalysis)
@@ -296,7 +301,15 @@ const DivisionSummary: React.FC<DivisionSummaryProps> = ({
     <div className="p-6 border-b border-gray-200">
       {/* Division Identifier and Status Badge */}
       <div className="flex items-center justify-between mb-3">
-        <h2 className="tm-h2 tm-text-loyal-blue">Division {divisionId}</h2>
+        <h2 className="tm-h2 tm-text-loyal-blue">
+          {to ? (
+            <Link to={to} className="division-heading-link">
+              Division {divisionId}
+            </Link>
+          ) : (
+            <>Division {divisionId}</>
+          )}
+        </h2>
         <div
           className={statusBadgeClasses}
           role="status"

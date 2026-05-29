@@ -8,11 +8,25 @@
  * Validates Requirements: 2.5, 3.4, 4.6, 5.3, 5.5, 1.1-1.4, 2.1-2.4, 3.1-3.4, 5.1-5.4
  */
 
+import type { ReactElement } from 'react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, cleanup, fireEvent, act } from '@testing-library/react'
+import {
+  render as rtlRender,
+  screen,
+  cleanup,
+  fireEvent,
+  act,
+} from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { ClubsTable } from '../ClubsTable'
 import { ClubTrend } from '../../hooks/useDistrictAnalytics'
 import * as csvExport from '../../utils/csvExport'
+
+// CC-7 (#872): ClubsTable now renders real <Link>s (desktop club-name cell +
+// mobile ClubCard), so every render needs a router context. Shadow `render`
+// to wrap in MemoryRouter — keeps all existing call sites unchanged.
+const render = (ui: ReactElement, options?: Parameters<typeof rtlRender>[1]) =>
+  rtlRender(<MemoryRouter>{ui}</MemoryRouter>, options)
 
 /**
  * Factory function to create a mock ClubTrend object with sensible defaults
@@ -130,6 +144,22 @@ describe('ClubsTable', () => {
 
       // Empty state should be shown instead of the count
       expect(screen.getByText('No Clubs Found')).toBeInTheDocument()
+    })
+  })
+
+  // CC-7 (#872, epic #873 Sprint 2): the desktop club-name cell is a real
+  // <Link> (not just a JS-navigating row), so middle-click / ⌘-click / open-in-
+  // new-tab work and the destination is announced to assistive tech. The whole
+  // row stays clickable as a mouse convenience.
+  describe('club-name link (CC-7) — #872', () => {
+    it('renders the club name as a link to the club detail route', () => {
+      const clubs = [
+        createMockClub({ clubId: 'c-42', clubName: 'Limestone City Club' }),
+      ]
+      render(<ClubsTable clubs={clubs} districtId="61" isLoading={false} />)
+
+      const link = screen.getByRole('link', { name: 'Limestone City Club' })
+      expect(link).toHaveAttribute('href', '/district/61/club/c-42')
     })
   })
 

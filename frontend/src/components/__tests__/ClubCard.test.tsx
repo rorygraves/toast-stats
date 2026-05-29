@@ -1,12 +1,26 @@
 /**
  * Tests for ClubCard (#217)
  */
-import { describe, it, expect, vi } from 'vitest'
-import { screen, render, fireEvent } from '@testing-library/react'
+import { describe, it, expect } from 'vitest'
+import { screen, render } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import '@testing-library/jest-dom'
 import ClubCard from '../ClubCard'
 import type { ProcessedClubTrend } from '../filters/types'
 import type { ClubHealthStatus } from '../../hooks/useDistrictAnalytics'
+
+const TO = '/district/61/club/123'
+
+// CC-7 (#872): the card is now a real <Link>, so every render needs a router
+// context. Helper keeps the per-test call sites terse.
+const renderCard = (
+  props: { club?: ProcessedClubTrend; to?: string; state?: unknown } = {}
+) =>
+  render(
+    <MemoryRouter>
+      <ClubCard club={mockClub} to={TO} {...props} />
+    </MemoryRouter>
+  )
 
 const mockClub: ProcessedClubTrend = {
   clubId: '123',
@@ -28,42 +42,47 @@ const mockClub: ProcessedClubTrend = {
 
 describe('ClubCard (#217)', () => {
   it('renders club name', () => {
-    render(<ClubCard club={mockClub} />)
+    renderCard()
     expect(screen.getByText('Test Speakers')).toBeInTheDocument()
   })
 
   it('renders status badge', () => {
-    render(<ClubCard club={mockClub} />)
+    renderCard()
     expect(screen.getByText('Thriving')).toBeInTheDocument()
   })
 
   it('renders membership count', () => {
-    render(<ClubCard club={mockClub} />)
+    renderCard()
     expect(screen.getByText('20')).toBeInTheDocument()
     expect(screen.getByText('Members')).toBeInTheDocument()
   })
 
   it('renders net change', () => {
-    render(<ClubCard club={mockClub} />)
+    renderCard()
     // 20 - 18 = +2
     expect(screen.getByText('+2')).toBeInTheDocument()
   })
 
   it('renders DCP goals', () => {
-    render(<ClubCard club={mockClub} />)
+    renderCard()
     // latestDcpGoals = 7, but rendered with /10
     expect(screen.getByText('7')).toBeInTheDocument()
   })
 
-  it('calls onClick when clicked', () => {
-    const onClick = vi.fn()
-    render(<ClubCard club={mockClub} onClick={onClick} />)
-    fireEvent.click(screen.getByTestId('club-card'))
-    expect(onClick).toHaveBeenCalledWith(mockClub)
+  // CC-7 (#872): the card is a real <Link>, not a JS-navigating <button>, so
+  // middle-click / ⌘-click / "open in new tab" / mobile long-press all work and
+  // the destination is announced to assistive tech.
+  it('renders as a real link to the club detail route', () => {
+    renderCard()
+    const card = screen.getByTestId('club-card')
+    expect(card.tagName).toBe('A')
+    expect(card).toHaveAttribute('href', TO)
+    // role=link is what AT and getByRole rely on
+    expect(screen.getByRole('link')).toBe(card)
   })
 
   it('has accessible aria-label', () => {
-    render(<ClubCard club={mockClub} />)
+    renderCard()
     const card = screen.getByTestId('club-card')
     expect(card).toHaveAttribute(
       'aria-label',
@@ -78,7 +97,7 @@ describe('ClubCard (#217)', () => {
   // on both surfaces (lesson 052 — one definition, not two).
   describe('re-skin (#671)', () => {
     it('uses the shared clubs-status-pill class, not an inline hex style', () => {
-      render(<ClubCard club={mockClub} />)
+      renderCard()
       const badge = screen.getByText('Thriving')
       expect(badge.className).toContain('clubs-status-pill')
       expect(badge.getAttribute('style') ?? '').not.toMatch(/background/i)
@@ -97,9 +116,9 @@ describe('ClubCard (#217)', () => {
         ],
       ]
       for (const [status, modifier, label] of cases) {
-        const { unmount } = render(
-          <ClubCard club={{ ...mockClub, currentStatus: status }} />
-        )
+        const { unmount } = renderCard({
+          club: { ...mockClub, currentStatus: status },
+        })
         const pill = document.querySelector(`.${modifier}`)
         expect(
           pill,
@@ -111,7 +130,7 @@ describe('ClubCard (#217)', () => {
     })
 
     it('carries the token-driven card class and no legacy gray/white chrome', () => {
-      render(<ClubCard club={mockClub} />)
+      renderCard()
       const card = screen.getByTestId('club-card')
       expect(card.className).toContain('clubs-card')
       // No legacy gray utilities anywhere in the card subtree, and no bg-white.

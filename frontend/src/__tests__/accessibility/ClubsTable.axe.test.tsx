@@ -12,7 +12,14 @@
 // and verified live in both engines on the PR preview.
 
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest'
-import { render, cleanup, within } from '@testing-library/react'
+import { render as rtlRender, cleanup, within } from '@testing-library/react'
+import type { ReactElement } from 'react'
+import { MemoryRouter } from 'react-router-dom'
+
+// CC-7 (#872): ClubsTable now renders <Link>s — wrap every render in a router
+// context (wrapper option persists across rerender).
+const render = (ui: ReactElement, options?: Parameters<typeof rtlRender>[1]) =>
+  rtlRender(ui, { wrapper: MemoryRouter, ...options })
 import { axe, toHaveNoViolations } from 'jest-axe'
 import { ClubsTable } from '../../components/ClubsTable'
 import { ClubTrend } from '../../hooks/useDistrictAnalytics'

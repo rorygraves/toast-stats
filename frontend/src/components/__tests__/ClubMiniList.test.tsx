@@ -9,13 +9,21 @@
  * visible StatusChip (Lesson 105 — browse-one-row lists card-collapse). Reuses
  * the themed `.clubs-card` chrome so dark mode just works (R10).
  */
-import { describe, it, expect, afterEach, vi } from 'vitest'
-import { render, screen, cleanup, within } from '@testing-library/react'
+import type { ReactElement } from 'react'
+import { describe, it, expect, afterEach } from 'vitest'
+import { render as rtlRender, screen, cleanup } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import '@testing-library/jest-dom'
 import { ClubMiniList } from '../ClubMiniList'
 import type { ClubTrend } from '../../hooks/useDistrictAnalytics'
 
 afterEach(cleanup)
+
+// CC-7 (#872): cards are real <Link>s now — wrap renders in a router context.
+const render = (ui: ReactElement) =>
+  rtlRender(<MemoryRouter>{ui}</MemoryRouter>)
+
+const clubTo = (c: ClubTrend) => `/district/61/club/${c.clubId}`
 
 const CLUBS: ClubTrend[] = [
   {
@@ -35,9 +43,7 @@ const CLUBS: ClubTrend[] = [
 
 describe('ClubMiniList (#871 CC-4)', () => {
   it('renders one card per club with a StatusChip (not raw enum)', () => {
-    const { container } = render(
-      <ClubMiniList clubs={CLUBS} onSelect={vi.fn()} />
-    )
+    const { container } = render(<ClubMiniList clubs={CLUBS} clubTo={clubTo} />)
     const card = container.querySelector('.clubs-card')
     expect(card).not.toBeNull()
     expect(screen.getByText('Limestone City Club')).toBeInTheDocument()
@@ -52,19 +58,15 @@ describe('ClubMiniList (#871 CC-4)', () => {
   })
 
   it('renders no <table> — the row is de-tabled to avoid 375px overflow', () => {
-    const { container } = render(
-      <ClubMiniList clubs={CLUBS} onSelect={vi.fn()} />
-    )
+    const { container } = render(<ClubMiniList clubs={CLUBS} clubTo={clubTo} />)
     expect(container.querySelector('table')).toBeNull()
   })
 
-  it('invokes onSelect with the clubId when a card is activated', () => {
-    const onSelect = vi.fn()
-    const { container } = render(
-      <ClubMiniList clubs={CLUBS} onSelect={onSelect} />
-    )
-    const card = container.querySelector('.clubs-card') as HTMLElement
-    within(card).getByText('Limestone City Club').click()
-    expect(onSelect).toHaveBeenCalledWith('c1')
+  // CC-7 (#872): each card is a real <Link> to the club detail route — restores
+  // long-press / open-in-new-tab on mobile (the surface this list serves).
+  it('renders each card as a link to the club detail route', () => {
+    render(<ClubMiniList clubs={CLUBS} clubTo={clubTo} />)
+    const link = screen.getByRole('link', { name: /Limestone City Club/ })
+    expect(link).toHaveAttribute('href', '/district/61/club/c1')
   })
 })

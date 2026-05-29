@@ -165,8 +165,13 @@ interface ClubsTableProps {
   districtId: string
   /** Whether the data is currently loading */
   isLoading?: boolean
-  /** Optional callback when a club row is clicked */
+  /** Optional callback when a club row is clicked (whole-row mouse convenience;
+   *  the club name itself is a real <Link> regardless — CC-7, #872). */
   onClubClick?: (club: ClubTrend) => void
+  /** Router location state to attach to every club link (CC-7, #872). The
+   *  clubs page passes `{ fromClubsSearch }` so the club page's breadcrumb can
+   *  round-trip back to the exact filtered list (#577). */
+  clubLinkState?: unknown
   /** Initial sort field from URL params (#230) */
   initialSortField?: SortField | undefined
   /** Initial sort direction from URL params (#230) */
@@ -232,6 +237,7 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
   districtId,
   isLoading = false,
   onClubClick,
+  clubLinkState,
   initialSortField,
   initialSortDirection,
   onSortChange,
@@ -519,10 +525,18 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
     return vis
   }, [hiddenGroups])
 
+  // CC-7 (#872): build the club-detail href once; the sticky name cell renders
+  // it as a real <Link> (via table.meta), and the mobile ClubCard reuses it.
+  const clubLinkTo = useCallback(
+    (club: ProcessedClubTrend) => `/district/${districtId}/club/${club.clubId}`,
+    [districtId]
+  )
+
   const table = useReactTable<ProcessedClubTrend>({
     data: nameSortedClubs,
     columns: tableColumns,
     state: { sorting, columnPinning, columnVisibility },
+    meta: { clubLinkTo, clubLinkState },
     // columnVisibility is fully controlled by hiddenGroups above — TanStack
     // never writes it directly, so onColumnVisibilityChange is intentionally
     // omitted (R11 — drive the existing state, don't add a parallel one).
@@ -1029,7 +1043,8 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
               <ClubCard
                 key={club.clubId}
                 club={club}
-                onClick={onClubClick ? () => onClubClick(club) : undefined}
+                to={clubLinkTo(club)}
+                state={clubLinkState}
               />
             ))}
           </div>

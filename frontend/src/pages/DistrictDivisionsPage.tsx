@@ -144,6 +144,7 @@ const DistrictDivisionsPage: React.FC = () => {
                 districtSnapshot={districtStatistics}
                 isLoading={isLoadingStatistics}
                 snapshotTimestamp={districtStatistics.asOfDate}
+                districtId={districtId}
               />
             ) : (
               isLoadingStatistics && <LoadingSkeleton variant="card" />
