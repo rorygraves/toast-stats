@@ -169,3 +169,14 @@ jobs:
         # Safari-only rendering regression fails the webkit project while
         # Chromium stays green — exactly the #710 class.
         run: npx playwright test --config playwright.config.ts e2e/regions-legibility.smoke.ts
+
+      # Dual-engine 44px touch-target tripwire (#887, epic #888 Sprint 3). Locks
+      # in the #886 family-A/B/C fix: every interactive element on every routed
+      # page must keep the 44px floor in BOTH engines. WebKit ignores min-height
+      # on a native <select> without appearance:none (lesson 111), so a
+      # Chromium-only check is blind — runs both projects like the smoke above.
+      - name: Cross-engine 44px touch-target tripwire against preview
+        working-directory: frontend
+        env:
+          BASE_URL: ${{ steps.deploy.outputs.url }}
+        run: npx playwright test --config playwright.config.ts e2e/touch-targets.smoke.ts

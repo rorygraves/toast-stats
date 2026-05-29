@@ -111,3 +111,4 @@
 - **138** [css, frontend, accessibility, verification, playwright, mobile] — `scroll-margin-top` belongs on the element that holds the anchor id, not a styled child (#877, #880)
 - **139** [css, frontend, accessibility, router, verification, playwright, mobile] — A TOC-anchor jump fired from inside a scroll-locked sheet has three independent scroll-clobbering traps; only live measurement separates them (#878, #880)
 - **140** [css, frontend, refactoring, simplify, process] — A deliberately-isolated surface namespace outranks a DRY "reuse" flag; a small typographic duplication is cheaper than cross-surface coupling (#879, #880)
+- **141** [tests, playwright, e2e, verification, frontend, accessibility] — A page-sweep tripwire passes vacuously on nav chrome; gate each route on a content sentinel, not a bare element count (#887, #888)
