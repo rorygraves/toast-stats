@@ -1,0 +1,15 @@
+{
+  "_format": {
+    "version": "1",
+    "type": "competitive-awards"
+  },
+  "metadata": {
+    "snapshotId": "2025-11-22",
+    "calculatedAt": "2025-11-22T06:00:00Z",
+    "totalDistricts": 12
+  },
+  "extensionAward": [],
+  "twentyPlusAward": [],
+  "retentionAward": [],
+  "byDistrict": {}
+}

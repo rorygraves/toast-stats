@@ -8,7 +8,14 @@
 module.exports = {
   ci: {
     collect: {
-      startServerCommand: 'npm run preview --prefix frontend',
+      // #915 (epic #917 Sprint 4 — V10): serve committed CDN fixtures from the
+      // same origin instead of `vite preview` (which let `/` fetch the live prod
+      // CDN). A CDN flake used to push the page into its error state and red the
+      // CLS budget on luck (the 0.206 of #825 / Lesson 125). This server makes
+      // the gate's *input* deterministic — the build is pointed at it via
+      // VITE_CDN_BASE_URL=http://localhost:4173, so the page reliably reaches the
+      // LOADED state offline. See scripts/lighthouse-cdn-server.mjs.
+      startServerCommand: 'node scripts/lighthouse-cdn-server.mjs',
       startServerReadyPattern: 'ready',
       startServerReadyTimeout: 30000,
       url: ['http://localhost:4173/'],

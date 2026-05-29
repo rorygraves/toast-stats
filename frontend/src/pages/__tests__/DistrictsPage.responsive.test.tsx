@@ -88,6 +88,28 @@ const headerByText = (re: RegExp): HTMLElement => {
   return match
 }
 
+/**
+ * The CLS-stable shell invariant (#826/#488/#861, Lesson 125): every terminal
+ * state (loading + both error branches + loaded) reserves the hero-search slot
+ * ABOVE a KPI strip whose mobile height is fixed by the 3-card demotion. Shared
+ * by the loading-slot test (#861) and the error-state tests (#915 V9) so the
+ * invariant has one definition.
+ */
+const expectReservedShell = (container: HTMLElement) => {
+  const skel = container.querySelector('.districts-hero-search-skeleton')
+  const strip = container.querySelector('.districts-kpi-strip')
+  expect(skel).not.toBeNull()
+  expect(strip).not.toBeNull()
+  // Hero-search slot precedes the KPI strip in DOM so it sits above on mobile.
+  expect(
+    skel!.compareDocumentPosition(strip!) & Node.DOCUMENT_POSITION_FOLLOWING
+  ).toBeTruthy()
+  // 3 secondary KPI cards → the strip's mobile height matches across states.
+  expect(
+    container.querySelectorAll('.districts-kpi-card--secondary').length
+  ).toBe(3)
+}
+
 describe('DistrictsPage rankings table — responsive + sticky (#811)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -240,19 +262,44 @@ describe('DistrictsPage landing hero hoist + KPI demotion (#861)', () => {
     const { container } = renderWithProviders(<DistrictsPage />)
     await screen.findByRole('status', { name: /loading district rankings/i })
 
-    const skel = container.querySelector('.districts-hero-search-skeleton')
-    const strip = container.querySelector('.districts-kpi-strip')
-    expect(skel).not.toBeNull()
-    expect(strip).not.toBeNull()
-    // Placeholder must precede the KPI strip in DOM so it sits above it on mobile.
-    expect(
-      skel!.compareDocumentPosition(strip!) & Node.DOCUMENT_POSITION_FOLLOWING
-    ).toBeTruthy()
+    // Lesson 125: the loading shell reserves the same slot as loaded + error.
+    expectReservedShell(container)
+  })
+})
 
-    // Lesson 125: the KPI demotion must apply to the loading state too.
-    const secondary = container.querySelectorAll(
-      '.districts-kpi-card--secondary'
+/**
+ * Terminal-state CLS-slot reservation (#915, epic #917 Sprint 4 — V9; Lesson 125).
+ *
+ * #826 unified the OUTER geometry across loading / both error branches / loaded
+ * (`.districts-page-root > .districts-page`), and the test above proves the
+ * LOADING shell reserves the hoisted-search slot + KPI strip + 3-card demotion.
+ * But the deep-dive (§3 V9) flagged that only the *loading* slot was covered —
+ * a CDN flake renders the **error/empty** state, whose reserved-slot geometry
+ * was unverified. If a future refactor lets an error branch bypass `renderShell`
+ * (or drop the demotion), the loaded↔error swap re-opens the ~0.2 CLS that
+ * lessons 79/107/125 closed, and it only ever fires when the CDN flakes — green
+ * most days, red on luck. These lock the error terminal states to the SAME
+ * reserved geometry, so the Lighthouse CLS gate can't be ambushed by which
+ * terminal state the run happened to render.
+ */
+describe('DistrictsPage terminal-state CLS slot (#915 V9, Lesson 125)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('reserves the hero-search slot + KPI strip in the no-snapshot welcome state', async () => {
+    mockedFetchCdnRankings.mockRejectedValue(
+      new Error('CDN rankings fetch failed: 404')
     )
-    expect(secondary.length).toBe(3)
+    const { container } = renderWithProviders(<DistrictsPage />)
+    await screen.findByText('Welcome to Toast-Stats!')
+    expectReservedShell(container)
+  })
+
+  it('reserves the hero-search slot + KPI strip in the generic error state', async () => {
+    mockedFetchCdnRankings.mockRejectedValue(new Error('Something went wrong'))
+    const { container } = renderWithProviders(<DistrictsPage />)
+    await screen.findByText('Error Loading Rankings')
+    expectReservedShell(container)
   })
 })
