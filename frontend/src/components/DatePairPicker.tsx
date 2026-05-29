@@ -18,8 +18,12 @@ export interface DatePairPickerProps {
   onToChange: (date: string) => void
 }
 
+// min-h-[44px]: the WCAG 2.5.5 / handoff 44px touch-target floor (#886, epic
+// #888 Sprint 2). The label is the touch target (an inset-0 opacity-0 <select>
+// overlays it), so lifting the label to 44px lifts the real target in both
+// engines (L111 family) — audit #885 measured these chips at 34px.
 const CHIP_BASE =
-  'inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium border bg-white border-gray-200 text-gray-700 theme-dark:bg-gray-800 theme-dark:border-gray-700 theme-dark:text-gray-200'
+  'inline-flex items-center gap-1.5 min-h-[44px] px-3 py-2 rounded-full text-xs font-medium border bg-white border-gray-200 text-gray-700 theme-dark:bg-gray-800 theme-dark:border-gray-700 theme-dark:text-gray-200'
 
 const DateChipSelect: React.FC<{
   testId: string

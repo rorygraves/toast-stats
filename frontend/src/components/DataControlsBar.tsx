@@ -15,8 +15,14 @@ export interface DataControlsBarProps {
   onDateChange: (date: string | undefined) => void
 }
 
+// min-h-[44px]: the WCAG 2.5.5 / handoff 44px touch-target floor (#886, epic
+// #888 Sprint 2). The chip is a <label> with an inset-0 opacity-0 <select>
+// overlay, so the overlay inherits the label's height — lifting the label to
+// 44px lifts the real touch target in both engines (L111 family). Shared with
+// the non-interactive freshness pill too, which keeps the control row at a
+// uniform height.
 const CHIP_BASE =
-  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border bg-white border-gray-200 text-gray-700 theme-dark:bg-gray-800 theme-dark:border-gray-700 theme-dark:text-gray-200'
+  'inline-flex items-center gap-1.5 min-h-[44px] px-3 py-1.5 rounded-full text-xs font-medium border bg-white border-gray-200 text-gray-700 theme-dark:bg-gray-800 theme-dark:border-gray-700 theme-dark:text-gray-200'
 
 const FreshnessPill: React.FC<{ date: string }> = ({ date }) => (
   <div
