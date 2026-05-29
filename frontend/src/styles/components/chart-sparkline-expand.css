@@ -1,0 +1,146 @@
+/* chart-sparkline-expand.css (#874, epic #876 Epic D / CC-3)
+   The mobile sparkline-then-expand pattern: a collapsed headline + sparkline
+   trigger, and the full-screen sheet it opens. Desktop renders the raw chart
+   (no chrome from this file). Semantic tokens only → dark mode at the CSS
+   layer for free (R10). */
+
+@layer components {
+  /* ---- Collapsed mobile trigger -------------------------------------- */
+  .chart-spark {
+    width: 100%;
+  }
+
+  .chart-spark__trigger {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    /* ≥44px touch target (WCAG 2.5.5). */
+    min-height: 44px;
+    border: 1px solid var(--line);
+    border-radius: 0.625rem;
+    background-color: var(--surface);
+    color: var(--ink);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .chart-spark__trigger:hover {
+    background-color: var(--surface-2);
+  }
+
+  .chart-spark__trigger:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--rt-stats, #d4873f);
+  }
+
+  .chart-spark__headline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem 0.75rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .chart-spark__sparkline {
+    display: block;
+    width: 100%;
+    height: 32px;
+    /* The polyline strokes `currentColor`; tint it with the product accent. */
+    color: var(--rt-stats, #d4873f);
+  }
+
+  .chart-spark__hint {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ink-2);
+  }
+
+  /* ---- Full-screen sheet --------------------------------------------- */
+  .chart-expand-sheet-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: flex;
+  }
+
+  .chart-expand-sheet-backdrop {
+    position: absolute;
+    inset: 0;
+    background-color: rgba(15, 23, 42, 0.55);
+  }
+
+  .chart-expand-sheet {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    background-color: var(--surface);
+    animation: chart-expand-sheet-in 180ms ease-out;
+  }
+
+  @keyframes chart-expand-sheet-in {
+    from {
+      opacity: 0;
+      transform: translateY(2%);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .chart-expand-sheet {
+      animation: none;
+    }
+  }
+
+  .chart-expand-sheet__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .chart-expand-sheet__title {
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 1.0625rem;
+    font-weight: 700;
+  }
+
+  /* 44px touch target (WCAG 2.5.5). */
+  .chart-expand-sheet__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 0.5rem;
+    color: var(--ink-2);
+    cursor: pointer;
+  }
+
+  .chart-expand-sheet__close:hover {
+    background-color: var(--surface-2);
+    color: var(--ink);
+  }
+
+  .chart-expand-sheet__close:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--rt-stats, #d4873f);
+  }
+
+  .chart-expand-sheet__body {
+    flex: 1;
+    min-height: 0;
+    padding: 1rem;
+    overflow: auto;
+  }
+}
