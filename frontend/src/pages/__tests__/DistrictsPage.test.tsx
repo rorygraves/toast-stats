@@ -541,6 +541,46 @@ describe('DistrictsPage - Layout Order (#83)', () => {
     expect(summary!.textContent).toMatch(/Historical Rank Progression/i)
   })
 
+  // #875 (epic #876 Sprint 2, CC-3): below 768px the multi-series rank chart
+  // collapses to a sparkline-then-expand wrapper. setup.ts's matchMedia mock is
+  // writable; flip only the max-width query to mobile, restore in finally.
+  it('collapses Historical Rank Progression behind an expand trigger at <768px (#875)', async () => {
+    const original = window.matchMedia
+    ;(window.matchMedia as unknown as ReturnType<typeof vi.fn>) = vi
+      .fn()
+      .mockImplementation((query: string) => ({
+        matches: /max-width/.test(query),
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }))
+    try {
+      setupWithData()
+      const { container } = renderWithProviders(<DistrictsPage />)
+      await screen.findByText('District 1')
+      const historyDetails = Array.from(
+        container.querySelectorAll('details')
+      ).find(d =>
+        d
+          .querySelector('summary')
+          ?.textContent?.match(/Historical Rank Progression/i)
+      )
+      expect(historyDetails).toBeDefined()
+      // The collapsed view renders a tap target instead of the chart itself.
+      expect(
+        within(historyDetails!).getByRole('button', {
+          name: /expand historical rank progression chart/i,
+        })
+      ).toBeInTheDocument()
+    } finally {
+      window.matchMedia = original
+    }
+  })
+
   it('renders the redesign h1 "District Rankings" (#356)', async () => {
     setupWithData()
 
