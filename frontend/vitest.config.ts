@@ -1,6 +1,10 @@
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
-import { integrationGlobs, baseExclude } from './vitest.shared.mjs'
+import {
+  integrationGlobs,
+  baseExclude,
+  resolveMaxWorkers,
+} from './vitest.shared.mjs'
 
 // Test config is split into two first-class projects (#482):
 //   - `unit`        — fast (~18-20s, well under the 30s pre-push budget),
@@ -25,17 +29,14 @@ export default defineConfig({
     // Set aggressive timeout limits for fast test execution
     testTimeout: 5000, // 5 seconds max per test
     hookTimeout: 5000, // 5 seconds max for setup/teardown hooks
-    // Cap local worker forks at 3. The default (one fork per core) saturates
-    // a busy dev machine — when something else is eating CPU (a background OS
-    // update/reindex, a persistent VM like Rancher Desktop, another build),
-    // forks starve each other and fast tests blow the 5s timeout, failing the
-    // pre-push gate for reasons unrelated to the code (worker-saturation
-    // flakiness, #473 / Lesson 53). A 50% cap still left ~4 timeouts on a
-    // heavily-contended machine; a fixed 3 forks gives each enough headroom
-    // to finish in time. CI runners are small and not oversubscribed, so they
-    // keep the default for full throughput.
+    // Worker-count policy lives in vitest.shared.mjs so the guard test can't
+    // drift from it (V8, #914). Local: fixed 3 forks (a busy dev machine
+    // saturates at one-fork-per-core and blows the 5s timeout — #473 / Lesson
+    // 53). CI: capped at 50% of cores so an oversubscribed runner can't convert
+    // contention into red builds (previously `undefined` = unbounded, the
+    // Sprint 1 deep-dive's single highest-leverage flake amplifier).
     // eslint-disable-next-line no-undef
-    maxWorkers: process.env.CI ? undefined : 3,
+    maxWorkers: resolveMaxWorkers(process.env),
     exclude: baseExclude,
     coverage: {
       exclude: [...baseExclude],
