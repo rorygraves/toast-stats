@@ -16,12 +16,9 @@ import { resolveMaxWorkers } from '../../../vitest.shared.mjs'
 
 describe('resolveMaxWorkers — CI worker cap (V8, #914)', () => {
   it('caps workers under CI (never unbounded)', () => {
-    const ci = resolveMaxWorkers({ CI: 'true' })
     // The bug was `undefined` in CI (= one fork per core). The cap must be a
-    // concrete, bounded value — a percentage of cores or a fixed N.
-    expect(ci).toBeDefined()
-    expect(ci).not.toBeUndefined()
-    expect(ci).toBe('50%')
+    // concrete, bounded value — `toBe('50%')` also proves it isn't undefined.
+    expect(resolveMaxWorkers({ CI: 'true' })).toBe('50%')
   })
 
   it('keeps the fixed local cap when not in CI', () => {
