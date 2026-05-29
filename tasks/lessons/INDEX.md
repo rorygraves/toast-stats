@@ -107,3 +107,4 @@
 - **136** [tests, flaky, vitest, ci, contention] — A flake detector must not inherit the stability cap it measures; cap the gate, pin the detector to max parallelism (#914, #917)
 - **137** [tests, flaky, vitest, process, verification, tdd] — An audit's "false-confidence" list is a per-file hypothesis; re-confirm before deleting, because the first-pass classification over-flags (#916, #917)
 - **138** [css, frontend, accessibility, verification, playwright, mobile] — `scroll-margin-top` belongs on the element that holds the anchor id, not a styled child (#877, #880)
+- **139** [css, frontend, accessibility, router, verification, playwright, mobile] — A TOC-anchor jump fired from inside a scroll-locked sheet has three independent scroll-clobbering traps; only live measurement separates them (#878, #880)
