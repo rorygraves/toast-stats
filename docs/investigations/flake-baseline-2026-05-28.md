@@ -82,9 +82,20 @@ record it under §4.
 The clean, calibrated number — `flake-detection` job, suspect set ×8 on a
 dedicated `ubuntu-latest` runner:
 
-| Date       | Commit     | Flake rate | p50    | p95    | Source                      |
-| ---------- | ---------- | ---------- | ------ | ------ | --------------------------- |
-| 2026-05-29 | `8a672b7b` | **0.0%**   | 31.4 s | 31.9 s | PR #919 flake-detection job |
+| Date       | Commit     | Flake rate                                                              | p50    | p95    | Source                      |
+| ---------- | ---------- | ----------------------------------------------------------------------- | ------ | ------ | --------------------------- |
+| 2026-05-29 | `8a672b7b` | **0.0%**                                                                | 31.4 s | 31.9 s | PR #919 flake-detection job |
+| 2026-05-29 | (S3 PR)    | _(record from the S3 PR's `flake-detection` job — `--maxWorkers=100%`)_ |        |        |                             |
+
+> **Sprint 3 (#914) note.** The harness now pins `--maxWorkers=100%`
+> (`buildVitestArgs`) so the DETECTOR keeps running one-fork-per-core — the
+> §2.3 amplifier — _decoupled_ from the gate. The BLOCKING CI `test` job is now
+> capped at **50% of cores** (`resolveMaxWorkers` in `vitest.shared.mjs`, V8).
+> So the detector row above and the gate are deliberately measuring different
+> configurations: the detector at 100% should stay ~0% on a clean runner (same
+> as #919) and spike on an oversubscribed one (early-warning), while the capped
+> gate stays stable even when the runner is busy. Record the S3 detector row
+> from the PR's `flake-detection` job once it runs.
 
 **Reading:** on a clean, non-oversubscribed CI runner the suspect set is **not
 flaky** (0/8) and its duration is tight (31.3–31.9 s, p95/p50 ≈ 1.02 — no

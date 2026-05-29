@@ -174,4 +174,13 @@ describe('buildVitestArgs', () => {
     expect(args).toContain('--coverage.thresholds.branches=0')
     expect(args).toContain('--coverage.thresholds.statements=0')
   })
+
+  it('pins --maxWorkers=100% so the DETECTOR stays maximally sensitive after the gate was capped (V8, #914)', () => {
+    // Sprint 3 capped the BLOCKING CI test invocation at 50% of cores
+    // (resolveMaxWorkers). The flake DETECTOR must NOT inherit that cap, or it
+    // would only ever measure the safe configuration and could never surface a
+    // contention regression. Pinning 100% keeps it running one-fork-per-core —
+    // the original §2.3 amplifier — decoupled from the gate's stability cap.
+    expect(args).toContain('--maxWorkers=100%')
+  })
 })

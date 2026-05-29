@@ -1,11 +1,17 @@
 /**
  * Flake-detection harness — IO orchestrator (#913, epic #917 S2).
  *
- * Runs a target test set N× under the REAL CI invocation (`CI=true vitest run
- * --coverage`, unbounded workers — the §2.3 amplifier) from the frontend
- * workspace, captures per-run pass/fail + wall-clock duration, and computes the
- * variance-aware flake metric. Writes a JSON artifact and, when running in CI,
- * a markdown summary to $GITHUB_STEP_SUMMARY.
+ * Runs a target test set N× under the CI invocation (`CI=true vitest run
+ * --coverage`) from the frontend workspace, captures per-run pass/fail +
+ * wall-clock duration, and computes the variance-aware flake metric. Writes a
+ * JSON artifact and, when running in CI, a markdown summary to
+ * $GITHUB_STEP_SUMMARY.
+ *
+ * Worker policy (V8, #914): the BLOCKING CI test job is now capped at 50% of
+ * cores (`resolveMaxWorkers`), but this DETECTOR pins `--maxWorkers=100%`
+ * (buildVitestArgs) so it keeps running one-fork-per-core — the original §2.3
+ * amplifier — and stays sensitive to a contention regression the capped gate
+ * would mask.
  *
  *   npm run test:flake                    # suspect set ×DEFAULT_REPEATS
  *   FLAKE_REPEATS=20 npm run test:flake   # more samples
@@ -40,7 +46,9 @@ function runOnce(targets: string[], i: number, total: number): RunResult {
   const start = Date.now()
   const res = spawnSync('npx', ['vitest', ...buildVitestArgs(targets)], {
     cwd: FRONTEND_DIR,
-    // CI=true removes the local 3-worker cap → the real, contended invocation.
+    // CI=true + the explicit --maxWorkers=100% in buildVitestArgs keep this the
+    // unbounded, contended invocation (the §2.3 amplifier) even though the
+    // blocking CI gate is now capped at 50% (V8, #914).
     env: { ...process.env, CI: 'true' },
     encoding: 'utf8',
     stdio: ['ignore', 'inherit', 'inherit'],

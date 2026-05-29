@@ -24,6 +24,28 @@ import { dirname, join } from 'node:path'
 // file lands in neither project, so a mis-placed test is caught in CI
 // rather than silently dropping out of both gates.
 
+// V8 (#914, epic #917 S3) — the worker-count policy, sourced once so the real
+// vitest config and its guard test (src/__tests__/config/maxWorkers.guard.test.ts)
+// can never disagree.
+//
+// The Sprint 1 deep-dive named `maxWorkers: CI ? undefined : 3` the single
+// highest-leverage flake amplifier: `undefined` lets CI spawn one fork per core,
+// so an oversubscribed runner converts ambient timing-sensitivity into 5s-timeout
+// failures (contention, not a regression). Local dev was already capped at a
+// fixed 3 forks; CI was unbounded. We now cap CI at 50% of cores — half the box
+// stays free for the main thread + v8 coverage instrumentation, which is exactly
+// the headroom that keeps fast tests under the 5s timeout. The calibrated CI
+// baseline was already 0% at unbounded on a clean runner; the cap is the durable
+// guard against a future oversubscribed/larger runner drifting toward the
+// workstation stress ceiling (100% flake, 30.9→171.9s spread).
+//
+// NOTE: the non-gating flake-detection harness (scripts/run-flake-detection.ts)
+// deliberately OVERRIDES this with `--maxWorkers=100%` so the DETECTOR stays
+// maximally sensitive while the GATE stays capped/stable.
+export function resolveMaxWorkers(env) {
+  return env && env.CI ? '50%' : 3
+}
+
 export const integrationGlobs = [
   'src/__tests__/integration/**/*.test.{ts,tsx}',
   'src/__tests__/accessibility/**/*.test.{ts,tsx}',

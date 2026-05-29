@@ -21,18 +21,32 @@ class MockIntersectionObserver implements IntersectionObserver {
   readonly rootMargin: string = ''
   readonly thresholds: ReadonlyArray<number> = []
 
+  private readonly callback: (
+    entries: IntersectionObserverEntry[],
+    observer: IntersectionObserver
+  ) => void
+
   constructor(
     callback: (
       entries: IntersectionObserverEntry[],
       observer: IntersectionObserver
     ) => void
   ) {
-    setTimeout(() => {
-      callback([{ isIntersecting: true } as IntersectionObserverEntry], this)
-    }, 0)
+    this.callback = callback
   }
 
-  observe(): void {}
+  // Fire from observe() (deferred, so lazy children still flush) WITH the
+  // observed `target` — conforming to the global setup.ts mock's shape. The
+  // old version fired from the constructor with no target, so any callback
+  // reading `entry.target` would throw asynchronously (Lesson 72 / V3, #914).
+  observe(target: Element): void {
+    setTimeout(() => {
+      this.callback(
+        [{ isIntersecting: true, target } as IntersectionObserverEntry],
+        this
+      )
+    }, 0)
+  }
   unobserve(): void {}
   disconnect(): void {}
   takeRecords(): IntersectionObserverEntry[] {

@@ -47,13 +47,24 @@ const createEmptyCdnDatesResponse = () => ({
   generatedAt: '2024-02-10T10:00:00Z',
 })
 
-// Create a wrapper with QueryClientProvider for testing
-// Note: retry: false ensures errors are immediately propagated without retries
+// Create a wrapper with QueryClientProvider for testing.
+//
+// `retryDelay: 0` (V2, #914): DateSelector's query hardcodes `retry: 2`
+// (Requirement 3.4), which OVERRIDES this wrapper's `retry: false`. With the
+// default exponential backoff that means the rejection-path tests sit through
+// ~1s + ~2s of retry waits before settling to the error state — which both
+// pushes them toward the 5s test timeout under contention (the baseline §3
+// "Test timed out in 5000ms" flake signature) and widens the window in which a
+// deferred retry/render can leak into the next test and hit the reset mock's
+// `undefined.dates` (L120). Zeroing the delay keeps the retry COUNT (the
+// retry-limit test still asserts ≤3 calls) but collapses the multi-second
+// window — a test-only timing fix, no production behaviour change.
 const createWrapper = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
         retry: false,
+        retryDelay: 0,
         gcTime: 0,
         staleTime: 0,
       },
