@@ -81,7 +81,10 @@ export interface ClubsTableMeta {
 // `name` cell reads `table.options.meta` with full types (the documented
 // react-table pattern for typed meta).
 declare module '@tanstack/react-table' {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // The empty body is intentional — this is purely a module augmentation that
+  // merges ClubsTableMeta into TableMeta. TData is required by the original
+  // signature but unused here.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-object-type
   interface TableMeta<TData extends RowData> extends ClubsTableMeta {}
 }
 

@@ -3970,36 +3970,22 @@
     color: var(--ink);
   }
 
-  /* CC-7 (#872): the desktop club-name cell is a real <Link>. Keep it visually
-     inheriting the row text (it sits inside an already-clickable row), but
-     reveal the link affordance on hover/focus and give keyboard users a ring. */
-  .clubs-name-link {
-    color: inherit;
-    text-decoration: none;
-  }
-
-  .clubs-name-link:hover {
-    text-decoration: underline;
-  }
-
-  .clubs-name-link:focus-visible {
-    outline: 2px solid var(--loyal-600);
-    outline-offset: 2px;
-    border-radius: 2px;
-  }
-
-  /* CC-7 (#872): the division performance card's "Division X" heading links to
-     the division page. Keep the heading's existing colour; underline on
-     hover/focus to surface the affordance. */
+  /* CC-7 (#872): inline text links that sit inside an already-interactive
+     surface — the desktop club-name cell (inside a clickable row) and the
+     division card's "Division X" heading. Both inherit the surrounding colour,
+     reveal the affordance on hover, and give keyboard users a focus ring. */
+  .clubs-name-link,
   .division-heading-link {
     color: inherit;
     text-decoration: none;
   }
 
+  .clubs-name-link:hover,
   .division-heading-link:hover {
     text-decoration: underline;
   }
 
+  .clubs-name-link:focus-visible,
   .division-heading-link:focus-visible {
     outline: 2px solid var(--loyal-600);
     outline-offset: 2px;
