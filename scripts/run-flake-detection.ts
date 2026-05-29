@@ -23,6 +23,7 @@ import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
+  buildVitestArgs,
   computeFlakeMetric,
   formatFlakeSummary,
   resolveHarnessConfig,
@@ -37,17 +38,13 @@ const ARTIFACT = join(REPO_ROOT, 'flake-metric.json')
 function runOnce(targets: string[], i: number, total: number): RunResult {
   console.error(`\n=== flake run ${i}/${total} ===`)
   const start = Date.now()
-  const res = spawnSync(
-    'npx',
-    ['vitest', 'run', ...targets, '--coverage', '--reporter=dot'],
-    {
-      cwd: FRONTEND_DIR,
-      // CI=true removes the local 3-worker cap → the real, contended invocation.
-      env: { ...process.env, CI: 'true' },
-      encoding: 'utf8',
-      stdio: ['ignore', 'inherit', 'inherit'],
-    }
-  )
+  const res = spawnSync('npx', ['vitest', ...buildVitestArgs(targets)], {
+    cwd: FRONTEND_DIR,
+    // CI=true removes the local 3-worker cap → the real, contended invocation.
+    env: { ...process.env, CI: 'true' },
+    encoding: 'utf8',
+    stdio: ['ignore', 'inherit', 'inherit'],
+  })
   const durationMs = Date.now() - start
   if (res.error) {
     throw new Error(`harness: failed to spawn vitest — ${res.error.message}`)

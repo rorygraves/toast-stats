@@ -84,6 +84,30 @@ export function resolveHarnessConfig(
   return { targets, repeats, label }
 }
 
+/**
+ * Build the `vitest run` argv for one harness execution.
+ *
+ * We keep `--coverage` because coverage *instrumentation* is part of the §2.3
+ * contention amplifier the harness must reproduce — but a filtered subset run
+ * can never meet the whole-repo 55% coverage threshold, so leaving thresholds
+ * on makes every run exit non-zero on a coverage gate, which the harness would
+ * misread as a 100% flake rate (all tests can pass and the run still "fails").
+ * Zeroing every threshold makes the exit code reflect TEST pass/fail only —
+ * which is what the flake metric is measuring.
+ */
+export function buildVitestArgs(targets: string[]): string[] {
+  return [
+    'run',
+    ...targets,
+    '--coverage',
+    '--coverage.thresholds.lines=0',
+    '--coverage.thresholds.functions=0',
+    '--coverage.thresholds.branches=0',
+    '--coverage.thresholds.statements=0',
+    '--reporter=dot',
+  ]
+}
+
 /** Context for rendering a human/markdown summary. */
 export interface SummaryContext {
   /** What was repeated (e.g. "suspect-set", "full-suite"). */

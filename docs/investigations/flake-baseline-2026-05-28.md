@@ -25,6 +25,14 @@ The harness runs a **target test set N× under the real CI invocation** —
 `CI=true vitest run <targets> --coverage` (unbounded workers; the §2.3
 amplifier) — and reports:
 
+> **Coverage thresholds are zeroed for the harness run** (`buildVitestArgs`).
+> Coverage _instrumentation_ is kept (it is part of the contention amplifier),
+> but a filtered subset can never meet the whole-repo 55% threshold, so leaving
+> the gate on makes every run exit non-zero on coverage — which would misreport
+> a 100% flake rate even when all tests pass. The exit code therefore reflects
+> **test pass/fail only**. (Caught on the first CI run, PR #919: 115/115 tests
+> passed but the run "failed" at 52.8% lines.)
+
 - **Flake rate** = `failedRuns / totalRuns` on otherwise-unchanged code. Any
   failure across an unchanged suite is, by definition, a flake.
 - **Duration p50 / p95 / min / max.** Variance is the _leading_ signal (L53):

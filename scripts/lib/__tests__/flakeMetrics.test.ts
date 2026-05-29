@@ -17,6 +17,7 @@ import {
   computeFlakeMetric,
   formatFlakeSummary,
   resolveHarnessConfig,
+  buildVitestArgs,
   DEFAULT_SUSPECT_SET,
   type RunResult,
   type FlakeMetric,
@@ -154,5 +155,23 @@ describe('resolveHarnessConfig', () => {
     expect(joined).toMatch(/DateSelector/)
     expect(joined).toMatch(/journeys/)
     expect(joined).toMatch(/DistrictsPage/)
+  })
+})
+
+describe('buildVitestArgs', () => {
+  const args = buildVitestArgs(['src/foo.test.tsx', 'src/bar/'])
+
+  it('runs the given targets under coverage instrumentation (the §2.3 amplifier)', () => {
+    expect(args[0]).toBe('run')
+    expect(args).toContain('src/foo.test.tsx')
+    expect(args).toContain('src/bar/')
+    expect(args).toContain('--coverage')
+  })
+
+  it('zeroes ALL coverage thresholds — a filtered subset can never meet the whole-repo 55% gate, so without this the harness misreports a deterministic coverage-gate failure as 100% flake', () => {
+    expect(args).toContain('--coverage.thresholds.lines=0')
+    expect(args).toContain('--coverage.thresholds.functions=0')
+    expect(args).toContain('--coverage.thresholds.branches=0')
+    expect(args).toContain('--coverage.thresholds.statements=0')
   })
 })
