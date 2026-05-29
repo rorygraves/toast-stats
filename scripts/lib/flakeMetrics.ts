@@ -94,6 +94,14 @@ export function resolveHarnessConfig(
  * misread as a 100% flake rate (all tests can pass and the run still "fails").
  * Zeroing every threshold makes the exit code reflect TEST pass/fail only —
  * which is what the flake metric is measuring.
+ *
+ * `--maxWorkers=100%` (V8, #914): Sprint 3 capped the BLOCKING CI test
+ * invocation at 50% of cores (`resolveMaxWorkers` in vitest.shared.mjs) to keep
+ * an oversubscribed runner from converting contention into red builds. The flake
+ * DETECTOR must NOT inherit that cap — a detector that only ever runs the safe
+ * configuration can never surface a contention regression. Pinning 100% keeps it
+ * running one-fork-per-core (the original §2.3 amplifier), decoupled from the
+ * gate's stability cap: gate = capped/stable, detector = unbounded/sensitive.
  */
 export function buildVitestArgs(targets: string[]): string[] {
   return [
@@ -104,6 +112,7 @@ export function buildVitestArgs(targets: string[]): string[] {
     '--coverage.thresholds.functions=0',
     '--coverage.thresholds.branches=0',
     '--coverage.thresholds.statements=0',
+    '--maxWorkers=100%',
     '--reporter=dot',
   ]
 }
