@@ -4185,6 +4185,64 @@
     color: var(--ink-3);
   }
 
+  /* Mobile disclosure (#877). These classes are only emitted by
+     CollapsibleSection when useIsMobile() is true, so they never apply at
+     desktop widths — desktop markup is the plain <h2>+body above. */
+  .methodology-section--collapsible {
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .methodology-section--collapsible .methodology-section__title {
+    margin: 0;
+  }
+
+  .methodology-section__toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    margin: 0;
+    /* 16px vertical padding + the 22px heading line lands the tap target
+       well above the 44px floor (Epic G / lesson 111 family). */
+    padding: 16px 0;
+    background: none;
+    border: none;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .methodology-section__toggle-text {
+    flex: 1;
+  }
+
+  .methodology-section__chevron {
+    flex-shrink: 0;
+    width: 9px;
+    height: 9px;
+    border-right: 2px solid var(--ink-3);
+    border-bottom: 2px solid var(--ink-3);
+    transform: rotate(45deg);
+    transition: transform 0.15s ease;
+  }
+
+  .methodology-section__toggle[aria-expanded='true']
+    .methodology-section__chevron {
+    transform: rotate(-135deg);
+  }
+
+  .methodology-section__content {
+    padding-bottom: 20px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .methodology-section__chevron {
+      transition: none;
+    }
+  }
+
   .methodology-link {
     color: var(--link);
     text-decoration: underline;
