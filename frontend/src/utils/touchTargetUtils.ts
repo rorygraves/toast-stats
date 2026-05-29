@@ -29,6 +29,14 @@ export const INTERACTIVE_SELECTORS = [
 ] as const
 
 /**
+ * The minimum tap-target dimension in px (WCAG 2.5.5 / mobile handoff floor).
+ * One source of truth for the policy: `useTouchTarget`'s default `minSize` and
+ * the dual-engine touch-target tripwire (`frontend/e2e/touch-targets.smoke.ts`,
+ * #887) both use it, so the guard and the runtime check the same number.
+ */
+export const MIN_TOUCH_TARGET_PX = 44
+
+/**
  * Utility function to check if an element is interactive
  */
 export function isInteractiveElement(element: HTMLElement): boolean {

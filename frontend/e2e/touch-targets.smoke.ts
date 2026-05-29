@@ -1,5 +1,8 @@
 import { test, expect, type Page } from '@playwright/test'
-import { INTERACTIVE_SELECTORS } from '../src/utils/touchTargetUtils'
+import {
+  INTERACTIVE_SELECTORS,
+  MIN_TOUCH_TARGET_PX,
+} from '../src/utils/touchTargetUtils'
 
 /* Dual-engine 44×44px touch-target tripwire (#887, epic #888 "Epic G" Sprint 3).
  *
@@ -32,7 +35,7 @@ import { INTERACTIVE_SELECTORS } from '../src/utils/touchTargetUtils'
  *    defects are 30–42px (well above 1px), so this can't mask one.
  */
 
-const FLOOR = 44 // px, WCAG 2.5.5 AAA / mobile handoff target
+const FLOOR = MIN_TOUCH_TARGET_PX // px, WCAG 2.5.5 / mobile handoff floor
 const VIEWPORT = { width: 375, height: 812 } // iPhone-class portrait
 
 // One concrete instance of every route shape in App.tsx (the #885 audit set).
@@ -68,7 +71,7 @@ interface Finding {
 
 async function measureInteractiveTargets(
   page: Page,
-  selectors: string[]
+  selectors: readonly string[]
 ): Promise<Finding[]> {
   return page.evaluate(sels => {
     const els = Array.from(document.querySelectorAll(sels.join(', ')))
@@ -111,8 +114,6 @@ function describe(f: Finding): string {
   return `${f.tag}${id} ${f.w}×${f.h}`
 }
 
-const selectors = [...INTERACTIVE_SELECTORS]
-
 for (const route of ROUTES) {
   test(`every interactive element clears ${FLOOR}px at 375px — ${route}`, async ({
     page,
@@ -123,7 +124,7 @@ for (const route of ROUTES) {
     await page.evaluate(() => document.fonts.ready)
     await page.waitForTimeout(500)
 
-    const found = await measureInteractiveTargets(page, selectors)
+    const found = await measureInteractiveTargets(page, INTERACTIVE_SELECTORS)
 
     // Non-vacuity: a blank/broken page (zero interactive elements) must not pass
     // green. Every routed page has at least a nav/theme/menu control.

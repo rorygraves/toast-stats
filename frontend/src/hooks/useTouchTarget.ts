@@ -8,7 +8,10 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { INTERACTIVE_SELECTORS } from '../utils/touchTargetUtils'
+import {
+  INTERACTIVE_SELECTORS,
+  MIN_TOUCH_TARGET_PX,
+} from '../utils/touchTargetUtils'
 
 export interface TouchTargetResult {
   width: number
@@ -30,7 +33,7 @@ export interface TouchTargetValidationOptions {
  */
 export function useTouchTarget(options: TouchTargetValidationOptions = {}) {
   const {
-    minSize = 44,
+    minSize = MIN_TOUCH_TARGET_PX,
     includeMargin = true,
     checkOnResize = true,
     onViolation,
