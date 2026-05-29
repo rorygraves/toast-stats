@@ -8,6 +8,8 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useDistrictAnalytics } from '../hooks/useDistrictAnalytics'
 import { LoadingSkeleton } from '../components/LoadingSkeleton'
 import { EmptyState } from '../components/ErrorDisplay'
+import { ClubMiniList } from '../components/ClubMiniList'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 const DivisionPage: React.FC = () => {
   const { districtId, divId } = useParams<{
@@ -15,6 +17,7 @@ const DivisionPage: React.FC = () => {
     divId: string
   }>()
   const navigate = useNavigate()
+  const isMobile = useIsMobile()
 
   const { data, isLoading, error } = useDistrictAnalytics(
     districtId ?? '',
@@ -172,59 +175,72 @@ const DivisionPage: React.FC = () => {
             </span>
           </h2>
 
-          <div className="districts-rankings-table-wrap">
-            <div className="overflow-x-auto">
-              <table className="districts-rankings-table">
-                <thead>
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Club
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Members
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Distinguished
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {area.clubs.map(c => {
-                    const last = c.membershipTrend[c.membershipTrend.length - 1]
-                    return (
-                      <tr
-                        key={c.clubId}
-                        className="cursor-pointer"
-                        onClick={() =>
-                          navigate(`/district/${districtId}/club/${c.clubId}`)
-                        }
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm font-medium text-gray-900">
-                            {c.clubName}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          {c.currentStatus}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 tabular-nums">
-                          {last?.count ?? '—'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {c.distinguishedLevel === 'NotDistinguished'
-                            ? '—'
-                            : c.distinguishedLevel}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+          {/* CC-4 (#871): the 4-col table overflows 375px and clips the
+              Status chip, so mobile de-tables to a stacked card list; desktop
+              keeps the table unchanged. */}
+          {isMobile ? (
+            <ClubMiniList
+              clubs={area.clubs}
+              onSelect={clubId =>
+                navigate(`/district/${districtId}/club/${clubId}`)
+              }
+            />
+          ) : (
+            <div className="districts-rankings-table-wrap">
+              <div className="overflow-x-auto">
+                <table className="districts-rankings-table">
+                  <thead>
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Club
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Members
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Distinguished
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {area.clubs.map(c => {
+                      const last =
+                        c.membershipTrend[c.membershipTrend.length - 1]
+                      return (
+                        <tr
+                          key={c.clubId}
+                          className="cursor-pointer"
+                          onClick={() =>
+                            navigate(`/district/${districtId}/club/${c.clubId}`)
+                          }
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm font-medium text-gray-900">
+                              {c.clubName}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            {c.currentStatus}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 tabular-nums">
+                            {last?.count ?? '—'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {c.distinguishedLevel === 'NotDistinguished'
+                              ? '—'
+                              : c.distinguishedLevel}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
         </section>
       ))}
     </div>

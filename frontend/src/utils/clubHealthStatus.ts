@@ -34,3 +34,20 @@ export function getClubHealthStatusPillModifier(
       return 'clubs-status-pill--thriving'
   }
 }
+
+/**
+ * Decorative glyph that reinforces the health status with a non-colour cue.
+ * Matches the ClubDetailPage DCP-outlook glyphs (✓ / ⚠ / ✗) so the same datum
+ * reads consistently across surfaces. The text label carries the meaning; the
+ * icon is `aria-hidden` at the render site (WCAG 1.4.1 — never colour alone).
+ */
+export function getClubHealthStatusIcon(status: ClubHealthStatus): string {
+  switch (status) {
+    case 'intervention-required':
+      return '✗'
+    case 'vulnerable':
+      return '⚠'
+    default:
+      return '✓'
+  }
+}
