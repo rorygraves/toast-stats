@@ -4,9 +4,11 @@
  * as plain `whitespace-nowrap` text, which clips to "vulne…" / "interv…" at
  * 375px (CC-4). This chip is the mobile (<768px) treatment: a colored pill
  * carrying the short label AND a glyph, so meaning never rests on colour alone
- * (WCAG 1.4.1). Label, colour modifier and icon all come from the single
- * source of truth in `utils/clubHealthStatus.ts` (lesson 052) — the same datum
- * the desktop ClubsTable pill uses.
+ * (WCAG 1.4.1). Label and colour modifier are the shared single source of truth
+ * in `utils/clubHealthStatus.ts` (lesson 052) — identical to the desktop
+ * ClubsTable pill. The chip adds an icon glyph on top, per the CC-4 a11y
+ * criterion (colour + text + icon); the desktop pill stays icon-free
+ * ("Desktop unchanged").
  *
  * Per lesson 077 it accepts a `className` override rather than a variant
  * taxonomy, so each call site can add its own layout class. */

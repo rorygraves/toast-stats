@@ -5,8 +5,8 @@
  *
  * The chip pairs colour with BOTH a text label and an icon glyph so meaning
  * never rests on colour alone (WCAG 1.4.1). Label + pill modifier come from the
- * single source of truth in `utils/clubHealthStatus.ts` (lesson 052), so the
- * chip reads identically to the desktop ClubsTable pill.
+ * single source of truth in `utils/clubHealthStatus.ts` (lesson 052) — the same
+ * label/colour as the desktop ClubsTable pill, with an added icon cue.
  */
 import { describe, it, expect, afterEach } from 'vitest'
 import { render, screen, cleanup } from '@testing-library/react'
