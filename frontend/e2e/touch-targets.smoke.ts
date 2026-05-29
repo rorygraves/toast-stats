@@ -41,23 +41,34 @@ const VIEWPORT = { width: 375, height: 812 } // iPhone-class portrait
 // One concrete instance of every route shape in App.tsx (the #885 audit set).
 // District 61 / club 01479548 / division A / region 1 are representative; the
 // three defect families are component-level, so params don't change them.
-const ROUTES = [
-  '/',
-  '/district/61',
-  '/district/61/clubs',
-  '/district/61/changes',
-  '/district/61/divisions',
-  '/district/61/rankings',
-  '/district/61/trends',
-  '/district/61/analytics',
-  '/district/61/division/A',
-  '/district/61/club/01479548',
-  '/club/01479548',
-  '/history',
-  '/methodology',
-  '/awards',
-  '/regions',
-  '/region/1',
+//
+// `mustRender` is a CONTENT sentinel (not chrome): a selector for a control the
+// page is REQUIRED to mount before we measure. It does double duty — (1) it is
+// the content-ready wait (so we don't measure a half-rendered page, cf.
+// regions-legibility.smoke), and (2) it closes the vacuous-green hole: nav/theme
+// chrome renders even when a route's real content fails to load, so a bare
+// `found.length > 0` would pass having measured nothing relevant. Pinning the
+// family-bearing control means "the toolbar/finder #886 fixed didn't render" is
+// a loud red, not a silent pass. Routes the #885 audit found clean (no family
+// control) carry no sentinel — they still get the ≥1 non-vacuity floor.
+const CHIP_SELECT = '[data-testid$="-chip-select"]' // family A (shared toolbar)
+const ROUTES: { path: string; mustRender?: string }[] = [
+  { path: '/', mustRender: CHIP_SELECT }, // families A + B
+  { path: '/district/61', mustRender: CHIP_SELECT },
+  { path: '/district/61/clubs', mustRender: CHIP_SELECT },
+  { path: '/district/61/changes', mustRender: CHIP_SELECT },
+  { path: '/district/61/divisions', mustRender: CHIP_SELECT },
+  { path: '/district/61/rankings', mustRender: CHIP_SELECT },
+  { path: '/district/61/trends', mustRender: CHIP_SELECT },
+  { path: '/district/61/analytics', mustRender: CHIP_SELECT },
+  { path: '/district/61/division/A' },
+  { path: '/district/61/club/01479548' },
+  { path: '/club/01479548' },
+  { path: '/history' },
+  { path: '/methodology' },
+  { path: '/awards' },
+  { path: '/regions', mustRender: '.region-finder__chip' }, // family C
+  { path: '/region/1' },
 ]
 
 interface Finding {
@@ -114,12 +125,24 @@ function describe(f: Finding): string {
   return `${f.tag}${id} ${f.w}×${f.h}`
 }
 
-for (const route of ROUTES) {
-  test(`every interactive element clears ${FLOOR}px at 375px — ${route}`, async ({
+for (const { path, mustRender } of ROUTES) {
+  test(`every interactive element clears ${FLOOR}px at 375px — ${path}`, async ({
     page,
   }) => {
+    // The global config timeout (30s) governs the whole test; raise it so the
+    // 60s goto budget is actually reachable on a cold preview hitting the CDN.
+    test.setTimeout(90_000)
     await page.setViewportSize(VIEWPORT)
-    await page.goto(route, { waitUntil: 'networkidle', timeout: 60_000 })
+    await page.goto(path, { waitUntil: 'networkidle', timeout: 60_000 })
+
+    // Wait for the page's REQUIRED content control to mount before measuring —
+    // this is both the content-ready gate and the anti-vacuous-green guard.
+    if (mustRender) {
+      await page
+        .locator(mustRender)
+        .first()
+        .waitFor({ state: 'visible', timeout: 30_000 })
+    }
     // Display-font reflow settles before we measure text-driven controls (L134).
     await page.evaluate(() => document.fonts.ready)
     await page.waitForTimeout(500)
@@ -130,13 +153,13 @@ for (const route of ROUTES) {
     // green. Every routed page has at least a nav/theme/menu control.
     expect(
       found.length,
-      `${route}: found 0 measurable interactive elements — page did not render`
+      `${path}: found 0 measurable interactive elements — page did not render`
     ).toBeGreaterThan(0)
 
     const failing = found.filter(f => f.w < FLOOR || f.h < FLOOR)
     expect(
       failing,
-      `${route}: ${failing.length} sub-${FLOOR}px target(s): ` +
+      `${path}: ${failing.length} sub-${FLOOR}px target(s): ` +
         failing.map(describe).join('; ')
     ).toEqual([])
   })
