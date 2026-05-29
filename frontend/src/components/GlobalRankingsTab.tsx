@@ -2,6 +2,7 @@ import React, { useMemo } from 'react'
 import { useUrlState } from '../hooks/useUrlState'
 import EndOfYearRankingsPanel from './EndOfYearRankingsPanel'
 import FullYearRankingChart, { type RankMetric } from './FullYearRankingChart'
+import { ChartSparklineExpand } from './ChartSparklineExpand'
 
 /* #571 — URL contract for the metric toggle. Product-facing token is
    `paid`; the internal RankMetric union still uses `clubs` so the
@@ -268,6 +269,23 @@ const GlobalRankingsTab: React.FC<GlobalRankingsTabProps> = ({
     refetch,
   } = useGlobalRankings(hookParams)
 
+  // #875 (epic #876, CC-3): collapsed-mobile sparkline for the Ranking
+  // Progression chart. Prefer a fully-populated overallRank series; fall back
+  // to aggregateScore (always present) when older snapshots lack overallRank
+  // (mixing the two scales in one line would jump, so don't interleave them).
+  const rankSparkline = useMemo(() => {
+    const pts = currentYearHistory?.history ?? []
+    const ranks = pts
+      .map(p => p.overallRank)
+      .filter((r): r is number => typeof r === 'number')
+    return ranks.length === pts.length && ranks.length > 0
+      ? ranks
+      : pts.map(p => p.aggregateScore)
+  }, [currentYearHistory])
+  const latestRank =
+    currentYearHistory?.history?.[currentYearHistory.history.length - 1]
+      ?.overallRank ?? null
+
   // Determine the effective selected program year (default to most recent)
   const effectiveSelectedYear = useMemo(() => {
     if (selectedProgramYear) return selectedProgramYear
@@ -366,13 +384,23 @@ const GlobalRankingsTab: React.FC<GlobalRankingsTabProps> = ({
       />
 
       {/* Full Year Ranking Chart — loads progressively */}
-      <FullYearRankingChart
-        data={currentYearHistory}
-        selectedMetric={selectedMetric}
-        onMetricChange={handleMetricChange}
-        isLoading={isLoadingChart}
-        programYear={effectiveSelectedYear}
-      />
+      <ChartSparklineExpand
+        title="Ranking Progression"
+        sparklineData={rankSparkline}
+        headline={
+          <span className="chart-spark__headline-text">
+            {latestRank !== null ? `Rank #${latestRank}` : 'Rank trend'}
+          </span>
+        }
+      >
+        <FullYearRankingChart
+          data={currentYearHistory}
+          selectedMetric={selectedMetric}
+          onMetricChange={handleMetricChange}
+          isLoading={isLoadingChart}
+          programYear={effectiveSelectedYear}
+        />
+      </ChartSparklineExpand>
 
       {/* Multi-Year Comparison Table — loads progressively */}
       <MultiYearComparisonTable

@@ -485,7 +485,10 @@ describe('GlobalRankingsTab', () => {
           })
         )
         expect(screen.getByRole('dialog')).toBeInTheDocument()
-        expect(screen.getByText('Ranking Progression')).toBeInTheDocument()
+        // Appears twice once open: the sheet title + the chart's own heading.
+        expect(
+          screen.getAllByText('Ranking Progression').length
+        ).toBeGreaterThanOrEqual(1)
       })
 
       it('renders the chart directly at desktop widths', () => {
