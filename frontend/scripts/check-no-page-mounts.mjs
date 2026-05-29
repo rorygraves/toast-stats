@@ -20,63 +20,26 @@
  *
  * Exits non-zero with the offending files + specifiers listed on any violation.
  */
-import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
-
-const FRONTEND_DIR = fileURLToPath(new URL('..', import.meta.url))
-
-function listUnitFiles() {
-  let out
-  try {
-    out = execFileSync(
-      'npx',
-      ['vitest', 'list', '--json', '--project=unit'],
-      {
-        cwd: FRONTEND_DIR,
-        encoding: 'utf8',
-        maxBuffer: 64 * 1024 * 1024,
-        stdio: ['ignore', 'pipe', 'ignore'],
-      }
-    )
-  } catch (err) {
-    out = err.stdout ? String(err.stdout) : ''
-  }
-  let cases
-  try {
-    cases = JSON.parse(out)
-  } catch {
-    throw new Error(
-      'vitest list --project=unit produced no parseable JSON. Is the "unit" project configured?'
-    )
-  }
-  return [...new Set(cases.map((c) => c.file))]
-}
-
-function rel(f) {
-  const i = f.indexOf('/frontend/')
-  return i === -1 ? f : f.slice(i + 1)
-}
+import { listVitestFiles, relFromFrontend as rel } from './lib/listVitestFiles.mjs'
 
 // Capture the module specifier of every static import and dynamic import().
 const IMPORT_RE = /(?:from\s*|import\s*\(\s*)['"]([^'"]+)['"]/g
 
 /** Is this specifier a page component or the app root (a full-page mount)? */
 function isPageMountSpecifier(spec) {
-  if (!spec.includes('/pages/') && !/(^|\/)App$/.test(spec)) {
-    // Allow a bare '../App' / './App' too (no /pages/).
-    if (!/(^|\/)App$/.test(spec)) return false
-  }
   const base = spec.split('/').pop() || ''
-  // A page component module ends in "Page" and lives under pages/; the app root
-  // basename is exactly "App". Helper/type modules under pages/ (e.g.
-  // pages/utils) are intentionally NOT flagged — they aren't a mount.
+  // The app root: a bare './App' / '../App' or any `.../App` — the basename
+  // pop covers every relative form, so no separate regex is needed.
   if (base === 'App') return true
+  // A page component module lives under pages/ and its basename ends in "Page".
+  // Helper/type modules under pages/ (e.g. pages/utils) are intentionally NOT
+  // flagged — they aren't a mount.
   return spec.includes('/pages/') && /Page$/.test(base)
 }
 
 const violations = []
-for (const file of listUnitFiles()) {
+for (const file of listVitestFiles('unit')) {
   let src
   try {
     src = readFileSync(file, 'utf8')
