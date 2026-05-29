@@ -61,10 +61,14 @@ const MethodologyPage: React.FC = () => {
       <header className="methodology-page__header">
         <p className="placeholder-page__eyebrow">Reference · Updated 2026-05</p>
         <h1 className="placeholder-page__title">Methodology</h1>
-        <p className="placeholder-page__body">
-          How Toast Stats sources, processes, and ranks the worldwide
-          Toastmasters dashboard. Everything here is reproducible from public
-          data — no scraping, no inference.
+        {/* "What does this page answer?" lede (#879). One scannable sentence
+            above the section list so a (mobile) reader can decide whether to
+            dive into the ~16,000px of prose below. Replaces the older generic
+            intro — see docs/design/mobile-ux-audit-2026-05-28.md §14. */}
+        <p className="long-text-lede" data-testid="methodology-lede">
+          Where Toast Stats gets its numbers, how districts and regions are
+          ranked, and what every DCP tier and club-health label means — defined
+          once, from public data, here.
         </p>
       </header>
 

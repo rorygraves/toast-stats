@@ -374,6 +374,20 @@
     color: var(--ink-2);
   }
 
+  /* "What does this page answer?" lede for the long-text/doc-style routes
+     (/methodology, /history) — #879, epic #880 Sprint 3. Slightly larger and
+     more open than the generic body so it reads as a decision aid above the
+     section list. Colour is --ink-2 (AA-verified on the dark surface by
+     LandingStaticDarkModeContrast.test.ts), capped at a comfortable measure. */
+  .long-text-lede {
+    margin: 0;
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--ink-2);
+    max-width: 60ch;
+  }
+
   /* Districts page redesign chrome (#356). Lives inside DistrictsPage.tsx
      until #369 retires the file. The .districts-* namespace is intentional
      — Districts is its own surface, distinct from app-shell chrome and

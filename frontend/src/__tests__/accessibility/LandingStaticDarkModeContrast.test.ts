@@ -188,6 +188,7 @@ describe('Landing + static pages dark-mode contrast (#611)', () => {
     },
     { name: 'placeholder body', selector: '.placeholder-page__body' },
     { name: 'placeholder title', selector: '.placeholder-page__title' },
+    { name: 'long-text lede', selector: '.long-text-lede' },
   ]
 
   it.each(ALREADY_OK)('$name clears AA on the dark surface', ({ selector }) => {
