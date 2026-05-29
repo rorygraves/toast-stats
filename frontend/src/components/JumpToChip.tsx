@@ -59,6 +59,7 @@ const JumpToChip: React.FC<JumpToChipProps> = ({ sections, onJump }) => {
   // keyboard/AT users return to the trigger, not the document top.
   useEffect(() => {
     if (!open) return
+    const chip = chipRef.current
     closeButtonRef.current?.focus()
 
     const handleTab = (e: KeyboardEvent) => {
@@ -81,7 +82,7 @@ const JumpToChip: React.FC<JumpToChipProps> = ({ sections, onJump }) => {
     sheet?.addEventListener('keydown', handleTab)
     return () => {
       sheet?.removeEventListener('keydown', handleTab)
-      chipRef.current?.focus()
+      chip?.focus()
     }
   }, [open])
 

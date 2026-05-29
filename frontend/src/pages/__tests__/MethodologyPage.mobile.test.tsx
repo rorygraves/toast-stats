@@ -7,7 +7,7 @@
 
 import React from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 
@@ -64,6 +64,32 @@ describe('MethodologyPage — mobile collapsed sections', () => {
     expect(
       screen.getByText(/weights all three categories equally/i)
     ).toBeVisible()
+  })
+})
+
+describe('MethodologyPage — sticky Jump-to chip (#878)', () => {
+  beforeEach(() => mockIsMobile.mockReturnValue(true))
+
+  it('renders the sticky "Jump to" chip on mobile', () => {
+    renderPage()
+    expect(screen.getByRole('button', { name: /jump to/i })).toHaveAttribute(
+      'aria-haspopup',
+      'dialog'
+    )
+  })
+
+  it('opens a sheet and expands the chosen section when its sheet link is tapped', async () => {
+    renderPage()
+    await userEvent.click(screen.getByRole('button', { name: /jump to/i }))
+    const dialog = screen.getByRole('dialog')
+    // Jump to a section that is collapsed by default.
+    await userEvent.click(
+      within(dialog).getByRole('link', { name: /Borda count scoring/i })
+    )
+    // Sheet closed and the target section is now expanded.
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    const toggle = screen.getByRole('button', { name: /Borda count scoring/i })
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
   })
 })
 

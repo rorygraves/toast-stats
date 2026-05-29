@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useIsMobile } from '../hooks/useIsMobile'
 import CollapsibleSection from '../components/CollapsibleSection'
+import JumpToChip from '../components/JumpToChip'
 
 /* Methodology page (#368). Authored fresh from analytics-core as the
    source of truth — Borda formula, DCP thresholds, club health
@@ -66,6 +67,11 @@ const MethodologyPage: React.FC = () => {
           data — no scraping, no inference.
         </p>
       </header>
+
+      {/* Mobile-only sticky chip: re-open the TOC as a sheet without scrolling
+          back to the top (#878). Reuses `expand` so a jump reveals the
+          collapsed target section. Desktop keeps the in-flow TOC card below. */}
+      {isMobile && <JumpToChip sections={SECTIONS} onJump={expand} />}
 
       <nav aria-label="On this page" className="methodology-toc">
         <p className="methodology-toc__title">On this page</p>

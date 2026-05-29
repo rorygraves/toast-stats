@@ -4247,6 +4247,180 @@
     }
   }
 
+  /* Sticky "Jump to ▾" chip + TOC sheet (#878, epic #880 Sprint 2).
+     Emitted only on mobile (the page renders <JumpToChip> when useIsMobile()),
+     so these classes match nothing on desktop — class-emission-gated, like the
+     CollapsibleSection mobile classes above. */
+
+  /* The bar is sticky (not fixed) so it reserves its own space in normal flow
+     and never overlaps the content it sits above — it pins just under the
+     56px-tall sticky top bar as the reader scrolls. The blurred surface masks
+     prose scrolling beneath it. Horizontal safe-area padding keeps the chip
+     clear of a landscape notch. */
+  .jump-to-bar {
+    position: sticky;
+    top: 56px;
+    z-index: 30;
+    margin: -8px -24px 24px;
+    padding: 8px max(24px, env(safe-area-inset-left)) 8px
+      max(24px, env(safe-area-inset-right));
+    background-color: rgba(var(--rds-surface-rgb), 0.85);
+    -webkit-backdrop-filter: saturate(140%) blur(8px);
+    backdrop-filter: saturate(140%) blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .jump-to-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    /* >=44px touch target (WCAG 2.5.5). */
+    min-height: 44px;
+    padding: 0 16px;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    box-shadow: var(--rds-shadow-sm);
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--ink);
+    cursor: pointer;
+  }
+
+  .jump-to-chip:hover {
+    background-color: var(--surface-2);
+  }
+
+  .jump-to-chip:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--rt-stats, #d4873f);
+  }
+
+  .jump-to-chip__caret {
+    font-size: 11px;
+    color: var(--ink-3);
+    line-height: 1;
+  }
+
+  /* Bottom sheet, portalled to <body> (escapes the page's overflow context). */
+  .jump-to-sheet-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  .jump-to-sheet-backdrop {
+    position: absolute;
+    inset: 0;
+    background-color: rgba(15, 23, 42, 0.55);
+  }
+
+  .jump-to-sheet {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;
+    background-color: var(--surface);
+    border-top-left-radius: var(--rds-radius-lg);
+    border-top-right-radius: var(--rds-radius-lg);
+    /* Clear the home indicator on notched phones. */
+    padding-bottom: env(safe-area-inset-bottom);
+    animation: jump-to-sheet-in 180ms ease-out;
+  }
+
+  @keyframes jump-to-sheet-in {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .jump-to-sheet {
+      animation: none;
+    }
+  }
+
+  .jump-to-sheet__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .jump-to-sheet__title {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .jump-to-sheet__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: none;
+    background: none;
+    border-radius: 0.5rem;
+    color: var(--ink-2);
+    cursor: pointer;
+  }
+
+  .jump-to-sheet__close:hover {
+    background-color: var(--surface-2);
+    color: var(--ink);
+  }
+
+  .jump-to-sheet__close:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--rt-stats, #d4873f);
+  }
+
+  .jump-to-sheet__nav {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .jump-to-sheet__list {
+    list-style: none;
+    margin: 0;
+    padding: 8px 0;
+  }
+
+  .jump-to-sheet__link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    /* >=44px touch target per row (WCAG 2.5.5). */
+    min-height: 44px;
+    padding: 0 16px;
+    color: var(--ink);
+    text-decoration: none;
+    font-size: 15px;
+  }
+
+  .jump-to-sheet__link:hover {
+    background-color: var(--surface-2);
+  }
+
+  .jump-to-sheet__num {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-3);
+    min-width: 22px;
+  }
+
   .methodology-link {
     color: var(--link);
     text-decoration: underline;
