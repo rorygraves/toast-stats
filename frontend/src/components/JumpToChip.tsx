@@ -97,9 +97,26 @@ const JumpToChip: React.FC<JumpToChipProps> = ({ sections, onJump }) => {
   }, [open])
 
   const handleJump = useCallback(
-    (id: string) => {
+    (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
+      // Drive the scroll ourselves rather than via the native hash anchor: at
+      // click time the sheet is still open and locks body scroll
+      // (overflow:hidden), so the browser's fragment scroll is computed against
+      // the locked state and ignores scroll-margin-top — landing the heading
+      // behind the chip bar (caught on the live preview). preventDefault, then
+      // after close() unlocks scroll and onJump() expands the target, scroll it
+      // into view on the next frame — scrollIntoView honours scroll-margin-top.
+      e.preventDefault()
       onJump(id)
       close()
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const target = document.getElementById(id)
+          target?.scrollIntoView?.({ behavior: 'auto', block: 'start' })
+          // Reflect the section in the URL (deep-link / refresh) without
+          // pushing a history entry or re-triggering a scroll.
+          window.history.replaceState(null, '', `#${id}`)
+        })
+      })
     },
     [onJump, close]
   )
@@ -171,7 +188,7 @@ const JumpToChip: React.FC<JumpToChipProps> = ({ sections, onJump }) => {
                       <a
                         href={`#${s.id}`}
                         className="jump-to-sheet__link"
-                        onClick={() => handleJump(s.id)}
+                        onClick={e => handleJump(e, s.id)}
                       >
                         <span className="jump-to-sheet__num">{s.num}</span>
                         <span className="jump-to-sheet__text">{s.title}</span>
