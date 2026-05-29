@@ -1,6 +1,8 @@
-import React from 'react'
+import React, { useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { useIsMobile } from '../hooks/useIsMobile'
+import CollapsibleSection from '../components/CollapsibleSection'
 
 /* Methodology page (#368). Authored fresh from analytics-core as the
    source of truth — Borda formula, DCP thresholds, club health
@@ -31,6 +33,28 @@ const SECTIONS: ReadonlyArray<{ id: string; num: string; title: string }> = [
 
 const MethodologyPage: React.FC = () => {
   useDocumentTitle('Methodology')
+
+  // On mobile each H2 section collapses by default; desktop is untouched
+  // (useIsMobile is false in jsdom too, so the static-content tests still
+  // see the full page). #877.
+  const isMobile = useIsMobile()
+  const [openIds, setOpenIds] = useState<ReadonlySet<string>>(() => new Set())
+
+  const toggle = useCallback((id: string) => {
+    setOpenIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
+
+  // A TOC anchor must reveal its target — otherwise the jump lands on a
+  // collapsed heading and the reader sees nothing below it.
+  const expand = useCallback((id: string) => {
+    setOpenIds(prev => (prev.has(id) ? prev : new Set(prev).add(id)))
+  }, [])
+
   return (
     <div className="methodology-page">
       <header className="methodology-page__header">
@@ -49,7 +73,11 @@ const MethodologyPage: React.FC = () => {
           {SECTIONS.map(s => (
             <li key={s.id} className="methodology-toc__item">
               <span className="methodology-toc__num">{s.num}</span>
-              <a href={`#${s.id}`} className="methodology-toc__link">
+              <a
+                href={`#${s.id}`}
+                className="methodology-toc__link"
+                onClick={() => expand(s.id)}
+              >
                 {s.title}
               </a>
             </li>
@@ -57,11 +85,14 @@ const MethodologyPage: React.FC = () => {
         </ol>
       </nav>
 
-      <section id="data-source" className="methodology-section">
-        <h2 className="methodology-section__title">
-          <span className="methodology-section__num">01</span>
-          Data source &amp; access
-        </h2>
+      <CollapsibleSection
+        id="data-source"
+        num="01"
+        title="Data source & access"
+        collapsible={isMobile}
+        open={openIds.has('data-source')}
+        onToggle={toggle}
+      >
         <p>
           All numbers come from the public{' '}
           <a
@@ -82,13 +113,16 @@ const MethodologyPage: React.FC = () => {
           stops publishing a file, the pipeline fails loudly rather than
           silently inferring values.
         </p>
-      </section>
+      </CollapsibleSection>
 
-      <section id="refresh-cadence" className="methodology-section">
-        <h2 className="methodology-section__title">
-          <span className="methodology-section__num">02</span>
-          Refresh cadence
-        </h2>
+      <CollapsibleSection
+        id="refresh-cadence"
+        num="02"
+        title="Refresh cadence"
+        collapsible={isMobile}
+        open={openIds.has('refresh-cadence')}
+        onToggle={toggle}
+      >
         <p>
           The data pipeline runs once daily at 09:15 UTC (≈04:15 ET / 02:15 PT)
           — the schedule lives in{' '}
@@ -101,13 +135,16 @@ const MethodologyPage: React.FC = () => {
           Stale-data indicator: every page surfaces a "Data fresh ·
           &lt;date&gt;" pill so you always know which snapshot you're seeing.
         </p>
-      </section>
+      </CollapsibleSection>
 
-      <section id="borda-count" className="methodology-section">
-        <h2 className="methodology-section__title">
-          <span className="methodology-section__num">03</span>
-          Borda count scoring
-        </h2>
+      <CollapsibleSection
+        id="borda-count"
+        num="03"
+        title="Borda count scoring"
+        collapsible={isMobile}
+        open={openIds.has('borda-count')}
+        onToggle={toggle}
+      >
         <p>
           Each district is ranked separately in three categories:
           <strong> Paid Clubs</strong>, <strong>Total Payments</strong>, and{' '}
@@ -131,13 +168,16 @@ const MethodologyPage: React.FC = () => {
           President's Extension, President's 20-Plus, and District Club
           Retention.
         </p>
-      </section>
+      </CollapsibleSection>
 
-      <section id="regions-borda" className="methodology-section">
-        <h2 className="methodology-section__title">
-          <span className="methodology-section__num">04</span>
-          Region-level scoring
-        </h2>
+      <CollapsibleSection
+        id="regions-borda"
+        num="04"
+        title="Region-level scoring"
+        collapsible={isMobile}
+        open={openIds.has('regions-borda')}
+        onToggle={toggle}
+      >
         <p>
           The{' '}
           <Link to="/regions" className="methodology-link">
@@ -182,13 +222,16 @@ const MethodologyPage: React.FC = () => {
           </Link>{' '}
           only when non-zero.
         </p>
-      </section>
+      </CollapsibleSection>
 
-      <section id="dcp-tiers" className="methodology-section">
-        <h2 className="methodology-section__title">
-          <span className="methodology-section__num">05</span>
-          DCP tier definitions
-        </h2>
+      <CollapsibleSection
+        id="dcp-tiers"
+        num="05"
+        title="DCP tier definitions"
+        collapsible={isMobile}
+        open={openIds.has('dcp-tiers')}
+        onToggle={toggle}
+      >
         <p>Distinguished Club Program tiers, in ascending order:</p>
         <ul>
           <li>
@@ -231,13 +274,16 @@ const MethodologyPage: React.FC = () => {
           — the same denominator that underpins the Distinguished tier
           definitions above.
         </p>
-      </section>
+      </CollapsibleSection>
 
-      <section id="club-health" className="methodology-section">
-        <h2 className="methodology-section__title">
-          <span className="methodology-section__num">06</span>
-          Club health classifications
-        </h2>
+      <CollapsibleSection
+        id="club-health"
+        num="06"
+        title="Club health classifications"
+        collapsible={isMobile}
+        open={openIds.has('club-health')}
+        onToggle={toggle}
+      >
         <p>
           Toast Stats classifies each club into one of three mutually exclusive
           health statuses, recomputed every snapshot from the current data
@@ -277,13 +323,16 @@ const MethodologyPage: React.FC = () => {
           analytics module. Toast Stats health is a project-specific overlay,
           not an official Toastmasters International metric.
         </p>
-      </section>
+      </CollapsibleSection>
 
-      <section id="district-membership-trend" className="methodology-section">
-        <h2 className="methodology-section__title">
-          <span className="methodology-section__num">07</span>
-          District Membership Trend
-        </h2>
+      <CollapsibleSection
+        id="district-membership-trend"
+        num="07"
+        title="District Membership Trend"
+        collapsible={isMobile}
+        open={openIds.has('district-membership-trend')}
+        onToggle={toggle}
+      >
         <p>
           The chart on the District Detail · Trends tab plots a single metric:
           the district&apos;s <strong>total paid members</strong> at each
@@ -322,13 +371,16 @@ const MethodologyPage: React.FC = () => {
           consecutive month-over-month deltas; the threshold and detection logic
           live in <code>frontend/src/components/MembershipTrendChart.tsx</code>.
         </p>
-      </section>
+      </CollapsibleSection>
 
-      <section id="glossary" className="methodology-section">
-        <h2 className="methodology-section__title">
-          <span className="methodology-section__num">08</span>
-          Glossary
-        </h2>
+      <CollapsibleSection
+        id="glossary"
+        num="08"
+        title="Glossary"
+        collapsible={isMobile}
+        open={openIds.has('glossary')}
+        onToggle={toggle}
+      >
         <dl className="methodology-glossary">
           <dt>Paid Club</dt>
           <dd>
@@ -360,13 +412,16 @@ const MethodologyPage: React.FC = () => {
             .
           </dd>
         </dl>
-      </section>
+      </CollapsibleSection>
 
-      <section id="caveats" className="methodology-section">
-        <h2 className="methodology-section__title">
-          <span className="methodology-section__num">09</span>
-          Caveats &amp; known issues
-        </h2>
+      <CollapsibleSection
+        id="caveats"
+        num="09"
+        title="Caveats & known issues"
+        collapsible={isMobile}
+        open={openIds.has('caveats')}
+        onToggle={toggle}
+      >
         <ul>
           <li>
             <strong>Pre-2019 data</strong> — Toast Stats only stores snapshots
@@ -394,13 +449,16 @@ const MethodologyPage: React.FC = () => {
             unrounded values.
           </li>
         </ul>
-      </section>
+      </CollapsibleSection>
 
-      <section id="changelog" className="methodology-section">
-        <h2 className="methodology-section__title">
-          <span className="methodology-section__num">10</span>
-          Changelog
-        </h2>
+      <CollapsibleSection
+        id="changelog"
+        num="10"
+        title="Changelog"
+        collapsible={isMobile}
+        open={openIds.has('changelog')}
+        onToggle={toggle}
+      >
         <p>
           Material methodology changes are recorded as ADRs in{' '}
           <code>docs/architecture-decisions/</code> and as releases on{' '}
@@ -430,7 +488,7 @@ const MethodologyPage: React.FC = () => {
             Epic #352.
           </li>
         </ul>
-      </section>
+      </CollapsibleSection>
     </div>
   )
 }

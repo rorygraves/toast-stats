@@ -106,3 +106,4 @@
 - **135** [tests, flaky, vitest, ci, coverage, verification] — A global coverage threshold deterministically fails a filtered subset run; a flake harness must keep instrumentation but zero thresholds (#913, #917)
 - **136** [tests, flaky, vitest, ci, contention] — A flake detector must not inherit the stability cap it measures; cap the gate, pin the detector to max parallelism (#914, #917)
 - **137** [tests, flaky, vitest, process, verification, tdd] — An audit's "false-confidence" list is a per-file hypothesis; re-confirm before deleting, because the first-pass classification over-flags (#916, #917)
+- **138** [css, frontend, accessibility, verification, playwright, mobile] — `scroll-margin-top` belongs on the element that holds the anchor id, not a styled child (#877, #880)
