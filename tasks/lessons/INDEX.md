@@ -107,6 +107,7 @@
 - **136** [tests, flaky, vitest, ci, contention] — A flake detector must not inherit the stability cap it measures; cap the gate, pin the detector to max parallelism (#914, #917)
 - **137** [tests, flaky, vitest, process, verification, tdd] — An audit's "false-confidence" list is a per-file hypothesis; re-confirm before deleting, because the first-pass classification over-flags (#916, #917)
 - **138** [frontend, react, scope, refactor, tests] — A view that renders correctly only because an upstream utility incidentally sorts that way should own and pin its own order (#882, #884)
+- **138** [css, accessibility, frontend, tests, playwright] — An `inset-0` overlay is sized to its container's PADDING box; a 1px border on the chip steals from the touch target (#886, #888)
 - **138** [css, frontend, accessibility, verification, playwright, mobile] — `scroll-margin-top` belongs on the element that holds the anchor id, not a styled child (#877, #880)
 - **139** [css, frontend, accessibility, router, verification, playwright, mobile] — A TOC-anchor jump fired from inside a scroll-locked sheet has three independent scroll-clobbering traps; only live measurement separates them (#878, #880)
 - **140** [css, frontend, refactoring, simplify, process] — A deliberately-isolated surface namespace outranks a DRY "reuse" flag; a small typographic duplication is cheaper than cross-surface coupling (#879, #880)
