@@ -520,6 +520,34 @@
     color: var(--ink);
   }
 
+  /* #890 — mobile collapse of the Program Year eyebrow onto the title line.
+     Hidden by default (desktop shows the eyebrow); revealed <768px where the
+     `--py` eyebrow is hidden. Subordinate size/weight so the title never wraps
+     to a 2nd line. The dark remap mirrors the eyebrow's #609 fix — --maroon-500
+     is 1.69:1 on the dark surface, so the suffix borrows the same #e8879a. */
+  .districts-page-header__title-py {
+    display: none;
+    font-size: 0.6em;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--maroon-500);
+    white-space: nowrap;
+  }
+
+  [data-theme='dark'] .districts-page-header__title-py {
+    color: #e8879a;
+  }
+
+  @media (max-width: 767px) {
+    .districts-page-header__eyebrow--py {
+      display: none;
+    }
+
+    .districts-page-header__title-py {
+      display: inline;
+    }
+  }
+
   .districts-page-header__lede {
     margin: 0;
     font-family: var(--sans);
@@ -3032,6 +3060,12 @@
     letter-spacing: 0.04em;
     color: var(--maroon-500);
     white-space: nowrap;
+  }
+
+  /* --maroon-500 is 1.69:1 on the dark surface (#609); lift to the same
+     #e8879a the dark eyebrow uses so the mobile suffix clears AA. */
+  [data-theme='dark'] .district-detail-page-header__title-py {
+    color: #e8879a;
   }
 
   @media (max-width: 767px) {

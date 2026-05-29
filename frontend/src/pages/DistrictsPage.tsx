@@ -26,6 +26,7 @@ import {
   getAvailableProgramYears,
   filterDatesByProgramYear,
   getMostRecentDateInProgramYear,
+  formatProgramYearShort,
 } from '../utils/programYear'
 import { DistrictRanking } from '../types/districts'
 import { arrayToCSV, downloadCSV } from '../utils/csvExport'
@@ -492,10 +493,19 @@ const DistrictsPage: React.FC = () => {
       <div className="districts-page">
         <div className="districts-page-header">
           <div className="districts-page-header__intro">
-            <p className="districts-page-header__eyebrow">
+            {/* #890 — `--py` scopes the mobile hide to the landing only; the
+                shared .districts-page-header__eyebrow rule is left untouched so
+                Region/Division/Area eyebrows (non-PY text) keep showing. */}
+            <p className="districts-page-header__eyebrow districts-page-header__eyebrow--py">
               Program Year {selectedProgramYear.label.replace(/-/g, '–')}
             </p>
-            <h1 className="districts-page-header__title">District Rankings</h1>
+            <h1 className="districts-page-header__title">
+              District Rankings
+              <span className="districts-page-header__title-py">
+                {' · PY '}
+                {formatProgramYearShort(selectedProgramYear.year)}
+              </span>
+            </h1>
             <p className="districts-page-header__lede">
               Compare district performance across paid clubs, payments, and
               distinguished clubs.
@@ -675,10 +685,19 @@ const DistrictsPage: React.FC = () => {
         {/* Redesigned page header (#356) */}
         <div className="districts-page-header">
           <div className="districts-page-header__intro">
-            <p className="districts-page-header__eyebrow">
+            {/* #890 — `--py` scopes the mobile hide to the landing only; the
+                shared .districts-page-header__eyebrow rule is left untouched so
+                Region/Division/Area eyebrows (non-PY text) keep showing. */}
+            <p className="districts-page-header__eyebrow districts-page-header__eyebrow--py">
               Program Year {selectedProgramYear.label.replace(/-/g, '–')}
             </p>
-            <h1 className="districts-page-header__title">District Rankings</h1>
+            <h1 className="districts-page-header__title">
+              District Rankings
+              <span className="districts-page-header__title-py">
+                {' · PY '}
+                {formatProgramYearShort(selectedProgramYear.year)}
+              </span>
+            </h1>
             <p className="districts-page-header__lede">
               Compare district performance across paid clubs, payments, and
               distinguished clubs.
