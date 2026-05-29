@@ -81,6 +81,12 @@ Read `tasks/rules.md` completely before every task. Key rules:
 - Chart `|| 1` range fallback causes y-axis inversion. Pad symmetrically when `range === 0`.
 - `Path.join()` with raw user input = path traversal. Always call `validateDistrictId()` first.
 
+### Test-infra contracts (flakiness epic #917 — don't unknowingly break)
+
+- **Flake detector is sensitive by design (R21).** `scripts/run-flake-detection.ts` pins `--maxWorkers=100%` (the contention amplifier) while the blocking CI `test` job is capped at 50% (`resolveMaxWorkers`). Never "fix" the detector to inherit the cap — it would go blind. The detector is **non-gating per-PR** (a contention blip must not red an unrelated PR); the **0% gate lives on the nightly `flake-sentinel.yml`** (gating via `FLAKE_MAX_RATE=0`, ×30). Coverage instrumentation is kept but thresholds zeroed in the harness (a filtered subset can't meet the 55% whole-repo gate — L135).
+- **Unit tests must not full-page-mount (R22).** `npm run test:no-page-mounts:check` fails if a unit-project test imports a `pages/*Page` / `<App>`. Page mounts → `src/pages/__tests__/` or `src/__tests__/integration/`.
+- **Quarantine ≠ skip (R1).** `frontend/test-quarantine.json` is empty; an entry needs a reason + tracking issue and is loudly reported by `npm run test:quarantine:check`. Don't bump `testTimeout` to mask contention — root-cause it.
+
 ## Learning Artifacts
 
 - `tasks/lessons/` — Per-file lessons (one discovery each, tagged frontmatter). `tasks/lessons/INDEX.md` is the always-loadable tag index (regenerate with `npm run lessons:index`).
