@@ -192,11 +192,59 @@ jobs:
       - name: Check vitest project partition (#482)
         run: npm run test:projects:check --workspace=frontend
 
+      - name: Check test quarantine is justified (#913)
+        # Quarantine != skip (R1): fails only if an entry lacks a reason/issue
+        # or the file is malformed. An empty list passes loudly.
+        run: npm run test:quarantine:check
+
       - name: Run frontend tests
         run: npm run test --workspace=frontend -- --coverage
 
       - name: Run scripts/lib tests
         run: npm run test:scripts
+
+  # Flake-detection harness (#913, epic #917 S2) — NON-GATING.
+  # Runs the §2.3 suspect set N× under the real CI invocation and reports an
+  # objective flake-rate metric (pass/fail + duration p50/p95). This sets the
+  # baseline before later sprints tighten it into a gate; it never fails the
+  # build (the harness exits 0 on a measured flake; continue-on-error is belt
+  # and suspenders).
+  flake-detection:
+    name: Flake Detection (baseline metric)
+    runs-on: ubuntu-latest
+    needs: quality-gates
+    continue-on-error: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build dependency packages
+        run: |
+          npm run build:shared-contracts
+          npm run build:analytics-core
+
+      - name: Run flake-detection harness
+        env:
+          FLAKE_REPEATS: '8'
+        run: npm run test:flake
+
+      - name: Upload flake metric artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flake-metric
+          path: flake-metric.json
+          if-no-files-found: warn
 
   # Build Applications
   build:
