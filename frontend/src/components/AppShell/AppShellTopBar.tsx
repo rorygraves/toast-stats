@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { NavLink, Link, useLocation } from 'react-router-dom'
 import ThemeToggle from '../ThemeToggle'
+import AppMeta from './AppMeta'
+import { useIsMobile } from '../../hooks/useIsMobile'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Districts', end: true },
@@ -20,6 +22,11 @@ const AppShellTopBar: React.FC = () => {
   const closeNav = useCallback(() => setNavOpen(false), [])
   const headerRef = useRef<HTMLElement>(null)
   const location = useLocation()
+
+  // <768px the footer chrome is dropped (#889); its version/license meta
+  // moves here behind a collapsed-by-default "About ▾" disclosure. Desktop
+  // keeps the footer, so this control is absent there entirely.
+  const isMobile = useIsMobile(768)
 
   // Close on route change — covers browser back/forward, not just link taps
   // (link taps also call closeNav). React's sanctioned "adjust state when a
@@ -118,6 +125,16 @@ const AppShellTopBar: React.FC = () => {
             {item.label}
           </NavLink>
         ))}
+        {isMobile && (
+          <details className="app-shell-nav-about">
+            <summary className="app-shell-nav__link app-shell-nav-about__summary">
+              About
+            </summary>
+            <div className="app-shell-nav-about__content">
+              <AppMeta />
+            </div>
+          </details>
+        )}
       </nav>
 
       <div className="app-shell-tools">

@@ -1,17 +1,26 @@
 /* AppShell behavior contract — Epic #352 / Issue #354. */
 
 import React from 'react'
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import AppShell from '../../components/AppShell/AppShell'
 import { DarkModeProvider } from '../../contexts/DarkModeContext'
+import { useIsMobile } from '../../hooks/useIsMobile'
 
 // Mock the CDN service the CommandPalette (#422) lazy-fetches when the
 // shell mounts — keeps these tests isolated from the network layer.
 vi.mock('../../services/cdn', () => ({
   fetchCdnRankings: vi.fn().mockResolvedValue({ rankings: [], date: '' }),
+}))
+
+// #889: the footer is dropped at <768px (its meta moves to the nav "About"
+// disclosure). jsdom matchMedia would resolve useIsMobile to false anyway;
+// mocking it keeps the breakpoint explicit and lets the mobile case assert
+// the drop deterministically.
+vi.mock('../../hooks/useIsMobile', () => ({
+  useIsMobile: vi.fn(() => false),
 }))
 
 const renderShell = (initialPath = '/') => {
@@ -52,6 +61,8 @@ const renderShell = (initialPath = '/') => {
 }
 
 describe('AppShell (#354)', () => {
+  beforeEach(() => vi.mocked(useIsMobile).mockReturnValue(false))
+
   describe('top bar', () => {
     it('renders the brand mark with "TS" text', () => {
       renderShell()
@@ -215,6 +226,22 @@ describe('AppShell (#354)', () => {
       renderShell()
       const main = screen.getByRole('main')
       expect(main).toHaveAttribute('id', 'main-content')
+    })
+  })
+
+  describe('mobile footer chrome (#889)', () => {
+    it('drops the full footer at <768px', async () => {
+      const { useIsMobile } = await import('../../hooks/useIsMobile')
+      vi.mocked(useIsMobile).mockReturnValue(true)
+      renderShell()
+      expect(screen.queryByRole('contentinfo')).not.toBeInTheDocument()
+    })
+
+    it('keeps the footer at desktop widths', async () => {
+      const { useIsMobile } = await import('../../hooks/useIsMobile')
+      vi.mocked(useIsMobile).mockReturnValue(false)
+      renderShell()
+      expect(screen.getByRole('contentinfo')).toBeInTheDocument()
     })
   })
 })
