@@ -13,6 +13,7 @@
     "test:unit": "vitest --run --project unit",
     "test:integration": "vitest --run --project integration",
     "test:projects:check": "node scripts/check-test-projects.mjs",
+    "test:no-page-mounts:check": "node scripts/check-no-page-mounts.mjs",
     "test:watch": "vitest",
     "test:journey:stress": "for i in 1 2 3 4 5; do echo \"=== journey stress run $i/5 ===\" && vitest run src/__tests__/integration/journeys/ --reporter=dot || exit 1; done",
     "typecheck": "tsc --noEmit --skipLibCheck --project tsconfig.json",
