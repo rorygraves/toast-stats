@@ -188,6 +188,58 @@
     vertical-align: 1px;
   }
 
+  /* "About ▾" nav disclosure (#889) — mobile-only fold for the version +
+     license meta the dropped footer used to carry. The <summary> reuses
+     .app-shell-nav__link for the nav-item look + >=44px touch target; we
+     strip the native marker and supply our own rotating caret so it reads
+     "About ▾". Rendered only at <768px (JS-gated in AppShellTopBar), so the
+     desktop nav is untouched. */
+  .app-shell-nav-about {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .app-shell-nav-about__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 44px;
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .app-shell-nav-about__summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .app-shell-nav-about__summary::after {
+    content: '▾';
+    font-size: 12px;
+    line-height: 1;
+    color: var(--ink-3);
+    transition: transform 150ms ease;
+  }
+
+  .app-shell-nav-about[open] .app-shell-nav-about__summary::after {
+    transform: rotate(180deg);
+  }
+
+  .app-shell-nav-about__summary:focus-visible {
+    outline: 2px solid var(--link);
+    outline-offset: 2px;
+  }
+
+  .app-shell-nav-about__content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 12px 12px;
+    font-family: var(--sans);
+    font-size: 12px;
+    color: var(--ink-3);
+  }
+
   .app-shell-tools {
     display: flex;
     align-items: center;

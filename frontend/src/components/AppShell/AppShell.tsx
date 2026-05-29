@@ -4,6 +4,7 @@ import AppShellTopBar from './AppShellTopBar'
 import AppShellFooter from './AppShellFooter'
 import CommandPalette from './CommandPalette'
 import { useGoogleAnalytics } from '../../hooks/useGoogleAnalytics'
+import { useIsMobile } from '../../hooks/useIsMobile'
 
 /* Per Epic #352: no notifications/help/avatar (no auth today),
    no Regions/Awards "soon" stubs. ThemeToggle now lives in the top
@@ -15,6 +16,11 @@ import { useGoogleAnalytics } from '../../hooks/useGoogleAnalytics'
 
 const AppShell: React.FC = () => {
   useGoogleAnalytics()
+
+  // <768px: drop the full footer chrome to recover above-the-fold space on
+  // short pages (CC-11, Epic H #889). Its version/license meta moves to the
+  // nav "About ▾" disclosure. Desktop keeps the footer.
+  const isMobile = useIsMobile(768)
 
   const [paletteOpen, setPaletteOpen] = useState(false)
   const closePalette = useCallback(() => setPaletteOpen(false), [])
@@ -39,7 +45,7 @@ const AppShell: React.FC = () => {
       <main id="main-content" className="app-shell__main">
         <Outlet />
       </main>
-      <AppShellFooter />
+      {!isMobile && <AppShellFooter />}
       <CommandPalette isOpen={paletteOpen} onClose={closePalette} />
     </div>
   )
