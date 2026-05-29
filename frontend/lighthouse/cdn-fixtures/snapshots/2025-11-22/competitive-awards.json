@@ -3,7 +3,13 @@
     "version": "1",
     "type": "competitive-awards"
   },
-  "date": "2025-11-22",
-  "generatedAt": "2025-11-22T06:00:00Z",
-  "standings": []
+  "metadata": {
+    "snapshotId": "2025-11-22",
+    "calculatedAt": "2025-11-22T06:00:00Z",
+    "totalDistricts": 12
+  },
+  "extensionAward": [],
+  "twentyPlusAward": [],
+  "retentionAward": [],
+  "byDistrict": {}
 }
