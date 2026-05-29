@@ -26,7 +26,16 @@ import { listVitestFiles, relFromFrontend as rel } from './lib/listVitestFiles.m
 // Capture the module specifier of every static import and dynamic import().
 const IMPORT_RE = /(?:from\s*|import\s*\(\s*)['"]([^'"]+)['"]/g
 
-/** Is this specifier a page component or the app root (a full-page mount)? */
+/**
+ * Is this specifier a page component or the app root (a full-page mount)?
+ *
+ * This is a naming-convention guard (basename `App`, or `.../pages/*Page`), not
+ * a render-call analysis — it assumes the repo's convention that page modules
+ * live under `pages/` and end in `Page`, and uses relative imports (no `@/pages`
+ * alias today). A page mounted via a re-export not ending in `Page`, or a future
+ * path alias, would slip past; the nightly flake sentinel (R21) is the backstop
+ * that would catch the contention such a mount reintroduces.
+ */
 function isPageMountSpecifier(spec) {
   const base = spec.split('/').pop() || ''
   // The app root: a bare './App' / '../App' or any `.../App` — the basename
