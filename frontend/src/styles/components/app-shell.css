@@ -550,6 +550,14 @@
     .page-header__title-py {
       display: inline;
     }
+
+    /* #890 — 28px is oversized at 375px; the longer landing title ("District
+       Rankings") + PY suffix overflows to a 2nd line. Drop to 22px on mobile so
+       the title stays single-line (recovering more above-the-fold height — the
+       epic's goal). Desktop keeps 28px. */
+    .districts-page-header__title {
+      font-size: 22px;
+    }
   }
 
   .districts-page-header__lede {
@@ -3060,6 +3068,12 @@
   @media (max-width: 767px) {
     .district-detail-page-header__eyebrow {
       display: none;
+    }
+
+    /* Match the landing header's mobile title size (#890) for a consistent
+       single-line title-with-PY-suffix across page headers. */
+    .district-detail-page-header__title {
+      font-size: 22px;
     }
   }
 
