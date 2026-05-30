@@ -3922,3 +3922,111 @@ describe('countVisitCompletions', () => {
     })
   })
 })
+
+describe('AreaPerformance — per-area current-round missing club-visit list (#973)', () => {
+  /**
+   * Build a single-area snapshot. Each `club` entry is merged into both the
+   * divisionPerformance row (carries the visit-award fields) and a matching
+   * clubPerformance row (carries Club Status). Field name for the visit award
+   * is the caller's responsibility so we can exercise R1 vs R2.
+   */
+  function snapshotWithClubs(
+    clubs: Array<{
+      number: string
+      name: string
+      status: string
+      novVisit?: string
+      mayVisit?: string
+      mayVisitLower?: string
+    }>
+  ) {
+    return {
+      divisionPerformance: clubs.map(c => ({
+        Division: 'A',
+        Area: '01',
+        'Area Club Base': String(clubs.length),
+        'Club Number': c.number,
+        'Club Name': c.name,
+        ...(c.novVisit !== undefined ? { 'Nov Visit award': c.novVisit } : {}),
+        ...(c.mayVisit !== undefined ? { 'May Visit award': c.mayVisit } : {}),
+        ...(c.mayVisitLower !== undefined
+          ? { 'May visit award': c.mayVisitLower }
+          : {}),
+      })),
+      clubPerformance: clubs.map(c => ({
+        'Club Number': c.number,
+        'Club Name': c.name,
+        'Club Status': c.status,
+        'Club Distinguished Status': '',
+      })),
+    }
+  }
+
+  it('exposes currentRound derived from the snapshot date (R1 window)', () => {
+    const snapshot = snapshotWithClubs([
+      { number: '1', name: 'Alpha', status: 'Active', novVisit: '1' },
+    ])
+    const area = extractDivisionPerformance(snapshot, '2025-09-15')[0].areas[0]
+    expect(area.currentRound).toBe(1)
+  })
+
+  it('exposes currentRound derived from the snapshot date (R2 window)', () => {
+    const snapshot = snapshotWithClubs([
+      { number: '1', name: 'Alpha', status: 'Active', mayVisit: '1' },
+    ])
+    const area = extractDivisionPerformance(snapshot, '2026-02-15')[0].areas[0]
+    expect(area.currentRound).toBe(2)
+  })
+
+  it('lists ACTIVE clubs missing the R1 visit, by number+name, sorted', () => {
+    const snapshot = snapshotWithClubs([
+      { number: '2', name: 'Bravo', status: 'Active', novVisit: '1' }, // done
+      { number: '1', name: 'Alpha', status: 'Active', novVisit: '0' }, // missing
+      { number: '3', name: 'Charlie', status: 'Active' }, // missing (field absent)
+    ])
+    const area = extractDivisionPerformance(snapshot, '2025-09-15')[0].areas[0]
+    expect(area.clubsMissingCurrentRoundVisit).toEqual([
+      { clubNumber: '1', clubName: 'Alpha' },
+      { clubNumber: '3', clubName: 'Charlie' },
+    ])
+    expect(area.clubsMissingCurrentRoundVisitIneligible).toEqual([])
+  })
+
+  it('flags suspended/ineligible clubs separately, excluding them from the active list', () => {
+    const snapshot = snapshotWithClubs([
+      { number: '1', name: 'Alpha', status: 'Active', novVisit: '0' },
+      { number: '2', name: 'Bravo', status: 'Suspended', novVisit: '0' },
+      { number: '3', name: 'Charlie', status: 'Ineligible', novVisit: '0' },
+    ])
+    const area = extractDivisionPerformance(snapshot, '2025-09-15')[0].areas[0]
+    expect(area.clubsMissingCurrentRoundVisit).toEqual([
+      { clubNumber: '1', clubName: 'Alpha' },
+    ])
+    expect(area.clubsMissingCurrentRoundVisitIneligible).toEqual([
+      { clubNumber: '2', clubName: 'Bravo', status: 'Suspended' },
+      { clubNumber: '3', clubName: 'Charlie', status: 'Ineligible' },
+    ])
+  })
+
+  it('uses the R2 visit field and honours the lowercase "May visit award" fallback (#268)', () => {
+    const snapshot = snapshotWithClubs([
+      { number: '1', name: 'Alpha', status: 'Active', mayVisitLower: '1' }, // done via lowercase
+      { number: '2', name: 'Bravo', status: 'Active', mayVisitLower: '0' }, // missing
+    ])
+    const area = extractDivisionPerformance(snapshot, '2026-02-15')[0].areas[0]
+    expect(area.currentRound).toBe(2)
+    expect(area.clubsMissingCurrentRoundVisit).toEqual([
+      { clubNumber: '2', clubName: 'Bravo' },
+    ])
+  })
+
+  it('returns empty lists when every active club has the current-round visit', () => {
+    const snapshot = snapshotWithClubs([
+      { number: '1', name: 'Alpha', status: 'Active', novVisit: '1' },
+      { number: '2', name: 'Bravo', status: 'Active', novVisit: '1' },
+    ])
+    const area = extractDivisionPerformance(snapshot, '2025-09-15')[0].areas[0]
+    expect(area.clubsMissingCurrentRoundVisit).toEqual([])
+    expect(area.clubsMissingCurrentRoundVisitIneligible).toEqual([])
+  })
+})
