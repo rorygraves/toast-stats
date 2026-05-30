@@ -514,15 +514,23 @@ launch_sprint_session() {
 # only costs one extra reap.
 sprint_already_shipped() {
   local issue="$1" merged
-  merged=$(gh pr list --state merged --search "$issue" --json number 2>/dev/null \
+
+  # Signal 1: a merged PR that references the issue in its title/body. Scoped to
+  # `in:title,body` (not bare full-text) to avoid matching a PR that merely
+  # mentions the number in a code block or comment thread.
+  merged=$(gh pr list --state merged --search "$issue in:title,body" --json number 2>/dev/null \
             | jq 'length' 2>/dev/null || echo 0)
   [[ "$merged" =~ ^[0-9]+$ ]] || merged=0
   if (( merged > 0 )); then return 0; fi
 
-  # A commit referencing the issue on origin/main's actual history (best-effort
-  # fetch first; the grep is over origin/main, NOT the local branch).
+  # Signal 2: a commit referencing the issue on origin/main's ACTUAL history
+  # (best-effort fetch first; the grep is over origin/main, NEVER the diverged
+  # local branch — a diverged `origin/main..HEAD` lies about what shipped, L086).
+  # The `#<issue>([^0-9]|$)` boundary stops `#931` from matching `#9310` — a
+  # spurious match would falsely report "shipped" and (since the shipped path
+  # doesn't burn an attempt) could reap+relaunch forever without ever escalating.
   git -C "$REPO_DIR" fetch origin main --quiet 2>/dev/null || true
-  if [[ -n "$(git -C "$REPO_DIR" log origin/main --grep="#${issue}" --format=%h -1 2>/dev/null || true)" ]]; then
+  if [[ -n "$(git -C "$REPO_DIR" log origin/main -E --grep="#${issue}([^0-9]|\$)" --format=%h -1 2>/dev/null || true)" ]]; then
     return 0
   fi
   return 1
