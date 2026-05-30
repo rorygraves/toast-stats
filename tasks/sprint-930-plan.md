@@ -44,7 +44,7 @@ Epic #933 (stuck-session liveness). Builds on Sprint 1 design
 macOS system `screen 4.00.03 (FAU)` supports only `-L` (logs to `screenlog.0` in cwd — would
 pollute the worktree), **not** `-Logfile` (design §2.3 / open-Q #2 assumed 4.06+). So the
 production **screen-logfile wiring is deferred**: `evaluate_liveness` samples
-`$RUNNER_LOG_DIR/session-<issue>.log` *if present*, else log-probe → UNKNOWN (safe direction).
+`$RUNNER_LOG_DIR/session-<issue>.log` _if present_, else log-probe → UNKNOWN (safe direction).
 Consequence: until a later sprint wires the logfile (hardcopy fallback), the log signal can't
 fire, so the #871 shape (commit-stall + log-repeat) corroborates via commit-stall + process-idle
 instead. Full #871 end-to-end catch is Sprint 5 (#932) and will need the logfile. Fusion +

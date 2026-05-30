@@ -108,6 +108,7 @@
 - **137** [tests, flaky, vitest, process, verification, tdd] — An audit's "false-confidence" list is a per-file hypothesis; re-confirm before deleting, because the first-pass classification over-flags (#916, #917)
 - **138** [verification, automation, sprint-runner, ci, frontend, process] — A "verify on the PR preview" sprint needs a diff that actually triggers the preview (#904, #900)
 - **138** [bash, automation, sprint-runner] — A bare `(( … ))` on injected input aborts the host script under `set -u` (#929, #933)
+- **138** [bash, automation, sprint-runner, shell] — A bash function that returns data via globals must be called as a statement, never in `$(...)` (#930, #933)
 - **138** [frontend, react, scope, refactor, tests] — A view that renders correctly only because an upstream utility incidentally sorts that way should own and pin its own order (#882, #884)
 - **138** [css, accessibility, frontend, tests, playwright] — An `inset-0` overlay is sized to its container's PADDING box; a 1px border on the chip steals from the touch target (#886, #888)
 - **138** [css, frontend, accessibility, verification, playwright, mobile] — `scroll-margin-top` belongs on the element that holds the anchor id, not a styled child (#877, #880)
