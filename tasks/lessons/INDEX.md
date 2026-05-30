@@ -119,3 +119,5 @@
 - **141** [tests, playwright, e2e, verification, frontend, accessibility] — A page-sweep tripwire passes vacuously on nav chrome; gate each route on a content sentinel, not a bare element count (#887, #888)
 - **142** [css, frontend, verification, tests, accessibility] — 142-a-new-component-stylesheet-must-be-wired-into-the-import-graph-tests-wont-catch-an-orphan
 - **143** [automation, sprint-runner, verification, tdd, bash] — A probe whose production feed was deferred reports UNKNOWN forever; the verification sprint is where you drive it end-to-end against the real feed (#932, #933)
+- **144** [router, react, frontend, scope, verification] — A cap (or any invariant) enforced only on the mutation path is bypassed the moment the value becomes URL-seedable (#978, #969)
+- **145** [cls, performance, frontend, react, verification, ci] — An incidental post-data re-render can be load-bearing for CLS; a "cleanup" that removes it regresses layout only on the CI font environment (#978, #969)

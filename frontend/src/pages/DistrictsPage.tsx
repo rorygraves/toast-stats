@@ -17,9 +17,10 @@ import InfoTooltip from '../components/InfoTooltip'
 import DistrictTierChip from '../components/DistrictTierChip'
 import { DistrictChipAndName } from '../components/DistrictChipAndName'
 import { useMyDistrict } from '../hooks/useMyDistrict'
-import { usePersistedState } from '../hooks/usePersistedState'
 import { useLastVisit } from '../hooks/useLastVisit'
 import { useUrlSort } from '../hooks/useUrlSort'
+import { useUrlState } from '../hooks/useUrlState'
+import { useDebounce } from '../hooks/useDebounce'
 import { SortableHeader } from '../components/SortableHeader'
 import { LazyComparisonPanel as ComparisonPanel } from '../components/LazyCharts'
 import {
@@ -42,6 +43,21 @@ import { useIsMobile } from '../hooks/useIsMobile'
 // query never hides its own matches.
 const MOBILE_RANKINGS_CAP = 20
 
+// Shared parse/serialize for comma-joined string-list URL params (?regions=,
+// ?pinned=). Module-level so their identity is stable across renders (#978).
+const EMPTY_LIST: string[] = []
+const parseList = (v: string): string[] =>
+  v ? v.split(',').filter(Boolean) : []
+const serializeList = (a: string[]): string => a.join(',')
+const LIST_OPTS = { parse: parseList, serialize: serializeList }
+
+// Comparison pins cap (#93). Enforced on the inward parse too, not just on
+// togglePin adds, so a hand-edited / shared `?pinned=1,2,3,4,5` can't seed a
+// 4+-district comparison past the cap.
+const MAX_PINNED = 3
+const parsePinned = (v: string): string[] => parseList(v).slice(0, MAX_PINNED)
+const PINNED_OPTS = { parse: parsePinned, serialize: serializeList }
+
 const DistrictsPage: React.FC = () => {
   const navigate = useNavigate()
   // URL-synced click-header sort (#851). Replaces the prior persisted
@@ -61,11 +77,35 @@ const DistrictsPage: React.FC = () => {
     defaultDirection: 'desc',
   })
   const sortBy = sort.field
-  // Intentionally NOT persisted — search query should reset between visits.
-  const [searchQuery, setSearchQuery] = useState<string>('')
-  const [pinnedDistrictIds, setPinnedDistrictIds] = useState<Set<string>>(
-    new Set()
+  // URL-synced search query (?q=, #978). The text input drives a LOCAL
+  // searchQuery so filtering + the type-ahead stay instant (and the existing
+  // synchronous search tests keep passing). A 300ms-debounced copy is pushed
+  // OUT to ?q= only once it has SETTLED (`debounced === searchQuery`, Lesson
+  // 130) — pushing the lagging debounced value during an external clear would
+  // re-apply the query we just cleared. An inward render-phase sync pulls the
+  // param (shared link / reload / back button) back into local state.
+  const [qParam, setQParam] = useUrlState('q', '')
+  const [searchQuery, setSearchQuery] = useState<string>(qParam)
+  const [trackedQParam, setTrackedQParam] = useState<string>(qParam)
+  if (qParam !== trackedQParam) {
+    setTrackedQParam(qParam)
+    setSearchQuery(qParam)
+  }
+  const debouncedSearch = useDebounce(searchQuery, 300)
+  useEffect(() => {
+    if (debouncedSearch === searchQuery && debouncedSearch !== qParam) {
+      setQParam(debouncedSearch)
+    }
+  }, [debouncedSearch, searchQuery, qParam, setQParam])
+
+  // URL-synced comparison pins (?pinned=12,34, #978). Stored as a string list
+  // in the URL; derived into a Set for the existing membership checks.
+  const [pinnedIds, setPinnedIds] = useUrlState<string[]>(
+    'pinned',
+    EMPTY_LIST,
+    PINNED_OPTS
   )
+  const pinnedDistrictIds = React.useMemo(() => new Set(pinnedIds), [pinnedIds])
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [searchFocused, setSearchFocused] = useState<boolean>(false)
   const { myDistrictId, setMyDistrict, isMyDistrict } = useMyDistrict()
@@ -90,12 +130,20 @@ const DistrictsPage: React.FC = () => {
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
-  // selectedRegions persists across visits (#416). Default = all (empty list,
-  // which the existing useEffect inflates to all-known-regions on first
-  // data render).
-  const [selectedRegions, setSelectedRegions] = usePersistedState<string[]>(
-    'districts-selected-regions',
-    []
+  // URL-synced region filter (?regions=1,2,3, #978; was localStorage #416).
+  // Storage backend only — the selection semantics are unchanged from the
+  // localStorage version: it inflates to the full region set on first data
+  // render (see the effect below) and "All" / solo-toggle reset to that full
+  // set. That post-data inflate render is also load-bearing for CLS — it
+  // settles the rankings-table layout after the web-font swap; dropping it
+  // exposed a second table-wrap layout shift on the Linux CI runner that
+  // pushed `/` over the 0.1 budget (0.081 → 0.248). See Lesson 145. The
+  // tradeoff is a fuller default URL (the explicit region list) rather than a
+  // bare `/`; a strict subset still reads as `?regions=1,2,3`.
+  const [selectedRegions, setSelectedRegions] = useUrlState<string[]>(
+    'regions',
+    EMPTY_LIST,
+    LIST_OPTS
   )
 
   // Use URL-synced program year and date (#272)
@@ -268,12 +316,18 @@ const DistrictsPage: React.FC = () => {
     return Array.from(uniqueRegions).sort()
   }, [rankings])
 
-  // Initialize selected regions to all regions when data loads
+  // Inflate the selection to all known regions on first data render (#416,
+  // retained for #978). Beyond initializing the toolbar's selected state, this
+  // post-data setState is load-bearing for CLS: the extra commit settles the
+  // rankings-table layout after the web-font swap, coalescing what is
+  // otherwise a second table-wrap layout shift on the Linux CI runner (#978 /
+  // Lesson 145). selectedRegions is URL-backed now, so the inflated set lands
+  // in `?regions=`.
   React.useEffect(() => {
     if (regions.length > 0 && selectedRegions.length === 0) {
       setSelectedRegions(regions)
     }
-  }, [regions, selectedRegions.length])
+  }, [regions, selectedRegions.length, setSelectedRegions])
 
   // Filter by selected regions
   const filteredRankings = React.useMemo(() => {
@@ -419,17 +473,16 @@ const DistrictsPage: React.FC = () => {
     navigate(`/district/${districtId}`)
   }
 
-  // Comparison mode — pin/unpin districts (#93)
-  const MAX_PINNED = 3
+  // Comparison mode — pin/unpin districts (#93). MAX_PINNED is module-level.
   const togglePin = (districtId: string) => {
-    setPinnedDistrictIds(prev => {
-      const next = new Set(prev)
-      if (next.has(districtId)) {
-        next.delete(districtId)
-      } else if (next.size < MAX_PINNED) {
-        next.add(districtId)
+    setPinnedIds(prev => {
+      if (prev.includes(districtId)) {
+        return prev.filter(id => id !== districtId)
       }
-      return next
+      if (prev.length < MAX_PINNED) {
+        return [...prev, districtId]
+      }
+      return prev
     })
   }
 
@@ -911,6 +964,8 @@ const DistrictsPage: React.FC = () => {
                   selectedRegions.length === regions.length)
               const handleRegionClick = (region: string, shiftKey: boolean) => {
                 if (shiftKey) {
+                  // Additive toggle against the explicit selection (post-inflate
+                  // this is the full set, so a shift-click removes one region).
                   setSelectedRegions(
                     selectedRegions.includes(region)
                       ? selectedRegions.filter(r => r !== region)
@@ -1078,7 +1133,7 @@ const DistrictsPage: React.FC = () => {
           allRankings={rankings}
           totalDistricts={rankings.length}
           onRemove={districtId => togglePin(districtId)}
-          onClearAll={() => setPinnedDistrictIds(new Set())}
+          onClearAll={() => setPinnedIds(EMPTY_LIST)}
         />
 
         {/* Rankings Table */}
