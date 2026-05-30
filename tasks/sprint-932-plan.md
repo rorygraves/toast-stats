@@ -11,7 +11,7 @@ output looping) is **not detectable in production as currently wired**:
 
 - `launch_sprint_session` starts `screen -dmS … bash -c "claude …"` — claude's
   output goes only to the in-memory PTY. **Nothing is written to disk.**
-- `evaluate_liveness` reads `$RUNNER_LOG_DIR/session-$issue.log` *if present*,
+- `evaluate_liveness` reads `$RUNNER_LOG_DIR/session-$issue.log` _if present_,
   else the log probe → UNKNOWN (the safe direction).
 - So in production: commit=STALL, process=OK (CPU spins, not idle, not husk),
   log=UNKNOWN → **1 STALL → SUSPECT → never reaped.**
@@ -32,8 +32,8 @@ preserved (claude's interactive UI intact).
 
 1. **Red A / Green A — wire the session logfile at launch.**
    `launch_sprint_session` writes a per-session screenrc (`logfile
-   $RUNNER_LOG_DIR/session-$issue.log`, `deflog on`) and launches with `-c
-   <screenrc> -L`. `RUNNER_LOG_DIR` defaults to `$WORKTREE_BASE/.runner-logs`
+$RUNNER_LOG_DIR/session-$issue.log`, `deflog on`) and launches with `-c
+<screenrc> -L`. `RUNNER_LOG_DIR` defaults to `$WORKTREE_BASE/.runner-logs`
    (sibling of worktrees, never inside one). Test asserts the screen invocation
    carries logging configured at the per-session path.
 2. **Red B / Green B — reap the logfile.** `reap_screen_session` and the GC
@@ -59,6 +59,6 @@ preserved (claude's interactive UI intact).
 - Shell tests are **macOS-local** (`ps -o lstart`, `stat -f`, `date -j`) — not
   ubuntu-CI-portable by design (the runner is a macOS launchd job). "Regression
   test green" = passes here; "CI green" = the vitest/lint/format pipeline stays
-  green. Run `npm run format` (prettier touches **/*.md) before commit; regen
+  green. Run `npm run format` (prettier touches \*_/_.md) before commit; regen
   `tasks/lessons/INDEX.md` (lessonsIndexGuard vitest asserts it).
 - Every commit references #932. No `Closes #932` in the PR body (L106/R15).

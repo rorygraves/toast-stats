@@ -24,6 +24,28 @@
 #
 # Pause autonomy: apply `runner-paused` label to the META_EPIC. Remove to resume.
 #
+# ── Stuck-session liveness contract (epic #933) ───────────────────────────────
+# An OPEN in-epic session is no longer trusted indefinitely. Each tick samples
+# three probes (scripts/lib/sprint-runner-probes.sh) and fuses one verdict
+# (scripts/lib/sprint-runner-liveness.sh):
+#   • commit  — no commit in the worktree for 45 min (9 ticks) → STALL
+#   • process — `claude` child gone but screen daemon alive → HUSK (conclusive);
+#               present but CPU < ~1% across two samples → STALL
+#   • log     — the per-session screen logfile (RUNNER_LOG_DIR/session-<issue>.log,
+#               written at launch via a screenrc) is 45-min stale OR its tail has
+#               collapsed to a repeating loop (the #871 thinking-block signature)
+#               → STALL; missing logfile → UNKNOWN (never STALL)
+# Fusion:  HUSK (alone) → reap now · ≥2 STALL → STUCK (corroborated) · exactly 1
+# STALL → SUSPECT (logged, NOT reaped — the false-positive guard) · else HEALTHY.
+# UNKNOWN never counts as STALL, and any probe flipping to OK rescues the verdict,
+# so a legitimately-slow 6–9h sprint survives. On STUCK/HUSK the runner reaps +
+# relaunches fresh, capped at LIVENESS_MAX_ATTEMPTS (default 3); the ship-state
+# check (L086) skips relaunch if the work already merged. At the cap it escalates:
+# adds `runner-stuck`, comments, notifies, leaves the slot free, does NOT relaunch.
+# To re-arm after a fix: remove the `runner-stuck` label. `--status` prints the
+# per-session verdict + probe breakdown + attempts N/3. State (the relaunch
+# counter — the one fact truth can't rebuild) lives at WORKTREE_BASE/.runner-state.json.
+#
 # Usage:
 #   scripts/sprint-runner.sh             # normal run
 #   scripts/sprint-runner.sh --dry-run   # report what it would launch, no side effects
@@ -45,6 +67,9 @@
 #                         <WORKTREE_BASE>/sprint-<N>. Isolates the spawned
 #                         session's file edits, branches, and index from the
 #                         operator's primary checkout. See #625.
+#   RUNNER_LOG_DIR        Dir for per-session screen logfiles the liveness log
+#                         probe samples (default: <WORKTREE_BASE>/.runner-logs).
+#                         Must match the liveness lib's fallback. See epic #933.
 #
 # Scheduling: this script is invoked by a launchd LaunchAgent — NOT crontab —
 # every 5 minutes (StartInterval 300). Plist lives at:
