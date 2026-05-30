@@ -1,39 +1,109 @@
 import { describe, expect, it } from 'vitest'
 import {
-  CLOSE_TO_DISTINGUISHED_MAX_MEMBERS,
   isCloseToDistinguished,
+  type CloseToDistinguishedInput,
 } from '../closeToDistinguished'
 
-describe('closeToDistinguished — shared threshold for "close to Distinguished"', () => {
-  describe('CLOSE_TO_DISTINGUISHED_MAX_MEMBERS', () => {
-    it('is 4 — within reach in a single membership drive', () => {
-      expect(CLOSE_TO_DISTINGUISHED_MAX_MEMBERS).toBe(4)
+/**
+ * Canonical "Close to Distinguished" predicate — the ONE definition both the
+ * clubs-table preset and the club-detail banner consume (epic #900, Sprint 1
+ * spec in docs/design/close-to-distinguished-predicate.md). All four AND:
+ *   1. currentLevel === 'NotDistinguished'
+ *   2. gapToDistinguished.members <= 3   (already floored min by the projection)
+ *   3. currentGoals >= 3
+ *   4. cspSubmitted === true || === undefined
+ */
+function makeInput(
+  overrides: Partial<{
+    currentLevel: CloseToDistinguishedInput['projection']['currentLevel']
+    currentGoals: number
+    members: number
+    goals: number
+    cspSubmitted: boolean | undefined
+  }> = {}
+): CloseToDistinguishedInput {
+  const {
+    currentLevel = 'NotDistinguished',
+    currentGoals = 4,
+    members = 2,
+    goals = 1,
+    cspSubmitted = true,
+  } = overrides
+  return {
+    projection: {
+      currentLevel,
+      currentGoals,
+      gapToDistinguished: { goals, members },
+    },
+    cspSubmitted,
+  }
+}
+
+describe('isCloseToDistinguished — canonical shared predicate', () => {
+  it('IN for a club that satisfies all four conditions', () => {
+    expect(isCloseToDistinguished(makeInput())).toBe(true)
+  })
+
+  describe('condition 1 — not already Distinguished+', () => {
+    it.each(['Distinguished', 'Select', 'President', 'Smedley'] as const)(
+      'OUT when currentLevel is %s',
+      level => {
+        expect(isCloseToDistinguished(makeInput({ currentLevel: level }))).toBe(
+          false
+        )
+      }
+    )
+    it('IN when currentLevel is NotDistinguished', () => {
+      expect(
+        isCloseToDistinguished(makeInput({ currentLevel: 'NotDistinguished' }))
+      ).toBe(true)
     })
   })
 
-  describe('isCloseToDistinguished', () => {
-    it('returns false when goal gap is non-zero (not yet at 5 DCP goals)', () => {
-      expect(isCloseToDistinguished({ goals: 1, members: 2 })).toBe(false)
+  describe('condition 2 — members gap <= 3', () => {
+    it('IN at the boundary (gap exactly 3)', () => {
+      expect(isCloseToDistinguished(makeInput({ members: 3 }))).toBe(true)
     })
+    it('OUT just past the boundary (gap 4)', () => {
+      expect(isCloseToDistinguished(makeInput({ members: 4 }))).toBe(false)
+    })
+    it('IN when membership already met (gap 0)', () => {
+      expect(isCloseToDistinguished(makeInput({ members: 0 }))).toBe(true)
+    })
+  })
 
-    it('returns false when no members are needed (already qualifies)', () => {
-      expect(isCloseToDistinguished({ goals: 0, members: 0 })).toBe(false)
+  describe('condition 3 — DCP goals >= 3', () => {
+    it('IN at the boundary (goals exactly 3)', () => {
+      expect(isCloseToDistinguished(makeInput({ currentGoals: 3 }))).toBe(true)
     })
+    it('OUT just below the boundary (goals 2)', () => {
+      expect(isCloseToDistinguished(makeInput({ currentGoals: 2 }))).toBe(false)
+    })
+  })
 
-    it('returns true at the lower boundary — 1 member needed', () => {
-      expect(isCloseToDistinguished({ goals: 0, members: 1 })).toBe(true)
+  describe('condition 4 — CSP submitted or unknown', () => {
+    it('IN when cspSubmitted true', () => {
+      expect(isCloseToDistinguished(makeInput({ cspSubmitted: true }))).toBe(
+        true
+      )
     })
+    it('OUT when cspSubmitted false', () => {
+      expect(isCloseToDistinguished(makeInput({ cspSubmitted: false }))).toBe(
+        false
+      )
+    })
+    it('IN when cspSubmitted undefined (pre-2025 data)', () => {
+      expect(
+        isCloseToDistinguished(makeInput({ cspSubmitted: undefined }))
+      ).toBe(true)
+    })
+  })
 
-    it('returns true at the upper boundary — 4 members needed', () => {
-      expect(isCloseToDistinguished({ goals: 0, members: 4 })).toBe(true)
-    })
-
-    it('returns false when 5 members are needed (just past the boundary)', () => {
-      expect(isCloseToDistinguished({ goals: 0, members: 5 })).toBe(false)
-    })
-
-    it('returns false when 12 members are needed (the original bug report)', () => {
-      expect(isCloseToDistinguished({ goals: 0, members: 12 })).toBe(false)
-    })
+  it('OUT when multiple conditions fail at once', () => {
+    expect(
+      isCloseToDistinguished(
+        makeInput({ members: 5, currentGoals: 1, cspSubmitted: false })
+      )
+    ).toBe(false)
   })
 })
