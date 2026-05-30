@@ -667,12 +667,12 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
             isGroupHidden={isGroupHidden}
             onToggle={toggleGroup}
           />
-        </div>
-
-        {/* Close-to-Distinguished preset (#903) — one action-oriented toggle in
-            place of the retired quick-filter row, sharing the canonical
-            predicate with the club-detail banner. */}
-        <div className="clubs-preset-bar">
+          {/* Close-to-Distinguished preset (#903) — moved into the toolbar
+              cluster, directly after Columns (#967). One action-oriented toggle
+              in place of the retired quick-filter row, sharing the canonical
+              predicate with the club-detail banner. It carries the shared
+              .clubs-filters-trigger treatment so it reads as one toolbar
+              language; .clubs-preset-chip adds only the pressed-state amber. */}
           <button
             type="button"
             className="clubs-filters-trigger clubs-preset-chip"
@@ -681,13 +681,17 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
           >
             🎯 Close to Distinguished
           </button>
-          {presetActive && (
-            <span className="clubs-preset-count" aria-live="polite">
-              {presetFilteredClubs.length} of {filteredClubs.length} clubs need
-              a nudge to Distinguished
-            </span>
-          )}
         </div>
+
+        {/* Preset feedback line — distinct from the table's "Showing N of M"
+            summary, and a polite live region for the toggle. Sits below the
+            single toolbar row rather than in its own control row (#967). */}
+        {presetActive && (
+          <p className="clubs-preset-count" aria-live="polite">
+            {presetFilteredClubs.length} of {filteredClubs.length} clubs need a
+            nudge to Distinguished
+          </p>
+        )}
 
         {/* Results Count and Quick Filters */}
         <div className="flex flex-wrap items-center gap-4 text-sm clubs-text-muted">

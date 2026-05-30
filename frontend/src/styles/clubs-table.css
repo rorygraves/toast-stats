@@ -6,15 +6,10 @@
    Columns buttons exactly — one visual language, no drift. The .clubs-preset-chip
    modifier below adds ONLY the pressed-state affordance (product accent amber),
    layered on top of the shared base. (Imported after app-shell.css in index.css,
-   so the equal-specificity pressed rules win source-order over the base hover.) */
-.clubs-preset-bar {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-top: 0.25rem;
-}
-
+   so the equal-specificity pressed rules win source-order over the base hover.)
+   #967: the chip now lives inside .clubs-filter-toolbar (after Columns), so the
+   former standalone .clubs-preset-bar wrapper is gone; only the chip modifier
+   and the feedback-count line remain. */
 .clubs-preset-chip {
   white-space: nowrap;
 }
@@ -29,6 +24,8 @@
 }
 
 .clubs-preset-count {
+  margin-top: -0.5rem;
+  margin-bottom: 1rem;
   font-size: 0.8125rem;
   font-weight: 500;
   color: var(--color-tm-slate, #5b6470);
