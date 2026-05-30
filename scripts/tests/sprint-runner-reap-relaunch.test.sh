@@ -189,4 +189,15 @@ else
   echo "FAIL [D]: expected HEALTHY left-running, got:"; sed 's/^/    /' "$TMP/d.log"; fail=1
 fi
 
+# --- Case E: --status surfaces per-session verdict + attempts (acceptance) ---
+reset_world 2
+CLAUDE_ALIVE=0 "$RUNNER" --status >"$TMP/e.log" 2>&1 || true
+if grep -qE '  - sprint-runner-930  \[verdict=HUSK .*attempts=2/3\]' "$TMP/e.log" \
+   && ! grep -q 'SCREEN_CALL .*quit' "$SCREEN_CALLS"; then
+  echo "PASS [E]: --status shows verdict + attempts, never reaps (read-only)"
+else
+  echo "FAIL [E]: expected --status liveness line with verdict+attempts, no reap:"
+  echo "  status:"; sed 's/^/    /' "$TMP/e.log"; fail=1
+fi
+
 exit "$fail"

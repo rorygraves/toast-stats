@@ -1,19 +1,24 @@
 #!/usr/bin/env bash
 # Integration regression test for the liveness verdict wired into mode_run's
-# active-session branch (epic #933 Sprint 3, #930).
+# active-session branch (epic #933 Sprint 3 #930, updated for Sprint 4 #931).
 #
 # The runner used to do an unconditional "OPEN session → skip launch" exit. Now
 # an OPEN in-epic active session is first evaluated for liveness: the fused
-# verdict is computed + logged, the attempt-state is recorded, and a STUCK/HUSK
-# verdict logs the Sprint-4 reap/relaunch handoff. Every path still skips the
-# launch — Sprint 3 changes the OBSERVABILITY, not the action (reap is Sprint 4).
+# verdict is computed + logged. This test owns the HEALTHY (observe-only) edge
+# and proves the verdict computation reaches the tick with its per-probe
+# breakdown POPULATED (the globals-not-subshell bug guard). The full ACTING
+# matrix a STUCK/HUSK verdict drives — reap → ship-check → relaunch → escalate,
+# attempt persistence — lives in sprint-runner-reap-relaunch.test.sh (#931).
+#
+# Sprint 3 originally asserted "HUSK → handoff logged, NO reap (reap is Sprint
+# 4)". Sprint 4 lands that reap, so that transitional contract is superseded:
+# Case B now asserts HUSK reaches the live reap, not the deferred handoff.
 #
 # Hermetic: mocks gh/screen/pgrep/ps/git on PATH; LIVENESS_CPU_SAMPLE_GAP=0 so
 # the CPU double-sample doesn't sleep. Asserts on the log decision.
-#   Case A (claude alive + busy + recent commit): verdict=HEALTHY, no launch,
-#                                                 no reap, no Sprint-4 handoff.
-#   Case B (screen alive + claude gone):          verdict=HUSK, Sprint-4 handoff
-#                                                 logged, no reap, no launch.
+#   Case A (claude alive + busy + recent commit): verdict=HEALTHY, populated
+#                                                 breakdown, no launch, no reap.
+#   Case B (screen alive + claude gone):          verdict=HUSK → live reap fired.
 #
 # Run directly: scripts/tests/sprint-runner-liveness-tick.test.sh
 set -euo pipefail
@@ -126,25 +131,19 @@ else
   echo "FAIL [A]: expected HEALTHY + breakdown + no launch + no reap, got:"; sed 's/^/    /' "$TMP/a.log"; fail=1
 fi
 
-# --- Case B: screen alive, claude gone → HUSK, Sprint-4 handoff, no reap ---
+# --- Case B: screen alive, claude gone → HUSK verdict reaches the LIVE reap ---
+# (Sprint 4: HUSK now acts. The full reap→ship-check→relaunch→escalate matrix is
+# asserted in sprint-runner-reap-relaunch.test.sh; here we only prove the HUSK
+# verdict computed in the tick drives the reap action, not a deferred handoff.)
 : > "$SCREEN_CALLS"
-CLAUDE_ALIVE=0 "$RUNNER" --dry-run >"$TMP/b.log" 2>&1 || true
+CLAUDE_ALIVE=0 "$RUNNER" >"$TMP/b.log" 2>&1 || true
 if grep -q 'verdict=HUSK' "$TMP/b.log" \
    && grep -q 'process=HUSK' "$TMP/b.log" \
-   && grep -qi 'Sprint 4' "$TMP/b.log" \
-   && ! grep -q 'would launch screen session' "$TMP/b.log" \
-   && ! grep -q 'SCREEN_CALL.*quit' "$SCREEN_CALLS"; then
-  echo "PASS [B]: HUSK verdict + populated breakdown + Sprint-4 handoff, no reap, no launch"
+   && grep -q 'reaping stuck session' "$TMP/b.log" \
+   && grep -q 'SCREEN_CALL .*-X -S sprint-runner-930 quit' "$SCREEN_CALLS"; then
+  echo "PASS [B]: HUSK verdict + populated breakdown reaches the live reap"
 else
-  echo "FAIL [B]: expected HUSK + breakdown + Sprint-4 handoff + no reap, got:"; sed 's/^/    /' "$TMP/b.log"; fail=1
-fi
-
-# --- Case C: the attempt-state file recorded the verdict (state wired in) ---
-if [[ -f "$WORKTREE_BASE/.runner-state.json" ]] \
-   && [[ "$(jq -r '."930".last_verdict' "$WORKTREE_BASE/.runner-state.json")" == "HUSK" ]]; then
-  echo "PASS [C]: liveness verdict persisted to attempt-state store"
-else
-  echo "FAIL [C]: expected state store to record #930 last_verdict=HUSK"; fail=1
+  echo "FAIL [B]: expected HUSK + breakdown + live reap, got:"; sed 's/^/    /' "$TMP/b.log"; fail=1
 fi
 
 exit "$fail"

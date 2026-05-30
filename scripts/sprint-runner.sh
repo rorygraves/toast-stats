@@ -424,6 +424,141 @@ issue_needs_review() {
     | grep -qx 'needs-product-review'
 }
 
+# === Sprint launch (shared by first-launch and Sprint-4 auto-relaunch) ===
+#
+# launch_sprint_session <sprint_n> <issue> <prev_issue> <epic>
+#   Build the bootstrap prompt, create the per-sprint worktree, and spawn the
+#   detached `screen` session running `claude --remote-control`. Returns:
+#     0 — launched and the screen daemon verified in the process table
+#     1 — hard failure (missing bootstrap prompt / worktree create failed)
+#     2 — launched but the daemon wasn't visible within the verify window
+#   Used by BOTH the cold first-launch path and the auto-relaunch path so a
+#   relaunch is byte-identical to a fresh launch (no drift between the two).
+#   PROMPT_FILE stays a global (not local) so the EXIT trap's cleanup() still
+#   removes it if `screen -dmS` fails before the inner subshell rm runs.
+launch_sprint_session() {
+  local target_n="$1" target_issue="$2" prev_issue="$3" epic="$4"
+
+  [[ -f "$BOOTSTRAP_PROMPT" ]] || { log "ERROR: Bootstrap prompt missing: $BOOTSTRAP_PROMPT"; return 1; }
+
+  local prompt
+  prompt=$(sed \
+    -e "s|{{SPRINT_N}}|$target_n|g" \
+    -e "s|{{TARGET_ISSUE}}|$target_issue|g" \
+    -e "s|{{PREV_ISSUE}}|${prev_issue:-none}|g" \
+    -e "s|{{EPIC}}|$epic|g" \
+    "$BOOTSTRAP_PROMPT")
+  PROMPT_FILE=$(mktemp -t sprint-runner-prompt.XXXXXX)
+  printf '%s' "$prompt" > "$PROMPT_FILE"
+
+  # Dedicated worktree (#625) keyed by issue # (#630) — isolates the session's
+  # edits/branches/index from the operator's primary checkout.
+  local worktree
+  worktree=$(create_sprint_worktree "$target_issue") || { log "ERROR: Failed to create worktree for sprint-$target_issue"; return 1; }
+  log "Created worktree at $worktree"
+
+  local session_name="sprint-runner-$target_issue"
+  log "Launching detached screen session $session_name (Sprint $target_n of epic #$epic, work #$target_issue)"
+
+  # Spawned sprint sessions run at ultracode (effortLevel "ultracode" = xhigh
+  # reasoning + standing dynamic workflow orchestration). Passed per-launch via
+  # --settings (an *additional* settings overlay) so it scopes to the runner's
+  # sessions ONLY — the operator's own interactive `claude` keeps its configured
+  # effortLevel. "ultracode" is not a valid --effort flag choice; it must come
+  # through settings. Single-quoted so the inner bash passes the JSON literally.
+  local ultracode_settings='{"effortLevel":"ultracode"}'
+
+  # `screen -dmS` allocates a PTY so claude's interactive UI works.
+  screen -dmS "$session_name" bash -c "
+    cd '$worktree' && \
+    claude --settings '$ultracode_settings' --remote-control 'sprint-$target_issue' \"\$(cat '$PROMPT_FILE')\";
+    EXIT_CODE=\$?;
+    rm -f '$PROMPT_FILE';
+    echo \"[sprint-runner] claude exited with code \$EXIT_CODE — session ending.\"
+  "
+
+  # Verify the session came up. `screen -dmS` exits 0 even on PTY-alloc failure
+  # on some macOS configs. Use `pgrep` against the daemon's command line (#633),
+  # not `screen -ls`: the socket file can lag >5s under launchd while the daemon
+  # process exists immediately on fork, and the process table has no such lag.
+  local verified=0 _
+  for _ in 1 2 3; do
+    if pgrep -f "SCREEN -dmS $session_name" >/dev/null 2>&1; then
+      verified=1
+      break
+    fi
+    sleep 1
+  done
+  if (( verified == 0 )); then
+    log "WARNING: $session_name daemon process not visible after 3s — leaving alone. Next tick will detect a live session or relaunch fresh."
+    return 2
+  fi
+
+  log "Launched. Attach: screen -r $session_name. Or pair via claude.ai Remote Control as 'sprint-$target_issue'."
+  return 0
+}
+
+# === Stuck-session ship-check / escalation (Sprint 4, #931) ===
+#
+# sprint_already_shipped <issue> → 0 if the sprint's work has ALREADY landed,
+# 1 otherwise. The L086/R15 guardrail: a STUCK session may have died only in its
+# verify→label→tick→close tail, AFTER its PR merged. Relaunching `/sprint` would
+# duplicate merged work. We check the SHARED truth — a merged PR referencing the
+# issue, or a commit on the real `origin/main` history — never `origin/main..HEAD`
+# of a diverged local branch (which lies about what shipped; design §5).
+# Fail-safe direction: any uncertainty resolves to "not shipped" → relaunch (the
+# diagram's default), because a missed relaunch starves work while a wrong "no"
+# only costs one extra reap.
+sprint_already_shipped() {
+  local issue="$1" merged
+  merged=$(gh pr list --state merged --search "$issue" --json number 2>/dev/null \
+            | jq 'length' 2>/dev/null || echo 0)
+  [[ "$merged" =~ ^[0-9]+$ ]] || merged=0
+  if (( merged > 0 )); then return 0; fi
+
+  # A commit referencing the issue on origin/main's actual history (best-effort
+  # fetch first; the grep is over origin/main, NOT the local branch).
+  git -C "$REPO_DIR" fetch origin main --quiet 2>/dev/null || true
+  if [[ -n "$(git -C "$REPO_DIR" log origin/main --grep="#${issue}" --format=%h -1 2>/dev/null || true)" ]]; then
+    return 0
+  fi
+  return 1
+}
+
+# issue_is_stuck_escalated <issue> → 0 if the issue carries `runner-stuck` (the
+# auto-relaunch cap was hit and the operator hasn't cleared it). The normal
+# launch path skips such an issue so the freed slot isn't silently re-filled
+# with a 4th relaunch before the operator investigates (design §5). Fail-open:
+# a gh error yields "not flagged" so the predecessor gate still governs.
+issue_is_stuck_escalated() {
+  gh issue view "$1" --json labels --jq '.labels[].name' 2>/dev/null \
+    | grep -qx 'runner-stuck'
+}
+
+# escalate_stuck <issue> <attempts> → flag the issue for the operator and free
+# the slot WITHOUT relaunching (cap reached). Idempotent: the strong, visible
+# signals (label + comment) are written once; if `runner-stuck` is already
+# present a later tick only logs. R15 two-signal discipline: the label is the
+# durable gate the normal path keys off, the comment is the human-readable why.
+escalate_stuck() {
+  local issue="$1" attempts="$2"
+  if issue_is_stuck_escalated "$issue"; then
+    log "Escalation: #$issue already flagged runner-stuck (attempts=$attempts/$LIVENESS_MAX_ATTEMPTS) — slot free, awaiting operator. No relaunch."
+    return 0
+  fi
+  log "Escalation: #$issue exhausted $attempts/$LIVENESS_MAX_ATTEMPTS auto-relaunch attempts — flagging runner-stuck, freeing slot, notifying operator. No relaunch."
+  # Ensure the label exists (idempotent); -f? gh has no create-or-update, so
+  # tolerate the already-exists error.
+  gh label create runner-stuck --color B60205 \
+    --description "sprint-runner: auto-relaunch cap reached; needs operator" 2>/dev/null || true
+  gh issue edit "$issue" --add-label runner-stuck 2>/dev/null \
+    || log "WARNING: failed to add runner-stuck label to #$issue"
+  gh issue comment "$issue" --body "🛑 **sprint-runner: auto-relaunch exhausted (${attempts}/${LIVENESS_MAX_ATTEMPTS}).** This sprint's session was detected STUCK and reaped, but every capped relaunch also stalled. The slot is now **free** and this issue is flagged \`runner-stuck\` so the runner will **not** auto-relaunch it again. Operator: investigate the stall (see the runner log), then remove the \`runner-stuck\` label to re-arm. The ship-state check ran before each relaunch, so this is not already-merged work." 2>/dev/null \
+    || log "WARNING: failed to post escalation comment on #$issue"
+  notify "sprint-runner" "Sprint #$issue STUCK — ${attempts}/${LIVENESS_MAX_ATTEMPTS} relaunches exhausted, needs operator"
+  return 0
+}
+
 # === Gate check ===
 # Echoes "PASS <desc>" or "FAIL <desc>". Non-fatal — caller decides.
 check_gate() {
@@ -478,8 +613,17 @@ mode_status() {
   if [[ -z "$sessions" ]]; then
     log "Active screen sessions: (none)"
   else
-    log "Active screen sessions:"
-    printf '%s\n' "$sessions" | while read -r s; do log "  - $s"; done
+    log "Active screen sessions (liveness — read-only, no reap):"
+    # Per-session fused verdict + probe breakdown + relaunch attempt count
+    # (#931 acceptance). evaluate_liveness only SAMPLES (git/pgrep/ps/stat) — it
+    # never reaps — so it is safe in the read-only status mode. Globals it sets
+    # are read in the same subshell iteration.
+    printf '%s\n' "$sessions" | while read -r s; do
+      local issue="${s##sprint-runner-}"
+      evaluate_liveness "$issue"
+      local att; att=$(state_get_attempts "$issue")
+      log "  - $s  [verdict=$LIVENESS_VERDICT  commit=$LIVENESS_COMMIT process=$LIVENESS_PROCESS log=$LIVENESS_LOG  attempts=$att/$LIVENESS_MAX_ATTEMPTS]"
+    done
   fi
 
   # Worktree state (read-only — never removes during --status).
@@ -632,30 +776,80 @@ mode_run() {
         # Stale only if the epic checkbox is ALSO ticked (#626).
         if [[ "$active_line" =~ ^-\ \[x\] ]]; then
           log "Stale session $active: #$active_issue is CLOSED + ticked — reaping."
+          # Genuine completion (CLOSED + ticked) — reset the relaunch attempt
+          # counter so a future re-open of this issue starts fresh (design §4.2).
+          state_record "$active_issue" DONE 0 || true
           reap_screen_session "$active"
         else
           log "Session $active: #$active_issue is CLOSED but epic checkbox not yet ticked — letting session finish cleanup. Operator can --reap if genuinely stuck."
           exit 0
         fi
       else
-        # OPEN in-epic session: no longer an automatic pass. Evaluate liveness
-        # (sample 3 probes → fuse) and record the verdict to the attempt-state
-        # store. A STUCK/HUSK verdict will be reaped + relaunched by the Sprint 4
-        # path (#931); Sprint 3 only OBSERVES — every branch still skips the
-        # launch this tick, so existing behavior is preserved.
-        # Call as a plain statement (NOT $(...)): evaluate_liveness returns its
-        # verdict + breakdown via globals, which a subshell would discard.
+        # OPEN in-epic session — evaluate liveness, then ACT (Sprint 4, #931).
+        # Sample the 3 probes → fuse → verdict; the pure layers keep every
+        # decision unit-testable, evaluate_liveness is the only host-touching
+        # part. Call as a plain statement (NOT $(...)): it returns its verdict +
+        # breakdown via globals, which a subshell would discard.
         local verdict attempts
         evaluate_liveness "$active_issue"
         verdict="$LIVENESS_VERDICT"
         attempts=$(state_get_attempts "$active_issue")
-        log "Existing session $active active (#$active_issue is $active_state) — liveness verdict=$verdict [commit=$LIVENESS_COMMIT process=$LIVENESS_PROCESS log=$LIVENESS_LOG attempts=$attempts/3]."
-        state_record "$active_issue" "$verdict" "$attempts" || log "WARNING: failed to persist liveness state for #$active_issue"
-        if [[ "$verdict" == STUCK || "$verdict" == HUSK ]]; then
-          log "Liveness: $verdict on #$active_issue — reap + capped auto-relaunch lands in Sprint 4 (#931); skipping launch this tick."
-        else
-          log "Liveness: $verdict on #$active_issue — healthy/insufficient-evidence; skipping launch as before."
+        log "Existing session $active active (#$active_issue is $active_state) — liveness verdict=$verdict [commit=$LIVENESS_COMMIT process=$LIVENESS_PROCESS log=$LIVENESS_LOG attempts=$attempts/$LIVENESS_MAX_ATTEMPTS]."
+
+        if [[ "$verdict" != STUCK && "$verdict" != HUSK ]]; then
+          # HEALTHY (progress / insufficient evidence) or SUSPECT (one soft
+          # signal — the false-positive guard). Record and leave the session
+          # running; the next tick re-evaluates. No reap, no launch.
+          state_record "$active_issue" "$verdict" "$attempts" \
+            || log "WARNING: failed to persist liveness state for #$active_issue"
+          log "Liveness: $verdict on #$active_issue — leaving session running; skipping launch."
+          exit 0
         fi
+
+        # STUCK (≥2 corroborating stalls) or HUSK (conclusive: screen alive,
+        # claude gone). The session is not progressing — act per design §5.
+        if (( attempts >= LIVENESS_MAX_ATTEMPTS )); then
+          # Cap reached — reap to free the slot, escalate, do NOT relaunch.
+          state_record "$active_issue" "$verdict" "$attempts" || true
+          log "Liveness: $verdict on #$active_issue at attempt cap ($attempts/$LIVENESS_MAX_ATTEMPTS) — reaping + escalating, no relaunch."
+          reap_screen_session "$active"
+          escalate_stuck "$active_issue" "$attempts"
+          exit 0
+        fi
+
+        log "Liveness: $verdict on #$active_issue (attempt $attempts/$LIVENESS_MAX_ATTEMPTS) — reaping stuck session."
+        reap_screen_session "$active"
+
+        # L086 / R15 ship-state check BEFORE relaunch: the zombie may have
+        # already merged its PR and died only in its verify→label→tick→close
+        # tail. Relaunching /sprint would duplicate merged work. Check the
+        # SHARED truth (merged PR / origin/main), never a diverged local branch.
+        if sprint_already_shipped "$active_issue"; then
+          log "Liveness: #$active_issue already shipped (merged PR / commit on origin/main) — NOT relaunching implementation (L086). Slot freed; reconcile needed: live-verify → sprint-verified → tick epic → close. Notifying operator."
+          notify "sprint-runner" "Sprint #$active_issue was STUCK but already shipped — needs gating, not relaunch"
+          exit 0
+        fi
+
+        # Genuinely unshipped — relaunch fresh. Persist attempts+1 BEFORE the
+        # launch so a launch that itself crashes still burns the attempt (no
+        # infinite relaunch of a launch-failing config; design §5).
+        local relaunch_n new_attempts relaunch_prev_n relaunch_prev_issue
+        relaunch_n=$(printf '%s\n' "$active_line" | sed -nE 's/.*Sprint ([0-9]+)\*\*.*/\1/p')
+        relaunch_prev_n=$(( ${relaunch_n:-1} - 1 ))
+        relaunch_prev_issue=$(find_sprint_issue "$relaunch_prev_n" "$body")
+        new_attempts=$(( attempts + 1 ))
+        state_record "$active_issue" "$verdict" "$new_attempts" "$(date +%s)" \
+          || log "WARNING: failed to persist incremented attempt for #$active_issue"
+        log "Liveness: relaunching Sprint ${relaunch_n:-?} for #$active_issue (attempt $new_attempts/$LIVENESS_MAX_ATTEMPTS)."
+
+        local relaunch_rc=0
+        launch_sprint_session "${relaunch_n:-1}" "$active_issue" "${relaunch_prev_issue:-}" "$EPIC" || relaunch_rc=$?
+        case "$relaunch_rc" in
+          0) notify "sprint-runner" "Auto-relaunched STUCK Sprint #$active_issue (attempt $new_attempts/$LIVENESS_MAX_ATTEMPTS)" ;;
+          2) notify "sprint-runner" "Relaunch of #$active_issue unverifiable — check screen -ls" ;;
+          *) log "ERROR: relaunch of #$active_issue failed (rc=$relaunch_rc); attempt $new_attempts already burned. Next tick retries or escalates."
+             notify "sprint-runner" "Relaunch of #$active_issue FAILED — see runner log" ;;
+        esac
         exit 0
       fi
     else
@@ -732,6 +926,17 @@ mode_run() {
     exit 0
   fi
 
+  # --- Auto-relaunch escalation gate (#931) ---
+  # A sprint whose auto-relaunch cap was hit carries `runner-stuck`. With the
+  # slot freed by the reap, the normal path would otherwise immediately re-fill
+  # it with a 4th relaunch. Skip until the operator investigates and clears the
+  # label (which re-arms the issue; design §5).
+  if issue_is_stuck_escalated "$target_issue"; then
+    log "Sprint $target_n (#$target_issue) is flagged runner-stuck (auto-relaunch cap reached) — NOT launching. Operator: investigate, then remove the label to re-arm."
+    notify "sprint-runner" "Sprint $target_n (#$target_issue) runner-stuck — skipped (awaiting operator)"
+    exit 0
+  fi
+
   # --- Gate check ---
   local prev_n=$((target_n - 1))
   local prev_issue
@@ -749,78 +954,18 @@ mode_run() {
     exit 0
   fi
 
-  [[ -f "$BOOTSTRAP_PROMPT" ]] || die "Bootstrap prompt missing: $BOOTSTRAP_PROMPT"
-
-  local prompt
-  prompt=$(sed \
-    -e "s|{{SPRINT_N}}|$target_n|g" \
-    -e "s|{{TARGET_ISSUE}}|$target_issue|g" \
-    -e "s|{{PREV_ISSUE}}|${prev_issue:-none}|g" \
-    -e "s|{{EPIC}}|$EPIC|g" \
-    "$BOOTSTRAP_PROMPT")
-
-  # PROMPT_FILE is exported into the trap via cleanup() so it's removed
-  # even if `screen -dmS` fails before the inner subshell runs.
-  PROMPT_FILE=$(mktemp -t sprint-runner-prompt.XXXXXX)
-  printf '%s' "$prompt" > "$PROMPT_FILE"
-
-  # Create a dedicated worktree for this sprint (#625) so the spawned
-  # session's branches and edits stay isolated from the operator's primary
-  # checkout. Identifiers are keyed by target issue # (#630) for global
-  # uniqueness — sprint-N within an epic isn't unique across epics.
-  local worktree
-  worktree=$(create_sprint_worktree "$target_issue") || die "Failed to create worktree for sprint-$target_issue"
-  log "Created worktree at $worktree"
-
-  local session_name="sprint-runner-$target_issue"
-  log "Launching detached screen session $session_name (Sprint $target_n of epic #$EPIC, work #$target_issue)"
-
-  # Spawned sprint sessions run at ultracode (effortLevel "ultracode" = xhigh
-  # reasoning + standing dynamic workflow orchestration). Passed per-launch via
-  # --settings (an *additional* settings overlay) so it scopes to the runner's
-  # sessions ONLY — the operator's own interactive `claude` keeps its configured
-  # effortLevel. "ultracode" is not a valid --effort flag choice; it must come
-  # through settings. Single-quoted so the inner bash passes the JSON literally.
-  local ultracode_settings='{"effortLevel":"ultracode"}'
-
-  # `screen -dmS` allocates a PTY so claude's interactive UI works.
-  screen -dmS "$session_name" bash -c "
-    cd '$worktree' && \
-    claude --settings '$ultracode_settings' --remote-control 'sprint-$target_issue' \"\$(cat '$PROMPT_FILE')\";
-    EXIT_CODE=\$?;
-    rm -f '$PROMPT_FILE';
-    echo \"[sprint-runner] claude exited with code \$EXIT_CODE — session ending.\"
-  "
-
-  # Verify the session actually came up. `screen -dmS` exits 0 even on PTY
-  # allocation failure on some macOS configurations.
-  #
-  # Use `pgrep` against the screen daemon's command line (#633) instead of
-  # `screen -ls`. Two reasons: (1) the screen socket file in
-  # /var/folders/.../.screen.<host>/ can take >5s to register under launchd's
-  # environment (filesystem-visibility lag), even though the daemon process
-  # itself exists immediately on fork; (2) pgrep against the process table
-  # has no filesystem-level lag.
-  #
-  # warn-and-exit-0 (not die) for the not-found case: the inner claude may
-  # have argv captured from `$(cat $PROMPT_FILE)` already, and `die` doesn't
-  # kill the screen — it just adds false-alarm noise to launchd's last-exit.
-  local verified=0
-  for _ in 1 2 3; do
-    if pgrep -f "SCREEN -dmS $session_name" >/dev/null 2>&1; then
-      verified=1
-      break
-    fi
-    sleep 1
-  done
-  if (( verified == 0 )); then
-    log "WARNING: $session_name daemon process not visible after 3s — leaving alone. Next tick will detect a live session or relaunch fresh."
-    notify "sprint-runner" "Sprint $target_n launch unverifiable — check screen -ls"
-    exit 0
-  fi
-
-  log "Launched. Attach: screen -r $session_name. Or pair via claude.ai Remote Control as 'sprint-$target_issue'."
-  notify "sprint-runner" "Launched Sprint $target_n (#$target_issue)"
+  # First launch of this sprint from the top of the cascade. The normal path is
+  # always attempt 0; the per-issue attempt counter is only incremented by the
+  # Sprint-4 auto-relaunch path (relaunch_stuck_sprint). Resetting it here keeps
+  # an operator-cleared `runner-stuck` re-launch from inheriting a stale count.
+  local launch_rc=0
+  launch_sprint_session "$target_n" "$target_issue" "${prev_issue:-}" "$EPIC" || launch_rc=$?
+  case "$launch_rc" in
+    0) state_record "$target_issue" LAUNCHED 0 || true
+       notify "sprint-runner" "Launched Sprint $target_n (#$target_issue)" ;;
+    2) notify "sprint-runner" "Sprint $target_n launch unverifiable — check screen -ls" ;;
+    *) die "Failed to launch Sprint $target_n (#$target_issue) — see log above" ;;
+  esac
   break  # cascade: one launch per tick is the cap (#627)
   done
 
