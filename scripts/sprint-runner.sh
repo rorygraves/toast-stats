@@ -67,6 +67,12 @@ BOOTSTRAP_PROMPT="$REPO_DIR/scripts/sprint-bootstrap.prompt"
 LOG_FILE="${SPRINT_RUNNER_LOG:-$HOME/.toast-stats-sprint-runner.log}"
 LOG_ROTATE_BYTES=$((1024 * 1024))
 WORKTREE_BASE="${WORKTREE_BASE:-$HOME/sprint-worktrees}"
+# Per-session screen logfiles live here — a sibling of the worktrees, NEVER
+# inside one (so they don't pollute a git status or get swept by `git worktree
+# remove`). The liveness log probe samples $RUNNER_LOG_DIR/session-<issue>.log
+# (epic #933 §2.3); launch_sprint_session writes it, reap/GC delete it. The
+# default MUST match the liveness lib's own fallback ($WORKTREE_BASE/.runner-logs).
+RUNNER_LOG_DIR="${RUNNER_LOG_DIR:-$WORKTREE_BASE/.runner-logs}"
 
 # Stuck-session liveness (epic #933). Sourcing only DEFINES functions.
 #   probes      — pure classify functions over sampled inputs (Sprint 2 #929).
@@ -311,6 +317,10 @@ reap_screen_session() {
   fi
   # Also remove the worktree (idempotent — no-op if it doesn't exist).
   remove_sprint_worktree "$n"
+  # Delete the per-session screen logfile + screenrc (epic #933 §2.3): they are
+  # truth-tied to session lifetime, so a fresh relaunch never reads a reaped
+  # session's stale loop transcript as the new session's log signal.
+  rm -f "$RUNNER_LOG_DIR/session-$n.log" "$RUNNER_LOG_DIR/session-$n.screenrc" 2>/dev/null || true
   notify "sprint-runner" "Reaped session $session"
 }
 
@@ -403,6 +413,9 @@ gc_worktrees() {
     log "GC: orphan worktree $wt (no sprint-runner-$n screen) — removing"
     git -C "$REPO_DIR" worktree remove --force "$wt" 2>/dev/null \
       || rm -rf "$wt"
+    # A worktree with no paired screen is a dead session — drop its logfile +
+    # screenrc too (same truth-tied lifetime as in reap_screen_session).
+    rm -f "$RUNNER_LOG_DIR/session-$n.log" "$RUNNER_LOG_DIR/session-$n.screenrc" 2>/dev/null || true
     # Best-effort branch cleanup. `git branch -d` refuses unmerged branches,
     # which is what we want — operator can inspect crashed-session branches.
     if [[ -n "$branch" && "$branch" != "main" ]]; then
@@ -471,8 +484,25 @@ launch_sprint_session() {
   # through settings. Single-quoted so the inner bash passes the JSON literally.
   local ultracode_settings='{"effortLevel":"ultracode"}'
 
-  # `screen -dmS` allocates a PTY so claude's interactive UI works.
-  screen -dmS "$session_name" bash -c "
+  # Per-session screen logfile (epic #933 §2.3) — the on-disk feed the liveness
+  # log probe samples to catch a #871-shape loop (output repeating, no commits).
+  # Without it the log probe is permanently UNKNOWN and the #871 shape collapses
+  # to a single soft signal (SUSPECT → never reaped). Installed screen is
+  # 4.00.03 (FAU), which has NO `-Logfile` flag (design open-Q #2) — only `-L`,
+  # which alone writes `screenlog.0` into the window's cwd (collides across
+  # concurrent sessions, pollutes the worktree). So we point logging at an
+  # explicit path via a minimal per-session screenrc (`logfile` + `deflog on`)
+  # and launch with `-c <screenrc> -L`. Logging taps the window output; the PTY
+  # is untouched, so claude's interactive UI still works.
+  local logfile="$RUNNER_LOG_DIR/session-$target_issue.log"
+  local screenrc="$RUNNER_LOG_DIR/session-$target_issue.screenrc"
+  mkdir -p "$RUNNER_LOG_DIR"
+  printf 'logfile %s\ndeflog on\n' "$logfile" > "$screenrc"
+
+  # `screen -dmS` allocates a PTY so claude's interactive UI works. `-dmS
+  # <name>` stays FIRST so downstream `pgrep -f "SCREEN -dmS <name>"` and the
+  # hermetic tests still match on that prefix; the logging flags follow.
+  screen -dmS "$session_name" -c "$screenrc" -L bash -c "
     cd '$worktree' && \
     claude --settings '$ultracode_settings' --remote-control 'sprint-$target_issue' \"\$(cat '$PROMPT_FILE')\";
     EXIT_CODE=\$?;
