@@ -55,6 +55,8 @@ const sortValue = (field: SortField, r: RegionRollup): number => {
 
 const HEADER_TH =
   'px-4 py-3 text-xs font-medium uppercase tracking-wider text-gray-500'
+const NUMERIC_TD =
+  'px-4 py-3 text-right tabular-nums text-gray-700 theme-dark:text-gray-200'
 
 export const RegionsLeaderboard: React.FC<RegionsLeaderboardProps> = ({
   rollups,
@@ -173,16 +175,12 @@ export const RegionsLeaderboard: React.FC<RegionsLeaderboardProps> = ({
                     </span>
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-right tabular-nums text-gray-700 theme-dark:text-gray-200">
-                  {r.districtCount}
-                </td>
-                <td className="px-4 py-3 text-right tabular-nums text-gray-700 theme-dark:text-gray-200">
-                  {r.paidClubs.toLocaleString()}
-                </td>
-                <td className="px-4 py-3 text-right tabular-nums text-gray-700 theme-dark:text-gray-200">
+                <td className={NUMERIC_TD}>{r.districtCount}</td>
+                <td className={NUMERIC_TD}>{r.paidClubs.toLocaleString()}</td>
+                <td className={NUMERIC_TD}>
                   {r.totalPayments.toLocaleString()}
                 </td>
-                <td className="px-4 py-3 text-right tabular-nums text-gray-700 theme-dark:text-gray-200">
+                <td className={NUMERIC_TD}>
                   {r.distinguishedClubs.toLocaleString()}
                   <span className="text-gray-500 theme-dark:text-gray-400 ml-1">
                     · {Math.round(r.distinguishedPercent)}%
