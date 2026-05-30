@@ -68,11 +68,14 @@ LOG_FILE="${SPRINT_RUNNER_LOG:-$HOME/.toast-stats-sprint-runner.log}"
 LOG_ROTATE_BYTES=$((1024 * 1024))
 WORKTREE_BASE="${WORKTREE_BASE:-$HOME/sprint-worktrees}"
 
-# Stuck-session liveness probes (epic #933). Sourcing only DEFINES the pure
-# probe functions (probe_commit_age / probe_process / probe_log) — they are not
-# yet called from any tick branch. Fusion + tick wiring land in Sprint 3 (#930).
+# Stuck-session liveness (epic #933). Sourcing only DEFINES functions.
+#   probes      — pure classify functions over sampled inputs (Sprint 2 #929).
+#   liveness    — fuse_verdict, the attempt-state store, and evaluate_liveness
+#                 (the sampling edge), wired into the tick below (Sprint 3 #930).
 # shellcheck source=lib/sprint-runner-probes.sh
 source "$REPO_DIR/scripts/lib/sprint-runner-probes.sh"
+# shellcheck source=lib/sprint-runner-liveness.sh
+source "$REPO_DIR/scripts/lib/sprint-runner-liveness.sh"
 
 # Populated by resolve_active_epic(); used by callers to decide whether
 # auto-tick fires and to print the source in --status.
@@ -635,7 +638,24 @@ mode_run() {
           exit 0
         fi
       else
-        log "Existing session $active active (#$active_issue is $active_state) — skipping launch."
+        # OPEN in-epic session: no longer an automatic pass. Evaluate liveness
+        # (sample 3 probes → fuse) and record the verdict to the attempt-state
+        # store. A STUCK/HUSK verdict will be reaped + relaunched by the Sprint 4
+        # path (#931); Sprint 3 only OBSERVES — every branch still skips the
+        # launch this tick, so existing behavior is preserved.
+        # Call as a plain statement (NOT $(...)): evaluate_liveness returns its
+        # verdict + breakdown via globals, which a subshell would discard.
+        local verdict attempts
+        evaluate_liveness "$active_issue"
+        verdict="$LIVENESS_VERDICT"
+        attempts=$(state_get_attempts "$active_issue")
+        log "Existing session $active active (#$active_issue is $active_state) — liveness verdict=$verdict [commit=$LIVENESS_COMMIT process=$LIVENESS_PROCESS log=$LIVENESS_LOG attempts=$attempts/3]."
+        state_record "$active_issue" "$verdict" "$attempts" || log "WARNING: failed to persist liveness state for #$active_issue"
+        if [[ "$verdict" == STUCK || "$verdict" == HUSK ]]; then
+          log "Liveness: $verdict on #$active_issue — reap + capped auto-relaunch lands in Sprint 4 (#931); skipping launch this tick."
+        else
+          log "Liveness: $verdict on #$active_issue — healthy/insufficient-evidence; skipping launch as before."
+        fi
         exit 0
       fi
     else
