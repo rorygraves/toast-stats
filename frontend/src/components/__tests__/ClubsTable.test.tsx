@@ -947,6 +947,44 @@ describe('ClubsTable', () => {
       expect(screen.getByText('FarClub')).toBeInTheDocument()
       expect(screen.getByText('DoneClub')).toBeInTheDocument()
     })
+
+    // URL-sync seam (#979): the page owns the `?preset=` param and seeds the
+    // toggle via initialPresetActive; the toggle notifies via onPresetChange.
+    it('starts pressed and pre-filtered when initialPresetActive is true', () => {
+      render(
+        <ClubsTable
+          clubs={presetClubs}
+          districtId="test-district"
+          isLoading={false}
+          initialPresetActive
+        />
+      )
+      const toggle = screen.getByRole('button', {
+        name: /close to distinguished/i,
+      })
+      expect(toggle).toHaveAttribute('aria-pressed', 'true')
+      expect(screen.getByText('NearClub')).toBeInTheDocument()
+      expect(screen.queryByText('FarClub')).not.toBeInTheDocument()
+    })
+
+    it('calls onPresetChange with the new pressed state on toggle', () => {
+      const onPresetChange = vi.fn()
+      render(
+        <ClubsTable
+          clubs={presetClubs}
+          districtId="test-district"
+          isLoading={false}
+          onPresetChange={onPresetChange}
+        />
+      )
+      const toggle = screen.getByRole('button', {
+        name: /close to distinguished/i,
+      })
+      fireEvent.click(toggle)
+      expect(onPresetChange).toHaveBeenCalledWith(true)
+      fireEvent.click(toggle)
+      expect(onPresetChange).toHaveBeenCalledWith(false)
+    })
   })
 
   describe('Row Click Handler', () => {
