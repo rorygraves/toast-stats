@@ -864,6 +864,33 @@ describe('ClubsTable', () => {
       expect(toggle).toHaveAttribute('aria-pressed', 'false')
     })
 
+    it('places the preset toggle inside the toolbar, directly after Columns (#967)', () => {
+      // #967: the preset moves out of its standalone row and into the single
+      // toolbar cluster — Search | Filters | Columns | Close to Distinguished.
+      const { container } = render(
+        <ClubsTable
+          clubs={presetClubs}
+          districtId="test-district"
+          isLoading={false}
+        />
+      )
+      const toolbar = container.querySelector('.clubs-filter-toolbar')
+      expect(toolbar).not.toBeNull()
+      const toggle = screen.getByRole('button', {
+        name: /close to distinguished/i,
+      })
+      // The preset lives in the toolbar row, not a separate presets row…
+      expect(toolbar).toContainElement(toggle)
+      // …and that standalone presets row is gone entirely.
+      expect(container.querySelector('.clubs-preset-bar')).toBeNull()
+      // Order within the toolbar: Columns, then the preset directly after it.
+      const columnsBtn = screen.getByRole('button', { name: /columns/i })
+      const buttons = Array.from(toolbar!.querySelectorAll('button'))
+      expect(buttons.indexOf(toggle)).toBeGreaterThan(
+        buttons.indexOf(columnsBtn)
+      )
+    })
+
     it('renders an unpressed toggle by default, with all clubs shown', () => {
       render(
         <ClubsTable
