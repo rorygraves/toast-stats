@@ -29,7 +29,14 @@ export interface UseProgramYearSummariesResult {
   error: Error | null
 }
 
-/** Program year (Jul 1 – Jun 30) a snapshot date belongs to, as a start year. */
+/**
+ * Program year (Jul 1 – Jun 30) a snapshot date belongs to, as a start year.
+ *
+ * Parses the ISO string by hand on purpose — do NOT swap this for the
+ * `new Date()`-based `getProgramYearForDate`: that reads the month in LOCAL
+ * time, so a `YYYY-07-01` boundary date parses to June 30 in any negative-UTC
+ * zone and lands in the wrong program year. String parsing is timezone-safe.
+ */
 function startYearOf(dateStr: string): number {
   const [y, m] = dateStr.split('-')
   const year = parseInt(y!, 10)

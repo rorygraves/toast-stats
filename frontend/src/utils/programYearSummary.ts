@@ -9,6 +9,8 @@
  * the card's view-model: headline aggregate metrics + the top-5 districts.
  */
 
+import { formatProgramYearShort } from './programYear'
+
 /** The subset of a CDN ranking entry the summary needs. */
 export interface DistrictRankingLite {
   districtId: string
@@ -96,7 +98,7 @@ export function buildProgramYearSummary(
 
   return {
     startYear,
-    label: `${startYear}-${String((startYear + 1) % 100).padStart(2, '0')}`,
+    label: formatProgramYearShort(startYear),
     yearEndDate,
     totalDistricts: rankings.length,
     ...totals,
