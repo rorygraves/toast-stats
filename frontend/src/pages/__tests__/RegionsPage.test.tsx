@@ -1,10 +1,17 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
+import { render, screen, cleanup, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom'
-import { MemoryRouter, Routes, Route } from 'react-router-dom'
+import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import RegionsPage from '../RegionsPage'
+
+/* Reads the live URL search string so URL-sync round-trips are assertable
+   (#979 — region deep link). */
+const LocationProbe = () => {
+  const { search } = useLocation()
+  return <div data-testid="loc-search">{search}</div>
+}
 
 /* Sprint C test suite (#496, #492). Red-first per Lesson 54. */
 
@@ -72,6 +79,22 @@ const renderPage = () => {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={['/regions']}>
+        <Routes>
+          <Route path="/regions" element={<RegionsPage />} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>
+  )
+}
+
+const renderPageAt = (url: string) => {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={[url]}>
+        <LocationProbe />
         <Routes>
           <Route path="/regions" element={<RegionsPage />} />
         </Routes>
@@ -154,5 +177,57 @@ describe('RegionsPage (#496)', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /all regions/i }))
     expect(screen.getAllByText(/Region 01/).length).toBeGreaterThan(0)
+  })
+
+  describe('deep-link region selection (#979)', () => {
+    it('isolates the region named in ?region= on load', async () => {
+      renderPageAt('/regions?region=07')
+      await screen.findByRole('link', { name: /^region 07/i })
+      // Region 07 is pre-selected from the URL; Region 01 is filtered out.
+      expect(
+        screen.getByRole('button', { name: /^region 07$/i })
+      ).toHaveAttribute('aria-pressed', 'true')
+      expect(screen.queryByText(/Region 01/)).not.toBeInTheDocument()
+    })
+
+    it('writes ?region= to the URL when a region is selected', async () => {
+      renderPageAt('/regions')
+      await screen.findByRole('link', { name: /^region 01/i })
+
+      await userEvent.click(
+        screen.getByRole('button', { name: /^region 07$/i })
+      )
+      await waitFor(() =>
+        expect(screen.getByTestId('loc-search').textContent).toContain(
+          'region=07'
+        )
+      )
+    })
+
+    it('clears ?region= when "All regions" is reselected', async () => {
+      renderPageAt('/regions?region=07')
+      await screen.findByRole('link', { name: /^region 07/i })
+
+      await userEvent.click(
+        screen.getByRole('button', { name: /all regions/i })
+      )
+      await waitFor(() =>
+        expect(screen.getByTestId('loc-search').textContent).not.toContain(
+          'region='
+        )
+      )
+    })
+
+    it('self-heals an unknown ?region= to All (page-level validation, Lesson 124)', async () => {
+      renderPageAt('/regions?region=99')
+      await screen.findByRole('link', { name: /^region 01/i })
+      // 99 is not a real region id, so the grid shows everything and "All
+      // regions" is the effective selection — never a stranded empty grid.
+      expect(
+        screen.getByRole('button', { name: /all regions/i })
+      ).toHaveAttribute('aria-pressed', 'true')
+      expect(screen.getAllByText(/Region 01/).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/Region 07/).length).toBeGreaterThan(0)
+    })
   })
 })

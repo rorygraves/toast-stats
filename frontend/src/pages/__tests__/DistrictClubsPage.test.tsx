@@ -319,6 +319,52 @@ describe('DistrictClubsPage (#570 — Phase 2)', () => {
     expect(screen.queryByText(/alpha toastmasters/i)).not.toBeInTheDocument()
   })
 
+  it('honors ?preset=close-to-distinguished on load — the toggle is pressed (#979)', async () => {
+    renderAt('/district/61/clubs?preset=close-to-distinguished')
+
+    const toggle = await screen.findByRole('button', {
+      name: /close to distinguished/i,
+    })
+    expect(toggle).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('writes ?preset=close-to-distinguished when the preset is toggled on (#979)', async () => {
+    const user = userEvent.setup()
+    const { router } = renderAt('/district/61/clubs')
+
+    await screen.findByText(/alpha toastmasters/i)
+    const toggle = screen.getByRole('button', {
+      name: /close to distinguished/i,
+    })
+    expect(toggle).toHaveAttribute('aria-pressed', 'false')
+
+    await user.click(toggle)
+
+    await waitFor(() => {
+      const params = new URLSearchParams(router.state.location.search)
+      expect(params.get('preset')).toBe('close-to-distinguished')
+    })
+  })
+
+  it('clears ?preset= from the URL when the preset is toggled back off (#979)', async () => {
+    const user = userEvent.setup()
+    const { router } = renderAt(
+      '/district/61/clubs?preset=close-to-distinguished'
+    )
+
+    const toggle = await screen.findByRole('button', {
+      name: /close to distinguished/i,
+    })
+    expect(toggle).toHaveAttribute('aria-pressed', 'true')
+
+    await user.click(toggle)
+
+    await waitFor(() => {
+      const params = new URLSearchParams(router.state.location.search)
+      expect(params.has('preset')).toBe(false)
+    })
+  })
+
   it('writes ?status= to the URL when the Status filter is applied via the drawer (#902)', async () => {
     const user = userEvent.setup()
     const { router } = renderAt('/district/61/clubs')

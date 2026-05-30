@@ -187,6 +187,10 @@ interface ClubsTableProps {
   onFilterChange?:
     | ((state: import('./filters/types').FilterState) => void)
     | undefined
+  /** Initial "Close to Distinguished" preset state from URL params (#979) */
+  initialPresetActive?: boolean | undefined
+  /** Callback when the preset toggles — for URL param sync (#979). */
+  onPresetChange?: ((active: boolean) => void) | undefined
   /** Reference date for anniversary computation. Defaults to `new Date()`.
    *  Tests inject a fixed date to keep year counts deterministic (#448). */
   referenceDate?: Date
@@ -244,6 +248,8 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
   onSortChange,
   initialFilterState,
   onFilterChange,
+  initialPresetActive,
+  onPresetChange,
   referenceDate,
   snapshotDiff,
 }) => {
@@ -345,7 +351,18 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
   // "Close to Distinguished" preset (#903) — a new pipeline step (R11) layered
   // on the column filters, powered by the ONE shared canonical predicate so it
   // can never diverge from the club-detail-card banner.
-  const [presetActive, setPresetActive] = useState(false)
+  // Seeded from the URL (#979) via initialPresetActive; toggling notifies the
+  // owning page through onPresetChange, which writes `?preset=`. Local state is
+  // the live source of truth for the render (mirrors the sort/dir seam) — the
+  // page never pushes the value back in, so there is no inward-sync race.
+  const [presetActive, setPresetActive] = useState(initialPresetActive ?? false)
+  const handlePresetToggle = useCallback(() => {
+    setPresetActive(prev => {
+      const next = !prev
+      onPresetChange?.(next)
+      return next
+    })
+  }, [onPresetChange])
   const presetFilteredClubs = useMemo(() => {
     if (!presetActive) return filteredClubs
     return filteredClubs.filter(club =>
@@ -677,7 +694,7 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
             type="button"
             className="clubs-filters-trigger clubs-preset-chip"
             aria-pressed={presetActive}
-            onClick={() => setPresetActive(p => !p)}
+            onClick={handlePresetToggle}
           >
             🎯 Close to Distinguished
           </button>
