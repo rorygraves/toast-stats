@@ -114,3 +114,4 @@
 - **139** [data-pipeline, frontend, hooks, analytics, verification, cdn] — A year-end snapshot's `sourceCsvDate` falls in July, so a program-year-equality guard silently drops every completed year (#892, #893)
 - **140** [css, frontend, refactoring, simplify, process] — A deliberately-isolated surface namespace outranks a DRY "reuse" flag; a small typographic duplication is cheaper than cross-surface coupling (#879, #880)
 - **141** [tests, playwright, e2e, verification, frontend, accessibility] — A page-sweep tripwire passes vacuously on nav chrome; gate each route on a content sentinel, not a bare element count (#887, #888)
+- **142** [css, frontend, verification, tests, accessibility] — 142-a-new-component-stylesheet-must-be-wired-into-the-import-graph-tests-wont-catch-an-orphan
