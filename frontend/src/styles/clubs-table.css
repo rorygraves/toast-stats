@@ -1,7 +1,12 @@
 
-/* Close-to-Distinguished preset (#903) — one action-oriented chip that replaced
-   the retired quick-filter row. Reuses toolbar tokens so dark mode inherits;
-   the pressed state uses the product accent (--rt-stats amber). */
+/* Close-to-Distinguished preset (#903, restyled #966) — one action-oriented
+   toggle that replaced the retired quick-filter row. It now carries the shared
+   .clubs-filters-trigger class (app-shell.css) so its border / radius / padding
+   / 44px height / hover / focus-ring / dark-mode tokens match the Filters and
+   Columns buttons exactly — one visual language, no drift. The .clubs-preset-chip
+   modifier below adds ONLY the pressed-state affordance (product accent amber),
+   layered on top of the shared base. (Imported after app-shell.css in index.css,
+   so the equal-specificity pressed rules win source-order over the base hover.) */
 .clubs-preset-bar {
   display: flex;
   align-items: center;
@@ -11,32 +16,15 @@
 }
 
 .clubs-preset-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 0.9rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-tm-loyal, #004165);
-  background: var(--color-tm-fog, #f3f5f7);
-  border: 1px solid var(--color-tm-mist, #d6dde3);
-  border-radius: 999px;
-  cursor: pointer;
-  min-height: 44px;
   white-space: nowrap;
-  transition:
-    background 0.15s ease,
-    color 0.15s ease,
-    border-color 0.15s ease;
 }
 
-.clubs-preset-chip:hover {
-  background: var(--color-tm-mist, #d6dde3);
-}
-
-.clubs-preset-chip[aria-pressed='true'] {
+/* Active toggle — amber fill so the pressed state reads as an active filter,
+   not just another idle toolbar button. Overrides the shared base + its hover. */
+.clubs-preset-chip[aria-pressed='true'],
+.clubs-preset-chip[aria-pressed='true']:hover {
   color: #fff;
-  background: var(--rt-stats, #d4873f);
+  background-color: var(--rt-stats, #d4873f);
   border-color: var(--rt-stats, #d4873f);
 }
 

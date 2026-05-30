@@ -843,6 +843,27 @@ describe('ClubsTable', () => {
       createMockClub({ clubId: 'c-done', clubName: 'DoneClub' }),
     ]
 
+    it('shares the toolbar-button treatment with Filters/Columns (#966)', () => {
+      // The preset must match the Filters/Columns look-and-feel: it carries the
+      // canonical .clubs-filters-trigger class (same border/radius/padding/
+      // height/hover/focus/dark-mode tokens) instead of a bespoke pill. The
+      // .clubs-preset-chip modifier stays only for the aria-pressed amber fill.
+      render(
+        <ClubsTable
+          clubs={presetClubs}
+          districtId="test-district"
+          isLoading={false}
+        />
+      )
+      const toggle = screen.getByRole('button', {
+        name: /close to distinguished/i,
+      })
+      expect(toggle).toHaveClass('clubs-filters-trigger')
+      expect(toggle).toHaveClass('clubs-preset-chip')
+      // Toggle semantics preserved — aria-pressed, NOT role=tab (Lesson 128).
+      expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    })
+
     it('renders an unpressed toggle by default, with all clubs shown', () => {
       render(
         <ClubsTable

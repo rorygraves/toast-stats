@@ -675,7 +675,7 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
         <div className="clubs-preset-bar">
           <button
             type="button"
-            className="clubs-preset-chip"
+            className="clubs-filters-trigger clubs-preset-chip"
             aria-pressed={presetActive}
             onClick={() => setPresetActive(p => !p)}
           >
