@@ -5,10 +5,22 @@
    archived program year shows and which years are on file. */
 
 import React from 'react'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import HistoryPage from '../HistoryPage'
+
+// HistoryPage fetches per-year summary cards (#892); this lede test asserts the
+// synchronous header/strip only, so stub the data hook (empty = no cards, the
+// year strip stays the sole role="list").
+vi.mock('../../hooks/useProgramYearSummaries', () => ({
+  useProgramYearSummaries: () => ({
+    summaries: [],
+    isLoading: false,
+    isError: false,
+    error: null,
+  }),
+}))
 
 const renderPage = () =>
   render(

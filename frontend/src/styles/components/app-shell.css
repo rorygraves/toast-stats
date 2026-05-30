@@ -4193,6 +4193,180 @@
     border: 1px dashed var(--line);
   }
 
+  /* Per-year summary cards (#892). Responsive grid; each card links into the
+     landing page for that program year. */
+  .history-year-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-top: 24px;
+  }
+
+  .history-year-cards__notice {
+    margin-top: 24px;
+    padding: 16px 18px;
+    border-radius: 10px;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--ink-2);
+    font-family: var(--sans);
+    font-size: 14px;
+  }
+
+  .history-year-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    /* Reserve enough height that the loaded card matches the skeleton, so the
+       async arrival doesn't shift the page (CLS — Lessons 79/125). */
+    min-height: 220px;
+    padding: 18px;
+    border-radius: 12px;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-family: var(--sans);
+    text-decoration: none;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease,
+      transform 0.15s ease;
+  }
+
+  a.history-year-card:hover {
+    border-color: var(--loyal-200);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+  }
+
+  a.history-year-card:focus-visible {
+    outline: 2px solid var(--link);
+    outline-offset: 2px;
+  }
+
+  .history-year-card--skeleton {
+    background-image: linear-gradient(
+      100deg,
+      var(--surface) 30%,
+      var(--line) 50%,
+      var(--surface) 70%
+    );
+    background-size: 200% 100%;
+    animation: history-year-card-shimmer 1.4s ease-in-out infinite;
+  }
+
+  @keyframes history-year-card-shimmer {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+
+  .history-year-card__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .history-year-card__year {
+    font-family: var(--display, var(--sans));
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .history-year-card__frozen {
+    font-size: 11px;
+    color: var(--ink-3);
+    white-space: nowrap;
+  }
+
+  .history-year-card__metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 16px;
+    margin: 0;
+  }
+
+  .history-year-card__metric {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .history-year-card__metric-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-3);
+  }
+
+  .history-year-card__metric-value {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+
+  .history-year-card__top {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: auto;
+  }
+
+  .history-year-card__top-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-3);
+  }
+
+  .history-year-card__top-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .history-year-card__top-item {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+
+  .history-year-card__top-rank {
+    flex: none;
+    min-width: 18px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--loyal-500);
+  }
+
+  [data-theme='dark'] .history-year-card__top-rank {
+    color: var(--link);
+  }
+
+  .history-year-card__top-name {
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  .history-year-card__top-region {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--ink-3);
+    white-space: nowrap;
+  }
+
   /* Methodology page (#368) — TOC + numbered sections. */
   .methodology-page {
     max-width: 1280px;

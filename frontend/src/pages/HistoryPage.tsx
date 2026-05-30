@@ -1,32 +1,28 @@
 import React from 'react'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { useProgramYearSummaries } from '../hooks/useProgramYearSummaries'
+import { ProgramYearSummaryCards } from '../components/ProgramYearSummaryCards'
+import {
+  getCurrentProgramYear,
+  formatProgramYearShort,
+} from '../utils/programYear'
 
-/* History page (#367). The 2026 design specifies year-end snapshot
-   cards (top 5 districts + headline metrics + notable note) for each
-   archived program year. That data is NOT currently fetched on the
-   client — it lives in archived snapshots that would need a new GCS
-   index endpoint to surface. Filing as a follow-up.
+/* History page (#367, #892). Per-year summary cards — top-5 districts +
+   headline metrics for each COMPLETED program year — assembled from existing
+   CDN endpoints (dates index → year-end all-districts rankings), newest first.
+   Each card links into the landing page filtered to that program year.
 
-   This v1 ships the page header + year-strip chip row pointing to the
-   archive years on file, plus the TI archive callout for pre-2019. */
-
-const PROGRAM_YEARS_ON_FILE = [
-  { label: '2025–26', current: true },
-  { label: '2024–25' },
-  { label: '2023–24' },
-  { label: '2022–23' },
-  { label: '2021–22' },
-  { label: '2020–21' },
-  { label: '2019–20' },
-]
+   The year strip and card list are data-driven, so years with no snapshot data
+   (e.g. the 2021-22 COVID gap) are correctly absent rather than hardcoded. */
 
 const HistoryPage: React.FC = () => {
   useDocumentTitle('Program Year History')
+  const { summaries, isLoading, isError } = useProgramYearSummaries()
+  const currentPY = getCurrentProgramYear()
+
   return (
     <div className="placeholder-page">
-      <p className="placeholder-page__eyebrow">
-        Archive · {PROGRAM_YEARS_ON_FILE.length} program years on file
-      </p>
+      <p className="placeholder-page__eyebrow">Program year archive</p>
       <h1 className="placeholder-page__title">Program Year History</h1>
       {/* "What does this page answer?" lede (#879, epic #880 Sprint 3). The
           other doc-style route; one scannable sentence above the year strip. */}
@@ -36,21 +32,26 @@ const HistoryPage: React.FC = () => {
         file here versus the TI archive.
       </p>
 
-      <div className="history-page-year-strip" role="list">
-        {PROGRAM_YEARS_ON_FILE.map(year => (
+      <div
+        className="history-page-year-strip"
+        role="list"
+        data-testid="history-year-strip"
+      >
+        <span
+          role="listitem"
+          className="history-page-year-chip history-page-year-chip--current"
+          aria-current="page"
+        >
+          {formatProgramYearShort(currentPY.year)}
+          <span className="history-page-year-chip__live">· LIVE</span>
+        </span>
+        {summaries.map(s => (
           <span
-            key={year.label}
+            key={s.startYear}
             role="listitem"
-            className={
-              'history-page-year-chip' +
-              (year.current ? ' history-page-year-chip--current' : '')
-            }
-            aria-current={year.current ? 'page' : undefined}
+            className="history-page-year-chip"
           >
-            {year.label}
-            {year.current && (
-              <span className="history-page-year-chip__live">· LIVE</span>
-            )}
+            {s.label}
           </span>
         ))}
         <span
@@ -61,11 +62,15 @@ const HistoryPage: React.FC = () => {
         </span>
       </div>
 
+      <ProgramYearSummaryCards
+        summaries={summaries}
+        isLoading={isLoading}
+        isError={isError}
+      />
+
       <div className="districts-methodology-callout" style={{ marginTop: 32 }}>
-        <strong>Per-year summary cards coming soon.</strong> The full archive UI
-        (top 5 districts + headline metrics per year) needs a new year-end
-        snapshot endpoint — tracked as a follow-up. For pre-2019 data, see the
-        official{' '}
+        <strong>Pre-2019 data.</strong> Years before 2019 aren’t on file here.
+        For those, see the official{' '}
         <a
           href="https://dashboards.toastmasters.org"
           target="_blank"
