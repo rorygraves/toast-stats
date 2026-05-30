@@ -520,6 +520,46 @@
     color: var(--ink);
   }
 
+  /* #890 — mobile collapse of the Program Year eyebrow onto the title line.
+     Shared by the landing and district-detail headers (see ProgramYearTitleSuffix).
+     Hidden by default (desktop shows the eyebrow); revealed <768px. Subordinate
+     size/weight so the title never wraps to a 2nd line. The dark remap mirrors
+     the eyebrow's #609 fix — --maroon-500 is 1.69:1 on the dark surface, so the
+     suffix borrows the same #e8879a. */
+  .page-header__title-py {
+    display: none;
+    font-size: 0.6em;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--maroon-500);
+    white-space: nowrap;
+  }
+
+  [data-theme='dark'] .page-header__title-py {
+    color: #e8879a;
+  }
+
+  @media (max-width: 767px) {
+    /* `--py` scopes the hide to the landing eyebrow only — the shared
+       .districts-page-header__eyebrow rule (Region/Division/Area pages) is
+       left untouched (Lesson 120/131). */
+    .districts-page-header__eyebrow--py {
+      display: none;
+    }
+
+    .page-header__title-py {
+      display: inline;
+    }
+
+    /* #890 — 28px is oversized at 375px; the longer landing title ("District
+       Rankings") + PY suffix overflows to a 2nd line. Drop to 22px on mobile so
+       the title stays single-line (recovering more above-the-fold height — the
+       epic's goal). Desktop keeps 28px. */
+    .districts-page-header__title {
+      font-size: 22px;
+    }
+  }
+
   .districts-page-header__lede {
     margin: 0;
     font-family: var(--sans);
@@ -3019,6 +3059,22 @@
     line-height: 1.15;
     letter-spacing: -0.015em;
     color: var(--ink);
+  }
+
+  /* #890 — mobile collapse of the eyebrow onto the title line. The shared
+     `.page-header__title-py` rule (defined with the landing header) styles and
+     reveals the suffix; here we only hide this header's (unshared) eyebrow
+     <768px. */
+  @media (max-width: 767px) {
+    .district-detail-page-header__eyebrow {
+      display: none;
+    }
+
+    /* Match the landing header's mobile title size (#890) for a consistent
+       single-line title-with-PY-suffix across page headers. */
+    .district-detail-page-header__title {
+      font-size: 22px;
+    }
   }
 
   .district-detail-page-header__lede {

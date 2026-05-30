@@ -1,6 +1,7 @@
 import React from 'react'
 import { DataControlsBar } from './DataControlsBar'
 import { HeaderActionsMenu } from './HeaderActionsMenu'
+import { ProgramYearTitleSuffix } from './ProgramYearTitleSuffix'
 import type { ProgramYear } from '../utils/programYear'
 
 /* District detail page header (#358). Extracted from DistrictDetailPage so
@@ -47,7 +48,10 @@ export const DistrictDetailHeader: React.FC<DistrictDetailHeaderProps> = ({
           <p className="district-detail-page-header__eyebrow">
             Program Year {selectedProgramYear.label.replace(/-/g, '–')}
           </p>
-          <h1 className="district-detail-page-header__title">{districtName}</h1>
+          <h1 className="district-detail-page-header__title">
+            {districtName}
+            <ProgramYearTitleSuffix programYear={selectedProgramYear} />
+          </h1>
           <p
             className="district-detail-page-header__lede"
             data-testid="district-detail-lede"

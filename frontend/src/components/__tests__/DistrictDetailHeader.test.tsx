@@ -43,6 +43,25 @@ describe('DistrictDetailHeader DataControlsBar adoption (#531 #528)', () => {
   })
 })
 
+describe('DistrictDetailHeader mobile sub-line collapse (#890)', () => {
+  it('renders a compact PY suffix inside the title (shown on mobile via CSS)', () => {
+    renderHeader()
+    const suffix = screen.getByTestId('page-header-title-py')
+    // Lives inside the H1 title so it collapses onto the title line on mobile.
+    const title = screen.getByRole('heading', { level: 1 })
+    expect(title).toContainElement(suffix)
+    expect(title).toHaveTextContent('District 61')
+    expect(suffix).toHaveTextContent(/·\s*PY\s*2025-26/)
+  })
+
+  it('keeps the full Program Year eyebrow in the DOM (shown on desktop)', () => {
+    renderHeader()
+    // Desktop sub-line unchanged — the eyebrow still carries the full label;
+    // CSS hides it <768px. Both surfaces render so neither width loses the PY.
+    expect(screen.getByText(/Program Year 2025–2026/)).toBeInTheDocument()
+  })
+})
+
 describe('DistrictDetailHeader action cluster consolidation (#676)', () => {
   it('moves Export + Share behind a single overflow menu, not inline buttons', () => {
     renderHeader()

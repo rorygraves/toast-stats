@@ -303,3 +303,53 @@ describe('DistrictsPage terminal-state CLS slot (#915 V9, Lesson 125)', () => {
     expectReservedShell(container)
   })
 })
+
+/**
+ * Mobile sub-line collapse (#890, epic #891 Sprint 2 — Epic H / CC-11).
+ *
+ * The landing header carries the same redundant "Program Year 2025–2026"
+ * eyebrow as the district-detail header. At <768px it collapses into a compact
+ * "· PY 2025-26" suffix on the title line to recover ~80px above the fold;
+ * desktop keeps the eyebrow above the title. jsdom has no media queries
+ * (Lesson 66), so these assert the structural hooks the CSS keys off — the
+ * per-breakpoint visibility is proven on the PR preview channel.
+ *
+ * Scope guard (Lesson 120/131): `.districts-page-header__eyebrow` is SHARED
+ * chrome (RegionPage / RegionsPage / DivisionPage / AreaPage reuse it with
+ * non-PY text). The mobile hide is keyed off a landing-only `--py` modifier so
+ * those siblings' eyebrows are untouched.
+ */
+describe('DistrictsPage mobile sub-line collapse (#890)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('renders a compact PY suffix inside the landing title (shown on mobile via CSS)', async () => {
+    setupSingleRow()
+    const { container } = renderWithProviders(<DistrictsPage />)
+    await screen.findByText('District 7')
+
+    const suffix = container.querySelector('.page-header__title-py')
+    expect(suffix).not.toBeNull()
+    expect(suffix!.textContent).toMatch(/·\s*PY\s*\d{4}-\d{2}/)
+
+    const title = screen.getByRole('heading', {
+      level: 1,
+      name: /District Rankings/i,
+    })
+    expect(title).toContainElement(suffix as HTMLElement)
+  })
+
+  it('marks the landing eyebrow with the --py modifier so only the landing hides it on mobile', async () => {
+    setupSingleRow()
+    const { container } = renderWithProviders(<DistrictsPage />)
+    await screen.findByText('District 7')
+
+    const eyebrow = container.querySelector('.districts-page-header__eyebrow')
+    expect(eyebrow).not.toBeNull()
+    // Scope marker — the shared eyebrow rule is NOT touched; only --py hides.
+    expect(eyebrow!.className).toMatch(/districts-page-header__eyebrow--py/)
+    // Full label preserved for desktop (CSS hides it <768px).
+    expect(eyebrow!.textContent).toMatch(/Program Year \d{4}–\d{4}/)
+  })
+})
