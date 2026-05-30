@@ -30,6 +30,9 @@ import {
   paramsToFilterState,
   filterStateToParams,
   FILTER_PARAM_KEYS,
+  PRESET_PARAM,
+  PRESET_CLOSE_TO_DISTINGUISHED,
+  paramsToPresetActive,
 } from '../utils/clubFilterUrl'
 
 /* District Clubs Page (#570, epic #568 Phase 2; URL-sync generalised #817).
@@ -83,6 +86,33 @@ const DistrictClubsPage: React.FC = () => {
             next.set('sort', field)
             next.set('dir', direction)
           }
+          return next
+        },
+        { replace: true }
+      )
+    },
+    [setSearchParams]
+  )
+
+  // "Close to Distinguished" preset URL state (#979). Like sort/dir, the preset
+  // is a single-writer param with its own handler — disjoint from the filter
+  // reconcile's FILTER_PARAM_KEYS, so a filter change never wipes it and the two
+  // never collide in one batch (no lesson-070 race). Initial value read once on
+  // mount; later updates flow through onPresetChange. The page owns the param;
+  // ClubsTable seeds its local toggle from it (R3).
+  const initialPresetActive = useMemo(
+    () => paramsToPresetActive(searchParams),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  )
+
+  const handlePresetChange = useCallback(
+    (active: boolean) => {
+      setSearchParams(
+        prev => {
+          const next = new URLSearchParams(prev)
+          if (active) next.set(PRESET_PARAM, PRESET_CLOSE_TO_DISTINGUISHED)
+          else next.delete(PRESET_PARAM)
           return next
         },
         { replace: true }
@@ -274,6 +304,8 @@ const DistrictClubsPage: React.FC = () => {
                   onSortChange={handleSortChange}
                   initialFilterState={initialFilterState}
                   onFilterChange={handleFilterChange}
+                  initialPresetActive={initialPresetActive}
+                  onPresetChange={handlePresetChange}
                   snapshotDiff={snapshotDiff}
                 />
                 <ProspectiveClubsPanel clubs={analytics?.prospectiveClubs} />
