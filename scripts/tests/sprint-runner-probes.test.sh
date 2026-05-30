@@ -25,7 +25,6 @@ LIB="$SCRIPT_DIR/../lib/sprint-runner-probes.sh"
 source "$LIB"
 
 fail=0
-WINDOW=2700 # 45 min — matches LIVENESS_STALL_WINDOW default
 
 # assert_eq <label> <expected> <actual>
 assert_eq() {
