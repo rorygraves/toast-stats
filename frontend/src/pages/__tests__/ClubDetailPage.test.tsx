@@ -502,13 +502,14 @@ describe('Close-to-Distinguished call-out — ClubDetailPage', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('renders the call-out at the upper boundary — exactly 4 members short (#433)', () => {
-    // 5 goals (gap=0). To get memberGap=4 we need both
-    //   absoluteGap = 20 - currentMembers = 4 → currentMembers = 16
-    //   growthGap   = 3  - netGrowth      ≥ 4 → netGrowth ≤ -1 → base ≥ 17
+  it('renders the call-out at the upper boundary — exactly 3 members short (#903)', () => {
+    // #903 tightened the members gap from <=4 (old #433) to <=3 (the canonical
+    // gapToDistinguished.members rule). 5 goals (gap=0). For memberGap=3:
+    //   absoluteGap = 20 - currentMembers = 3 → currentMembers = 17
+    //   growthGap   = 3  - netGrowth      ≥ 3 → netGrowth ≤ 0 → base ≥ 17
     setClubOverrides({
       membershipBase: 17,
-      membershipTrend: [{ date: '2026-03-15', count: 16 }],
+      membershipTrend: [{ date: '2026-03-15', count: 17 }],
       dcpGoalsTrend: [{ date: '2026-03-15', goalsAchieved: 5 }],
       distinguishedLevel: 'NotDistinguished',
       aprilRenewals: 0,
@@ -520,12 +521,13 @@ describe('Close-to-Distinguished call-out — ClubDetailPage', () => {
     ).toBeInTheDocument()
   })
 
-  it('does NOT render the call-out when 5 members short — just past the threshold (#433)', () => {
-    // 5 goals (gap=0). currentMembers=15, base=17 → netGrowth=-2,
-    // absoluteGap=5, growthGap=5, memberGap=5.
+  it('does NOT render the call-out when 4 members short — just past the #903 threshold', () => {
+    // #903: memberGap=4 no longer qualifies (was the old #433 boundary).
+    // 5 goals (gap=0). currentMembers=16, base=17 → netGrowth=-1,
+    // absoluteGap=4, growthGap=4, memberGap=4.
     setClubOverrides({
       membershipBase: 17,
-      membershipTrend: [{ date: '2026-03-15', count: 15 }],
+      membershipTrend: [{ date: '2026-03-15', count: 16 }],
       dcpGoalsTrend: [{ date: '2026-03-15', goalsAchieved: 5 }],
       distinguishedLevel: 'NotDistinguished',
       aprilRenewals: 0,
