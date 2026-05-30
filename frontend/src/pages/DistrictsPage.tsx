@@ -17,9 +17,10 @@ import InfoTooltip from '../components/InfoTooltip'
 import DistrictTierChip from '../components/DistrictTierChip'
 import { DistrictChipAndName } from '../components/DistrictChipAndName'
 import { useMyDistrict } from '../hooks/useMyDistrict'
-import { usePersistedState } from '../hooks/usePersistedState'
 import { useLastVisit } from '../hooks/useLastVisit'
 import { useUrlSort } from '../hooks/useUrlSort'
+import { useUrlState } from '../hooks/useUrlState'
+import { useDebounce } from '../hooks/useDebounce'
 import { SortableHeader } from '../components/SortableHeader'
 import { LazyComparisonPanel as ComparisonPanel } from '../components/LazyCharts'
 import {
@@ -42,6 +43,14 @@ import { useIsMobile } from '../hooks/useIsMobile'
 // query never hides its own matches.
 const MOBILE_RANKINGS_CAP = 20
 
+// Shared parse/serialize for comma-joined string-list URL params (?regions=,
+// ?pinned=). Module-level so their identity is stable across renders (#978).
+const EMPTY_LIST: string[] = []
+const parseList = (v: string): string[] =>
+  v ? v.split(',').filter(Boolean) : []
+const serializeList = (a: string[]): string => a.join(',')
+const LIST_OPTS = { parse: parseList, serialize: serializeList }
+
 const DistrictsPage: React.FC = () => {
   const navigate = useNavigate()
   // URL-synced click-header sort (#851). Replaces the prior persisted
@@ -61,11 +70,35 @@ const DistrictsPage: React.FC = () => {
     defaultDirection: 'desc',
   })
   const sortBy = sort.field
-  // Intentionally NOT persisted — search query should reset between visits.
-  const [searchQuery, setSearchQuery] = useState<string>('')
-  const [pinnedDistrictIds, setPinnedDistrictIds] = useState<Set<string>>(
-    new Set()
+  // URL-synced search query (?q=, #978). The text input drives a LOCAL
+  // searchQuery so filtering + the type-ahead stay instant (and the existing
+  // synchronous search tests keep passing). A 300ms-debounced copy is pushed
+  // OUT to ?q= only once it has SETTLED (`debounced === searchQuery`, Lesson
+  // 130) — pushing the lagging debounced value during an external clear would
+  // re-apply the query we just cleared. An inward render-phase sync pulls the
+  // param (shared link / reload / back button) back into local state.
+  const [qParam, setQParam] = useUrlState('q', '')
+  const [searchQuery, setSearchQuery] = useState<string>(qParam)
+  const [trackedQParam, setTrackedQParam] = useState<string>(qParam)
+  if (qParam !== trackedQParam) {
+    setTrackedQParam(qParam)
+    setSearchQuery(qParam)
+  }
+  const debouncedSearch = useDebounce(searchQuery, 300)
+  useEffect(() => {
+    if (debouncedSearch === searchQuery && debouncedSearch !== qParam) {
+      setQParam(debouncedSearch)
+    }
+  }, [debouncedSearch, searchQuery, qParam, setQParam])
+
+  // URL-synced comparison pins (?pinned=12,34, #978). Stored as a string list
+  // in the URL; derived into a Set for the existing membership checks.
+  const [pinnedIds, setPinnedIds] = useUrlState<string[]>(
+    'pinned',
+    EMPTY_LIST,
+    LIST_OPTS
   )
+  const pinnedDistrictIds = React.useMemo(() => new Set(pinnedIds), [pinnedIds])
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [searchFocused, setSearchFocused] = useState<boolean>(false)
   const { myDistrictId, setMyDistrict, isMyDistrict } = useMyDistrict()
@@ -90,12 +123,14 @@ const DistrictsPage: React.FC = () => {
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
-  // selectedRegions persists across visits (#416). Default = all (empty list,
-  // which the existing useEffect inflates to all-known-regions on first
-  // data render).
-  const [selectedRegions, setSelectedRegions] = usePersistedState<string[]>(
-    'districts-selected-regions',
-    []
+  // URL-synced region filter (?regions=1,2,3, #978; was localStorage #416).
+  // An empty list means "all regions" — the filter below treats empty as
+  // no-filter, and the toolbar's "All" / solo / shift interactions collapse a
+  // full selection back to empty so the param drops off a clean URL.
+  const [selectedRegions, setSelectedRegions] = useUrlState<string[]>(
+    'regions',
+    EMPTY_LIST,
+    LIST_OPTS
   )
 
   // Use URL-synced program year and date (#272)
@@ -268,12 +303,9 @@ const DistrictsPage: React.FC = () => {
     return Array.from(uniqueRegions).sort()
   }, [rankings])
 
-  // Initialize selected regions to all regions when data loads
-  React.useEffect(() => {
-    if (regions.length > 0 && selectedRegions.length === 0) {
-      setSelectedRegions(regions)
-    }
-  }, [regions, selectedRegions.length])
+  // No inflate-to-all effect (#978): an empty selection already means "all"
+  // for both the filter and the toolbar's active-state logic, and keeps the
+  // URL clean (no ?regions param) in the default view.
 
   // Filter by selected regions
   const filteredRankings = React.useMemo(() => {
@@ -422,14 +454,14 @@ const DistrictsPage: React.FC = () => {
   // Comparison mode — pin/unpin districts (#93)
   const MAX_PINNED = 3
   const togglePin = (districtId: string) => {
-    setPinnedDistrictIds(prev => {
-      const next = new Set(prev)
-      if (next.has(districtId)) {
-        next.delete(districtId)
-      } else if (next.size < MAX_PINNED) {
-        next.add(districtId)
+    setPinnedIds(prev => {
+      if (prev.includes(districtId)) {
+        return prev.filter(id => id !== districtId)
       }
-      return next
+      if (prev.length < MAX_PINNED) {
+        return [...prev, districtId]
+      }
+      return prev
     })
   }
 
@@ -911,16 +943,22 @@ const DistrictsPage: React.FC = () => {
                   selectedRegions.length === regions.length)
               const handleRegionClick = (region: string, shiftKey: boolean) => {
                 if (shiftKey) {
+                  // Additive toggle. Empty = all, so start from the full set
+                  // when nothing is explicitly selected; collapse back to
+                  // empty (clean URL) once every region is selected again.
+                  const base =
+                    selectedRegions.length === 0 ? regions : selectedRegions
+                  const next = base.includes(region)
+                    ? base.filter(r => r !== region)
+                    : [...base, region]
                   setSelectedRegions(
-                    selectedRegions.includes(region)
-                      ? selectedRegions.filter(r => r !== region)
-                      : [...selectedRegions, region]
+                    next.length === regions.length ? EMPTY_LIST : next
                   )
                   return
                 }
                 const isSoloActive =
                   selectedRegions.length === 1 && selectedRegions[0] === region
-                setSelectedRegions(isSoloActive ? regions : [region])
+                setSelectedRegions(isSoloActive ? EMPTY_LIST : [region])
               }
               const stateLabel = isAllActive
                 ? 'Showing all regions'
@@ -932,7 +970,7 @@ const DistrictsPage: React.FC = () => {
                   <span className="districts-toolbar__label">Regions:</span>
                   <button
                     type="button"
-                    onClick={() => setSelectedRegions(regions)}
+                    onClick={() => setSelectedRegions(EMPTY_LIST)}
                     className={`districts-toolbar__region-chip${isAllActive ? ' districts-toolbar__region-chip--active' : ''}`}
                     aria-pressed={isAllActive}
                   >
@@ -1078,7 +1116,7 @@ const DistrictsPage: React.FC = () => {
           allRankings={rankings}
           totalDistricts={rankings.length}
           onRemove={districtId => togglePin(districtId)}
-          onClearAll={() => setPinnedDistrictIds(new Set())}
+          onClearAll={() => setPinnedIds(EMPTY_LIST)}
         />
 
         {/* Rankings Table */}
