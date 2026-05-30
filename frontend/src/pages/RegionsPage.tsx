@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchCdnRankings } from '../services/cdn'
 import { aggregateRegions } from '../utils/aggregateRegions'
@@ -6,6 +6,16 @@ import { RegionGrid } from '../components/RegionGrid'
 import { RegionFinder } from '../components/RegionFinder'
 import { LoadingSkeleton } from '../components/LoadingSkeleton'
 import { EmptyState } from '../components/ErrorDisplay'
+import { useUrlState } from '../hooks/useUrlState'
+
+/* Region selection is URL state (#979) so it survives reload, back, and shared
+   links — `?region=07`. Module-level options keep a stable reference so
+   useUrlState's value memo isn't busted each render. `null` ("All regions")
+   serialises to '' and is dropped from the URL, keeping the default clean. */
+const REGION_URL_OPTIONS = {
+  parse: (raw: string): string | null => raw || null,
+  serialize: (value: string | null): string => value ?? '',
+}
 
 /* RegionsPage (#496) — overview of all 14 numbered regions.
 
@@ -28,7 +38,11 @@ const RegionsPage: React.FC = () => {
     staleTime: 15 * 60 * 1000,
   })
 
-  const [selectedRegion, setSelectedRegion] = useState<string | null>(null)
+  const [selectedRegion, setSelectedRegion] = useUrlState<string | null>(
+    'region',
+    null,
+    REGION_URL_OPTIONS
+  )
 
   const rollups = useMemo(
     () => (data?.rankings ? aggregateRegions(data.rankings) : []),
