@@ -47,8 +47,11 @@ probe_commit_age() {
     return 0
   fi
 
+  # Guard the arithmetic against a non-numeric last_commit (e.g. garbage from a
+  # misbehaving git): a bare `(( not-a-number ))` aborts the whole runner under
+  # `set -u`. A non-numeric value means "no usable commit" → stay on the floor.
   local progress_epoch="$start_epoch"
-  if [[ -n "$last_commit" ]] && (( last_commit > progress_epoch )); then
+  if [[ "$last_commit" =~ ^[0-9]+$ ]] && (( last_commit > progress_epoch )); then
     progress_epoch="$last_commit"
   fi
 
@@ -84,8 +87,10 @@ probe_process() {
 
   # pid present → classify on the max of the two CPU samples (float-safe via awk).
   local idle
+  # `+0` coerces each sample to a number so a stray non-float (not just empty)
+  # can't slip through as a string compare and misread idle as working.
   idle="$(awk -v a="${cpu1:-0}" -v b="${cpu2:-0}" -v t="$LIVENESS_CPU_IDLE_PCT" \
-    'BEGIN { m = (a > b) ? a : b; print (m < t) ? "1" : "0" }')"
+    'BEGIN { a += 0; b += 0; m = (a > b) ? a : b; print (m < t) ? "1" : "0" }')"
   if [[ "$idle" == 1 ]]; then
     echo STALL
   else
@@ -104,6 +109,13 @@ probe_log() {
   local present="$1" mtime_age="$2"
 
   if [[ "$present" != 1 ]]; then
+    echo UNKNOWN
+    return 0
+  fi
+
+  # A non-numeric mtime_age is a sampling failure, not evidence — and a bare
+  # `(( not-a-number ))` would abort the runner under `set -u`. Treat as UNKNOWN.
+  if ! [[ "$mtime_age" =~ ^[0-9]+$ ]]; then
     echo UNKNOWN
     return 0
   fi

@@ -67,6 +67,11 @@ assert_eq "commit: old commit on old session → STALL" "STALL" \
 assert_eq "commit: missing worktree → UNKNOWN" "UNKNOWN" \
   "$(probe_commit_age "$now" "$start" "" 0)"
 
+# Non-numeric last_commit (misbehaving git) must NOT abort under set -u; it
+# means "no usable commit" → stay on the floor. Fresh start → OK.
+assert_eq "commit: non-numeric last_commit → floored (OK)" "OK" \
+  "$(probe_commit_age "$((start + 600))" "$start" "garbage" 1)"
+
 # ---------------------------------------------------------------------------
 # probe_process <screen_alive:0|1> <pid|''> <cpu1> <cpu2>
 # ---------------------------------------------------------------------------
@@ -128,6 +133,10 @@ assert_eq "log: healthy varied tail → OK" "OK" \
 # Missing logfile (pre-rollout session) → UNKNOWN.
 assert_eq "log: missing logfile → UNKNOWN" "UNKNOWN" \
   "$(printf '' | probe_log 0 100)"
+
+# Non-numeric mtime_age (sampling failure) → UNKNOWN, not a set -u abort.
+assert_eq "log: non-numeric mtime_age → UNKNOWN" "UNKNOWN" \
+  "$(printf 'x\n' | probe_log 1 'n/a')"
 
 # Too few lines to establish a loop → OK (insufficient evidence, no false STALL).
 assert_eq "log: short fresh log (insufficient evidence) → OK" "OK" \
