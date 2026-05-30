@@ -175,6 +175,8 @@ Prioritised by user-facing value (sharing a filtered/searched view is the core p
 | **P3**   | Storage-only → URL (product call)  | my-district pin, KPI-strip collapse, Clubs column-group visibility                                                                                                                        | `myDistrict`, `kpiCollapsed`, `hiddenGroups`                                                                                           |
 
 > **P3 caveat (product decision required during that sprint):** my-district, theme, and column-visibility are genuine _per-user preferences_. Encoding them in the URL means a shared link imposes the sender's preference on the recipient. The implementing sprint should decide per-control whether URL-sync or keeping `localStorage` is the right UX — this audit flags them for the principle's sake but does not mandate the change.
+>
+> **✅ Resolved (#982, 2026-05-30):** **none promoted.** All three stay storage-backed — they describe the viewer's _personal environment_, not the shareable data/view, so URL-syncing would impose rather than inform (same category as the already-excluded theme toggle). Decision + per-control rationale: [`storage-only-prefs-decision-2026-05-30.md`](./storage-only-prefs-decision-2026-05-30.md); locked by `frontend/src/components/__tests__/storageOnlyPrefsNotUrlSynced.tripwire.test.tsx`.
 
 ### Guardrails for implementers
 
