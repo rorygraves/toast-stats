@@ -2,7 +2,7 @@ import type { ClubDCPProjection } from './dcpProjections'
 
 /**
  * Canonical "Close to Distinguished" predicate (epic #900, Sprint 1 spec in
- * docs/design/close-to-distinguished-predicate.md).
+ * docs/design/close-to-distinguished-predicate-2026-05-28.md).
  *
  * Single source of truth consumed by BOTH the clubs-table preset chip and the
  * club-detail-card banner — neither surface re-derives the rule (Lesson 052).
