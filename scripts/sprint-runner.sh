@@ -414,15 +414,18 @@ gc_worktrees() {
   git -C "$REPO_DIR" worktree prune 2>/dev/null || true
 }
 
-# True (0) if the issue carries the `needs-product-review` label — the runner
-# must not launch such a sprint autonomously (#767); the session can't make a
-# product call. Fail-open: a gh error yields "not flagged" and lets the normal
-# predecessor gate (which also queries gh) skip the tick instead.
-issue_needs_review() {
-  local issue="$1"
-  gh issue view "$issue" --json labels --jq '.labels[].name' 2>/dev/null \
-    | grep -qx 'needs-product-review'
+# issue_has_label <issue> <label> → 0 if the issue carries <label>, else 1.
+# Fail-open: a gh error yields non-zero ("absent") so every label gate built on
+# this degrades to "not flagged" and lets the predecessor gate govern the tick.
+issue_has_label() {
+  gh issue view "$1" --json labels --jq '.labels[].name' 2>/dev/null \
+    | grep -qx "$2"
 }
+
+# True (0) if the issue carries `needs-product-review` — the runner must not
+# launch such a sprint autonomously (#767); the session can't make a product
+# call. The operator removes the label (or hand-runs) to release it.
+issue_needs_review() { issue_has_label "$1" needs-product-review; }
 
 # === Sprint launch (shared by first-launch and Sprint-4 auto-relaunch) ===
 #
@@ -528,12 +531,8 @@ sprint_already_shipped() {
 # issue_is_stuck_escalated <issue> → 0 if the issue carries `runner-stuck` (the
 # auto-relaunch cap was hit and the operator hasn't cleared it). The normal
 # launch path skips such an issue so the freed slot isn't silently re-filled
-# with a 4th relaunch before the operator investigates (design §5). Fail-open:
-# a gh error yields "not flagged" so the predecessor gate still governs.
-issue_is_stuck_escalated() {
-  gh issue view "$1" --json labels --jq '.labels[].name' 2>/dev/null \
-    | grep -qx 'runner-stuck'
-}
+# with a 4th relaunch before the operator investigates (design §5).
+issue_is_stuck_escalated() { issue_has_label "$1" runner-stuck; }
 
 # escalate_stuck <issue> <attempts> → flag the issue for the operator and free
 # the slot WITHOUT relaunching (cap reached). Idempotent: the strong, visible
