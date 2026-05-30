@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.22.0](https://github.com/taverns-red/toast-stats/compare/toast-stats-v2.21.0...toast-stats-v2.22.0) (2026-05-30)
+
+
+### Features
+
+* **history:** per-year summary cards on /history ([#892](https://github.com/taverns-red/toast-stats/issues/892)) ([#947](https://github.com/taverns-red/toast-stats/issues/947)) ([e912a0c](https://github.com/taverns-red/toast-stats/commit/e912a0c4c6b41e38f582f532ef2f3c58544f0502))
+* shared Close-to-Distinguished predicate + clubs-table preset ([#903](https://github.com/taverns-red/toast-stats/issues/903)) ([#952](https://github.com/taverns-red/toast-stats/issues/952)) ([618c712](https://github.com/taverns-red/toast-stats/commit/618c71270bba57299322e3eacd55650e304adf72))
+
+
+### Refactors
+
+* **clubs:** remove the quick-filter chip row, keep the Filters drawer ([#902](https://github.com/taverns-red/toast-stats/issues/902)) ([#951](https://github.com/taverns-red/toast-stats/issues/951)) ([3a682a8](https://github.com/taverns-red/toast-stats/commit/3a682a8e2cafa2b6d83a5d5b3e9b5baa6a939d7b))
+
+
+### Documentation
+
+* **clubs:** document Close-to-Distinguished preset + verify ([#904](https://github.com/taverns-red/toast-stats/issues/904)) ([#954](https://github.com/taverns-red/toast-stats/issues/954)) ([405c12b](https://github.com/taverns-red/toast-stats/commit/405c12bfebdb6113f42c008e62cc18f47cadf6bf))
+* **design:** canonical Close-to-Distinguished predicate & helper plan ([#901](https://github.com/taverns-red/toast-stats/issues/901)) ([#950](https://github.com/taverns-red/toast-stats/issues/950)) ([5bf3dbb](https://github.com/taverns-red/toast-stats/commit/5bf3dbbe8e6a15905524687edac054ffe83664a9))
+* **lessons:** year-end freeze sourceCsvDate falls in July — use a date-window guard, not PY equality ([#892](https://github.com/taverns-red/toast-stats/issues/892)) ([#949](https://github.com/taverns-red/toast-stats/issues/949)) ([6c7c01f](https://github.com/taverns-red/toast-stats/commit/6c7c01f1a168cebc7c1570002e5eea40b76ab966))
+
 ## [2.21.0](https://github.com/taverns-red/toast-stats/compare/toast-stats-v2.20.1...toast-stats-v2.21.0) (2026-05-30)
 
 
