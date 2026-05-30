@@ -199,6 +199,38 @@ describe('RegionsLeaderboard (#964) — deep link', () => {
   })
 })
 
+describe('RegionsLeaderboard (#965) — sticky region-identity column', () => {
+  /* #965: at narrow widths the 6-column table scrolls horizontally; the Region
+     identity column must stay pinned so each row keeps its label while the
+     metric columns scroll under it (Lesson 105). The CSS that makes it opaque +
+     themed lives in app-shell.css and is contract-tested by
+     RegionDarkModeContrast; here we only assert the markup carries the hooks. */
+  it('tags the table so its sticky-column CSS can scope to it', () => {
+    renderAt(<RegionsLeaderboard rollups={sampleRollups} />)
+    expect(screen.getByRole('table').className).toMatch(
+      /region-leaderboard-table/
+    )
+  })
+
+  it('pins the Region header cell (sticky-col class on the <th>)', () => {
+    renderAt(<RegionsLeaderboard rollups={sampleRollups} />)
+    const th = screen
+      .getByRole('button', { name: /sort by region/i })
+      .closest('th')
+    expect(th?.className).toMatch(/region-leaderboard__sticky-col/)
+  })
+
+  it('pins the Region cell on every body row (sticky-col class on the first <td>)', () => {
+    renderAt(<RegionsLeaderboard rollups={sampleRollups} />)
+    const rows = screen.getByRole('table').querySelectorAll('tbody tr')
+    expect(rows.length).toBeGreaterThan(0)
+    for (const tr of rows) {
+      const firstCell = tr.querySelector('td')
+      expect(firstCell?.className).toMatch(/region-leaderboard__sticky-col/)
+    }
+  })
+})
+
 describe('RegionsLeaderboard (#964) — empty state', () => {
   it('renders a table-form empty message and no rows when there are no regions', () => {
     renderAt(<RegionsLeaderboard rollups={[]} />)

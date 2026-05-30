@@ -98,7 +98,7 @@ export const RegionsLeaderboard: React.FC<RegionsLeaderboardProps> = ({
         aria-label="Region rankings — scroll horizontally to see all metrics"
       >
         <table
-          className="w-full text-sm font-tm-body"
+          className="region-leaderboard-table w-full text-sm font-tm-body"
           aria-label="Region rankings"
         >
           <thead className="border-b border-gray-200 theme-dark:border-gray-700">
@@ -108,7 +108,7 @@ export const RegionsLeaderboard: React.FC<RegionsLeaderboardProps> = ({
                 label="Region"
                 currentSort={sort}
                 onSort={toggleSort}
-                thClassName={`${HEADER_TH} text-left`}
+                thClassName={`${HEADER_TH} text-left region-leaderboard__sticky-col`}
               />
               <SortableHeader<SortField>
                 field="districts"
@@ -158,7 +158,7 @@ export const RegionsLeaderboard: React.FC<RegionsLeaderboardProps> = ({
                 key={r.region}
                 className="hover:bg-gray-50 theme-dark:hover:bg-gray-800/50 transition-colors"
               >
-                <td className="px-4 py-3 text-left">
+                <td className="region-leaderboard__sticky-col px-4 py-3 text-left">
                   <Link
                     to={`/region/${r.region}`}
                     aria-label={`Region ${r.region} — leader ${r.leadingDistrictName}`}

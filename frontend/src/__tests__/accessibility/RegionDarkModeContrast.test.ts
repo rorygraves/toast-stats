@@ -389,6 +389,57 @@ describe('Region pages dark-mode contrast (#609)', () => {
     ).toBeGreaterThanOrEqual(4.5)
   })
 
+  // #965: the /regions OVERVIEW leaderboard (RegionsLeaderboard) gets its own
+  // sticky region-identity column. Unlike the detail table (border-collapse:
+  // collapse), the overview table is the default `separate` model with Tailwind
+  // `divide-y` row rules — a distinct class + re-derived border restoration
+  // (Lesson 126). Same lesson-092 trap applies: the opaque pinned background
+  // MUST be a theme token, never a hardcoded light literal.
+  it('overview sticky-col uses a THEMED background, not a hardcoded literal (#965)', () => {
+    const bg = ruleValue(
+      appShellCss,
+      '.region-leaderboard-table .region-leaderboard__sticky-col',
+      'background-color'
+    )
+    expect(
+      bg,
+      'overview sticky-col background-color rule must exist'
+    ).toBeTruthy()
+    expect(bg, `overview sticky-col bg "${bg}" must be a theme token`).toMatch(
+      /var\(--/
+    )
+    expect(resolveVar(bg!)).not.toBe(lightTokens.get('--surface'))
+  })
+
+  it('overview header sticky cell uses the themed thead surface (#965)', () => {
+    const bg = ruleValue(
+      appShellCss,
+      '.region-leaderboard-table thead .region-leaderboard__sticky-col',
+      'background-color'
+    )
+    expect(
+      bg,
+      `overview thead sticky bg "${bg}" must be a theme token`
+    ).toMatch(/var\(--/)
+  })
+
+  it('Region-cell text clears AA on the overview sticky column in dark (#965)', () => {
+    // The pinned Region cell carries the region link (text-tm-loyal-blue) and
+    // the "leader: …" sublabel (text-gray-700). Both sit on the sticky bg,
+    // which is --surface at rest and --surface-2 on hover/header. Size for the
+    // LIGHTEST surface it lands on (--surface-2, Lesson 095).
+    for (const cls of ['text-tm-loyal-blue', 'text-gray-700']) {
+      const fg = utilityDark(cls, 'color', surface)
+      for (const bg of [surface, surface2]) {
+        const ratio = calculateContrastRatio(fg, bg)
+        expect(
+          ratio,
+          `${cls}: ${fg} on overview sticky ${bg} = ${ratio.toFixed(2)}:1`
+        ).toBeGreaterThanOrEqual(4.5)
+      }
+    }
+  })
+
   it('scroll-cue overlay is themed, not a hardcoded colour (lesson 092)', () => {
     const bg = ruleValue(
       appShellCss,
