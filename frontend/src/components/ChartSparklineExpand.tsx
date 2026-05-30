@@ -28,21 +28,6 @@ export interface ChartSparklineExpandProps {
   urlId?: string
 }
 
-/**
- * Sparkline-then-expand wrapper (epic #876 / CC-3). At and above `breakpoint`
- * the desktop chart renders directly — zero added chrome, so desktop layout is
- * untouched. Below it, the multi-series chart (unreadable at 375px) collapses
- * to its headline numbers + a sparkline behind a tap target; tapping opens a
- * full-screen `ChartExpandSheet` with the full desktop chart.
- *
- * The collapse is width-driven (`useIsMobile` → matchMedia), NOT scroll/visibility
- * gated, so the collapsed view is present on mount in every context including
- * non-scroll capture (Lesson 113). In JSDOM `useIsMobile` resolves to false, so
- * desktop tests and existing consumers see the bare chart unchanged.
- *
- * This sprint (#874) ships only the reusable wrapper; #875 applies it to the
- * District Trends, Club detail, Rankings Progression and Awards charts.
- */
 type ViewProps = Omit<ChartSparklineExpandProps, 'breakpoint' | 'urlId'> & {
   isOpen: boolean
   setOpen: (open: boolean) => void
@@ -116,6 +101,20 @@ const LocalChartSparklineExpand: React.FC<
   )
 }
 
+/**
+ * Sparkline-then-expand wrapper (epic #876 / CC-3). At and above `breakpoint`
+ * the desktop chart renders directly — zero added chrome, so desktop layout is
+ * untouched. Below it, the multi-series chart (unreadable at 375px) collapses
+ * to its headline numbers + a sparkline behind a tap target; tapping opens a
+ * full-screen `ChartExpandSheet` with the full desktop chart.
+ *
+ * The collapse is width-driven (`useIsMobile` → matchMedia), NOT scroll/visibility
+ * gated, so the collapsed view is present on mount in every context including
+ * non-scroll capture (Lesson 113). In JSDOM `useIsMobile` resolves to false, so
+ * desktop tests and existing consumers see the bare chart unchanged.
+ *
+ * Pass `urlId` to deep-link the open sheet via `?chartExpanded=<id>` (#980).
+ */
 export const ChartSparklineExpand: React.FC<ChartSparklineExpandProps> = ({
   breakpoint = 768,
   urlId,

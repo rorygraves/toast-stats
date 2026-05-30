@@ -15,7 +15,6 @@
  * ```
  */
 
-import { useMemo } from 'react'
 import { useUrlState } from './useUrlState'
 
 /** Dedupe, preserving first-seen order, dropping empty entries. */
@@ -25,19 +24,19 @@ function dedupe(values: string[]): string[] {
 
 type SetStringSetAction = string[] | ((prev: string[]) => string[])
 
+// Module-scoped (stable references) so useUrlState's value memo + setter
+// useCallback don't churn each render. With stable options + default, the
+// parsed array useUrlState returns is itself stable when the param is unchanged
+// — so consumers can use it directly in effect/memo deps (no extra memo here).
+const EMPTY: string[] = []
+const STRING_SET_OPTIONS = {
+  parse: (raw: string) => dedupe(raw.split(',')),
+  // Sort on write so the URL is order-stable regardless of click order.
+  serialize: (values: string[]) => dedupe(values).sort().join(','),
+}
+
 export function useUrlStringSet(
   key: string
 ): [string[], (action: SetStringSetAction) => void] {
-  const [value, setValue] = useUrlState<string[]>(key, [], {
-    parse: raw => dedupe(raw.split(',')),
-    // Sort on write so the URL is order-stable regardless of click order.
-    serialize: values => dedupe(values).sort().join(','),
-  })
-
-  // useUrlState returns a fresh array each render; memoize on the joined value
-  // so consumers can safely use the result in effect/memo dependency arrays.
-  const joined = value.join(',')
-  const stable = useMemo(() => (joined ? joined.split(',') : []), [joined])
-
-  return [stable, setValue]
+  return useUrlState<string[]>(key, EMPTY, STRING_SET_OPTIONS)
 }

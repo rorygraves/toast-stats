@@ -26,15 +26,21 @@ interface UseUrlBooleanOptions {
 
 type SetBooleanAction = boolean | ((prev: boolean) => boolean)
 
+// Module-scoped so the reference is stable across renders — useUrlState keys its
+// value memo and setter useCallback on `options`, so a fresh object each render
+// would needlessly churn both. Anything that isn't an explicit '0' reads true.
+const BOOLEAN_OPTIONS = {
+  parse: (value: string) => value !== '0',
+  serialize: (value: boolean) => (value ? '1' : '0'),
+}
+
 export function useUrlBoolean(
   key: string,
   options?: UseUrlBooleanOptions
 ): [boolean, (action: SetBooleanAction) => void] {
-  const defaultValue = options?.defaultValue ?? false
-  return useUrlState<boolean>(key, defaultValue, {
-    // Anything that isn't an explicit '0' reads as true; '0' reads as false.
-    // `undefined` would fall back to the default, but '1'/'0' cover both writes.
-    parse: value => value !== '0',
-    serialize: value => (value ? '1' : '0'),
-  })
+  return useUrlState<boolean>(
+    key,
+    options?.defaultValue ?? false,
+    BOOLEAN_OPTIONS
+  )
 }
