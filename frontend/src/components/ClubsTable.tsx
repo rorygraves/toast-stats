@@ -39,7 +39,6 @@ import {
   buildClubsDeltaColumns,
   CLUBS_DELTA_COLUMN_IDS,
 } from './clubsDeltaColumns'
-import { CLOSE_TO_DISTINGUISHED_MAX_MEMBERS } from '../utils/closeToDistinguished'
 import ClubCard from './ClubCard'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { useDebounce } from '../hooks/useDebounce'
@@ -317,62 +316,6 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
     },
     [setFilter]
   )
-
-  // Quick-filter chip active flags — derived once per render from filterState.
-  // The membersNeeded filter is shared by two chips that interpret different
-  // ranges (#433 close-to-distinguished = [1, 4]; needs-members = [2, ∞)).
-  //
-  // NOTE: this chip uses `membersNeeded` (computeMembersToDistinguished —
-  // qualification-aware, includes Goal 7/8 paths), while ClubDetailPage's
-  // banner uses `gap.members` (raw tier gap). They share the numeric ≤4
-  // bound but are not perfectly equivalent — a club can appear in this
-  // chip's filtered results without firing the banner on its detail page
-  // (e.g. goalsAchieved=4 with a Goal-7 path) and vice versa.
-  const membersNeededValue = (() => {
-    const f = getFilter('membersNeeded')
-    return Array.isArray(f?.value) ? f.value : null
-  })()
-  const isCloseToDistinguishedActive =
-    membersNeededValue?.[0] === 1 &&
-    membersNeededValue?.[1] === CLOSE_TO_DISTINGUISHED_MAX_MEMBERS
-  const isNeedsMembersActive =
-    membersNeededValue?.[0] === 2 && membersNeededValue?.[1] === null
-
-  // Health-band presets (#815 B2). Merged into the ONE preset row below: the
-  // old segmented `role="tablist"` status control and the quick-filter chips
-  // read as two unrelated systems (table-ux-review §1). These filter the same
-  // `status` field, single-select (choosing one replaces the prior; clicking
-  // the active one clears it). "All" is the absence of an active band — the
-  // "Total / Showing N" count line already carries the total. `aria-pressed`
-  // (not `role="tab"`): a filter toggles a set, it doesn't switch a panel — and
-  // it unifies the affordance with the intent chips in the same row.
-  const statusFilterValue = (() => {
-    const f = getFilter('status')
-    return Array.isArray(f?.value) ? (f.value as string[]) : []
-  })()
-  const isStatusActive = (status: string) =>
-    statusFilterValue.length === 1 && statusFilterValue[0] === status
-  const setStatusPreset = (status: string) => {
-    setFilter(
-      'status',
-      isStatusActive(status)
-        ? null
-        : { field: 'status', type: 'categorical', value: [status] }
-    )
-  }
-  // One pass, memoized on `clubs` (the sort below memoizes for the same
-  // reason) — the badges recompute only when the data changes, not on every
-  // filter/sort/scroll-cue re-render.
-  const statusCounts = useMemo(() => {
-    const counts = { thriving: 0, vulnerable: 0, intervention: 0 }
-    for (const c of clubs) {
-      if (c.currentStatus === 'thriving') counts.thriving++
-      else if (c.currentStatus === 'vulnerable') counts.vulnerable++
-      else if (c.currentStatus === 'intervention-required')
-        counts.intervention++
-    }
-    return counts
-  }, [clubs])
 
   // Get row background color based on status
   const getRowColor = (
@@ -721,193 +664,6 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
               </>
             )}
           </div>
-
-          {/* ONE preset row (#815 B2): health bands + intent presets, merged
-              from the former segmented control and the separate chip strip.
-              Health bands first (single-select, with counts) so a leader can
-              narrow by health, then layer an intent preset on top. */}
-          <div className="clubs-quick-filters">
-            <span className="clubs-quick-filters__label">Quick filters:</span>
-
-            {/* Health bands — Thriving / Vulnerable / Intervention, single-select
-                (#361 → #815). Each carries its count; "All" = none active. */}
-            {(
-              [
-                ['thriving', 'Thriving', statusCounts.thriving],
-                ['vulnerable', 'Vulnerable', statusCounts.vulnerable],
-                [
-                  'intervention-required',
-                  'Intervention',
-                  statusCounts.intervention,
-                ],
-              ] as const
-            ).map(([value, label, count]) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setStatusPreset(value)}
-                className={
-                  'clubs-quick-filter-chip' +
-                  (isStatusActive(value)
-                    ? ' clubs-quick-filter-chip--active'
-                    : '')
-                }
-                aria-pressed={isStatusActive(value)}
-              >
-                {label}
-                <span className="clubs-quick-filter-chip__count">{count}</span>
-              </button>
-            ))}
-
-            {/* ⭐ Close to Distinguished — 1–4 more members (#433).
-                Threshold shared with ClubDetailPage banner. */}
-            <button
-              type="button"
-              onClick={() => {
-                if (isCloseToDistinguishedActive) {
-                  setFilter('membersNeeded', null)
-                } else {
-                  // Filter only — no hidden auto-sort (#815 B2). The chip used
-                  // to silently re-sort by membersNeeded, surprising the user
-                  // and overriding any column sort they'd chosen.
-                  setFilter('membersNeeded', {
-                    field: 'membersNeeded',
-                    type: 'numeric',
-                    value: [1, CLOSE_TO_DISTINGUISHED_MAX_MEMBERS],
-                  })
-                }
-              }}
-              className={
-                'clubs-quick-filter-chip' +
-                (isCloseToDistinguishedActive
-                  ? ' clubs-quick-filter-chip--active'
-                  : '')
-              }
-              aria-pressed={isCloseToDistinguishedActive}
-            >
-              <span
-                aria-hidden="true"
-                className="clubs-quick-filter-chip__star"
-              >
-                ★
-              </span>
-              Close to Distinguished
-            </button>
-
-            {/* Needs members — clubs short by 2+ to reach next tier */}
-            <button
-              type="button"
-              onClick={() => {
-                if (isNeedsMembersActive) {
-                  setFilter('membersNeeded', null)
-                } else {
-                  setFilter('membersNeeded', {
-                    field: 'membersNeeded',
-                    type: 'numeric',
-                    value: [2, null],
-                  })
-                }
-              }}
-              className={
-                'clubs-quick-filter-chip' +
-                (isNeedsMembersActive ? ' clubs-quick-filter-chip--active' : '')
-              }
-              aria-pressed={isNeedsMembersActive}
-            >
-              Needs members
-            </button>
-
-            {/* Missing renewals — clubs with 0 October renewals */}
-            <button
-              type="button"
-              onClick={() => {
-                const current = getFilter('octoberRenewals')
-                const isActive =
-                  Array.isArray(current?.value) &&
-                  current.value[0] === 0 &&
-                  current.value[1] === 0
-                if (isActive) {
-                  setFilter('octoberRenewals', null)
-                } else {
-                  setFilter('octoberRenewals', {
-                    field: 'octoberRenewals',
-                    type: 'numeric',
-                    value: [0, 0],
-                  })
-                }
-              }}
-              className={
-                'clubs-quick-filter-chip' +
-                (() => {
-                  const f = getFilter('octoberRenewals')
-                  return Array.isArray(f?.value) &&
-                    f.value[0] === 0 &&
-                    f.value[1] === 0
-                    ? ' clubs-quick-filter-chip--active'
-                    : ''
-                })()
-              }
-              aria-pressed={(() => {
-                const f = getFilter('octoberRenewals')
-                return (
-                  Array.isArray(f?.value) &&
-                  f.value[0] === 0 &&
-                  f.value[1] === 0
-                )
-              })()}
-            >
-              Missing renewals
-            </button>
-
-            {/* President's tier only */}
-            <button
-              type="button"
-              onClick={() => {
-                const current = getFilter('distinguished')
-                const isActive =
-                  Array.isArray(current?.value) &&
-                  (current.value as string[]).includes('President')
-                if (isActive) {
-                  setFilter('distinguished', null)
-                } else {
-                  setFilter('distinguished', {
-                    field: 'distinguished',
-                    type: 'categorical',
-                    value: ['President'],
-                  })
-                }
-              }}
-              className={
-                'clubs-quick-filter-chip' +
-                (() => {
-                  const f = getFilter('distinguished')
-                  return Array.isArray(f?.value) &&
-                    (f.value as string[]).includes('President')
-                    ? ' clubs-quick-filter-chip--active'
-                    : ''
-                })()
-              }
-              aria-pressed={(() => {
-                const f = getFilter('distinguished')
-                return (
-                  Array.isArray(f?.value) &&
-                  (f.value as string[]).includes('President')
-                )
-              })()}
-            >
-              President's tier only
-            </button>
-
-            {hasActiveFilters && (
-              <button
-                type="button"
-                onClick={clearAllFilters}
-                className="clubs-quick-filter-chip clubs-quick-filter-chip__clear"
-              >
-                Clear all ({activeFilterCount})
-              </button>
-            )}
-          </div>
         </div>
       </div>
 
@@ -986,7 +742,7 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
             <button
               type="button"
               onClick={clearAllFilters}
-              className="clubs-quick-filter-chip clubs-quick-filter-chip__clear mt-4 mx-auto"
+              className="clubs-clear-filters-btn mt-4 mx-auto"
             >
               Clear all filters
             </button>
@@ -1146,8 +902,9 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
       )}
 
       {/* Dedicated Filters drawer (#816). Instant-apply over the SAME filter
-          state the quick-filter chips and search box write to (R11) — one
-          mechanism, three entry points. */}
+          state the search box and ActiveFiltersBar write to (R11) — one
+          mechanism, multiple entry points. (The quick-filter chip row that
+          was a third entry point was removed in #902.) */}
       <FiltersPanel
         isOpen={isFiltersOpen}
         onClose={closeFilters}

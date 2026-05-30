@@ -35,8 +35,7 @@
     backdrop-filter: saturate(140%) blur(8px);
   }
 
-  @supports (backdrop-filter: blur(1px)) or
-    (-webkit-backdrop-filter: blur(1px)) {
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
     .app-shell-top-bar {
       background-color: rgba(var(--rds-surface-rgb), 0.85);
     }
@@ -143,7 +142,9 @@
     font-family: var(--sans);
     font-weight: 500;
     font-size: 15px;
-    transition: background-color 150ms ease, color 150ms ease;
+    transition:
+      background-color 150ms ease,
+      color 150ms ease;
   }
 
   .app-shell-nav__link:hover {
@@ -849,7 +850,10 @@
     padding: 6px 12px;
     border-radius: var(--rds-radius-sm);
     cursor: pointer;
-    transition: background-color 150ms, border-color 150ms, color 150ms;
+    transition:
+      background-color 150ms,
+      border-color 150ms,
+      color 150ms;
   }
 
   .districts-toolbar__sort-btn:hover {
@@ -877,7 +881,10 @@
     padding: 4px 10px;
     border-radius: 999px;
     cursor: pointer;
-    transition: background-color 150ms, border-color 150ms, color 150ms;
+    transition:
+      background-color 150ms,
+      border-color 150ms,
+      color 150ms;
     /* 44px: WCAG 2.5.5 / handoff touch-target floor (#886, epic #888 Sprint 2).
        Audit #885 measured these chips 36px wide (width was the short side;
        height already cleared 44). text-align:center keeps the single-digit
@@ -934,7 +941,10 @@
     padding: 6px 12px;
     border-radius: 999px;
     cursor: pointer;
-    transition: background-color 150ms, border-color 150ms, color 150ms;
+    transition:
+      background-color 150ms,
+      border-color 150ms,
+      color 150ms;
     /* 44px: WCAG 2.5.5 / handoff touch-target floor (#886, epic #888 Sprint 2).
        Audit #885 measured these chips 40–41px wide — same width-short shape as
        .districts-toolbar__region-chip. */
@@ -981,7 +991,9 @@
     font-family: var(--sans);
     font-size: 13px;
     color: var(--ink);
-    transition: border-color 150ms, background-color 150ms;
+    transition:
+      border-color 150ms,
+      background-color 150ms;
   }
 
   .districts-toolbar__search-input::placeholder {
@@ -2355,99 +2367,32 @@
     margin-top: 12px;
   }
 
-  /* Clubs tab quick-filter chip strip (#24 follow-up). Sits above the
-     ClubsTable toolbar on the District detail Clubs tab. Since #815 this is
-     the SINGLE preset row: health bands (with count badges) + intent presets. */
-  .clubs-quick-filters {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .clubs-quick-filters__label {
-    font-family: var(--sans);
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-    margin-right: 4px;
-  }
-
-  .clubs-quick-filter-chip {
+  /* "Clear all filters" pill in the clubs-table empty (no-results) state.
+     The quick-filter chip row was removed in Sprint 2 of epic #900 (#902);
+     this is the last surviving pill, restyled into a dedicated self-contained
+     class (was .clubs-quick-filter-chip.clubs-quick-filter-chip__clear). The
+     maroon text/border has no dark remap — see the [data-theme='dark']
+     override in dark-mode.css (lesson 096). */
+  .clubs-clear-filters-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     padding: 4px 12px;
     border-radius: 999px;
-    border: 1px solid var(--line);
+    border: 1px solid rgba(123, 24, 40, 0.25);
     background-color: var(--surface);
-    color: var(--ink-2);
+    color: var(--maroon-500);
     font-family: var(--sans);
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color 150ms, border-color 150ms, color 150ms;
+    transition:
+      background-color 150ms,
+      border-color 150ms,
+      color 150ms;
   }
 
-  .clubs-quick-filter-chip:hover {
-    background-color: var(--surface-3);
-    border-color: var(--loyal-200);
-    color: var(--link);
-  }
-
-  /* Active chip matches the segmented control: --link text on --loyal-50,
-     not a solid --loyal-500 fill — keeps the accent dark-safe (#670). */
-  .clubs-quick-filter-chip--active {
-    background-color: var(--loyal-50);
-    border-color: var(--loyal-200);
-    color: var(--link);
-  }
-
-  .clubs-quick-filter-chip--active:hover {
-    background-color: var(--loyal-100);
-    border-color: var(--loyal-200);
-    color: var(--link);
-  }
-
-  /* Star stays gold in both rest and active states (the active fill is now
-     a light tint, so a white star would vanish). */
-  .clubs-quick-filter-chip__star {
-    color: var(--yellow-600);
-  }
-
-  /* Count badge on the health-band presets (#815). Pill of --surface-3 / --ink-3
-     at rest; on the active chip it inverts to --link on --surface to match the
-     active label (dark-safe via --link, lessons 093/096). */
-  .clubs-quick-filter-chip__count {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 20px;
-    padding: 0 6px;
-    height: 16px;
-    margin-left: 2px;
-    border-radius: 999px;
-    background-color: var(--surface-3);
-    color: var(--ink-3);
-    font-family: var(--mono, ui-monospace, SFMono-Regular, monospace);
-    font-weight: 500;
-    font-size: 11px;
-    line-height: 1;
-  }
-
-  .clubs-quick-filter-chip--active .clubs-quick-filter-chip__count {
-    background-color: var(--surface);
-    color: var(--link);
-  }
-
-  .clubs-quick-filter-chip__clear {
-    color: var(--maroon-500);
-    border-color: rgba(123, 24, 40, 0.25);
-  }
-
-  .clubs-quick-filter-chip__clear:hover {
+  .clubs-clear-filters-btn:hover {
     background-color: rgba(123, 24, 40, 0.06);
     border-color: var(--maroon-500);
     color: var(--maroon-500);
@@ -2515,7 +2460,9 @@
     background-color: transparent;
     color: var(--link);
     cursor: pointer;
-    transition: background-color 150ms, color 150ms;
+    transition:
+      background-color 150ms,
+      color 150ms;
   }
 
   .clubs-active-filters__remove:hover {
@@ -3234,7 +3181,9 @@
     white-space: nowrap;
     cursor: pointer;
     border-bottom: 3px solid transparent;
-    transition: color 150ms ease, background-color 150ms ease,
+    transition:
+      color 150ms ease,
+      background-color 150ms ease,
       border-color 150ms ease;
   }
 

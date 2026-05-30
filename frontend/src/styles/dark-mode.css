@@ -11,136 +11,136 @@
 /* ─── Semantic Design Tokens ─── */
 
 :root {
-    /* Light mode defaults (matching existing Tailwind values) */
-    --surface-primary: #FFFFFF;
-    --surface-secondary: #F9FAFB;
-    --surface-card: #FFFFFF;
-    --surface-card-hover: #F3F4F6;
-    --text-heading: #111827;
-    --text-body: #374151;
-    --text-muted: #6B7280;
-    --border-default: #E5E7EB;
-    --border-subtle: #D1D5DB;
-    --shadow-color: rgba(0, 0, 0, 0.1);
+  /* Light mode defaults (matching existing Tailwind values) */
+  --surface-primary: #ffffff;
+  --surface-secondary: #f9fafb;
+  --surface-card: #ffffff;
+  --surface-card-hover: #f3f4f6;
+  --text-heading: #111827;
+  --text-body: #374151;
+  --text-muted: #6b7280;
+  --border-default: #e5e7eb;
+  --border-subtle: #d1d5db;
+  --shadow-color: rgba(0, 0, 0, 0.1);
 }
 
 /* ─── Taverns-Red Dark Palette ─── */
 
 [data-theme='dark'] {
-    /* Backgrounds */
-    --surface-primary: #0C0A0F;
-    --surface-secondary: #14111A;
-    --surface-card: #1A1722;
-    --surface-card-hover: #221E2D;
+  /* Backgrounds */
+  --surface-primary: #0c0a0f;
+  --surface-secondary: #14111a;
+  --surface-card: #1a1722;
+  --surface-card-hover: #221e2d;
 
-    /* Text */
-    --text-heading: #F0ECF5;
-    --text-body: rgba(240, 236, 245, 0.87);
-    --text-muted: #9B95A5;
+  /* Text */
+  --text-heading: #f0ecf5;
+  --text-body: rgba(240, 236, 245, 0.87);
+  --text-muted: #9b95a5;
 
-    /* Borders */
-    --border-default: rgba(255, 255, 255, 0.06);
-    --border-subtle: rgba(255, 255, 255, 0.10);
+  /* Borders */
+  --border-default: rgba(255, 255, 255, 0.06);
+  --border-subtle: rgba(255, 255, 255, 0.1);
 
-    /* Shadows */
-    --shadow-color: rgba(0, 0, 0, 0.4);
+  /* Shadows */
+  --shadow-color: rgba(0, 0, 0, 0.4);
 
-    /* Taverns-red accents */
-    --accent-red: #C13B3B;
-    --accent-red-dark: #8B1A1A;
-    --accent-maple: #D4873F;
-    --accent-maple-light: #E8A55C;
-    --accent-amber: #F5C36A;
-    --accent-cream: #FFF8ED;
+  /* Taverns-red accents */
+  --accent-red: #c13b3b;
+  --accent-red-dark: #8b1a1a;
+  --accent-maple: #d4873f;
+  --accent-maple-light: #e8a55c;
+  --accent-amber: #f5c36a;
+  --accent-cream: #fff8ed;
 
-    /* ─── Toastmasters Brand Token Overrides ─── */
-    --tm-black: #F0ECF5;
-    --tm-loyal-blue: #5DADE2;
-    --tm-loyal-blue-100: rgba(93, 173, 226, 1.0);
-    --tm-loyal-blue-90: rgba(93, 173, 226, 0.9);
-    --tm-loyal-blue-80: rgba(93, 173, 226, 0.8);
-    --tm-loyal-blue-70: rgba(93, 173, 226, 0.7);
-    --tm-loyal-blue-60: rgba(93, 173, 226, 0.6);
-    --tm-loyal-blue-50: rgba(93, 173, 226, 0.5);
-    --tm-loyal-blue-40: rgba(93, 173, 226, 0.4);
-    --tm-loyal-blue-30: rgba(93, 173, 226, 0.3);
-    --tm-loyal-blue-20: rgba(93, 173, 226, 0.2);
-    --tm-loyal-blue-10: rgba(93, 173, 226, 0.1);
-    --tm-true-maroon: #E8879A;
-    --tm-true-maroon-100: rgba(232, 135, 154, 1.0);
-    --tm-true-maroon-90: rgba(232, 135, 154, 0.9);
-    --tm-true-maroon-80: rgba(232, 135, 154, 0.8);
-    --tm-true-maroon-70: rgba(232, 135, 154, 0.7);
-    --tm-true-maroon-60: rgba(232, 135, 154, 0.6);
-    --tm-true-maroon-50: rgba(232, 135, 154, 0.5);
-    --tm-cool-gray: #C0C8C7;
-    --tm-cool-gray-80: rgba(192, 200, 199, 0.8);
-    --tm-cool-gray-60: rgba(192, 200, 199, 0.6);
-    --tm-cool-gray-40: rgba(192, 200, 199, 0.4);
-    --tm-cool-gray-20: rgba(192, 200, 199, 0.2);
-    --tm-cool-gray-10: rgba(192, 200, 199, 0.1);
+  /* ─── Toastmasters Brand Token Overrides ─── */
+  --tm-black: #f0ecf5;
+  --tm-loyal-blue: #5dade2;
+  --tm-loyal-blue-100: rgba(93, 173, 226, 1);
+  --tm-loyal-blue-90: rgba(93, 173, 226, 0.9);
+  --tm-loyal-blue-80: rgba(93, 173, 226, 0.8);
+  --tm-loyal-blue-70: rgba(93, 173, 226, 0.7);
+  --tm-loyal-blue-60: rgba(93, 173, 226, 0.6);
+  --tm-loyal-blue-50: rgba(93, 173, 226, 0.5);
+  --tm-loyal-blue-40: rgba(93, 173, 226, 0.4);
+  --tm-loyal-blue-30: rgba(93, 173, 226, 0.3);
+  --tm-loyal-blue-20: rgba(93, 173, 226, 0.2);
+  --tm-loyal-blue-10: rgba(93, 173, 226, 0.1);
+  --tm-true-maroon: #e8879a;
+  --tm-true-maroon-100: rgba(232, 135, 154, 1);
+  --tm-true-maroon-90: rgba(232, 135, 154, 0.9);
+  --tm-true-maroon-80: rgba(232, 135, 154, 0.8);
+  --tm-true-maroon-70: rgba(232, 135, 154, 0.7);
+  --tm-true-maroon-60: rgba(232, 135, 154, 0.6);
+  --tm-true-maroon-50: rgba(232, 135, 154, 0.5);
+  --tm-cool-gray: #c0c8c7;
+  --tm-cool-gray-80: rgba(192, 200, 199, 0.8);
+  --tm-cool-gray-60: rgba(192, 200, 199, 0.6);
+  --tm-cool-gray-40: rgba(192, 200, 199, 0.4);
+  --tm-cool-gray-20: rgba(192, 200, 199, 0.2);
+  --tm-cool-gray-10: rgba(192, 200, 199, 0.1);
 
-    /* Override the body base styles */
-    color-scheme: dark;
+  /* Override the body base styles */
+  color-scheme: dark;
 }
 
 /* ─── Root & Body Overrides ─── */
 
 [data-theme='dark'] body {
-    background-color: var(--surface-primary);
-    color: var(--text-body);
+  background-color: var(--surface-primary);
+  color: var(--text-body);
 }
 
 /* ─── Background Overrides ─── */
 
 [data-theme='dark'] .bg-white {
-    background-color: var(--surface-card) !important;
+  background-color: var(--surface-card) !important;
 }
 
 [data-theme='dark'] .bg-gray-50 {
-    background-color: var(--surface-secondary) !important;
+  background-color: var(--surface-secondary) !important;
 }
 
 [data-theme='dark'] .bg-gray-100 {
-    background-color: #1E1B27 !important;
+  background-color: #1e1b27 !important;
 }
 
 [data-theme='dark'] .bg-gray-200 {
-    background-color: #252230 !important;
+  background-color: #252230 !important;
 }
 
 [data-theme='dark'] .bg-gray-300 {
-    background-color: #2D2A38 !important;
+  background-color: #2d2a38 !important;
 }
 
 [data-theme='dark'] .bg-gray-400 {
-    background-color: #3A3648 !important;
+  background-color: #3a3648 !important;
 }
 
 [data-theme='dark'] .bg-gray-500 {
-    background-color: #4A4658 !important;
+  background-color: #4a4658 !important;
 }
 
 [data-theme='dark'] .bg-gray-900 {
-    background-color: #0C0A0F !important;
+  background-color: #0c0a0f !important;
 }
 
 /* ─── Text Overrides ─── */
 
 [data-theme='dark'] .text-gray-900 {
-    color: var(--text-heading) !important;
+  color: var(--text-heading) !important;
 }
 
 [data-theme='dark'] .text-gray-800 {
-    color: var(--text-heading) !important;
+  color: var(--text-heading) !important;
 }
 
 [data-theme='dark'] .text-gray-700 {
-    color: var(--text-body) !important;
+  color: var(--text-body) !important;
 }
 
 [data-theme='dark'] .text-gray-600 {
-    color: var(--text-muted) !important;
+  color: var(--text-muted) !important;
 }
 
 /* #609: gray-500/400 were hardcoded #6B6575 — 3.16:1 on the page surface and
@@ -148,151 +148,155 @@
    body text the Region pages use (table headers, KPI bases, card sublabels).
    Map them to --text-muted like gray-600 already does (5.06–6.10:1). */
 [data-theme='dark'] .text-gray-500 {
-    color: var(--text-muted) !important;
+  color: var(--text-muted) !important;
 }
 
 [data-theme='dark'] .text-gray-400 {
-    color: var(--text-muted) !important;
+  color: var(--text-muted) !important;
 }
 
 [data-theme='dark'] .text-gray-300 {
-    color: #9B95A5 !important;
+  color: #9b95a5 !important;
 }
 
 /* ─── Border Overrides ─── */
 
 [data-theme='dark'] .border-gray-100 {
-    border-color: var(--border-default) !important;
+  border-color: var(--border-default) !important;
 }
 
 [data-theme='dark'] .border-gray-200 {
-    border-color: var(--border-default) !important;
+  border-color: var(--border-default) !important;
 }
 
 [data-theme='dark'] .border-gray-300 {
-    border-color: var(--border-subtle) !important;
+  border-color: var(--border-subtle) !important;
 }
 
 [data-theme='dark'] .border-gray-400 {
-    border-color: var(--border-subtle) !important;
+  border-color: var(--border-subtle) !important;
 }
 
 [data-theme='dark'] .border-tm-cool-gray-20 {
-    border-color: var(--border-default) !important;
+  border-color: var(--border-default) !important;
 }
 
 [data-theme='dark'] .border-tm-cool-gray-30 {
-    border-color: var(--border-subtle) !important;
+  border-color: var(--border-subtle) !important;
 }
 
 [data-theme='dark'] .border-tm-cool-gray {
-    border-color: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
 }
 
 /* ─── Shadow Overrides ─── */
 
 [data-theme='dark'] .shadow-sm {
-    box-shadow: 0 1px 2px var(--shadow-color) !important;
+  box-shadow: 0 1px 2px var(--shadow-color) !important;
 }
 
 [data-theme='dark'] .shadow-md {
-    box-shadow: 0 4px 6px var(--shadow-color), 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+  box-shadow:
+    0 4px 6px var(--shadow-color),
+    0 2px 4px rgba(0, 0, 0, 0.2) !important;
 }
 
 [data-theme='dark'] .shadow-lg {
-    box-shadow: 0 10px 15px var(--shadow-color), 0 4px 6px rgba(0, 0, 0, 0.2) !important;
+  box-shadow:
+    0 10px 15px var(--shadow-color),
+    0 4px 6px rgba(0, 0, 0, 0.2) !important;
 }
 
 /* ─── Brand Component Overrides ─── */
 
 [data-theme='dark'] .tm-card {
-    background-color: var(--surface-card);
-    color: var(--text-body);
-    border-color: var(--border-default);
+  background-color: var(--surface-card);
+  color: var(--text-body);
+  border-color: var(--border-default);
 }
 
 [data-theme='dark'] .tm-card:hover {
-    background-color: var(--surface-card-hover);
+  background-color: var(--surface-card-hover);
 }
 
 [data-theme='dark'] .tm-card-header h1,
 [data-theme='dark'] .tm-card-header h2,
 [data-theme='dark'] .tm-card-header h3 {
-    color: var(--text-heading);
+  color: var(--text-heading);
 }
 
 [data-theme='dark'] .tm-card-header {
-    border-bottom-color: var(--border-default);
+  border-bottom-color: var(--border-default);
 }
 
 [data-theme='dark'] .tm-card-footer {
-    border-top-color: var(--border-default);
+  border-top-color: var(--border-default);
 }
 
 [data-theme='dark'] .tm-panel {
-    color: var(--text-body);
+  color: var(--text-body);
 }
 
 [data-theme='dark'] .tm-panel-default {
-    background-color: var(--surface-secondary);
-    border-color: var(--border-default);
+  background-color: var(--surface-secondary);
+  border-color: var(--border-default);
 }
 
 [data-theme='dark'] .tm-panel-subtle {
-    background-color: rgba(26, 23, 34, 0.5);
-    border-color: var(--border-default);
+  background-color: rgba(26, 23, 34, 0.5);
+  border-color: var(--border-default);
 }
 
 /* ─── Scroll Fade ─── */
 
-[data-theme='dark'] .tab-scroll-fade[data-scrollable-right="true"]::after {
-    background: linear-gradient(to right, transparent, var(--surface-primary));
+[data-theme='dark'] .tab-scroll-fade[data-scrollable-right='true']::after {
+  background: linear-gradient(to right, transparent, var(--surface-primary));
 }
 
 /* ─── Sticky Column Shadow ─── */
 
 [data-theme='dark'] .sticky-column-shadow {
-    box-shadow: 4px 0 6px -2px rgba(0, 0, 0, 0.4);
+  box-shadow: 4px 0 6px -2px rgba(0, 0, 0, 0.4);
 }
 
 /* ─── Hover State Overrides ─── */
 
 [data-theme='dark'] .hover\:bg-gray-50:hover {
-    background-color: var(--surface-card-hover) !important;
+  background-color: var(--surface-card-hover) !important;
 }
 
 [data-theme='dark'] .hover\:bg-gray-100:hover {
-    background-color: #252230 !important;
+  background-color: #252230 !important;
 }
 
 [data-theme='dark'] .hover\:bg-gray-200:hover {
-    background-color: #2D2A38 !important;
+  background-color: #2d2a38 !important;
 }
 
 [data-theme='dark'] .hover\:bg-tm-loyal-blue-10:hover {
-    background-color: rgba(0, 60, 113, 0.15) !important;
+  background-color: rgba(0, 60, 113, 0.15) !important;
 }
 
 /* ─── Colored Row Hover Overrides ─── */
 
 [data-theme='dark'] .hover\:bg-red-100:hover {
-    background-color: rgba(185, 28, 28, 0.20) !important;
+  background-color: rgba(185, 28, 28, 0.2) !important;
 }
 
 [data-theme='dark'] .hover\:bg-yellow-100:hover {
-    background-color: rgba(161, 98, 7, 0.20) !important;
+  background-color: rgba(161, 98, 7, 0.2) !important;
 }
 
 [data-theme='dark'] .hover\:bg-green-200:hover {
-    background-color: rgba(22, 163, 74, 0.20) !important;
+  background-color: rgba(22, 163, 74, 0.2) !important;
 }
 
 [data-theme='dark'] .hover\:bg-blue-200:hover {
-    background-color: rgba(37, 99, 235, 0.20) !important;
+  background-color: rgba(37, 99, 235, 0.2) !important;
 }
 
 [data-theme='dark'] .hover\:bg-blue-50:hover {
-    background-color: rgba(37, 99, 235, 0.10) !important;
+  background-color: rgba(37, 99, 235, 0.1) !important;
 }
 
 /* ═══════════════════════════════════════════
@@ -303,57 +307,57 @@
 /* ─── Red Backgrounds ─── */
 
 [data-theme='dark'] .bg-red-50 {
-    background-color: rgba(185, 28, 28, 0.10) !important;
+  background-color: rgba(185, 28, 28, 0.1) !important;
 }
 
 [data-theme='dark'] .bg-red-100 {
-    background-color: rgba(185, 28, 28, 0.18) !important;
+  background-color: rgba(185, 28, 28, 0.18) !important;
 }
 
 [data-theme='dark'] .bg-red-200 {
-    background-color: rgba(185, 28, 28, 0.25) !important;
+  background-color: rgba(185, 28, 28, 0.25) !important;
 }
 
 /* ─── Yellow/Amber Backgrounds ─── */
 
 [data-theme='dark'] .bg-yellow-50 {
-    background-color: rgba(161, 98, 7, 0.10) !important;
+  background-color: rgba(161, 98, 7, 0.1) !important;
 }
 
 [data-theme='dark'] .bg-yellow-100 {
-    background-color: rgba(161, 98, 7, 0.18) !important;
+  background-color: rgba(161, 98, 7, 0.18) !important;
 }
 
 [data-theme='dark'] .bg-yellow-200 {
-    background-color: rgba(161, 98, 7, 0.25) !important;
+  background-color: rgba(161, 98, 7, 0.25) !important;
 }
 
 /* ─── Green Backgrounds ─── */
 
 [data-theme='dark'] .bg-green-50 {
-    background-color: rgba(22, 163, 74, 0.10) !important;
+  background-color: rgba(22, 163, 74, 0.1) !important;
 }
 
 [data-theme='dark'] .bg-green-100 {
-    background-color: rgba(22, 163, 74, 0.18) !important;
+  background-color: rgba(22, 163, 74, 0.18) !important;
 }
 
 [data-theme='dark'] .bg-green-200 {
-    background-color: rgba(22, 163, 74, 0.25) !important;
+  background-color: rgba(22, 163, 74, 0.25) !important;
 }
 
 /* ─── Blue Backgrounds ─── */
 
 [data-theme='dark'] .bg-blue-50 {
-    background-color: rgba(37, 99, 235, 0.10) !important;
+  background-color: rgba(37, 99, 235, 0.1) !important;
 }
 
 [data-theme='dark'] .bg-blue-100 {
-    background-color: rgba(37, 99, 235, 0.18) !important;
+  background-color: rgba(37, 99, 235, 0.18) !important;
 }
 
 [data-theme='dark'] .bg-blue-200 {
-    background-color: rgba(37, 99, 235, 0.25) !important;
+  background-color: rgba(37, 99, 235, 0.25) !important;
 }
 
 /* ═══════════════════════════════════════════
@@ -363,11 +367,11 @@
 
 [data-theme='dark'] .text-red-700,
 [data-theme='dark'] .text-red-800 {
-    color: #FCA5A5 !important;
+  color: #fca5a5 !important;
 }
 
 [data-theme='dark'] .text-red-600 {
-    color: #F87171 !important;
+  color: #f87171 !important;
 }
 
 /* #610: -900 joins the group. The club anniversary badge (the only consumer)
@@ -377,20 +381,20 @@
 [data-theme='dark'] .text-yellow-700,
 [data-theme='dark'] .text-yellow-800,
 [data-theme='dark'] .text-yellow-900 {
-    color: #FDE68A !important;
+  color: #fde68a !important;
 }
 
 [data-theme='dark'] .text-yellow-600 {
-    color: #FBBF24 !important;
+  color: #fbbf24 !important;
 }
 
 [data-theme='dark'] .text-green-700,
 [data-theme='dark'] .text-green-800 {
-    color: #86EFAC !important;
+  color: #86efac !important;
 }
 
 [data-theme='dark'] .text-green-600 {
-    color: #4ADE80 !important;
+  color: #4ade80 !important;
 }
 
 /* #610: -900 joins the group — see the yellow note above. The upcoming-
@@ -398,11 +402,11 @@
 [data-theme='dark'] .text-blue-700,
 [data-theme='dark'] .text-blue-800,
 [data-theme='dark'] .text-blue-900 {
-    color: #93C5FD !important;
+  color: #93c5fd !important;
 }
 
 [data-theme='dark'] .text-blue-600 {
-    color: #60A5FA !important;
+  color: #60a5fa !important;
 }
 
 /* ═══════════════════════════════════════════
@@ -412,22 +416,22 @@
 [data-theme='dark'] .border-red-200,
 [data-theme='dark'] .border-red-300,
 [data-theme='dark'] .border-red-400 {
-    border-color: rgba(248, 113, 113, 0.30) !important;
+  border-color: rgba(248, 113, 113, 0.3) !important;
 }
 
 [data-theme='dark'] .border-yellow-200,
 [data-theme='dark'] .border-yellow-300 {
-    border-color: rgba(251, 191, 36, 0.30) !important;
+  border-color: rgba(251, 191, 36, 0.3) !important;
 }
 
 [data-theme='dark'] .border-green-200,
 [data-theme='dark'] .border-green-300 {
-    border-color: rgba(74, 222, 128, 0.30) !important;
+  border-color: rgba(74, 222, 128, 0.3) !important;
 }
 
 [data-theme='dark'] .border-blue-200,
 [data-theme='dark'] .border-blue-300 {
-    border-color: rgba(96, 165, 250, 0.30) !important;
+  border-color: rgba(96, 165, 250, 0.3) !important;
 }
 
 /* ═══════════════════════════════════════════
@@ -436,23 +440,23 @@
    ═══════════════════════════════════════════ */
 
 [data-theme='dark'] select,
-[data-theme='dark'] input[type="text"],
-[data-theme='dark'] input[type="search"],
-[data-theme='dark'] input[type="date"],
-[data-theme='dark'] input[type="number"] {
-    background-color: var(--surface-card) !important;
-    color: var(--text-body) !important;
-    border-color: var(--border-subtle) !important;
+[data-theme='dark'] input[type='text'],
+[data-theme='dark'] input[type='search'],
+[data-theme='dark'] input[type='date'],
+[data-theme='dark'] input[type='number'] {
+  background-color: var(--surface-card) !important;
+  color: var(--text-body) !important;
+  border-color: var(--border-subtle) !important;
 }
 
 [data-theme='dark'] select option {
-    background-color: var(--surface-card);
-    color: var(--text-body);
+  background-color: var(--surface-card);
+  color: var(--text-body);
 }
 
 /* Search bar placeholder */
 [data-theme='dark'] input::placeholder {
-    color: var(--text-muted) !important;
+  color: var(--text-muted) !important;
 }
 
 /* ═══════════════════════════════════════════
@@ -460,21 +464,21 @@
    ═══════════════════════════════════════════ */
 
 [data-theme='dark'] blockquote {
-    background-color: var(--surface-secondary) !important;
-    border-color: var(--border-subtle) !important;
-    color: var(--text-body) !important;
+  background-color: var(--surface-secondary) !important;
+  border-color: var(--border-subtle) !important;
+  color: var(--text-body) !important;
 }
 
 /* ═══════════════════════════════════════════
    Divider Overrides
    ═══════════════════════════════════════════ */
 
-[data-theme='dark'] .divide-gray-200>*+* {
-    border-color: var(--border-default) !important;
+[data-theme='dark'] .divide-gray-200 > * + * {
+  border-color: var(--border-default) !important;
 }
 
-[data-theme='dark'] .divide-gray-100>*+* {
-    border-color: var(--border-default) !important;
+[data-theme='dark'] .divide-gray-100 > * + * {
+  border-color: var(--border-default) !important;
 }
 
 /* ═══════════════════════════════════════════
@@ -483,16 +487,16 @@
    ═══════════════════════════════════════════ */
 
 [data-theme='dark'] td.sticky {
-    background-color: var(--surface-card) !important;
+  background-color: var(--surface-card) !important;
 }
 
 [data-theme='dark'] th.sticky {
-    background-color: var(--surface-secondary) !important;
+  background-color: var(--surface-secondary) !important;
 }
 
 /* Pinned row sticky columns */
 [data-theme='dark'] tr.bg-blue-50 td.sticky {
-    background-color: rgba(37, 99, 235, 0.10) !important;
+  background-color: rgba(37, 99, 235, 0.1) !important;
 }
 
 /* Landing rankings table sticky key column (#811). Its default bg is the
@@ -502,13 +506,14 @@
    No !important: the cell carries no Tailwind bg utility to override, and
    !important here would beat the row-hover rule and desync the pinned cell's
    highlight from its row in dark mode. */
-[data-theme='dark'] .districts-rankings-table__sticky-col[data-row-tint='mine'] {
-    background-color: rgba(161, 98, 7, 0.1);
+[data-theme='dark']
+  .districts-rankings-table__sticky-col[data-row-tint='mine'] {
+  background-color: rgba(161, 98, 7, 0.1);
 }
 
 [data-theme='dark']
-    .districts-rankings-table__sticky-col[data-row-tint='pinned'] {
-    background-color: rgba(37, 99, 235, 0.1);
+  .districts-rankings-table__sticky-col[data-row-tint='pinned'] {
+  background-color: rgba(37, 99, 235, 0.1);
 }
 
 /* Club table sticky key column (#812). Default bg is themed var(--surface)
@@ -520,24 +525,24 @@
    the hovered tinted row. No !important (the cell carries no Tailwind bg utility
    to override, and it would desync the row-hover highlight — Lesson 107). */
 [data-theme='dark'] .clubs-table__sticky-col[data-row-tint='vulnerable'] {
-    background-color: rgba(161, 98, 7, 0.1);
+  background-color: rgba(161, 98, 7, 0.1);
 }
 [data-theme='dark'] .clubs-table__sticky-col[data-row-tint='intervention'] {
-    background-color: rgba(185, 28, 28, 0.1);
+  background-color: rgba(185, 28, 28, 0.1);
 }
 [data-theme='dark']
-    #clubs-table
-    tbody
-    tr:hover
-    .clubs-table__sticky-col[data-row-tint='vulnerable'] {
-    background-color: rgba(161, 98, 7, 0.2);
+  #clubs-table
+  tbody
+  tr:hover
+  .clubs-table__sticky-col[data-row-tint='vulnerable'] {
+  background-color: rgba(161, 98, 7, 0.2);
 }
 [data-theme='dark']
-    #clubs-table
-    tbody
-    tr:hover
-    .clubs-table__sticky-col[data-row-tint='intervention'] {
-    background-color: rgba(185, 28, 28, 0.2);
+  #clubs-table
+  tbody
+  tr:hover
+  .clubs-table__sticky-col[data-row-tint='intervention'] {
+  background-color: rgba(185, 28, 28, 0.2);
 }
 
 /* ═══════════════════════════════════════════
@@ -546,35 +551,35 @@
    ═══════════════════════════════════════════ */
 
 [data-theme='dark'] .from-blue-50 {
-    --tw-gradient-from: rgba(37, 99, 235, 0.10) !important;
+  --tw-gradient-from: rgba(37, 99, 235, 0.1) !important;
 }
 
 [data-theme='dark'] .to-blue-100 {
-    --tw-gradient-to: rgba(37, 99, 235, 0.18) !important;
+  --tw-gradient-to: rgba(37, 99, 235, 0.18) !important;
 }
 
 [data-theme='dark'] .from-green-50 {
-    --tw-gradient-from: rgba(22, 163, 74, 0.10) !important;
+  --tw-gradient-from: rgba(22, 163, 74, 0.1) !important;
 }
 
 [data-theme='dark'] .to-green-100 {
-    --tw-gradient-to: rgba(22, 163, 74, 0.18) !important;
+  --tw-gradient-to: rgba(22, 163, 74, 0.18) !important;
 }
 
 [data-theme='dark'] .from-red-50 {
-    --tw-gradient-from: rgba(185, 28, 28, 0.10) !important;
+  --tw-gradient-from: rgba(185, 28, 28, 0.1) !important;
 }
 
 [data-theme='dark'] .to-red-100 {
-    --tw-gradient-to: rgba(185, 28, 28, 0.18) !important;
+  --tw-gradient-to: rgba(185, 28, 28, 0.18) !important;
 }
 
 [data-theme='dark'] .from-yellow-50 {
-    --tw-gradient-from: rgba(161, 98, 7, 0.10) !important;
+  --tw-gradient-from: rgba(161, 98, 7, 0.1) !important;
 }
 
 [data-theme='dark'] .to-yellow-100 {
-    --tw-gradient-to: rgba(161, 98, 7, 0.18) !important;
+  --tw-gradient-to: rgba(161, 98, 7, 0.18) !important;
 }
 
 /* ═══════════════════════════════════════════
@@ -586,51 +591,51 @@
    ═══════════════════════════════════════════ */
 
 [data-theme='dark'] .text-tm-black {
-    color: var(--text-heading) !important;
+  color: var(--text-heading) !important;
 }
 
 [data-theme='dark'] .text-tm-loyal-blue {
-    color: #5DADE2 !important;
+  color: #5dade2 !important;
 }
 
 [data-theme='dark'] .text-tm-loyal-blue-80 {
-    color: rgba(93, 173, 226, 0.85) !important;
+  color: rgba(93, 173, 226, 0.85) !important;
 }
 
 [data-theme='dark'] .text-tm-loyal-blue-70 {
-    color: rgba(93, 173, 226, 0.75) !important;
+  color: rgba(93, 173, 226, 0.75) !important;
 }
 
 [data-theme='dark'] .text-tm-true-maroon {
-    color: #E8879A !important;
+  color: #e8879a !important;
 }
 
 [data-theme='dark'] .text-tm-cool-gray {
-    color: #C0C8C7 !important;
+  color: #c0c8c7 !important;
 }
 
 [data-theme='dark'] .bg-tm-loyal-blue {
-    background-color: #1A6B8A !important;
+  background-color: #1a6b8a !important;
 }
 
 [data-theme='dark'] .bg-tm-loyal-blue-10 {
-    background-color: rgba(93, 173, 226, 0.10) !important;
+  background-color: rgba(93, 173, 226, 0.1) !important;
 }
 
 [data-theme='dark'] .bg-tm-loyal-blue-20 {
-    background-color: rgba(93, 173, 226, 0.15) !important;
+  background-color: rgba(93, 173, 226, 0.15) !important;
 }
 
 [data-theme='dark'] .bg-tm-loyal-blue-30 {
-    background-color: rgba(93, 173, 226, 0.22) !important;
+  background-color: rgba(93, 173, 226, 0.22) !important;
 }
 
 [data-theme='dark'] .border-tm-loyal-blue {
-    border-color: #5DADE2 !important;
+  border-color: #5dade2 !important;
 }
 
 [data-theme='dark'] .border-tm-loyal-blue-20 {
-    border-color: rgba(93, 173, 226, 0.25) !important;
+  border-color: rgba(93, 173, 226, 0.25) !important;
 }
 
 /* ═══════════════════════════════════════════
@@ -638,19 +643,19 @@
    ═══════════════════════════════════════════ */
 
 [data-theme='dark'] .bg-amber-50 {
-    background-color: rgba(161, 98, 7, 0.10) !important;
+  background-color: rgba(161, 98, 7, 0.1) !important;
 }
 
 [data-theme='dark'] .bg-amber-100 {
-    background-color: rgba(161, 98, 7, 0.18) !important;
+  background-color: rgba(161, 98, 7, 0.18) !important;
 }
 
 [data-theme='dark'] .text-amber-800 {
-    color: #FCD34D !important;
+  color: #fcd34d !important;
 }
 
 [data-theme='dark'] .text-amber-900 {
-    color: #FDE68A !important;
+  color: #fde68a !important;
 }
 
 /* bg-amber-50/N is Tailwind's opacity-modifier syntax. The compiled
@@ -661,16 +666,16 @@
    below targets the exact compiled form Tailwind emits and so reaches
    any element actually wearing the class. */
 [data-theme='dark'] .bg-amber-50\/50 {
-    background-color: rgba(161, 98, 7, 0.12) !important;
+  background-color: rgba(161, 98, 7, 0.12) !important;
 }
 
 /* Orange text used in DCP projections status */
 [data-theme='dark'] .text-orange-600 {
-    color: #FB923C !important;
+  color: #fb923c !important;
 }
 
 [data-theme='dark'] .text-orange-700 {
-    color: #FDBA74 !important;
+  color: #fdba74 !important;
 }
 
 /* ═══════════════════════════════════════════
@@ -689,23 +694,23 @@
    In dark mode the white text stays; tone the maroon down slightly so
    the pill doesn't burn against the dark surface. */
 [data-theme='dark'] .bg-tm-true-maroon {
-    background-color: #8B2D3C !important;
+  background-color: #8b2d3c !important;
 }
 
 [data-theme='dark'] .border-tm-true-maroon {
-    border-color: #8B2D3C !important;
+  border-color: #8b2d3c !important;
 }
 
 /* Select tier — base uses `bg-tm-cool-gray text-gray-900`. In dark
    mode swap to a translucent gray with light text. */
 [data-theme='dark'] .bg-tm-cool-gray {
-    background-color: rgba(192, 200, 199, 0.18) !important;
+  background-color: rgba(192, 200, 199, 0.18) !important;
 }
 
 /* Presidents tier — base uses `bg-tm-happy-yellow text-gray-900`.
    Dark-mode: muted golden bg + dark text stays readable. */
 [data-theme='dark'] .bg-tm-happy-yellow {
-    background-color: rgba(247, 209, 100, 0.85) !important;
+  background-color: rgba(247, 209, 100, 0.85) !important;
 }
 
 /* #609: the golden chip keeps a light bg, so its text must stay DARK. The
@@ -713,21 +718,21 @@
    is 1.70:1. This compound selector (more specific) restores dark text on the
    chip, the readable pairing the comment above always intended (8.94:1). */
 [data-theme='dark'] .bg-tm-happy-yellow.text-gray-900 {
-    color: #111827 !important;
+  color: #111827 !important;
 }
 
 [data-theme='dark'] .border-tm-happy-yellow {
-    border-color: rgba(247, 209, 100, 0.85) !important;
+  border-color: rgba(247, 209, 100, 0.85) !important;
 }
 
 [data-theme='dark'] .border-yellow-500 {
-    border-color: rgba(247, 209, 100, 0.65) !important;
+  border-color: rgba(247, 209, 100, 0.65) !important;
 }
 
 /* Smedley tier — base uses `bg-purple-100 text-purple-900
    border-purple-400`. Dark-mode: translucent purple + light text. */
 [data-theme='dark'] .bg-purple-100 {
-    background-color: rgba(168, 85, 247, 0.20) !important;
+  background-color: rgba(168, 85, 247, 0.2) !important;
 }
 
 /* #609: the Region page (and DistrictTierChip) Smedley chips use bg-purple-200,
@@ -735,69 +740,69 @@
    stayed light purple (#e9d5ff), 1.00:1. Mirror the bg-purple-100 treatment so
    the lightened text reads (10.33:1). */
 [data-theme='dark'] .bg-purple-200 {
-    background-color: rgba(168, 85, 247, 0.20) !important;
+  background-color: rgba(168, 85, 247, 0.2) !important;
 }
 
 [data-theme='dark'] .text-purple-900 {
-    color: #E9D5FF !important;
+  color: #e9d5ff !important;
 }
 
 [data-theme='dark'] .border-purple-400 {
-    border-color: rgba(168, 85, 247, 0.55) !important;
+  border-color: rgba(168, 85, 247, 0.55) !important;
 }
 
 /* ─── Additional Awards chips ─── */
 
 /* Club Strength Award — `bg-green-50 text-green-800 border-green-200` */
 [data-theme='dark'] .bg-green-50 {
-    background-color: rgba(34, 197, 94, 0.10) !important;
+  background-color: rgba(34, 197, 94, 0.1) !important;
 }
 
 [data-theme='dark'] .text-green-800 {
-    color: #86EFAC !important;
+  color: #86efac !important;
 }
 
 [data-theme='dark'] .border-green-200 {
-    border-color: rgba(34, 197, 94, 0.30) !important;
+  border-color: rgba(34, 197, 94, 0.3) !important;
 }
 
 /* Leadership Excellence — `bg-purple-50 text-purple-800 border-purple-200` */
 [data-theme='dark'] .bg-purple-50 {
-    background-color: rgba(168, 85, 247, 0.10) !important;
+  background-color: rgba(168, 85, 247, 0.1) !important;
 }
 
 [data-theme='dark'] .text-purple-800 {
-    color: #DDD6FE !important;
+  color: #ddd6fe !important;
 }
 
 [data-theme='dark'] .border-purple-200 {
-    border-color: rgba(168, 85, 247, 0.30) !important;
+  border-color: rgba(168, 85, 247, 0.3) !important;
 }
 
 /* Education & Training — `bg-blue-50 text-blue-800 border-blue-200` */
 [data-theme='dark'] .bg-blue-50 {
-    background-color: rgba(59, 130, 246, 0.10) !important;
+  background-color: rgba(59, 130, 246, 0.1) !important;
 }
 
 [data-theme='dark'] .text-blue-800 {
-    color: #BFDBFE !important;
+  color: #bfdbfe !important;
 }
 
 [data-theme='dark'] .border-blue-200 {
-    border-color: rgba(59, 130, 246, 0.30) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
 }
 
 /* Club Growth (CGD) — `bg-teal-50 text-teal-800 border-teal-200` */
 [data-theme='dark'] .bg-teal-50 {
-    background-color: rgba(20, 184, 166, 0.10) !important;
+  background-color: rgba(20, 184, 166, 0.1) !important;
 }
 
 [data-theme='dark'] .text-teal-800 {
-    color: #99F6E4 !important;
+  color: #99f6e4 !important;
 }
 
 [data-theme='dark'] .border-teal-200 {
-    border-color: rgba(20, 184, 166, 0.30) !important;
+  border-color: rgba(20, 184, 166, 0.3) !important;
 }
 
 /* ═══════════════════════════════════════════
@@ -829,91 +834,93 @@
 /* ─── loyal-blue (high opacity — emphasis fills) ─── */
 
 [data-theme='dark'] .bg-tm-loyal-blue-80 {
-    background-color: rgba(93, 173, 226, 0.55) !important;
+  background-color: rgba(93, 173, 226, 0.55) !important;
 }
 
 [data-theme='dark'] .bg-tm-loyal-blue-90 {
-    background-color: rgba(93, 173, 226, 0.7) !important;
+  background-color: rgba(93, 173, 226, 0.7) !important;
 }
 
 [data-theme='dark'] .border-tm-loyal-blue-30 {
-    border-color: rgba(93, 173, 226, 0.35) !important;
+  border-color: rgba(93, 173, 226, 0.35) !important;
 }
 
 /* ─── cool-gray (subtle surface tints + dividers) ─── */
 
 [data-theme='dark'] .bg-tm-cool-gray-10 {
-    background-color: rgba(192, 200, 199, 0.06) !important;
+  background-color: rgba(192, 200, 199, 0.06) !important;
 }
 
 [data-theme='dark'] .bg-tm-cool-gray-20 {
-    background-color: rgba(192, 200, 199, 0.12) !important;
+  background-color: rgba(192, 200, 199, 0.12) !important;
 }
 
 [data-theme='dark'] .bg-tm-cool-gray-30 {
-    background-color: rgba(192, 200, 199, 0.2) !important;
+  background-color: rgba(192, 200, 199, 0.2) !important;
 }
 
 [data-theme='dark'] .bg-tm-cool-gray-80 {
-    background-color: rgba(192, 200, 199, 0.4) !important;
+  background-color: rgba(192, 200, 199, 0.4) !important;
 }
 
 /* ─── happy-yellow (callouts, accents) ─── */
 
 [data-theme='dark'] .bg-tm-happy-yellow-20 {
-    background-color: rgba(247, 209, 100, 0.15) !important;
+  background-color: rgba(247, 209, 100, 0.15) !important;
 }
 
 [data-theme='dark'] .bg-tm-happy-yellow-30 {
-    background-color: rgba(247, 209, 100, 0.22) !important;
+  background-color: rgba(247, 209, 100, 0.22) !important;
 }
 
 [data-theme='dark'] .bg-tm-happy-yellow-80 {
-    background-color: rgba(247, 209, 100, 0.55) !important;
+  background-color: rgba(247, 209, 100, 0.55) !important;
 }
 
 [data-theme='dark'] .text-tm-happy-yellow-80 {
-    color: rgba(247, 209, 100, 0.9) !important;
+  color: rgba(247, 209, 100, 0.9) !important;
 }
 
 /* ─── true-maroon (status pills, emphasis chips) ─── */
 
 [data-theme='dark'] .bg-tm-true-maroon-10 {
-    background-color: rgba(232, 135, 154, 0.1) !important;
+  background-color: rgba(232, 135, 154, 0.1) !important;
 }
 
 [data-theme='dark'] .bg-tm-true-maroon-20 {
-    background-color: rgba(232, 135, 154, 0.16) !important;
+  background-color: rgba(232, 135, 154, 0.16) !important;
 }
 
 [data-theme='dark'] .bg-tm-true-maroon-80 {
-    background-color: rgba(232, 135, 154, 0.55) !important;
+  background-color: rgba(232, 135, 154, 0.55) !important;
 }
 
 [data-theme='dark'] .border-tm-true-maroon-30 {
-    border-color: rgba(232, 135, 154, 0.35) !important;
+  border-color: rgba(232, 135, 154, 0.35) !important;
 }
 
 /* ─── Clubs quick-filter "Clear all" chip (#670, epic #665 Sprint 4) ───
    The chip text/border uses the brand --maroon-500 (#7b1828), which has NO
    dark remap — on the dark --surface it lands at ~2:1. Scoped override to the
    dark maroon #e8879a the theme already uses for --tm-true-maroon (lesson 096):
-   light mode is byte-identical, dark passes AA. The segmented / quick-chip /
-   filter-popover active states need no override here — they were re-skinned to
-   the --link token, which remaps itself (R10, lesson 093). */
-[data-theme='dark'] .clubs-quick-filter-chip__clear {
-    color: #e8879a;
-    border-color: rgba(232, 135, 154, 0.3);
+   light mode is byte-identical, dark passes AA. The filter-popover active
+   states need no override here — they were re-skinned to the --link token,
+   which remaps itself (R10, lesson 093). */
+[data-theme='dark'] .clubs-clear-filters-btn {
+  color: #e8879a;
+  border-color: rgba(232, 135, 154, 0.3);
 }
 
-[data-theme='dark'] .clubs-quick-filter-chip__clear:hover {
-    background-color: rgba(232, 135, 154, 0.1);
-    border-color: #e8879a;
-    color: #e8879a;
+[data-theme='dark'] .clubs-clear-filters-btn:hover {
+  background-color: rgba(232, 135, 154, 0.1);
+  border-color: #e8879a;
+  color: #e8879a;
 }
 
 /* ─── Transition for Theme Switch ─── */
 
 html[data-theme] body {
-    transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
