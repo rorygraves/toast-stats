@@ -275,6 +275,12 @@ export const areaPerformanceArb = (options?: {
               // confirmed/provisional/not-distinguished states.
               snapshotDate: '2026-03-15',
             }),
+            // #973: the area arb models aggregate visit status, not per-club
+            // rows, so there are no enumerable missing clubs. snapshotDate
+            // '2026-03-15' (March) ⇒ round 2.
+            currentRound: 2 as const,
+            clubsMissingCurrentRoundVisit: [],
+            clubsMissingCurrentRoundVisitIneligible: [],
           }
         })
     })

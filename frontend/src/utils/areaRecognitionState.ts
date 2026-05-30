@@ -93,6 +93,23 @@ function programYearStartYear(dateStr: string): number {
 }
 
 /**
+ * Returns the currently-active visit round for `snapshotDate`.
+ *
+ *   - Round 1: Jul–Nov window (due Nov 30 of the PY start year)
+ *   - Round 2: Dec–Jun window (due May 31 of the PY end year)
+ *
+ * The Nov 30 deadline day itself is still round 1 (the round only flips on
+ * Dec 1); the May 31 deadline day and Jun 30 (last day of the PY) are round 2.
+ * String-slice month parsing mirrors `programYearStartYear` — `new Date()` is
+ * timezone-sensitive and would mis-bucket UTC-midnight dates west of UTC.
+ */
+export function getCurrentVisitRound(snapshotDate: string): 1 | 2 {
+  const iso = toIsoDate(snapshotDate)
+  const month = Number.parseInt(iso.slice(5, 7), 10)
+  return month >= 7 && month <= 11 ? 1 : 2
+}
+
+/**
  * Returns the R1 and R2 deadlines for the program year containing `snapshotDate`.
  */
 export function getAreaVisitDeadlines(snapshotDate: string): {

@@ -49,6 +49,27 @@ export interface VisitStatus {
 }
 
 /**
+ * A club in an area that has NOT completed the current round's qualifying
+ * club-visit. Identified by club number + name for direct UI display (#973).
+ */
+export interface MissingVisitClub {
+  /** Club Number (snapshot identifier; falls back to Club Name when absent) */
+  clubNumber: string
+  /** Club Name, for human-readable display */
+  clubName: string
+}
+
+/**
+ * A suspended/ineligible club missing the current-round visit, flagged
+ * separately from the active list so the UI can present it differently
+ * (per operator: "active only, flag others"). Carries the raw `Club Status`.
+ */
+export interface IneligibleMissingVisitClub extends MissingVisitClub {
+  /** Raw `Club Status` from clubPerformance (e.g. "Suspended", "Ineligible") */
+  status: string
+}
+
+/**
  * Performance metrics and status for a single area
  *
  * Contains all data needed to display area performance in the
@@ -85,6 +106,25 @@ export interface AreaPerformance {
    * provisional logic locally.
    */
   recognitionState: AreaRecognitionState
+  /**
+   * Currently-active visit round (1 = Jul–Nov / Nov 30, 2 = Dec–Jun / May 31),
+   * derived from the snapshot date via `getCurrentVisitRound` (#973). Single
+   * source of truth — never re-derive the round from a date in a component.
+   */
+  currentRound: 1 | 2
+  /**
+   * Active clubs in the area that have NOT completed the **current round's**
+   * qualifying club-visit (raw `Nov Visit award` for R1, `May Visit award` /
+   * `May visit award` for R2 ≠ `'1'`). Sorted by club number. Suspended /
+   * ineligible clubs are excluded here and surfaced in the flagged list (#973).
+   */
+  clubsMissingCurrentRoundVisit: MissingVisitClub[]
+  /**
+   * Suspended / ineligible clubs missing the current-round visit, flagged
+   * separately (per operator: "active only, flag others"). Sorted by club
+   * number (#973).
+   */
+  clubsMissingCurrentRoundVisitIneligible: IneligibleMissingVisitClub[]
 }
 
 /**
