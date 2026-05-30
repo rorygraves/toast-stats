@@ -111,19 +111,26 @@ describe('RegionsPage (#496)', () => {
     ).toBeInTheDocument()
   })
 
-  it('renders the region card grid and NOT a table (CC-9, #881)', async () => {
+  it('renders the leaderboard table as the primary view, not a card grid (#964)', async () => {
     renderPage()
-    // Wait for data to land (grid card link is the loaded marker now that
-    // the duplicate leaderboard table is gone).
-    await screen.findByRole('link', { name: /^region 01/i })
-    // The redundant leaderboard table must be gone.
-    expect(screen.queryByRole('table')).not.toBeInTheDocument()
-    // Grid cards remain (find by Region label in card eyebrow context).
-    expect(screen.getAllByText(/Region 01/).length).toBeGreaterThan(0)
-    expect(screen.getAllByText(/Region 07/).length).toBeGreaterThan(0)
+    // The leaderboard table is the loaded marker now that the card grid is
+    // gone (#964 reverses the CC-9 cards-only decision).
+    const table = await screen.findByRole('table', {
+      name: /region rankings/i,
+    })
+    expect(table).toBeInTheDocument()
+    // Region rows link out to each region detail page.
+    expect(screen.getByRole('link', { name: /^region 01/i })).toHaveAttribute(
+      'href',
+      '/region/01'
+    )
+    expect(screen.getByRole('link', { name: /^region 07/i })).toHaveAttribute(
+      'href',
+      '/region/07'
+    )
   })
 
-  it('excludes DNAR districts from the grid', async () => {
+  it('excludes DNAR districts from the table', async () => {
     renderPage()
     await screen.findByRole('link', { name: /^region 01/i })
     // DNAR (region "DNAR") must not appear
@@ -155,10 +162,10 @@ describe('RegionsPage (#496)', () => {
     ).toBeInTheDocument()
   })
 
-  it('isolates a single region in the grid when selected (#685)', async () => {
+  it('isolates a single region in the table when selected (#685)', async () => {
     renderPage()
     await screen.findByRole('link', { name: /^region 01/i })
-    // Both regions visible initially (grid card eyebrows).
+    // Both regions visible initially (table rows).
     expect(screen.getAllByText(/Region 01/).length).toBeGreaterThan(0)
     expect(screen.getAllByText(/Region 07/).length).toBeGreaterThan(0)
 
@@ -221,8 +228,8 @@ describe('RegionsPage (#496)', () => {
     it('self-heals an unknown ?region= to All (page-level validation, Lesson 124)', async () => {
       renderPageAt('/regions?region=99')
       await screen.findByRole('link', { name: /^region 01/i })
-      // 99 is not a real region id, so the grid shows everything and "All
-      // regions" is the effective selection — never a stranded empty grid.
+      // 99 is not a real region id, so the table shows everything and "All
+      // regions" is the effective selection — never a stranded empty table.
       expect(
         screen.getByRole('button', { name: /all regions/i })
       ).toHaveAttribute('aria-pressed', 'true')

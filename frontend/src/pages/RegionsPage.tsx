@@ -2,7 +2,7 @@ import React, { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchCdnRankings } from '../services/cdn'
 import { aggregateRegions } from '../utils/aggregateRegions'
-import { RegionGrid } from '../components/RegionGrid'
+import { RegionsLeaderboard } from '../components/RegionsLeaderboard'
 import { RegionFinder } from '../components/RegionFinder'
 import { LoadingSkeleton } from '../components/LoadingSkeleton'
 import { EmptyState } from '../components/ErrorDisplay'
@@ -25,8 +25,8 @@ const REGION_URL_OPTIONS = {
    per-district feed.
 
    DNAR (District-Not-Assigned-Region) districts are filtered OUT of
-   the grid. When non-zero, they're surfaced as a small footnote so the
-   count is visible without polluting the card grid. */
+   the table. When non-zero, they're surfaced as a small footnote so the
+   count is visible without polluting the leaderboard. */
 
 const RegionsPage: React.FC = () => {
   const { data, isLoading, error } = useQuery({
@@ -62,8 +62,8 @@ const RegionsPage: React.FC = () => {
     selectedRegion && regionIds.includes(selectedRegion) ? selectedRegion : null
 
   // Filter step (R11): "All" (null) shows every region; a selection isolates
-  // one in the grid so the user can jump straight to it instead of scanning
-  // all 14 cards (#685).
+  // one row in the leaderboard so the user can jump straight to it instead of
+  // scanning all 14 (#685).
   const displayedRollups = useMemo(
     () =>
       effectiveRegion
@@ -112,11 +112,11 @@ const RegionsPage: React.FC = () => {
         onSelect={setSelectedRegion}
       />
 
-      <section className="my-6" aria-labelledby="regions-grid-heading">
-        <h2 id="regions-grid-heading" className="sr-only">
-          Region cards
+      <section className="my-6" aria-labelledby="regions-table-heading">
+        <h2 id="regions-table-heading" className="sr-only">
+          Region leaderboard
         </h2>
-        <RegionGrid rollups={displayedRollups} />
+        <RegionsLeaderboard rollups={displayedRollups} />
       </section>
 
       {dnarCount > 0 && (
