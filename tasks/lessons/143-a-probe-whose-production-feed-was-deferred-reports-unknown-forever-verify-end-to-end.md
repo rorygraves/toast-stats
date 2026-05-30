@@ -1,5 +1,5 @@
 ---
-id: '140'
+id: '143'
 category: principle
 tags: [automation, sprint-runner, verification, tdd, bash]
 auto_load: true
@@ -7,7 +7,7 @@ date: 2026-05-30
 issues: [932, 933]
 ---
 
-# Lesson 140 — A probe whose production feed was deferred reports UNKNOWN forever; the verification sprint is where you drive it end-to-end against the real feed
+# Lesson 143 — A probe whose production feed was deferred reports UNKNOWN forever; the verification sprint is where you drive it end-to-end against the real feed
 
 **Date:** 2026-05-30
 **Issue:** #932 (epic #933 Sprint 5 — simulated-zombie verification)

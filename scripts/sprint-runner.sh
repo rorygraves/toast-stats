@@ -516,13 +516,26 @@ launch_sprint_session() {
   # 4.00.03 (FAU), which has NO `-Logfile` flag (design open-Q #2) — only `-L`,
   # which alone writes `screenlog.0` into the window's cwd (collides across
   # concurrent sessions, pollutes the worktree). So we point logging at an
-  # explicit path via a minimal per-session screenrc (`logfile` + `deflog on`)
-  # and launch with `-c <screenrc> -L`. Logging taps the window output; the PTY
-  # is untouched, so claude's interactive UI still works.
+  # explicit path via a per-session screenrc and launch with `-c <screenrc> -L`.
+  #   - `source <default>` first (when present) so `-c` ADDS logging rather than
+  #     REPLACING the operator's screen config (term/scrollback the UI may want).
+  #   - `logfile flush 1` so output reaches disk within ~1s (screen's default is
+  #     10s of buffering — long enough to read an empty logfile and be misled);
+  #     mtime then tracks real activity promptly.
+  # Logging taps the window output; the window's PTY is untouched, so claude's
+  # interactive UI still works.
   local logfile="$RUNNER_LOG_DIR/session-$target_issue.log"
   local screenrc="$RUNNER_LOG_DIR/session-$target_issue.screenrc"
   mkdir -p "$RUNNER_LOG_DIR"
-  printf 'logfile %s\ndeflog on\n' "$logfile" > "$screenrc"
+  {
+    [[ -f "$HOME/.screenrc" ]] && printf 'source %s\n' "$HOME/.screenrc"
+    printf 'logfile %s\nlogfile flush 1\ndeflog on\n' "$logfile"
+  } > "$screenrc"
+  # Start every launch from a byte-fresh logfile: screen APPENDS to an existing
+  # logfile, and a same-issue relaunch must never inherit a prior session's loop
+  # transcript as its own log signal (reap/GC normally delete it, but truncating
+  # here is the belt-and-suspenders guard against any residue).
+  : > "$logfile"
 
   # `screen -dmS` allocates a PTY so claude's interactive UI works. `-dmS
   # <name>` stays FIRST so downstream `pgrep -f "SCREEN -dmS <name>"` and the

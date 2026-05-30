@@ -197,18 +197,42 @@ else
   echo "  screen:"; sed 's/^/    /' "$SCREEN_CALLS"; fail=1
 fi
 
-# === Mode B: crashed-but-screen-alive (HUSK) → reap + logfile removed =========
+# === Mode B: crashed-but-screen-alive (HUSK) → reap severs the stale loop =====
+# The `claude` child is gone, screen lingers → HUSK → reap. The dead session's
+# loop transcript must NOT survive into the relaunch (reap deletes the logfile;
+# the relaunch starts byte-fresh). Invariant: after the tick the session logfile
+# carries none of the crashed session's loop content. (HUSK + attempts 0 +
+# unshipped reaps AND relaunches — the relaunch recreating an EMPTY logfile is
+# exactly the desired "fresh slate", so we assert content-severed, not absent.)
 reset_world
-write_loop_log   # a logfile exists; reap must delete it
-[[ -f "$LOGFILE" ]] || { echo "FAIL [B-setup]: logfile not created"; fail=1; }
+write_loop_log
+grep -q 'retrying request' "$LOGFILE" || { echo "FAIL [B-setup]: loop log not created"; fail=1; }
 CLAUDE_ALIVE=0 "$RUNNER" >"$TMP/b.log" 2>&1 || true
 if grep -q 'verdict=HUSK' "$TMP/b.log" \
    && grep -q 'SCREEN_CALL .*-X -S sprint-runner-930 quit' "$SCREEN_CALLS" \
-   && [[ ! -f "$LOGFILE" ]]; then
-  echo "PASS [B]: crashed (HUSK) → reaped, session logfile removed"
+   && ! grep -q 'retrying request' "$LOGFILE" 2>/dev/null; then
+  echo "PASS [B]: crashed (HUSK) → reaped, dead session's loop transcript severed (no stale carry-over)"
 else
-  echo "FAIL [B]: expected HUSK reap + logfile removed. logfile_present=$([[ -f "$LOGFILE" ]] && echo yes || echo no)"
+  echo "FAIL [B]: expected HUSK reap + stale loop severed. content=$(cat "$LOGFILE" 2>/dev/null | head -1)"
   echo "  log:"; sed 's/^/    /' "$TMP/b.log"
+  echo "  screen:"; sed 's/^/    /' "$SCREEN_CALLS"; fail=1
+fi
+
+# === Mode B2: HUSK at the relaunch cap → reap + escalate, logfile gone =========
+# At attempts==cap there is NO relaunch (escalation), so the reaped logfile stays
+# removed — the isolated proof that reap itself deletes the feed.
+reset_world
+printf '{"930":{"attempts":3,"last_verdict":"HUSK","last_relaunch_epoch":0}}' > "$STATE"
+write_loop_log
+CLAUDE_ALIVE=0 "$RUNNER" >"$TMP/b2.log" 2>&1 || true
+if grep -q 'verdict=HUSK' "$TMP/b2.log" \
+   && grep -q 'SCREEN_CALL .*-X -S sprint-runner-930 quit' "$SCREEN_CALLS" \
+   && ! grep -q 'SCREEN_CALL -dmS sprint-runner-930' "$SCREEN_CALLS" \
+   && [[ ! -f "$LOGFILE" ]]; then
+  echo "PASS [B2]: HUSK at cap → reaped + escalated (no relaunch), session logfile removed"
+else
+  echo "FAIL [B2]: expected reap+escalate+no relaunch+logfile gone. logfile_present=$([[ -f "$LOGFILE" ]] && echo yes || echo no)"
+  echo "  log:"; sed 's/^/    /' "$TMP/b2.log"
   echo "  screen:"; sed 's/^/    /' "$SCREEN_CALLS"; fail=1
 fi
 

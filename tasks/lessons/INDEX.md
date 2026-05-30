@@ -116,6 +116,6 @@
 - **139** [css, frontend, accessibility, router, verification, playwright, mobile] — A TOC-anchor jump fired from inside a scroll-locked sheet has three independent scroll-clobbering traps; only live measurement separates them (#878, #880)
 - **139** [data-pipeline, frontend, hooks, analytics, verification, cdn] — A year-end snapshot's `sourceCsvDate` falls in July, so a program-year-equality guard silently drops every completed year (#892, #893)
 - **140** [css, frontend, refactoring, simplify, process] — A deliberately-isolated surface namespace outranks a DRY "reuse" flag; a small typographic duplication is cheaper than cross-surface coupling (#879, #880)
-- **140** [automation, sprint-runner, verification, tdd, bash] — A probe whose production feed was deferred reports UNKNOWN forever; the verification sprint is where you drive it end-to-end against the real feed (#932, #933)
 - **141** [tests, playwright, e2e, verification, frontend, accessibility] — A page-sweep tripwire passes vacuously on nav chrome; gate each route on a content sentinel, not a bare element count (#887, #888)
 - **142** [css, frontend, verification, tests, accessibility] — 142-a-new-component-stylesheet-must-be-wired-into-the-import-graph-tests-wont-catch-an-orphan
+- **143** [automation, sprint-runner, verification, tdd, bash] — A probe whose production feed was deferred reports UNKNOWN forever; the verification sprint is where you drive it end-to-end against the real feed (#932, #933)
