@@ -159,6 +159,7 @@ state_prune() {
 # macOS `screen -ls` exits 1 even when sessions exist and silently inverts a
 # pipefail predicate (R14/L089).
 
+LIVENESS_VERDICT=""
 LIVENESS_COMMIT=""
 LIVENESS_PROCESS=""
 LIVENESS_LOG=""
@@ -185,8 +186,11 @@ _session_start_epoch() {
   printf '%s' "$epoch"
 }
 
-# evaluate_liveness <issue> → echoes HEALTHY|SUSPECT|STUCK|HUSK; sets the
-# LIVENESS_* globals as a side effect. Never aborts under set -u.
+# evaluate_liveness <issue> → sets LIVENESS_VERDICT (HEALTHY|SUSPECT|STUCK|HUSK)
+# and the LIVENESS_COMMIT/PROCESS/LOG breakdown as globals. Results are returned
+# via globals, NOT stdout, so the caller must invoke this as a plain statement —
+# a command-substitution `$(evaluate_liveness ...)` would run it in a subshell
+# and discard the globals. Never aborts under set -u.
 evaluate_liveness() {
   local issue="$1" now wt wt_present last_commit start_epoch
   local screen_pid claude_pid screen_alive
@@ -223,9 +227,14 @@ evaluate_liveness() {
   local logfile log_present=0 mtime_age=0 mtime
   logfile="${RUNNER_LOG_DIR:-$(_wt_base)/.runner-logs}/session-$issue.log"
   if [[ -f "$logfile" ]]; then
-    log_present=1
-    mtime="$(_int_or "$(stat -f %m "$logfile" 2>/dev/null)" "$now")"
-    mtime_age=$(( now - mtime ))
+    mtime="$(stat -f %m "$logfile" 2>/dev/null || true)"
+    # Only treat the log as present if we got a real mtime — an unstat-able
+    # file must resolve to UNKNOWN (the safe direction), not a fabricated
+    # "fresh" reading that would mask a stall.
+    if [[ "$mtime" =~ ^[0-9]+$ ]]; then
+      log_present=1
+      mtime_age=$(( now - mtime ))
+    fi
   fi
 
   LIVENESS_COMMIT="$(probe_commit_age "$now" "$start_epoch" "$last_commit" "$wt_present")"
@@ -236,6 +245,6 @@ evaluate_liveness() {
     LIVENESS_LOG="$(printf '' | probe_log 0 "$mtime_age")"
   fi
 
-  fuse_verdict "$LIVENESS_COMMIT" "$LIVENESS_PROCESS" "$LIVENESS_LOG"
+  LIVENESS_VERDICT="$(fuse_verdict "$LIVENESS_COMMIT" "$LIVENESS_PROCESS" "$LIVENESS_LOG")"
   return 0
 }

@@ -643,8 +643,11 @@ mode_run() {
         # store. A STUCK/HUSK verdict will be reaped + relaunched by the Sprint 4
         # path (#931); Sprint 3 only OBSERVES — every branch still skips the
         # launch this tick, so existing behavior is preserved.
+        # Call as a plain statement (NOT $(...)): evaluate_liveness returns its
+        # verdict + breakdown via globals, which a subshell would discard.
         local verdict attempts
-        verdict=$(evaluate_liveness "$active_issue")
+        evaluate_liveness "$active_issue"
+        verdict="$LIVENESS_VERDICT"
         attempts=$(state_get_attempts "$active_issue")
         log "Existing session $active active (#$active_issue is $active_state) — liveness verdict=$verdict [commit=$LIVENESS_COMMIT process=$LIVENESS_PROCESS log=$LIVENESS_LOG attempts=$attempts/3]."
         state_record "$active_issue" "$verdict" "$attempts" || log "WARNING: failed to persist liveness state for #$active_issue"

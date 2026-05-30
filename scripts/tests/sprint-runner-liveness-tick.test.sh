@@ -112,26 +112,31 @@ mkdir -p "$WORKTREE_BASE/sprint-930"
 fail=0
 
 # --- Case A: claude alive + busy + recent commit → HEALTHY, plain skip ---
+# The per-probe breakdown must be POPULATED, not blank: evaluate_liveness sets
+# globals, so a command-substitution call would silently lose them (the bug a
+# subshell call introduces). Assert the real probe tokens, not just the verdict.
 CLAUDE_ALIVE=1 "$RUNNER" --dry-run >"$TMP/a.log" 2>&1 || true
 if grep -q 'verdict=HEALTHY' "$TMP/a.log" \
+   && grep -q 'commit=OK process=OK log=UNKNOWN' "$TMP/a.log" \
    && ! grep -q 'would launch screen session' "$TMP/a.log" \
    && ! grep -qi 'Sprint 4' "$TMP/a.log" \
    && ! grep -q 'SCREEN_CALL.*quit' "$SCREEN_CALLS"; then
-  echo "PASS [A]: HEALTHY verdict logged, no launch, no reap"
+  echo "PASS [A]: HEALTHY verdict + populated breakdown logged, no launch, no reap"
 else
-  echo "FAIL [A]: expected HEALTHY + no launch + no reap, got:"; sed 's/^/    /' "$TMP/a.log"; fail=1
+  echo "FAIL [A]: expected HEALTHY + breakdown + no launch + no reap, got:"; sed 's/^/    /' "$TMP/a.log"; fail=1
 fi
 
 # --- Case B: screen alive, claude gone → HUSK, Sprint-4 handoff, no reap ---
 : > "$SCREEN_CALLS"
 CLAUDE_ALIVE=0 "$RUNNER" --dry-run >"$TMP/b.log" 2>&1 || true
 if grep -q 'verdict=HUSK' "$TMP/b.log" \
+   && grep -q 'process=HUSK' "$TMP/b.log" \
    && grep -qi 'Sprint 4' "$TMP/b.log" \
    && ! grep -q 'would launch screen session' "$TMP/b.log" \
    && ! grep -q 'SCREEN_CALL.*quit' "$SCREEN_CALLS"; then
-  echo "PASS [B]: HUSK verdict + Sprint-4 handoff logged, no reap, no launch"
+  echo "PASS [B]: HUSK verdict + populated breakdown + Sprint-4 handoff, no reap, no launch"
 else
-  echo "FAIL [B]: expected HUSK + Sprint-4 handoff + no reap, got:"; sed 's/^/    /' "$TMP/b.log"; fail=1
+  echo "FAIL [B]: expected HUSK + breakdown + Sprint-4 handoff + no reap, got:"; sed 's/^/    /' "$TMP/b.log"; fail=1
 fi
 
 # --- Case C: the attempt-state file recorded the verdict (state wired in) ---
