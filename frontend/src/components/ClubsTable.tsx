@@ -10,6 +10,8 @@ import {
 } from '@tanstack/react-table'
 import type { SnapshotDiff } from '@toastmasters/shared-contracts'
 import { ClubTrend } from '../hooks/useDistrictAnalytics'
+import { calculateClubProjection } from '../utils/dcpProjections'
+import { isCloseToDistinguished } from '../utils/closeToDistinguished'
 import { ExportButton } from './ExportButton'
 import { exportClubPerformance, exportSnapshotDiff } from '../utils/csvExport'
 import { LoadingSkeleton } from './LoadingSkeleton'
@@ -340,12 +342,26 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
   // Feed the table a name-ascending base order so its STABLE sort reproduces the
   // pre-migration "secondary sort by club name (always ascending)" tiebreak in
   // both directions (see clubsColumns.tsx). Memoized on filteredClubs.
+  // "Close to Distinguished" preset (#903) — a new pipeline step (R11) layered
+  // on the column filters, powered by the ONE shared canonical predicate so it
+  // can never diverge from the club-detail-card banner.
+  const [presetActive, setPresetActive] = useState(false)
+  const presetFilteredClubs = useMemo(() => {
+    if (!presetActive) return filteredClubs
+    return filteredClubs.filter(club =>
+      isCloseToDistinguished({
+        projection: calculateClubProjection(club),
+        cspSubmitted: club.cspSubmitted,
+      })
+    )
+  }, [filteredClubs, presetActive])
+
   const nameSortedClubs = useMemo(
     () =>
-      [...filteredClubs].sort((a, b) =>
+      [...presetFilteredClubs].sort((a, b) =>
         a.clubName.toLowerCase().localeCompare(b.clubName.toLowerCase())
       ),
-    [filteredClubs]
+    [presetFilteredClubs]
   )
 
   // Sort state is CONTROLLED by sortField/sortDirection — the URL-synced source
@@ -651,6 +667,26 @@ export const ClubsTable: React.FC<ClubsTableProps> = ({
             isGroupHidden={isGroupHidden}
             onToggle={toggleGroup}
           />
+        </div>
+
+        {/* Close-to-Distinguished preset (#903) — one action-oriented toggle in
+            place of the retired quick-filter row, sharing the canonical
+            predicate with the club-detail banner. */}
+        <div className="clubs-preset-bar">
+          <button
+            type="button"
+            className="clubs-preset-chip"
+            aria-pressed={presetActive}
+            onClick={() => setPresetActive(p => !p)}
+          >
+            🎯 Close to Distinguished
+          </button>
+          {presetActive && (
+            <span className="clubs-preset-count" aria-live="polite">
+              {presetFilteredClubs.length} of {filteredClubs.length} clubs need
+              a nudge to Distinguished
+            </span>
+          )}
         </div>
 
         {/* Results Count and Quick Filters */}

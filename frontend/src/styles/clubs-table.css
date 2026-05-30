@@ -1,0 +1,47 @@
+
+/* Close-to-Distinguished preset (#903) — one action-oriented chip that replaced
+   the retired quick-filter row. Reuses toolbar tokens so dark mode inherits;
+   the pressed state uses the product accent (--rt-stats amber). */
+.clubs-preset-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.clubs-preset-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-tm-loyal, #004165);
+  background: var(--color-tm-fog, #f3f5f7);
+  border: 1px solid var(--color-tm-mist, #d6dde3);
+  border-radius: 999px;
+  cursor: pointer;
+  min-height: 44px;
+  white-space: nowrap;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.clubs-preset-chip:hover {
+  background: var(--color-tm-mist, #d6dde3);
+}
+
+.clubs-preset-chip[aria-pressed='true'] {
+  color: #fff;
+  background: var(--rt-stats, #d4873f);
+  border-color: var(--rt-stats, #d4873f);
+}
+
+.clubs-preset-count {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-tm-slate, #5b6470);
+}
