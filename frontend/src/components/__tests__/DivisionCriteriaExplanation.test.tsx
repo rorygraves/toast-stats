@@ -21,7 +21,9 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { render, screen, fireEvent, cleanup } from '@testing-library/react'
 import '@testing-library/jest-dom'
+import React from 'react'
 import type { ReactElement } from 'react'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 import { DivisionCriteriaExplanation } from '../DivisionCriteriaExplanation'
 
 // DivisionCriteriaExplanation is provider-free (useState only). Skipping
@@ -488,6 +490,44 @@ describe('DivisionCriteriaExplanation', () => {
       // Section headings (h4)
       const sectionHeadings = screen.getAllByRole('heading', { level: 4 })
       expect(sectionHeadings.length).toBeGreaterThanOrEqual(3) // Eligibility, No Net Loss, Recognition Levels
+    })
+  })
+
+  // #980 — when a urlParam is supplied the expand state deep-links via the URL.
+  describe('URL-synced expand state (#980)', () => {
+    let location = ''
+    const LocationProbe: React.FC = () => {
+      location = useLocation().search
+      return null
+    }
+    const renderWithRouter = (entry: string) =>
+      render(
+        <MemoryRouter initialEntries={[entry]}>
+          <DivisionCriteriaExplanation urlParam="expandDivisionCriteria" />
+          <LocationProbe />
+        </MemoryRouter>
+      )
+    const button = () =>
+      screen.getByRole('button', {
+        name: /Distinguished Division Program Criteria/i,
+      })
+
+    it('reads expanded state from the URL param', () => {
+      renderWithRouter('/?expandDivisionCriteria=1')
+      expect(button()).toHaveAttribute('aria-expanded', 'true')
+    })
+
+    it('is collapsed when the param is absent', () => {
+      renderWithRouter('/')
+      expect(button()).toHaveAttribute('aria-expanded', 'false')
+    })
+
+    it('writes the param to the URL when toggled open', () => {
+      renderWithRouter('/')
+      fireEvent.click(button())
+      expect(new URLSearchParams(location).get('expandDivisionCriteria')).toBe(
+        '1'
+      )
     })
   })
 })

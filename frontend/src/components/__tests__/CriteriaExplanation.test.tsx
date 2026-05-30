@@ -23,6 +23,8 @@
 
 import { describe, it, expect, afterEach } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import React from 'react'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 
 // Provider-free unit-test render (#473): the component under test
 // uses no router / no React Query, so wrapping each render in a
@@ -453,6 +455,51 @@ describe('CriteriaExplanation', () => {
         name: /Distinguished Area Program Criteria/i,
       })
       expect(toggleButton).toHaveClass('focus-visible:ring-2')
+    })
+  })
+
+  // #980 — when a urlParam is supplied the expand state deep-links via the URL.
+  // Needs a router; the uncontrolled (no urlParam) path above stays router-free.
+  describe('URL-synced expand state (#980)', () => {
+    let location = ''
+    const LocationProbe: React.FC = () => {
+      location = useLocation().search
+      return null
+    }
+    const renderWithRouter = (entry: string) =>
+      render(
+        <MemoryRouter initialEntries={[entry]}>
+          <CriteriaExplanation urlParam="expandAreaCriteria" />
+          <LocationProbe />
+        </MemoryRouter>
+      )
+    const button = () =>
+      screen.getByRole('button', {
+        name: /Distinguished Area Program Criteria/i,
+      })
+
+    it('reads expanded state from the URL param', () => {
+      renderWithRouter('/?expandAreaCriteria=1')
+      expect(button()).toHaveAttribute('aria-expanded', 'true')
+    })
+
+    it('is collapsed when the param is absent', () => {
+      renderWithRouter('/')
+      expect(button()).toHaveAttribute('aria-expanded', 'false')
+    })
+
+    it('writes the param to the URL when toggled open', () => {
+      renderWithRouter('/')
+      fireEvent.click(button())
+      expect(new URLSearchParams(location).get('expandAreaCriteria')).toBe('1')
+    })
+
+    it('removes the param from the URL when toggled closed', () => {
+      renderWithRouter('/?expandAreaCriteria=1')
+      fireEvent.click(button())
+      expect(new URLSearchParams(location).has('expandAreaCriteria')).toBe(
+        false
+      )
     })
   })
 })
