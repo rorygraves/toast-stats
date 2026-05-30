@@ -125,6 +125,25 @@ describe('useProgramYearSummaries (#892)', () => {
     )
   })
 
+  it('keeps a completed year whose freeze CSV is dated in July (real data shape)', async () => {
+    // The year-end snapshot stored under snapshots/2024-06-30/ carries
+    // sourceCsvDate 2024-07-19 — the June-30 freeze is published ~3 weeks later.
+    // The guard must not mistake that lag for the current-data fallback.
+    mockedDates.mockResolvedValue({
+      dates: ['2023-09-30', '2024-06-30'],
+      count: 2,
+      generatedAt: '2024-07-20T00:00:00Z',
+    })
+    mockedRankings.mockImplementation(d =>
+      Promise.resolve(rankingsData(d === '2024-06-30' ? '2024-07-19' : d))
+    )
+
+    const { result } = renderHook(() => useProgramYearSummaries(), { wrapper })
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.summaries.map(s => s.label)).toEqual(['2023-24'])
+  })
+
   it('drops a year whose year-end file fell back to current rankings', async () => {
     // cdn.ts silently returns CURRENT v1/rankings.json when a per-date file
     // 404s — that must never render current standings on a past "final" card.

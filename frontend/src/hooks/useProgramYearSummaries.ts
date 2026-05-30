@@ -21,6 +21,14 @@ import {
 
 export const programYearSummariesQueryKey = ['program-year-summaries'] as const
 
+/**
+ * How many days after June 30 a legitimate year-end freeze may be dated. The
+ * year-end CSV is published ~mid-July (sourceCsvDate ~Jul 18-19), so a few
+ * weeks of lag is normal; the cdn.ts current-data fallback is months-to-years
+ * newer and falls well outside this window.
+ */
+const MAX_YEAR_END_LAG_DAYS = 120
+
 export interface UseProgramYearSummariesResult {
   /** Completed program years, newest first. */
   summaries: ProgramYearSummary[]
@@ -70,9 +78,16 @@ export function useProgramYearSummaries(): UseProgramYearSummariesResult {
           // `fetchCdnRankingsForDate` silently falls back to the CURRENT
           // v1/rankings.json when a year-end file 404s. Building a past-year
           // "final standings" card from current data would be actively
-          // misleading, so drop any year whose returned data isn't from that
-          // program year rather than render it.
-          if (startYearOf(date) !== startYear) return null
+          // misleading, so drop any year whose returned data is far newer than
+          // its year-end. NOTE: a real year-end freeze is published a few weeks
+          // AFTER June 30 (sourceCsvDate ~mid-July), so this is a date-window
+          // check, not a same-program-year check — July data is legitimate; the
+          // fallback's current data is months-to-years newer.
+          const lagDays =
+            (Date.parse(date) - Date.parse(yearEndDate)) / 86_400_000
+          if (!Number.isFinite(lagDays) || lagDays > MAX_YEAR_END_LAG_DAYS) {
+            return null
+          }
           return buildProgramYearSummary(startYear, yearEndDate, rankings)
         })
       )
