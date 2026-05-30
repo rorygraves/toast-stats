@@ -155,3 +155,95 @@ state_prune() {
   fi
   return 0
 }
+
+# === Sampling edge =========================================================
+#
+# evaluate_liveness is the ONLY part that touches the host. It samples the live
+# commands, feeds them through the pure probes, and echoes the fused verdict.
+# After it returns, the caller can read the per-probe breakdown from the
+# LIVENESS_COMMIT / LIVENESS_PROCESS / LIVENESS_LOG globals (for logging and a
+# future --status line). pgrep/ps are used over `screen -ls` deliberately —
+# macOS `screen -ls` exits 1 even when sessions exist and silently inverts a
+# pipefail predicate (R14/L089).
+
+LIVENESS_COMMIT=""
+LIVENESS_PROCESS=""
+LIVENESS_LOG=""
+
+# _wt_base → the worktree parent (set -u-safe default).
+_wt_base() { printf '%s' "${WORKTREE_BASE:-$HOME/sprint-worktrees}"; }
+
+# _session_start_epoch <issue> <screen_pid> → epoch the session started.
+# DERIVED, not stored (design §4.1): the screen daemon's start time IS the
+# session start. Falls back to the worktree's birth time, then to now (a fresh
+# session reads as progress-zero, never STALL).
+_session_start_epoch() {
+  local issue="$1" screen_pid="$2" epoch="" lstart
+  if [[ -n "$screen_pid" ]]; then
+    lstart="$(ps -o lstart= -p "$screen_pid" 2>/dev/null || true)"
+    if [[ -n "$lstart" ]]; then
+      epoch="$(date -j -f '%a %b %e %T %Y' "$lstart" +%s 2>/dev/null || true)"
+    fi
+  fi
+  if ! [[ "$epoch" =~ ^[0-9]+$ ]]; then
+    epoch="$(stat -f %B "$(_wt_base)/sprint-$issue" 2>/dev/null || true)"
+  fi
+  [[ "$epoch" =~ ^[0-9]+$ ]] || epoch="$(date +%s)"
+  printf '%s' "$epoch"
+}
+
+# evaluate_liveness <issue> → echoes HEALTHY|SUSPECT|STUCK|HUSK; sets the
+# LIVENESS_* globals as a side effect. Never aborts under set -u.
+evaluate_liveness() {
+  local issue="$1" now wt wt_present last_commit start_epoch
+  local screen_pid claude_pid screen_alive
+  now="$(date +%s)"
+
+  wt="$(_wt_base)/sprint-$issue"
+  if [[ -d "$wt" ]]; then
+    wt_present=1
+    last_commit="$(git -C "$wt" log -1 --format=%ct 2>/dev/null || true)"
+  else
+    wt_present=0
+    last_commit=""
+  fi
+
+  screen_pid="$(pgrep -f "SCREEN -dmS sprint-runner-$issue" 2>/dev/null | head -1 || true)"
+  [[ -n "$screen_pid" ]] && screen_alive=1 || screen_alive=0
+  claude_pid="$(pgrep -f "remote-control sprint-$issue" 2>/dev/null | head -1 || true)"
+
+  start_epoch="$(_session_start_epoch "$issue" "$screen_pid")"
+
+  # CPU: two samples, max() dodges a between-bursts trough. Only when a claude
+  # pid exists (no pid → the process probe takes the husk/unknown path).
+  local cpu1="" cpu2=""
+  if [[ -n "$claude_pid" ]]; then
+    cpu1="$(ps -o %cpu= -p "$claude_pid" 2>/dev/null | tr -d ' ' || true)"
+    sleep "${LIVENESS_CPU_SAMPLE_GAP:-3}"
+    cpu2="$(ps -o %cpu= -p "$claude_pid" 2>/dev/null | tr -d ' ' || true)"
+  fi
+
+  # Log signal: sample the per-session screen logfile IF present. Production
+  # screen-logfile wiring is deferred (macOS screen 4.00.03 has no -Logfile;
+  # see tasks/sprint-930-plan.md), so this is UNKNOWN until a later sprint —
+  # the safe direction (UNKNOWN never counts as STALL).
+  local logfile log_present=0 mtime_age=0 mtime
+  logfile="${RUNNER_LOG_DIR:-$(_wt_base)/.runner-logs}/session-$issue.log"
+  if [[ -f "$logfile" ]]; then
+    log_present=1
+    mtime="$(stat -f %m "$logfile" 2>/dev/null || echo "$now")"
+    [[ "$mtime" =~ ^[0-9]+$ ]] || mtime="$now"
+    mtime_age=$(( now - mtime ))
+  fi
+
+  LIVENESS_COMMIT="$(probe_commit_age "$now" "$start_epoch" "$last_commit" "$wt_present")"
+  LIVENESS_PROCESS="$(probe_process "$screen_alive" "$claude_pid" "$cpu1" "$cpu2")"
+  if (( log_present == 1 )); then
+    LIVENESS_LOG="$(tail -n 40 "$logfile" 2>/dev/null | probe_log 1 "$mtime_age")"
+  else
+    LIVENESS_LOG="$(printf '' | probe_log 0 "$mtime_age")"
+  fi
+
+  fuse_verdict "$LIVENESS_COMMIT" "$LIVENESS_PROCESS" "$LIVENESS_LOG"
+  return 0
+}
