@@ -76,7 +76,7 @@ _state_file() {
   if [[ -n "${RUNNER_STATE_FILE:-}" ]]; then
     printf '%s' "$RUNNER_STATE_FILE"
   else
-    printf '%s' "${WORKTREE_BASE:-$HOME/sprint-worktrees}/.runner-state.json"
+    printf '%s' "${WORKTREE_BASE:-$HOME/code/.worktrees}/.runner-state.json"
   fi
 }
 
@@ -171,7 +171,7 @@ LIVENESS_PROCESS=""
 LIVENESS_LOG=""
 
 # _wt_base → the worktree parent (set -u-safe default).
-_wt_base() { printf '%s' "${WORKTREE_BASE:-$HOME/sprint-worktrees}"; }
+_wt_base() { printf '%s' "${WORKTREE_BASE:-$HOME/code/.worktrees}"; }
 
 # _session_start_epoch <issue> <screen_pid> → epoch the session started.
 # DERIVED, not stored (design §4.1): the screen daemon's start time IS the
@@ -211,9 +211,12 @@ evaluate_liveness() {
     last_commit=""
   fi
 
-  screen_pid="$(pgrep -f "SCREEN -dmS sprint-runner-$issue" 2>/dev/null | head -1 || true)"
+  # Session/RC names are namespaced by RUNNER_NAME (sprint-runner.sh exports
+  # SESSION_PREFIX/RC_NAME_PREFIX). Fall back to the bare prefixes if this lib is
+  # sourced standalone (e.g. a unit test) so the pgrep patterns still resolve.
+  screen_pid="$(pgrep -f "SCREEN -dmS ${SESSION_PREFIX:-sprint-runner-}$issue" 2>/dev/null | head -1 || true)"
   [[ -n "$screen_pid" ]] && screen_alive=1 || screen_alive=0
-  claude_pid="$(pgrep -f "remote-control sprint-$issue" 2>/dev/null | head -1 || true)"
+  claude_pid="$(pgrep -f "remote-control ${RC_NAME_PREFIX:-sprint-}$issue" 2>/dev/null | head -1 || true)"
 
   start_epoch="$(_session_start_epoch "$issue" "$screen_pid")"
 

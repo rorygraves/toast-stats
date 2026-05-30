@@ -17,8 +17,8 @@
 #      META_EPIC (not when pinned via env).
 #
 # The CLOSED gate is the handshake between sessions: it means
-# "the previous session self-verified on ts.taverns.red and closed its
-# sub-issue" (per sprint-bootstrap.prompt step 5). Operator reopens if
+# "the previous session self-verified on the consumer's verification target
+# and closed its sub-issue" (per sprint-bootstrap.prompt step 5). Operator reopens if
 # a close was premature. When STRICT_GATE=1, the gate additionally
 # requires the predecessor issue to carry a `sprint-verified` label.
 #
@@ -58,10 +58,14 @@
 #                         AND auto-advance. Use for testing or temporary overrides.
 #                         At least one of META_EPIC or EPIC must be set.
 #   STRICT_GATE=0|1       Require `sprint-verified` label on predecessor (default 0)
+#   RUNNER_NAME           Per-consumer identity that namespaces the lock/log
+#                         defaults (default: basename of the repo dir). Set this
+#                         when two consumers might otherwise share a default path.
 #   SPRINT_RUNNER_LOG     Path to append-log; used for size-based rotation
+#                         (default: ~/.red-barkeep-<RUNNER_NAME>.log)
 #   SPRINT_RUNNER_LOCK_DIR  Override the mkdir-lock path (default
-#                         /tmp/toast-stats-sprint.lock). Used by the regression
-#                         test so it can't collide with a live tick.
+#                         /tmp/red-barkeep-<RUNNER_NAME>.lock). Used by the
+#                         regression test so it can't collide with a live tick.
 #   WORKTREE_BASE         Parent dir for per-sprint git worktrees
 #                         (default: ~/sprint-worktrees). Each sprint gets
 #                         <WORKTREE_BASE>/sprint-<N>. Isolates the spawned
@@ -73,12 +77,12 @@
 #
 # Scheduling: this script is invoked by a launchd LaunchAgent — NOT crontab —
 # every 5 minutes (StartInterval 300). Plist lives at:
-#   ~/Library/LaunchAgents/red.taverns.toast-stats.sprint-runner.plist
+#   ~/Library/LaunchAgents/red.taverns.<name>.sprint-runner.plist
 # Environment overrides (EPIC, STRICT_GATE, etc.) are set in that plist's
 # <key>EnvironmentVariables</key> dict. To apply changes:
-#   launchctl bootout gui/$(id -u)/red.taverns.toast-stats.sprint-runner
+#   launchctl bootout gui/$(id -u)/red.taverns.<name>.sprint-runner
 #   launchctl bootstrap gui/$(id -u) <plist>
-#   launchctl print gui/$(id -u)/red.taverns.toast-stats.sprint-runner  # verify run interval
+#   launchctl print gui/$(id -u)/red.taverns.<name>.sprint-runner  # verify run interval
 
 set -euo pipefail
 
@@ -87,17 +91,39 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 META_EPIC="${META_EPIC:-}"
 EPIC="${EPIC:-}"
 STRICT_GATE="${STRICT_GATE:-0}"
-LOCK_DIR="${SPRINT_RUNNER_LOCK_DIR:-/tmp/toast-stats-sprint.lock}"
+# A per-consumer identity (default: the basename of the repo this script lives
+# in). It namespaces the lock, log, AND worktree defaults so consumers in
+# differently-named repo dirs don't collide on shared default paths. Two repos
+# with the SAME basename would still collide — set RUNNER_NAME explicitly there.
+RUNNER_NAME="${RUNNER_NAME:-${REPO_DIR##*/}}"
+LOCK_DIR="${SPRINT_RUNNER_LOCK_DIR:-/tmp/red-barkeep-$RUNNER_NAME.lock}"
 BOOTSTRAP_PROMPT="$REPO_DIR/scripts/sprint-bootstrap.prompt"
-LOG_FILE="${SPRINT_RUNNER_LOG:-$HOME/.toast-stats-sprint-runner.log}"
+LOG_FILE="${SPRINT_RUNNER_LOG:-$HOME/.red-barkeep-$RUNNER_NAME.log}"
 LOG_ROTATE_BYTES=$((1024 * 1024))
-WORKTREE_BASE="${WORKTREE_BASE:-$HOME/code/.worktrees/toast-stats}"
+WORKTREE_BASE="${WORKTREE_BASE:-$HOME/code/.worktrees/$RUNNER_NAME}"
 # Per-session screen logfiles live here — a sibling of the worktrees, NEVER
 # inside one (so they don't pollute a git status or get swept by `git worktree
 # remove`). The liveness log probe samples $RUNNER_LOG_DIR/session-<issue>.log
 # (epic #933 §2.3); launch_sprint_session writes it, reap/GC delete it. The
 # default MUST match the liveness lib's own fallback ($WORKTREE_BASE/.runner-logs).
 RUNNER_LOG_DIR="${RUNNER_LOG_DIR:-$WORKTREE_BASE/.runner-logs}"
+
+# Screen-session + remote-control identity are namespaced by RUNNER_NAME so
+# multiple consumers on one host never adopt/reap each other's sessions when
+# their repos share issue numbers (the pre-#clobber bug: a bare
+# `sprint-runner-<issue>` name is ambiguous across repos). A session is THIS
+# runner's iff it carries this prefix; a bare or other-runner name is invisible
+# to list_sprint_screens, so cross-consumer clobber is impossible by construction.
+#   screen session : sprint-runner-<RUNNER_NAME>-<issue>
+#   remote-control : sprint-<RUNNER_NAME>-<issue>
+SESSION_PREFIX="sprint-runner-${RUNNER_NAME}-"
+RC_NAME_PREFIX="sprint-${RUNNER_NAME}-"
+
+# Export the per-consumer footprint so any subshell — and the liveness lib's
+# own `${WORKTREE_BASE:-…}`/`${RUNNER_LOG_DIR:-…}` fallbacks — see the SAME
+# namespaced values rather than guessing the old un-namespaced defaults (which
+# would silently re-introduce the cross-consumer collision this sprint kills).
+export RUNNER_NAME WORKTREE_BASE RUNNER_LOG_DIR LOCK_DIR LOG_FILE SESSION_PREFIX RC_NAME_PREFIX
 
 # Stuck-session liveness (epic #933). Sourcing only DEFINES functions.
 #   probes      — pure classify functions over sampled inputs (Sprint 2 #929).
@@ -107,6 +133,8 @@ RUNNER_LOG_DIR="${RUNNER_LOG_DIR:-$WORKTREE_BASE/.runner-logs}"
 source "$REPO_DIR/scripts/lib/sprint-runner-probes.sh"
 # shellcheck source=lib/sprint-runner-liveness.sh
 source "$REPO_DIR/scripts/lib/sprint-runner-liveness.sh"
+# shellcheck source=lib/sprint-runner-process.sh
+source "$REPO_DIR/scripts/lib/sprint-runner-process.sh"
 
 # Populated by resolve_active_epic(); used by callers to decide whether
 # auto-tick fires and to print the source in --status.
@@ -315,31 +343,28 @@ advance_meta_epic() {
 
 # === Screen session helpers ===
 list_sprint_screens() {
-  # macOS `screen -ls` writes to stderr → 2>&1.
-  screen -ls 2>&1 | grep -oE 'sprint-runner-[0-9]+' || true
+  # macOS `screen -ls` writes to stderr → 2>&1. Match ONLY this runner's
+  # namespaced sessions (sprint-runner-<RUNNER_NAME>-<issue>) so a co-resident
+  # consumer's sessions (bare or other-named) are never adopted/reaped.
+  screen -ls 2>&1 | grep -oE "${SESSION_PREFIX}[0-9]+" || true
 }
 
 reap_screen_session() {
   local session="$1"
-  local n="${session##sprint-runner-}"
+  local n="${session##"$SESSION_PREFIX"}"
   log "Reaping screen session $session"
-  screen -X -S "$session" quit 2>/dev/null || true
-  sleep 1
-  local pids
-  pids=$(pgrep -f "claude --remote-control sprint-$n" || true)
-  if [[ -n "$pids" ]]; then
-    log "Killing orphan claude pids: $pids"
+  # Kill the session's FULL process tree BEFORE quitting the screen. The PID set
+  # is snapshotted up front, so children (npm -> vitest worker pool) can't
+  # reparent to init and survive as bare `node`, pinning cores and flaking the
+  # next sprint (toast-stats #973). pgrep-by-name only ever matched claude itself.
+  local roots
+  roots=$(pgrep -f "claude --remote-control ${RC_NAME_PREFIX}$n" || true)
+  if [[ -n "$roots" ]]; then
+    log "Reaping session process tree (roots: $roots)"
     # shellcheck disable=SC2086
-    kill $pids 2>/dev/null || true
-    sleep 2
-    local still
-    still=$(pgrep -f "claude --remote-control sprint-$n" || true)
-    if [[ -n "$still" ]]; then
-      log "Force-killing surviving pids: $still"
-      # shellcheck disable=SC2086
-      kill -9 $still 2>/dev/null || true
-    fi
+    reap_tree $roots
   fi
+  screen -X -S "$session" quit 2>/dev/null || true
   # Also remove the worktree (idempotent — no-op if it doesn't exist).
   remove_sprint_worktree "$n"
   # Delete the per-session screen logfile + screenrc (epic #933 §2.3): they are
@@ -366,6 +391,10 @@ create_sprint_worktree() {
   local n="$1"
   local wt="$WORKTREE_BASE/sprint-$n"
   mkdir -p "$WORKTREE_BASE"
+  # Keep Spotlight (mdworker) out of the worktrees — each one carries a fresh
+  # node_modules (~100k files). A .metadata_never_index marker excludes the
+  # whole subtree from indexing. Best-effort; never fail the run over it.
+  [[ -e "$WORKTREE_BASE/.metadata_never_index" ]] || : > "$WORKTREE_BASE/.metadata_never_index" 2>/dev/null || true
   if [[ -e "$wt" ]]; then
     log "Worktree $wt already exists — removing before re-create"
     git -C "$REPO_DIR" worktree remove --force "$wt" 2>/dev/null \
@@ -412,7 +441,7 @@ find_orphan_worktrees() {
   for wt in "$WORKTREE_BASE"/sprint-*; do
     [[ -d "$wt" ]] || continue
     n="${wt##*/sprint-}"
-    if ! pgrep -f "SCREEN -dmS sprint-runner-$n" >/dev/null 2>&1; then
+    if ! pgrep -f "SCREEN -dmS ${SESSION_PREFIX}$n" >/dev/null 2>&1; then
       printf '%s\n' "$wt"
     fi
   done
@@ -435,7 +464,7 @@ gc_worktrees() {
     n="${wt##*/sprint-}"
     # Capture the branch the worktree was on, so we can attempt to delete it.
     branch=$(git -C "$wt" branch --show-current 2>/dev/null || true)
-    log "GC: orphan worktree $wt (no sprint-runner-$n screen) — removing"
+    log "GC: orphan worktree $wt (no ${SESSION_PREFIX}$n screen) — removing"
     git -C "$REPO_DIR" worktree remove --force "$wt" 2>/dev/null \
       || rm -rf "$wt"
     # A worktree with no paired screen is a dead session — drop its logfile +
@@ -498,7 +527,7 @@ launch_sprint_session() {
   worktree=$(create_sprint_worktree "$target_issue") || { log "ERROR: Failed to create worktree for sprint-$target_issue"; return 1; }
   log "Created worktree at $worktree"
 
-  local session_name="sprint-runner-$target_issue"
+  local session_name="${SESSION_PREFIX}$target_issue"
   log "Launching detached screen session $session_name (Sprint $target_n of epic #$epic, work #$target_issue)"
 
   # Spawned sprint sessions run at ultracode (effortLevel "ultracode" = xhigh
@@ -542,7 +571,7 @@ launch_sprint_session() {
   # hermetic tests still match on that prefix; the logging flags follow.
   screen -dmS "$session_name" -c "$screenrc" -L bash -c "
     cd '$worktree' && \
-    claude --settings '$ultracode_settings' --remote-control 'sprint-$target_issue' \"\$(cat '$PROMPT_FILE')\";
+    claude --settings '$ultracode_settings' --remote-control '${RC_NAME_PREFIX}$target_issue' \"\$(cat '$PROMPT_FILE')\";
     EXIT_CODE=\$?;
     rm -f '$PROMPT_FILE';
     echo \"[sprint-runner] claude exited with code \$EXIT_CODE — session ending.\"
@@ -565,7 +594,7 @@ launch_sprint_session() {
     return 2
   fi
 
-  log "Launched. Attach: screen -r $session_name. Or pair via claude.ai Remote Control as 'sprint-$target_issue'."
+  log "Launched. Attach: screen -r $session_name. Or pair via claude.ai Remote Control as '${RC_NAME_PREFIX}$target_issue'."
   return 0
 }
 
@@ -669,6 +698,8 @@ check_gate() {
 mode_status() {
   log "MODE: status (read-only, no lock)"
   log "Repo: $REPO_DIR"
+  log "Name: $RUNNER_NAME   Lock dir: $LOCK_DIR"
+  log "Log file: $LOG_FILE   Worktrees: $WORKTREE_BASE"
   log "META_EPIC: ${META_EPIC:-(unset)}   EPIC env: ${EPIC:-(unset)}   Strict gate: $STRICT_GATE"
 
   if [[ -d "$LOCK_DIR" ]]; then
@@ -694,7 +725,7 @@ mode_status() {
     # never reaps — so it is safe in the read-only status mode. Globals it sets
     # are read in the same subshell iteration.
     printf '%s\n' "$sessions" | while read -r s; do
-      local issue="${s##sprint-runner-}"
+      local issue="${s##"$SESSION_PREFIX"}"
       evaluate_liveness "$issue"
       local att; att=$(state_get_attempts "$issue")
       log "  - $s  [verdict=$LIVENESS_VERDICT  commit=$LIVENESS_COMMIT process=$LIVENESS_PROCESS log=$LIVENESS_LOG  attempts=$att/$LIVENESS_MAX_ATTEMPTS]"
@@ -718,9 +749,9 @@ mode_status() {
         [[ -d "$wt" ]] || continue
         local n="${wt##*/sprint-}"
         if printf '%s\n' "$orphans" | grep -qx "$wt"; then
-          log "  - $wt  [ORPHAN — no sprint-runner-$n screen; next run will GC]"
+          log "  - $wt  [ORPHAN — no ${SESSION_PREFIX}$n screen; next run will GC]"
         else
-          log "  - $wt  [active — paired with sprint-runner-$n]"
+          log "  - $wt  [active — paired with ${SESSION_PREFIX}$n]"
         fi
       done
     fi
@@ -764,11 +795,11 @@ mode_reap() {
   if [[ -z "$sessions" ]]; then
     log "No sprint-runner screen sessions to reap."
     local orphans
-    orphans=$(pgrep -f "claude --remote-control sprint-" || true)
+    orphans=$(pgrep -f "claude --remote-control ${RC_NAME_PREFIX}" || true)
     if [[ -n "$orphans" ]]; then
-      log "Orphan claude pids (no screen): $orphans — killing."
+      log "Orphan claude pids (no screen): $orphans — killing their process trees."
       # shellcheck disable=SC2086
-      kill $orphans 2>/dev/null || true
+      reap_tree $orphans
     fi
   else
     printf '%s\n' "$sessions" | while read -r s; do reap_screen_session "$s"; done
@@ -836,12 +867,13 @@ mode_run() {
   body=$(read_epic_body) || die "gh issue view #$EPIC failed"
 
   # --- Detect existing sprint-runner screen session; reap if stale ---
-  # Screen names are sprint-runner-<target_issue> (#630), so the suffix is
-  # the work item's issue number directly — no sprint-N parsing needed here.
+  # Screen names are <SESSION_PREFIX><target_issue> (#630), i.e.
+  # sprint-runner-<RUNNER_NAME>-<issue>, so stripping the prefix yields the work
+  # item's issue number directly — no sprint-N parsing needed here.
   local active
   active=$(list_sprint_screens | head -1 || true)
   if [[ -n "$active" ]]; then
-    local active_issue="${active##sprint-runner-}"
+    local active_issue="${active##"$SESSION_PREFIX"}"
     local active_line
     active_line=$(find_sprint_line_by_issue "$active_issue" "$body")
     if [[ -n "$active_line" ]]; then
@@ -1025,7 +1057,7 @@ mode_run() {
   log "Gate ok: $verdict. Target: Sprint $target_n (#$target_issue)."
 
   if [[ "$MODE" == "dry-run" ]]; then
-    log "DRY RUN — would launch screen session 'sprint-runner-$target_issue' (Sprint $target_n of epic #$EPIC, work #$target_issue)"
+    log "DRY RUN — would launch screen session '${SESSION_PREFIX}$target_issue' (Sprint $target_n of epic #$EPIC, work #$target_issue)"
     exit 0
   fi
 
