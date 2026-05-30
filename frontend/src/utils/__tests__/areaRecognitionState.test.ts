@@ -18,6 +18,7 @@ import { describe, it, expect } from 'vitest'
 import {
   deriveAreaRecognitionState,
   getAreaVisitDeadlines,
+  getCurrentVisitRound,
   type AreaRecognitionInput,
 } from '../areaRecognitionState'
 
@@ -35,6 +36,42 @@ function input(
     ...overrides,
   }
 }
+
+describe('getCurrentVisitRound (snapshot-date → active visit round)', () => {
+  // R1 window: Jul–Nov (due Nov 30). R2 window: Dec–Jun (due May 31).
+  it('returns round 1 for the start of the program year (Jul 1)', () => {
+    expect(getCurrentVisitRound('2025-07-01')).toBe(1)
+  })
+
+  it('returns round 1 mid first-round window (Sep)', () => {
+    expect(getCurrentVisitRound('2025-09-15')).toBe(1)
+  })
+
+  it('returns round 1 on the R1 deadline day itself (Nov 30)', () => {
+    expect(getCurrentVisitRound('2025-11-30')).toBe(1)
+  })
+
+  it('flips to round 2 the day after the R1 deadline (Dec 1)', () => {
+    expect(getCurrentVisitRound('2025-12-01')).toBe(2)
+  })
+
+  it('returns round 2 in the new calendar year (Jan)', () => {
+    expect(getCurrentVisitRound('2026-01-15')).toBe(2)
+  })
+
+  it('returns round 2 on the R2 deadline day itself (May 31)', () => {
+    expect(getCurrentVisitRound('2026-05-31')).toBe(2)
+  })
+
+  it('returns round 2 on the last day of the program year (Jun 30)', () => {
+    expect(getCurrentVisitRound('2026-06-30')).toBe(2)
+  })
+
+  it('tolerates a full ISO timestamp (slices to date)', () => {
+    expect(getCurrentVisitRound('2025-11-30T15:00:00Z')).toBe(1)
+    expect(getCurrentVisitRound('2025-12-01T00:00:00Z')).toBe(2)
+  })
+})
 
 describe('getAreaVisitDeadlines (program-year anchoring)', () => {
   it('anchors deadlines to the snapshot date program year (Aug 2026 → PY 2026-2027)', () => {

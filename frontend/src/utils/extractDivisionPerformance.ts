@@ -12,6 +12,8 @@ import type {
   DivisionPerformance,
   AreaPerformance,
   VisitStatus,
+  MissingVisitClub,
+  IneligibleMissingVisitClub,
 } from './divisionStatus.js'
 import {
   calculateRequiredDistinguishedClubs,
@@ -22,8 +24,65 @@ import {
   checkAreaQualifying,
 } from './divisionStatus.js'
 import { calculateDivisionDistinguishedRequirement } from './divisionGapAnalysis.js'
-import { deriveAreaRecognitionState } from './areaRecognitionState.js'
+import {
+  deriveAreaRecognitionState,
+  getCurrentVisitRound,
+} from './areaRecognitionState.js'
 import { logger } from './logger'
+
+/**
+ * Raw snapshot field(s) holding the qualifying club-visit award for a round.
+ * R1 → `Nov Visit award`. R2 → `May Visit award`, with the lowercase
+ * `May visit award` fallback the CDN sometimes emits (bug #268).
+ */
+function currentRoundVisitFields(round: 1 | 2): string[] {
+  return round === 1
+    ? ['Nov Visit award']
+    : ['May Visit award', 'May visit award']
+}
+
+/**
+ * A club has completed the round's visit when any candidate field is exactly
+ * `'1'` (string) or `1` (number) — mirrors `countVisitCompletions`.
+ */
+function hasCompletedRoundVisit(
+  club: Record<string, unknown>,
+  fields: string[]
+): boolean {
+  return fields.some(f => {
+    const v = club[f]
+    return v === '1' || v === 1
+  })
+}
+
+/**
+ * A club is flagged ineligible (not part of the "active" missing list) when its
+ * `Club Status` is suspended/closed/ineligible. Active (or unknown/absent
+ * status) clubs go in the primary missing list. Operator rule: "active only,
+ * flag others".
+ */
+function isIneligibleStatus(status: string): boolean {
+  return /suspend|close|ineligib/i.test(status)
+}
+
+/** Resolve a club's display number (falls back to name) from a snapshot row. */
+function clubNumberOf(club: Record<string, unknown>): string {
+  return (
+    (typeof club['Club Number'] === 'string' ||
+    typeof club['Club Number'] === 'number'
+      ? String(club['Club Number'])
+      : '') ||
+    (typeof club['Club'] === 'string' || typeof club['Club'] === 'number'
+      ? String(club['Club'])
+      : '') ||
+    (typeof club['Club Name'] === 'string' ? club['Club Name'] : '')
+  )
+}
+
+/** Resolve a club's display name from a snapshot row. */
+function clubNameOf(club: Record<string, unknown>): string {
+  return typeof club['Club Name'] === 'string' ? club['Club Name'] : ''
+}
 
 /**
  * Fallback snapshot date when none is provided by the caller. Today's date
@@ -682,6 +741,14 @@ function extractAreasForDivision(
     }
     const secondRound = calculateVisitStatus(secondRoundCompleted, clubBase)
 
+    // #973: enumerate the clubs missing the CURRENT round's qualifying visit,
+    // split into active (primary list) vs suspended/ineligible (flagged).
+    const currentRound = getCurrentVisitRound(snapshotDate)
+    const visitFields = currentRoundVisitFields(currentRound)
+    const clubsMissingCurrentRoundVisit: MissingVisitClub[] = []
+    const clubsMissingCurrentRoundVisitIneligible: IneligibleMissingVisitClub[] =
+      []
+
     for (const clubRaw of clubs) {
       const club = clubRaw as Record<string, unknown>
 
@@ -726,7 +793,36 @@ function extractAreasForDivision(
           distinguishedClubs++
         }
       }
+
+      // #973: collect clubs missing the current round's visit. The visit-award
+      // fields live on the divisionPerformance `club` row; `Club Status` is
+      // cross-referenced from clubPerformance (the row that carries it).
+      if (!hasCompletedRoundVisit(club, visitFields)) {
+        const clubStatus =
+          clubPerf && typeof clubPerf['Club Status'] === 'string'
+            ? (clubPerf['Club Status'] as string)
+            : ''
+        const clubNumber = clubNumberOf(club)
+        const clubName = clubNameOf(club)
+        if (isIneligibleStatus(clubStatus)) {
+          clubsMissingCurrentRoundVisitIneligible.push({
+            clubNumber,
+            clubName,
+            status: clubStatus,
+          })
+        } else {
+          clubsMissingCurrentRoundVisit.push({ clubNumber, clubName })
+        }
+      }
     }
+
+    // Stable order for deterministic rendering + tests.
+    clubsMissingCurrentRoundVisit.sort((a, b) =>
+      a.clubNumber.localeCompare(b.clubNumber)
+    )
+    clubsMissingCurrentRoundVisitIneligible.sort((a, b) =>
+      a.clubNumber.localeCompare(b.clubNumber)
+    )
 
     // Calculate derived metrics
     const netGrowth = calculateNetGrowth(paidClubs, clubBase)
@@ -770,6 +866,9 @@ function extractAreasForDivision(
       secondRoundVisits: secondRound,
       isQualified,
       recognitionState,
+      currentRound,
+      clubsMissingCurrentRoundVisit,
+      clubsMissingCurrentRoundVisitIneligible,
     })
   }
 
