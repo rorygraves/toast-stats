@@ -211,11 +211,19 @@ export const DivisionAreaRecognitionPanel: React.FC<
         </p>
       </div>
 
-      {/* Division Criteria Explanation - Requirements 10.3: DDP criteria */}
-      <DivisionCriteriaExplanation defaultExpanded={false} />
+      {/* Division Criteria Explanation - Requirements 10.3: DDP criteria.
+          Expand state deep-links via ?expandDivisionCriteria (#980). */}
+      <DivisionCriteriaExplanation
+        defaultExpanded={false}
+        urlParam="expandDivisionCriteria"
+      />
 
-      {/* Area Criteria Explanation - Requirements 2, 3, 4 (DAP) - Requirement 10.4 */}
-      <CriteriaExplanation defaultExpanded={false} />
+      {/* Area Criteria Explanation - Requirements 2, 3, 4 (DAP) - Requirement 10.4.
+          Expand state deep-links via ?expandAreaCriteria (#980). */}
+      <CriteriaExplanation
+        defaultExpanded={false}
+        urlParam="expandAreaCriteria"
+      />
 
       {/* Area Progress Summary - Requirements 5, 6, 10.2, 10.3 */}
       <DivisionAreaProgressSummary divisions={divisions} isLoading={false} />

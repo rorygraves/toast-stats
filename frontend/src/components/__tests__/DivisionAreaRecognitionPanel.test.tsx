@@ -29,11 +29,15 @@
 
 import { describe, it, expect, afterEach } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/react'
+import React from 'react'
+import { MemoryRouter } from 'react-router-dom'
 
-// Provider-free unit-test render (#473): the component under test
-// uses no router / no React Query, so wrapping each render in a
-// fresh QueryClient + memory router was pure contention amplifier.
-const renderWithProviders = (ui: React.ReactElement) => render(ui)
+// A bare MemoryRouter (NO QueryClient) — the panel's criteria children now
+// deep-link their expand state via useUrlBoolean/useSearchParams (#980), which
+// needs router context. This stays well short of the Lesson 473 contention
+// amplifier (which was the QueryClient + router + perf-wrapper stack).
+const renderWithProviders = (ui: React.ReactElement) =>
+  render(<MemoryRouter>{ui}</MemoryRouter>)
 const cleanupAllResources = () => cleanup()
 import '@testing-library/jest-dom'
 import { DivisionAreaRecognitionPanel } from '../DivisionAreaRecognitionPanel'
@@ -924,7 +928,11 @@ describe('DivisionAreaRecognitionPanel', () => {
         createDivisionWithAreas('B', ['B1']),
       ]
 
-      rerender(<DivisionAreaRecognitionPanel divisions={updatedDivisions} />)
+      rerender(
+        <MemoryRouter>
+          <DivisionAreaRecognitionPanel divisions={updatedDivisions} />
+        </MemoryRouter>
+      )
 
       expect(
         screen.getByText(/Showing 3 areas across 2 divisions/)
