@@ -27,6 +27,25 @@ import {
 const SEARCH_PARAM = 'search'
 const STATUS_PARAM = 'status'
 
+/**
+ * "Close to Distinguished" preset (#979). The preset is a separate pipeline
+ * step layered on the column filters (R11), NOT a column filter — so it lives
+ * here (the single club-URL contract module, no parallel param scheme) but is
+ * deliberately kept OUT of FILTER_PARAM_KEYS: the page's wholesale filter
+ * reconcile deletes every FILTER_PARAM_KEYS entry then re-emits present filters,
+ * and `filterStateToParams` never emits `preset`, so including it would clear
+ * the preset on any filter change. The preset gets its own single writer on the
+ * page (the proven sort/dir pattern — disjoint key, no shared-batch trigger, so
+ * no lesson-070 same-batch race). Only the canonical token activates it.
+ */
+export const PRESET_PARAM = 'preset'
+export const PRESET_CLOSE_TO_DISTINGUISHED = 'close-to-distinguished'
+
+/** Read whether the "Close to Distinguished" preset is active from the URL. */
+export function paramsToPresetActive(params: URLSearchParams): boolean {
+  return params.get(PRESET_PARAM) === PRESET_CLOSE_TO_DISTINGUISHED
+}
+
 /** Status internal ⇄ URL alias (kept stable for shared links / legacy redirect). */
 const statusUrlToInternal = (raw: string | null): string | null => {
   switch (raw) {

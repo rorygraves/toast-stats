@@ -8,6 +8,9 @@ import {
   paramsToFilterState,
   filterStateToParams,
   FILTER_PARAM_KEYS,
+  PRESET_PARAM,
+  PRESET_CLOSE_TO_DISTINGUISHED,
+  paramsToPresetActive,
 } from '../clubFilterUrl'
 import type { FilterState } from '../../components/filters/types'
 
@@ -217,5 +220,34 @@ describe('clubFilterUrl — round-trip', () => {
     }
     const sp = new URLSearchParams(filterStateToParams(original))
     expect(paramsToFilterState(sp)).toEqual(original)
+  })
+})
+
+describe('clubFilterUrl — "Close to Distinguished" preset (#979)', () => {
+  it('reads ?preset=close-to-distinguished as active', () => {
+    expect(
+      paramsToPresetActive(
+        params(`${PRESET_PARAM}=${PRESET_CLOSE_TO_DISTINGUISHED}`)
+      )
+    ).toBe(true)
+  })
+
+  it('treats an absent preset param as inactive', () => {
+    expect(paramsToPresetActive(params(''))).toBe(false)
+    expect(paramsToPresetActive(params('status=vulnerable'))).toBe(false)
+  })
+
+  it('ignores an unknown preset value (only the canonical token activates)', () => {
+    expect(paramsToPresetActive(params(`${PRESET_PARAM}=something-else`))).toBe(
+      false
+    )
+  })
+
+  it('keeps `preset` OUT of FILTER_PARAM_KEYS so a filter reconcile never wipes it', () => {
+    // The filter reconcile in DistrictClubsPage deletes every FILTER_PARAM_KEYS
+    // entry then re-emits present filters. The preset is a separate pipeline
+    // step (not a column filter), written by its own handler — including it here
+    // would silently clear the preset on any filter change.
+    expect(FILTER_PARAM_KEYS).not.toContain(PRESET_PARAM)
   })
 })
