@@ -665,6 +665,7 @@ const ClubDetailPage: React.FC = () => {
               <div className="club-panel__body">
                 {filteredMembershipTrend.length > 0 ? (
                   <ChartSparklineExpand
+                    urlId="membership"
                     title="Membership Trend"
                     sparklineData={membershipSparkline}
                     headline={

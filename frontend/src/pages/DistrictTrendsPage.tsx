@@ -207,6 +207,7 @@ const DistrictTrendsPage: React.FC = () => {
               // fixed-height div but do NOT gate rendering on viewport
               // intersection.
               <ChartSparklineExpand
+                urlId="membership"
                 title="Membership trend"
                 sparklineData={membershipSparkline}
                 headline={
@@ -249,6 +250,7 @@ const DistrictTrendsPage: React.FC = () => {
             {/* Membership Payments Chart (#243) */}
             {paymentsTrendData ? (
               <ChartSparklineExpand
+                urlId="payments"
                 title="Payments trend"
                 sparklineData={paymentsSparkline}
                 headline={
