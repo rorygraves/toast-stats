@@ -39,7 +39,7 @@ export const MobileDisclosure: React.FC<MobileDisclosureProps> = ({
   if (!isMobile) return <>{children}</>
 
   // URL-synced state source is split into its own component so the uncontrolled
-  // path never calls useSearchParams (no router required — Lesson 473 spirit).
+  // path never calls useSearchParams (no router required — #473 spirit).
   if (urlParam) {
     return (
       <UrlSyncedDisclosure urlParam={urlParam} summaryLabel={summaryLabel}>
