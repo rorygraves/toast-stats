@@ -1,9 +1,16 @@
-import React, { useCallback, useState } from 'react'
-import { Link } from 'react-router-dom'
+import React, { useCallback, useEffect, useMemo } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useIsMobile } from '../hooks/useIsMobile'
+import { useUrlState } from '../hooks/useUrlState'
 import CollapsibleSection from '../components/CollapsibleSection'
 import JumpToChip from '../components/JumpToChip'
+import {
+  OPEN_SECTIONS_PARAM,
+  parseOpenSections,
+  serializeOpenSections,
+  sectionFromHash,
+} from '../utils/methodologyUrl'
 
 /* Methodology page (#368). Authored fresh from analytics-core as the
    source of truth — Borda formula, DCP thresholds, club health
@@ -32,6 +39,15 @@ const SECTIONS: ReadonlyArray<{ id: string; num: string; title: string }> = [
   { id: 'changelog', num: '10', title: 'Changelog' },
 ]
 
+// Module-scope so the codec's parse/serialize identity is stable — keeps
+// useUrlState's memoised value and setter stable across renders.
+const SECTION_ID_SET: ReadonlySet<string> = new Set(SECTIONS.map(s => s.id))
+const EMPTY_OPEN: ReadonlyArray<string> = []
+const OPEN_SECTIONS_OPTS = {
+  parse: parseOpenSections(SECTION_ID_SET),
+  serialize: serializeOpenSections,
+}
+
 const MethodologyPage: React.FC = () => {
   useDocumentTitle('Methodology')
 
@@ -39,22 +55,59 @@ const MethodologyPage: React.FC = () => {
   // (useIsMobile is false in jsdom too, so the static-content tests still
   // see the full page). #877.
   const isMobile = useIsMobile()
-  const [openIds, setOpenIds] = useState<ReadonlySet<string>>(() => new Set())
 
-  const toggle = useCallback((id: string) => {
-    setOpenIds(prev => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
+  // Which sections are open is URL state (#981): `?openSections=a,b` round-trips
+  // through reload / back / share. The parse whitelists ids against
+  // SECTION_ID_SET, so a hand-edited/shared URL can't seed a phantom open id
+  // (Lesson 144 — the seed path bypasses the toggle's own guards).
+  const [openSections, setOpenSections] = useUrlState<string[]>(
+    OPEN_SECTIONS_PARAM,
+    EMPTY_OPEN as string[],
+    OPEN_SECTIONS_OPTS
+  )
+  const openIds = useMemo(() => new Set(openSections), [openSections])
+
+  const toggle = useCallback(
+    (id: string) => {
+      setOpenSections(prev =>
+        prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+      )
+    },
+    [setOpenSections]
+  )
+
+  // A TOC anchor (and the fragment-on-mount directive below) must reveal its
+  // target — otherwise the jump lands on a collapsed heading and the reader
+  // sees nothing below it. Idempotent: re-expanding an open section is a no-op.
+  const expand = useCallback(
+    (id: string) => {
+      setOpenSections(prev => (prev.includes(id) ? prev : [...prev, id]))
+    },
+    [setOpenSections]
+  )
+
+  // Fragment as an on-mount directive: a shared `/methodology#borda-count` link
+  // expands that section and scrolls to it. The whitelist in sectionFromHash
+  // means an unknown `#bogus` is a no-op. setOpenSections is this page's only
+  // URL writer, so there's no same-batch sibling to race (Lesson 070 N/A here).
+  // Keyed on the hash so a deep-link mount fires exactly once per fragment.
+  const { hash } = useLocation()
+  useEffect(() => {
+    const id = sectionFromHash(hash, SECTION_ID_SET)
+    if (!id) return
+    expand(id)
+    // Scroll after the expand paints. scrollIntoView (unlike the native locked
+    // hash scroll) honours scroll-margin-top on .methodology-section, so the
+    // heading clears the sticky chip bar (Lessons 138/139). Double rAF lets the
+    // newly-revealed content lay out first.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document
+          .getElementById(id)
+          ?.scrollIntoView?.({ behavior: 'auto', block: 'start' })
+      })
     })
-  }, [])
-
-  // A TOC anchor must reveal its target — otherwise the jump lands on a
-  // collapsed heading and the reader sees nothing below it.
-  const expand = useCallback((id: string) => {
-    setOpenIds(prev => (prev.has(id) ? prev : new Set(prev).add(id)))
-  }, [])
+  }, [hash, expand])
 
   return (
     <div className="methodology-page">
