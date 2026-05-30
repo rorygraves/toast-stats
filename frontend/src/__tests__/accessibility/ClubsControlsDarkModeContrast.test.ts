@@ -144,30 +144,9 @@ interface Surface {
 }
 
 const SURFACES: Surface[] = [
-  {
-    // #815: the segmented status control merged into the single preset row;
-    // the active health-band chip is now `.clubs-quick-filter-chip--active`
-    // (covered below), and its count badge inverts to --link on --surface.
-    name: 'health preset active count badge',
-    fg: [
-      '.clubs-quick-filter-chip--active .clubs-quick-filter-chip__count',
-      'color',
-    ],
-    expectFgToken: 'var(--link)',
-    bgToken: 'var(--surface)',
-  },
-  {
-    name: 'quick-filter chip active label',
-    fg: ['.clubs-quick-filter-chip--active', 'color'],
-    expectFgToken: 'var(--link)',
-    bgToken: 'var(--loyal-50)',
-  },
-  {
-    name: 'quick-filter chip hover label',
-    fg: ['.clubs-quick-filter-chip:hover', 'color'],
-    expectFgToken: 'var(--link)',
-    bgToken: 'var(--surface-3)',
-  },
+  // #902: the quick-filter chip row (active/hover/count surfaces) was removed
+  // in Sprint 2 of epic #900, so its dark-mode contrast surfaces went with it.
+  // The filter-popover active state below is a separate control that survives.
   {
     name: 'filter popover operator/sort active',
     fg: ['.clubs-filter-btn--active', 'color'],
@@ -196,28 +175,30 @@ describe('Clubs controls dark-mode contrast (#670)', () => {
     }
   )
 
-  // The maroon "Clear" chip keeps `--maroon-500` in light (brand danger colour)
-  // but that token has no dark remap (#7b1828 → ~2:1 on the dark surface), so it
-  // needs a scoped `[data-theme='dark']` override (lesson 096, #e8879a). It sits
-  // on the chip's base `--surface` background.
-  it('quick-filter Clear chip clears AA in both themes (light token + dark override)', () => {
+  // The maroon "Clear all filters" pill (empty-state) keeps `--maroon-500` in
+  // light (brand danger colour) but that token has no dark remap (#7b1828 →
+  // ~2:1 on the dark surface), so it needs a scoped `[data-theme='dark']`
+  // override (lesson 096, #e8879a). It sits on its own `--surface` background.
+  // (#902: was `.clubs-quick-filter-chip__clear`; the chip row is gone, the
+  // pill survives as `.clubs-clear-filters-btn`.)
+  it('clear-filters pill clears AA in both themes (light token + dark override)', () => {
     const lightFg = resolveVar(
-      ruleProp(appShellCss, '.clubs-quick-filter-chip__clear', 'color'),
+      ruleProp(appShellCss, '.clubs-clear-filters-btn', 'color'),
       'light'
     )
     const lightBg = resolveVar(
-      ruleProp(appShellCss, '.clubs-quick-filter-chip', 'background-color'),
+      ruleProp(appShellCss, '.clubs-clear-filters-btn', 'background-color'),
       'light'
     )
     expect(
       calculateContrastRatio(lightFg, lightBg),
-      `clear chip light ${lightFg} on ${lightBg}`
+      `clear pill light ${lightFg} on ${lightBg}`
     ).toBeGreaterThanOrEqual(AA)
 
-    const darkFgRaw = darkOverride('.clubs-quick-filter-chip__clear', 'color')
+    const darkFgRaw = darkOverride('.clubs-clear-filters-btn', 'color')
     expect(
       darkFgRaw,
-      'clear chip needs a [data-theme="dark"] color override (maroon-500 has no remap)'
+      'clear pill needs a [data-theme="dark"] color override (maroon-500 has no remap)'
     ).not.toBeNull()
     const darkFg = resolveVar(darkFgRaw as string, 'dark')
     const darkBg = resolveVar('var(--surface)', 'dark')

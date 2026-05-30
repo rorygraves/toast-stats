@@ -283,13 +283,19 @@ describe('DistrictClubsPage (#570 — Phase 2)', () => {
     expect(screen.queryByText(/beta speakers/i)).not.toBeInTheDocument()
   })
 
-  it("writes ?distinguished= when the President's-tier preset is activated (#817)", async () => {
+  it('writes ?distinguished= when a Tier column-filter is applied via the drawer (#817, #902)', async () => {
+    // #902 removed the quick-filter chip row; the drawer is now the single UI
+    // entry point for column filters. The page-level filter→URL write glue is
+    // field-agnostic — exercising it through the surviving drawer keeps the
+    // contract covered (the President's-tier preset chip is gone).
     const user = userEvent.setup()
     const { router } = renderAt('/district/61/clubs')
     await screen.findByText(/alpha toastmasters/i)
 
+    await user.click(screen.getByRole('button', { name: /^filters/i }))
+    const dialog = screen.getByRole('dialog')
     await user.click(
-      screen.getByRole('button', { name: /President's tier only/i })
+      within(dialog).getByRole('checkbox', { name: 'President' })
     )
 
     await waitFor(() => {
@@ -313,18 +319,19 @@ describe('DistrictClubsPage (#570 — Phase 2)', () => {
     expect(screen.queryByText(/alpha toastmasters/i)).not.toBeInTheDocument()
   })
 
-  it('writes ?status= to the URL when a health preset is activated', async () => {
+  it('writes ?status= to the URL when the Status filter is applied via the drawer (#902)', async () => {
     const user = userEvent.setup()
     const { router } = renderAt('/district/61/clubs')
 
     await screen.findByText(/alpha toastmasters/i)
 
-    // #815: health bands are now toggle buttons in the single preset row, not
-    // tabs in a segmented control.
-    const vulnerableChip = screen.getByRole('button', {
-      name: /^vulnerable/i,
-    })
-    await user.click(vulnerableChip)
+    // #902: health-band selection now lives in the Filters drawer (the chip
+    // row was removed). Same `status` field, same filter→URL write path.
+    await user.click(screen.getByRole('button', { name: /^filters/i }))
+    const dialog = screen.getByRole('dialog')
+    await user.click(
+      within(dialog).getByRole('checkbox', { name: 'vulnerable' })
+    )
 
     await waitFor(() => {
       const params = new URLSearchParams(router.state.location.search)
@@ -332,18 +339,21 @@ describe('DistrictClubsPage (#570 — Phase 2)', () => {
     })
   })
 
-  it('clears ?status= from the URL when the active health preset is toggled off', async () => {
+  it('clears ?status= from the URL when the Status filter is unchecked in the drawer (#902)', async () => {
     const user = userEvent.setup()
     const { router } = renderAt('/district/61/clubs?status=vulnerable')
 
     await screen.findByText(/beta speakers/i)
 
-    // No more "All" button (#815) — clicking the active band toggles it off.
-    const vulnerableChip = screen.getByRole('button', {
-      name: /^vulnerable/i,
+    await user.click(screen.getByRole('button', { name: /^filters/i }))
+    const dialog = screen.getByRole('dialog')
+    const vulnerable = within(dialog).getByRole('checkbox', {
+      name: 'vulnerable',
     })
-    expect(vulnerableChip).toHaveAttribute('aria-pressed', 'true')
-    await user.click(vulnerableChip)
+    // Loaded from the URL, so it starts checked; unchecking the only selected
+    // value clears the filter and the param.
+    expect(vulnerable).toBeChecked()
+    await user.click(vulnerable)
 
     await waitFor(() => {
       const params = new URLSearchParams(router.state.location.search)
