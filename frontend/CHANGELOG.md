@@ -1,5 +1,45 @@
 # Changelog
 
+## [3.6.0](https://github.com/taverns-red/toast-stats/compare/frontend-v3.5.1...frontend-v3.6.0) (2026-05-30)
+
+
+### Features
+
+* **charts:** apply sparkline-then-expand to District Trends, Club detail, Rankings ([#875](https://github.com/taverns-red/toast-stats/issues/875)) ([#927](https://github.com/taverns-red/toast-stats/issues/927)) ([286f5b7](https://github.com/taverns-red/toast-stats/commit/286f5b787e884072c1e002888fce860949f303f8))
+* **charts:** sparkline-then-expand wrapper for mobile ([#874](https://github.com/taverns-red/toast-stats/issues/874)) ([#926](https://github.com/taverns-red/toast-stats/issues/926)) ([a5c978a](https://github.com/taverns-red/toast-stats/commit/a5c978a6fe12f978ffa699e36015a78f265b730c))
+* **chrome:** collapse page header sub-line into title on mobile ([#890](https://github.com/taverns-red/toast-stats/issues/890)) ([#946](https://github.com/taverns-red/toast-stats/issues/946)) ([71673bf](https://github.com/taverns-red/toast-stats/commit/71673bf4986c29a15614e8da5ed15a2bcce2fbf8))
+* **chrome:** drop full footer on mobile; version+license behind 'About ▾' in hamburger ([#889](https://github.com/taverns-red/toast-stats/issues/889)) ([#945](https://github.com/taverns-red/toast-stats/issues/945)) ([61d621a](https://github.com/taverns-red/toast-stats/commit/61d621a8c1805219627312c554cf2b313bed0fe7))
+* **ci:** harden Lighthouse/CLS gate against CDN flakes ([#915](https://github.com/taverns-red/toast-stats/issues/915)) ([#921](https://github.com/taverns-red/toast-stats/issues/921)) ([035290c](https://github.com/taverns-red/toast-stats/commit/035290c9bb98d6c7fab42de91a0394f1b9b897d8))
+* **district:** 2×2 KPI grid on mobile ([#866](https://github.com/taverns-red/toast-stats/issues/866)) ([#899](https://github.com/taverns-red/toast-stats/issues/899)) ([6322716](https://github.com/taverns-red/toast-stats/commit/6322716073777346072fe833043466ea21861e31))
+* **district:** cap upcoming renewals to Next 3 on mobile with 'Show all →' ([#869](https://github.com/taverns-red/toast-stats/issues/869)) ([#907](https://github.com/taverns-red/toast-stats/issues/907)) ([97c2950](https://github.com/taverns-red/toast-stats/commit/97c2950e9d43d5b4db364495476b36ea4ce6ad06))
+* **district:** fold Milestones + Longest-Serving Clubs on mobile ([#867](https://github.com/taverns-red/toast-stats/issues/867)) ([#905](https://github.com/taverns-red/toast-stats/issues/905)) ([c18c7f8](https://github.com/taverns-red/toast-stats/commit/c18c7f83a9040ef6c29c0c4595f524f27d215ba1))
+* **district:** replace payment composition donut with inline sparkbar at 375px ([#868](https://github.com/taverns-red/toast-stats/issues/868)) ([#906](https://github.com/taverns-red/toast-stats/issues/906)) ([842de71](https://github.com/taverns-red/toast-stats/commit/842de711944feeb5af94345fd17739f2aac76d80))
+* **flake:** flake-detection harness, quarantine mechanism & baseline metric ([#913](https://github.com/taverns-red/toast-stats/issues/913)) ([#919](https://github.com/taverns-red/toast-stats/issues/919)) ([b105ac7](https://github.com/taverns-red/toast-stats/commit/b105ac7e013067ef19b123036cc24568a8661a23))
+* **landing:** cap districts list to top-20 on mobile with 'Show all' disclosure ([#863](https://github.com/taverns-red/toast-stats/issues/863)) ([#896](https://github.com/taverns-red/toast-stats/issues/896)) ([3674cbf](https://github.com/taverns-red/toast-stats/commit/3674cbfe7f0a859a19e8c48729497709468a1185))
+* **landing:** defer Awards Race behind a 'See Awards →' link on mobile ([#862](https://github.com/taverns-red/toast-stats/issues/862)) ([#895](https://github.com/taverns-red/toast-stats/issues/895)) ([5829c47](https://github.com/taverns-red/toast-stats/commit/5829c47c6808d66fdcb49e50dc26df6b376665d1))
+* **landing:** hoist 'Find your district' picker above the fold; demote KPI strip to a single tile on mobile ([#861](https://github.com/taverns-red/toast-stats/issues/861)) ([#894](https://github.com/taverns-red/toast-stats/issues/894)) ([9c0b968](https://github.com/taverns-red/toast-stats/commit/9c0b968570d581246ecc1c01daa06431c3b190d3))
+* **long-text:** 'what does this page answer?' lede on /methodology + /history ([#879](https://github.com/taverns-red/toast-stats/issues/879)) ([#936](https://github.com/taverns-red/toast-stats/issues/936)) ([7d40f44](https://github.com/taverns-red/toast-stats/commit/7d40f4406ba578ec288fb748887521768df55aba))
+* **long-text:** mobile-collapsed H2 sections + TOC anchor expand on /methodology ([#877](https://github.com/taverns-red/toast-stats/issues/877)) ([#934](https://github.com/taverns-red/toast-stats/issues/934)) ([ab668bd](https://github.com/taverns-red/toast-stats/commit/ab668bd86009f3bc15838885d705b6d97e8ab196))
+* **long-text:** sticky 'Jump to ▾' chip under the page header ([#878](https://github.com/taverns-red/toast-stats/issues/878)) ([#935](https://github.com/taverns-red/toast-stats/issues/935)) ([41a4b7e](https://github.com/taverns-red/toast-stats/commit/41a4b7e820284b2a2efdb06a85eee7fb73cb0f9a))
+* **region:** card-based empty/error states for /region/:n ([#883](https://github.com/taverns-red/toast-stats/issues/883)) ([#941](https://github.com/taverns-red/toast-stats/issues/941)) ([5866875](https://github.com/taverns-red/toast-stats/commit/5866875d5024a01fe08434888ff31ab5059ba8f4))
+* **regions:** delete leaderboard table, keep card grid (CC-9, [#881](https://github.com/taverns-red/toast-stats/issues/881)) ([#937](https://github.com/taverns-red/toast-stats/issues/937)) ([f19ef32](https://github.com/taverns-red/toast-stats/commit/f19ef321a891f6c3919410f4964310054c469f2d))
+* **regions:** sort region cards by a documented metric — region number asc ([#882](https://github.com/taverns-red/toast-stats/issues/882)) ([#938](https://github.com/taverns-red/toast-stats/issues/938)) ([4b963f7](https://github.com/taverns-red/toast-stats/commit/4b963f7e986ad978445a4c355a238cdee51e06a9))
+* **tables:** click-any-column-to-sort + URL-synced sort across all data tables ([#851](https://github.com/taverns-red/toast-stats/issues/851)) ([#857](https://github.com/taverns-red/toast-stats/issues/857)) ([e7681a5](https://github.com/taverns-red/toast-stats/commit/e7681a5034a8845a3b54fb9d7644283a37f11783))
+* **tables:** Status column renders as a chip at &lt;768px (CC-4) ([#871](https://github.com/taverns-red/toast-stats/issues/871)) ([#908](https://github.com/taverns-red/toast-stats/issues/908)) ([ed7ccaa](https://github.com/taverns-red/toast-stats/commit/ed7ccaa5d2eb7c2e4819111366c6340e2847e592))
+* **ux:** real &lt;Link&gt; navigation for club & division cards (CC-7) ([#872](https://github.com/taverns-red/toast-stats/issues/872)) ([#911](https://github.com/taverns-red/toast-stats/issues/911)) ([b1614f5](https://github.com/taverns-red/toast-stats/commit/b1614f5693293dff219b97b59da776abc2f20192))
+
+
+### Bug Fixes
+
+* **a11y:** lift chip touch targets to the 44px floor — families A/B/C ([#886](https://github.com/taverns-red/toast-stats/issues/886)) ([#943](https://github.com/taverns-red/toast-stats/issues/943)) ([e02bc69](https://github.com/taverns-red/toast-stats/commit/e02bc6980f3e033dacef7ad45173fb4c3b446ace))
+
+
+### Tests
+
+* **a11y:** dual-engine 44px touch-target tripwire — Epic G Sprint 3 ([#887](https://github.com/taverns-red/toast-stats/issues/887)) ([#944](https://github.com/taverns-red/toast-stats/issues/944)) ([879fcaf](https://github.com/taverns-red/toast-stats/commit/879fcaf74be34d87ebdb802896e51d6e3e03d118))
+* **flake:** eradicate contention & isolation root causes ([#914](https://github.com/taverns-red/toast-stats/issues/914)) ([#920](https://github.com/taverns-red/toast-stats/issues/920)) ([8cb1319](https://github.com/taverns-red/toast-stats/commit/8cb13190a432ca3485a5b43d1fc63914ca7c0a78))
+* **landing:** mobile scroll-length regression guard ([#864](https://github.com/taverns-red/toast-stats/issues/864)) ([#898](https://github.com/taverns-red/toast-stats/issues/898)) ([186a04c](https://github.com/taverns-red/toast-stats/commit/186a04c46f78f9109c2a7bc894e04fb639a4043c))
+
 ## [3.5.1](https://github.com/taverns-red/toast-stats/compare/frontend-v3.5.0...frontend-v3.5.1) (2026-05-28)
 
 
