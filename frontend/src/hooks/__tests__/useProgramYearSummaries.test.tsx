@@ -125,6 +125,26 @@ describe('useProgramYearSummaries (#892)', () => {
     )
   })
 
+  it('drops a year whose year-end file fell back to current rankings', async () => {
+    // cdn.ts silently returns CURRENT v1/rankings.json when a per-date file
+    // 404s — that must never render current standings on a past "final" card.
+    mockedDates.mockResolvedValue({
+      dates: ['2022-09-30', '2023-06-30', '2023-09-30', '2024-06-30'],
+      count: 4,
+      generatedAt: '2024-07-01T00:00:00Z',
+    })
+    mockedRankings.mockImplementation(d =>
+      // Simulate the fallback for 2022-23: returns data dated in 2025-26.
+      Promise.resolve(rankingsData(d === '2023-06-30' ? '2026-05-28' : d))
+    )
+
+    const { result } = renderHook(() => useProgramYearSummaries(), { wrapper })
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    // 2022-23 dropped (stale current data); 2023-24 kept.
+    expect(result.current.summaries.map(s => s.label)).toEqual(['2023-24'])
+  })
+
   it('surfaces an error when the dates index fetch fails', async () => {
     mockedDates.mockRejectedValue(new Error('CDN down'))
 

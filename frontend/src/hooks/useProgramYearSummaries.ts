@@ -64,12 +64,20 @@ export function useProgramYearSummaries(): UseProgramYearSummariesResult {
         .filter(([sy]) => new Date(`${sy + 1}-06-30T23:59:59`) < now)
         .sort(([a], [b]) => b - a)
 
-      return Promise.all(
+      const built = await Promise.all(
         completed.map(async ([startYear, yearEndDate]) => {
-          const { rankings } = await fetchCdnRankingsForDate(yearEndDate)
+          const { rankings, date } = await fetchCdnRankingsForDate(yearEndDate)
+          // `fetchCdnRankingsForDate` silently falls back to the CURRENT
+          // v1/rankings.json when a year-end file 404s. Building a past-year
+          // "final standings" card from current data would be actively
+          // misleading, so drop any year whose returned data isn't from that
+          // program year rather than render it.
+          if (startYearOf(date) !== startYear) return null
           return buildProgramYearSummary(startYear, yearEndDate, rankings)
         })
       )
+
+      return built.filter((s): s is ProgramYearSummary => s !== null)
     },
     staleTime: 15 * 60 * 1000, // 15 min — archived years are immutable
     gcTime: 30 * 60 * 1000,

@@ -4203,6 +4203,13 @@
   }
 
   .history-year-cards__notice {
+    /* Reserve height comparable to a loaded/loading card so the
+       loading→error and loading→empty transitions don't collapse the section
+       and shift the page (CLS — Lesson 125 covers error/empty, not just
+       loading). */
+    display: flex;
+    align-items: center;
+    min-height: 220px;
     margin-top: 24px;
     padding: 16px 18px;
     border-radius: 10px;
