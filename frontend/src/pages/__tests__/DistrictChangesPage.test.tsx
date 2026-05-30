@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
-import { MemoryRouter, Routes, Route } from 'react-router-dom'
+import { render, screen, fireEvent } from '@testing-library/react'
+import React from 'react'
+import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom'
 import DistrictChangesPage from '../DistrictChangesPage'
 import { useDistrictCachedDates } from '../../hooks/useDistrictData'
 import { useSnapshotDiff } from '../../hooks/useSnapshotDiff'
@@ -187,5 +188,81 @@ describe('DistrictChangesPage', () => {
     renderPage()
     expect(screen.getByTestId('changes-single')).toBeInTheDocument()
     expect(screen.queryByTestId('changes-headline')).not.toBeInTheDocument()
+  })
+})
+
+// #980 — change-groups are open by default; a user's collapses persist in
+// ?expandChanges (the value lists the COLLAPSED categories, so an all-default
+// page keeps a clean URL). A shared/reloaded link restores those collapses.
+describe('DistrictChangesPage — deep-linked group collapse (#980)', () => {
+  let location = ''
+  const LocationProbe: React.FC = () => {
+    location = useLocation().search
+    return null
+  }
+  function renderWithDiff(initialEntry: string) {
+    mockedDates.mockReturnValue({
+      data: { dates: ['2026-05-25', '2026-05-26'] },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useDistrictCachedDates>)
+    mockedDiff.mockReturnValue({
+      data: diffFixture(),
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<typeof useSnapshotDiff>)
+    return render(
+      <MemoryRouter initialEntries={[initialEntry]}>
+        <Routes>
+          <Route
+            path="/district/:districtId/changes"
+            element={<DistrictChangesPage />}
+          />
+        </Routes>
+        <LocationProbe />
+      </MemoryRouter>
+    )
+  }
+  /** Find the <details> whose summary text matches. */
+  const groupByHeading = (container: HTMLElement, re: RegExp) =>
+    Array.from(container.querySelectorAll('details')).find(d =>
+      d.querySelector('summary')?.textContent?.match(re)
+    ) as HTMLDetailsElement | undefined
+
+  it('opens every group by default (param absent)', () => {
+    const { container } = renderWithDiff('/district/61/changes')
+    expect(groupByHeading(container, /Clubs that joined/)?.open).toBe(true)
+    expect(
+      groupByHeading(container, /Distinguished status changes/)?.open
+    ).toBe(true)
+  })
+
+  it('collapses only the categories named in ?expandChanges', () => {
+    const { container } = renderWithDiff(
+      '/district/61/changes?expandChanges=club-added'
+    )
+    expect(groupByHeading(container, /Clubs that joined/)?.open).toBe(false)
+    expect(
+      groupByHeading(container, /Distinguished status changes/)?.open
+    ).toBe(true)
+  })
+
+  it('writes the category to ?expandChanges when a group is collapsed', () => {
+    const { container } = renderWithDiff('/district/61/changes')
+    const group = groupByHeading(container, /Clubs that joined/)!
+    group.open = false
+    fireEvent(group, new Event('toggle'))
+    expect(new URLSearchParams(location).get('expandChanges')).toBe(
+      'club-added'
+    )
+  })
+
+  it('removes the category from ?expandChanges when a group is re-opened', () => {
+    const { container } = renderWithDiff(
+      '/district/61/changes?expandChanges=club-added'
+    )
+    const group = groupByHeading(container, /Clubs that joined/)!
+    group.open = true
+    fireEvent(group, new Event('toggle'))
+    expect(new URLSearchParams(location).has('expandChanges')).toBe(false)
   })
 })
