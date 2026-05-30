@@ -91,7 +91,7 @@ LOCK_DIR="${SPRINT_RUNNER_LOCK_DIR:-/tmp/toast-stats-sprint.lock}"
 BOOTSTRAP_PROMPT="$REPO_DIR/scripts/sprint-bootstrap.prompt"
 LOG_FILE="${SPRINT_RUNNER_LOG:-$HOME/.toast-stats-sprint-runner.log}"
 LOG_ROTATE_BYTES=$((1024 * 1024))
-WORKTREE_BASE="${WORKTREE_BASE:-$HOME/sprint-worktrees}"
+WORKTREE_BASE="${WORKTREE_BASE:-$HOME/code/.worktrees/toast-stats}"
 # Per-session screen logfiles live here — a sibling of the worktrees, NEVER
 # inside one (so they don't pollute a git status or get swept by `git worktree
 # remove`). The liveness log probe samples $RUNNER_LOG_DIR/session-<issue>.log
