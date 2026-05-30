@@ -13,11 +13,23 @@
    CSS-uppercased "live", so the assertion is real, not false-confidence. */
 
 import React from 'react'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import HistoryPage from '../../pages/HistoryPage'
 import MethodologyPage from '../../pages/MethodologyPage'
+
+// HistoryPage now fetches per-year summary cards (#892). This routing test
+// only asserts the synchronous scaffold (heading, year strip, TI link), so
+// stub the data hook to keep it network-free and focused.
+vi.mock('../../hooks/useProgramYearSummaries', () => ({
+  useProgramYearSummaries: () => ({
+    summaries: [],
+    isLoading: false,
+    isError: false,
+    error: null,
+  }),
+}))
 
 const renderRoute = (Page: React.ComponentType, path: string) => {
   const router = createMemoryRouter([{ path, element: <Page /> }], {

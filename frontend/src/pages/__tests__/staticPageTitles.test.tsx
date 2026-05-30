@@ -2,11 +2,22 @@
    Methodology and History have no async data, so their title is deterministic
    on mount — the simplest end of the per-route title contract (F-SA3). */
 
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, cleanup, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import MethodologyPage from '../MethodologyPage'
 import HistoryPage from '../HistoryPage'
+
+// HistoryPage fetches per-year cards (#892); the title is still synchronous on
+// mount, so stub the data hook to keep this title test network-free.
+vi.mock('../../hooks/useProgramYearSummaries', () => ({
+  useProgramYearSummaries: () => ({
+    summaries: [],
+    isLoading: false,
+    isError: false,
+    error: null,
+  }),
+}))
 
 afterEach(() => cleanup())
 
