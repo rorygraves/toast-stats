@@ -111,6 +111,7 @@
 - **138** [bash, automation, sprint-runner, shell] — A bash function that returns data via globals must be called as a statement, never in `$(...)` (#930, #933)
 - **138** [frontend, react, scope, refactor, tests] — A view that renders correctly only because an upstream utility incidentally sorts that way should own and pin its own order (#882, #884)
 - **138** [css, accessibility, frontend, tests, playwright] — An `inset-0` overlay is sized to its container's PADDING box; a 1px border on the chip steals from the touch target (#886, #888)
+- **138** [automation, sprint-runner, bash, process] — In a retry-then-escalate machine, a counter-neutral "reconcile" branch needs a PRECISE gate, or it loops forever without escalating (#931, #933)
 - **138** [css, frontend, accessibility, verification, playwright, mobile] — `scroll-margin-top` belongs on the element that holds the anchor id, not a styled child (#877, #880)
 - **139** [css, frontend, accessibility, router, verification, playwright, mobile] — A TOC-anchor jump fired from inside a scroll-locked sheet has three independent scroll-clobbering traps; only live measurement separates them (#878, #880)
 - **139** [data-pipeline, frontend, hooks, analytics, verification, cdn] — A year-end snapshot's `sourceCsvDate` falls in July, so a program-year-equality guard silently drops every completed year (#892, #893)

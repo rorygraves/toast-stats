@@ -28,6 +28,12 @@
 #
 # Sourcing this file only DEFINES functions — no side effects.
 
+# Capped auto-relaunch: how many times a STUCK/HUSK sprint is reaped + relaunched
+# before the runner escalates to the operator instead (design §5; operator
+# decision 2026-05-29). Env-overridable so the regression harness can drive the
+# cap branch without 3 real ticks.
+LIVENESS_MAX_ATTEMPTS="${LIVENESS_MAX_ATTEMPTS:-3}"
+
 # === Fusion =================================================================
 
 # fuse_verdict <commit> <process> <log> → HEALTHY|SUSPECT|STUCK|HUSK
