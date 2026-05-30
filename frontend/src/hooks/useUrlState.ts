@@ -23,7 +23,7 @@
  * ```
  */
 
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
 interface UseUrlStateOptions<T> {
@@ -50,19 +50,21 @@ export function useUrlState<T = string>(
 ): [T, (action: SetStateAction<T>) => void] {
   const [searchParams, setSearchParams] = useSearchParams()
 
-  // Parse current value from URL
+  // Parse current value from URL. Memoized on the raw string so a custom
+  // `parse` (which returns a fresh object/array — e.g. a comma-split list)
+  // yields a STABLE reference across renders when the param is unchanged.
+  // Without this, every render hands consumers a new array, busting their
+  // downstream `useMemo`s (e.g. a 117-row re-sort on an unrelated keystroke).
   const rawValue = searchParams.get(key)
-  let currentValue: T
-
-  if (rawValue === null) {
-    currentValue = defaultValue
-  } else if (options?.parse) {
-    const parsed = options.parse(rawValue)
-    currentValue = parsed !== undefined ? parsed : defaultValue
-  } else {
+  const currentValue = useMemo<T>(() => {
+    if (rawValue === null) return defaultValue
+    if (options?.parse) {
+      const parsed = options.parse(rawValue)
+      return parsed !== undefined ? parsed : defaultValue
+    }
     // Default: treat as string (works when T = string)
-    currentValue = rawValue as unknown as T
-  }
+    return rawValue as unknown as T
+  }, [rawValue, defaultValue, options])
 
   const setValue = useCallback(
     (action: SetStateAction<T>) => {
