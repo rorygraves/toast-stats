@@ -68,6 +68,12 @@ LOG_FILE="${SPRINT_RUNNER_LOG:-$HOME/.toast-stats-sprint-runner.log}"
 LOG_ROTATE_BYTES=$((1024 * 1024))
 WORKTREE_BASE="${WORKTREE_BASE:-$HOME/sprint-worktrees}"
 
+# Stuck-session liveness probes (epic #933). Sourcing only DEFINES the pure
+# probe functions (probe_commit_age / probe_process / probe_log) — they are not
+# yet called from any tick branch. Fusion + tick wiring land in Sprint 3 (#930).
+# shellcheck source=lib/sprint-runner-probes.sh
+source "$REPO_DIR/scripts/lib/sprint-runner-probes.sh"
+
 # Populated by resolve_active_epic(); used by callers to decide whether
 # auto-tick fires and to print the source in --status.
 EPIC_SOURCE=""
