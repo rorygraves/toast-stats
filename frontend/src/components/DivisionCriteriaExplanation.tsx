@@ -33,6 +33,7 @@
 
 import React, { useState } from 'react'
 import { Card } from './ui/Card/Card'
+import { useUrlBoolean } from '../hooks/useUrlBoolean'
 
 /**
  * Props for the DivisionCriteriaExplanation component
@@ -40,6 +41,12 @@ import { Card } from './ui/Card/Card'
 export interface DivisionCriteriaExplanationProps {
   /** Whether to show in collapsed/expanded state */
   defaultExpanded?: boolean
+  /**
+   * When set, the expand state deep-links via this URL search param (#980):
+   * `?<urlParam>=1` when open, absent when collapsed. Requires a router in the
+   * tree. When omitted, the panel keeps purely-local `useState` (router-free).
+   */
+  urlParam?: string
 }
 
 /**
@@ -56,15 +63,10 @@ export interface DivisionCriteriaExplanationProps {
  * <DivisionCriteriaExplanation defaultExpanded={true} />
  * ```
  */
-export const DivisionCriteriaExplanation: React.FC<
-  DivisionCriteriaExplanationProps
-> = ({ defaultExpanded = false }) => {
-  const [isExpanded, setIsExpanded] = useState(defaultExpanded)
-
-  const toggleExpanded = () => {
-    setIsExpanded(!isExpanded)
-  }
-
+const DivisionCriteriaExplanationView: React.FC<{
+  isExpanded: boolean
+  toggleExpanded: () => void
+}> = ({ isExpanded, toggleExpanded }) => {
   return (
     <Card
       variant="default"
@@ -531,5 +533,46 @@ export const DivisionCriteriaExplanation: React.FC<
     </Card>
   )
 }
+
+/** URL-synced state source — only mounted when a urlParam is supplied. */
+const UrlSyncedDivisionCriteria: React.FC<{
+  urlParam: string
+  defaultExpanded: boolean
+}> = ({ urlParam, defaultExpanded }) => {
+  const [isExpanded, setIsExpanded] = useUrlBoolean(urlParam, {
+    defaultValue: defaultExpanded,
+  })
+  return (
+    <DivisionCriteriaExplanationView
+      isExpanded={isExpanded}
+      toggleExpanded={() => setIsExpanded(prev => !prev)}
+    />
+  )
+}
+
+/** Local (router-free) state source — the default. */
+const LocalDivisionCriteria: React.FC<{ defaultExpanded: boolean }> = ({
+  defaultExpanded,
+}) => {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded)
+  return (
+    <DivisionCriteriaExplanationView
+      isExpanded={isExpanded}
+      toggleExpanded={() => setIsExpanded(prev => !prev)}
+    />
+  )
+}
+
+export const DivisionCriteriaExplanation: React.FC<
+  DivisionCriteriaExplanationProps
+> = ({ defaultExpanded = false, urlParam }) =>
+  urlParam ? (
+    <UrlSyncedDivisionCriteria
+      urlParam={urlParam}
+      defaultExpanded={defaultExpanded}
+    />
+  ) : (
+    <LocalDivisionCriteria defaultExpanded={defaultExpanded} />
+  )
 
 export default DivisionCriteriaExplanation

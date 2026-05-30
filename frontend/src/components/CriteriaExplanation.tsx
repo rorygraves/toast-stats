@@ -31,6 +31,7 @@
 
 import React, { useState } from 'react'
 import { Card } from './ui/Card/Card'
+import { useUrlBoolean } from '../hooks/useUrlBoolean'
 
 /**
  * Props for the CriteriaExplanation component
@@ -38,6 +39,12 @@ import { Card } from './ui/Card/Card'
 export interface CriteriaExplanationProps {
   /** Whether to show in collapsed/expanded state */
   defaultExpanded?: boolean
+  /**
+   * When set, the expand state deep-links via this URL search param (#980):
+   * `?<urlParam>=1` when open, absent when collapsed. Requires a router in the
+   * tree. When omitted, the panel keeps purely-local `useState` (router-free).
+   */
+  urlParam?: string
 }
 
 /**
@@ -54,15 +61,10 @@ export interface CriteriaExplanationProps {
  * <CriteriaExplanation defaultExpanded={true} />
  * ```
  */
-export const CriteriaExplanation: React.FC<CriteriaExplanationProps> = ({
-  defaultExpanded = false,
-}) => {
-  const [isExpanded, setIsExpanded] = useState(defaultExpanded)
-
-  const toggleExpanded = () => {
-    setIsExpanded(!isExpanded)
-  }
-
+const CriteriaExplanationView: React.FC<{
+  isExpanded: boolean
+  toggleExpanded: () => void
+}> = ({ isExpanded, toggleExpanded }) => {
   return (
     <Card
       variant="default"
@@ -508,5 +510,47 @@ export const CriteriaExplanation: React.FC<CriteriaExplanationProps> = ({
     </Card>
   )
 }
+
+/** URL-synced state source — only mounted when a urlParam is supplied. */
+const UrlSyncedCriteriaExplanation: React.FC<{
+  urlParam: string
+  defaultExpanded: boolean
+}> = ({ urlParam, defaultExpanded }) => {
+  const [isExpanded, setIsExpanded] = useUrlBoolean(urlParam, {
+    defaultValue: defaultExpanded,
+  })
+  return (
+    <CriteriaExplanationView
+      isExpanded={isExpanded}
+      toggleExpanded={() => setIsExpanded(prev => !prev)}
+    />
+  )
+}
+
+/** Local (router-free) state source — the default. */
+const LocalCriteriaExplanation: React.FC<{ defaultExpanded: boolean }> = ({
+  defaultExpanded,
+}) => {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded)
+  return (
+    <CriteriaExplanationView
+      isExpanded={isExpanded}
+      toggleExpanded={() => setIsExpanded(prev => !prev)}
+    />
+  )
+}
+
+export const CriteriaExplanation: React.FC<CriteriaExplanationProps> = ({
+  defaultExpanded = false,
+  urlParam,
+}) =>
+  urlParam ? (
+    <UrlSyncedCriteriaExplanation
+      urlParam={urlParam}
+      defaultExpanded={defaultExpanded}
+    />
+  ) : (
+    <LocalCriteriaExplanation defaultExpanded={defaultExpanded} />
+  )
 
 export default CriteriaExplanation

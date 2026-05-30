@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useIsMobile } from '../hooks/useIsMobile'
+import { useUrlState } from '../hooks/useUrlState'
 import { Sparkline } from './Sparkline'
 import { ChartExpandSheet } from './ChartExpandSheet'
 
@@ -18,6 +19,86 @@ export interface ChartSparklineExpandProps {
   expandLabel?: string
   /** Class on the collapsed-mobile wrapper (Lesson 077 — override, no variant). */
   className?: string
+  /**
+   * When set, the expand sheet deep-links via `?chartExpanded=<urlId>` (#980).
+   * The param holds WHICH chart is open (the sheet is mutually exclusive), so
+   * multiple charts on one page each pass a distinct id. Requires a router.
+   * When omitted, the sheet uses purely-local state (router-free).
+   */
+  urlId?: string
+}
+
+type ViewProps = Omit<ChartSparklineExpandProps, 'breakpoint' | 'urlId'> & {
+  isOpen: boolean
+  setOpen: (open: boolean) => void
+}
+
+/** The collapsed-mobile sparkline + expand sheet. State source is injected. */
+const ChartSparklineExpandView: React.FC<ViewProps> = ({
+  title,
+  sparklineData,
+  headline,
+  children,
+  expandLabel,
+  className,
+  isOpen,
+  setOpen,
+}) => (
+  <div className={className ?? 'chart-spark'}>
+    <button
+      type="button"
+      className="chart-spark__trigger"
+      aria-haspopup="dialog"
+      aria-label={expandLabel ?? `Expand ${title} chart`}
+      onClick={() => setOpen(true)}
+    >
+      <span className="chart-spark__headline">{headline}</span>
+      <Sparkline
+        data={sparklineData}
+        ariaLabel={`${title} sparkline`}
+        className="chart-spark__sparkline"
+      />
+      <span className="chart-spark__hint" aria-hidden="true">
+        Tap to expand
+      </span>
+    </button>
+
+    <ChartExpandSheet
+      isOpen={isOpen}
+      onClose={() => setOpen(false)}
+      title={title}
+    >
+      {children}
+    </ChartExpandSheet>
+  </div>
+)
+
+/** URL-synced state source — `?chartExpanded` holds which chart id is open. */
+const UrlSyncedChartSparklineExpand: React.FC<
+  Omit<ChartSparklineExpandProps, 'breakpoint'> & { urlId: string }
+> = ({ urlId, ...viewProps }) => {
+  const [expandedId, setExpandedId] = useUrlState('chartExpanded', '')
+  return (
+    <ChartSparklineExpandView
+      {...viewProps}
+      isOpen={expandedId === urlId}
+      setOpen={open => setExpandedId(open ? urlId : '')}
+    />
+  )
+}
+
+/** Local (router-free) state source — the default. */
+const LocalChartSparklineExpand: React.FC<
+  Omit<ChartSparklineExpandProps, 'breakpoint' | 'urlId'>
+> = viewProps => {
+  const [isOpen, setIsOpen] = useState(false)
+  return (
+    <ChartSparklineExpandView
+      {...viewProps}
+      isOpen={isOpen}
+      setOpen={setIsOpen}
+    />
+  )
 }
 
 /**
@@ -32,51 +113,21 @@ export interface ChartSparklineExpandProps {
  * non-scroll capture (Lesson 113). In JSDOM `useIsMobile` resolves to false, so
  * desktop tests and existing consumers see the bare chart unchanged.
  *
- * This sprint (#874) ships only the reusable wrapper; #875 applies it to the
- * District Trends, Club detail, Rankings Progression and Awards charts.
+ * Pass `urlId` to deep-link the open sheet via `?chartExpanded=<id>` (#980).
  */
 export const ChartSparklineExpand: React.FC<ChartSparklineExpandProps> = ({
-  title,
-  sparklineData,
-  headline,
-  children,
   breakpoint = 768,
-  expandLabel,
-  className,
+  urlId,
+  ...viewProps
 }) => {
   const isMobile = useIsMobile(breakpoint)
-  const [isOpen, setIsOpen] = useState(false)
 
-  if (!isMobile) return <>{children}</>
+  if (!isMobile) return <>{viewProps.children}</>
 
-  return (
-    <div className={className ?? 'chart-spark'}>
-      <button
-        type="button"
-        className="chart-spark__trigger"
-        aria-haspopup="dialog"
-        aria-label={expandLabel ?? `Expand ${title} chart`}
-        onClick={() => setIsOpen(true)}
-      >
-        <span className="chart-spark__headline">{headline}</span>
-        <Sparkline
-          data={sparklineData}
-          ariaLabel={`${title} sparkline`}
-          className="chart-spark__sparkline"
-        />
-        <span className="chart-spark__hint" aria-hidden="true">
-          Tap to expand
-        </span>
-      </button>
-
-      <ChartExpandSheet
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        title={title}
-      >
-        {children}
-      </ChartExpandSheet>
-    </div>
+  return urlId ? (
+    <UrlSyncedChartSparklineExpand urlId={urlId} {...viewProps} />
+  ) : (
+    <LocalChartSparklineExpand {...viewProps} />
   )
 }
 

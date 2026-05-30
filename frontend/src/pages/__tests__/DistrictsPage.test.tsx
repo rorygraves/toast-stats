@@ -581,6 +581,31 @@ describe('DistrictsPage - Layout Order (#83)', () => {
     }
   })
 
+  // #980 — the historical-rank region selection and its mobile disclosure now
+  // deep-link via the URL, so a shared/reloaded link restores them.
+  it('restores the historical region selection from ?historyRegions', async () => {
+    setupWithData()
+    renderWithProviders(<DistrictsPage />, {
+      initialEntries: ['/?historyRegions=1'],
+    })
+    await screen.findByText('District 1')
+    // Region "1" is pre-selected from the URL → the count reflects it.
+    expect(screen.getByText(/Select Regions \(1 regions,/)).toBeInTheDocument()
+    expect(screen.getByText(/from 1 selected region/i)).toBeInTheDocument()
+  })
+
+  it('restores the history region disclosure open state from ?historyExpanded', async () => {
+    setupWithData()
+    renderWithProviders(<DistrictsPage />, {
+      initialEntries: ['/?historyExpanded=1'],
+    })
+    await screen.findByText('District 1')
+    const selectRegionsButton = screen.getByRole('button', {
+      name: /Select Regions \(/i,
+    })
+    expect(selectRegionsButton).toHaveAttribute('aria-expanded', 'true')
+  })
+
   it('renders the redesign h1 "District Rankings" (#356)', async () => {
     setupWithData()
 

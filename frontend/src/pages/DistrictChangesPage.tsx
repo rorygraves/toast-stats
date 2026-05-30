@@ -5,6 +5,7 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useDistrictCachedDates } from '../hooks/useDistrictData'
 import { useSnapshotDiff } from '../hooks/useSnapshotDiff'
 import { useUrlDatePair } from '../hooks/useUrlDatePair'
+import { useUrlStringSet } from '../hooks/useUrlStringSet'
 import { SubpageBreadcrumb } from '../components/SubpageBreadcrumb'
 import { DistrictSubnav } from '../components/DistrictSubnav'
 import { DatePairPicker } from '../components/DatePairPicker'
@@ -43,13 +44,21 @@ const CATEGORY_GROUPS: { category: DiffEventCategory; heading: string }[] = [
   { category: 'dcp-goals', heading: 'DCP goal changes' },
 ]
 
-const ChangeGroup: React.FC<{ heading: string; events: DiffEvent[] }> = ({
-  heading,
-  events,
-}) => {
+const ChangeGroup: React.FC<{
+  category: DiffEventCategory
+  heading: string
+  events: DiffEvent[]
+  /** Groups are open by default; collapsed when listed in ?expandChanges (#980). */
+  collapsed: boolean
+  onToggle: (category: DiffEventCategory, open: boolean) => void
+}> = ({ category, heading, events, collapsed, onToggle }) => {
   if (events.length === 0) return null
   return (
-    <details className="changes-group" open>
+    <details
+      className="changes-group"
+      open={!collapsed}
+      onToggle={e => onToggle(category, e.currentTarget.open)}
+    >
       <summary className="changes-group__summary">
         {heading}{' '}
         <span className="changes-group__count">({events.length})</span>
@@ -81,6 +90,16 @@ const DistrictChangesPage: React.FC = () => {
   )
   const dates = useMemo(() => cachedDates?.dates ?? [], [cachedDates?.dates])
   const { from, to, setFrom, setTo } = useUrlDatePair(dates)
+
+  // Change-groups are open by default; ?expandChanges lists the categories the
+  // user has COLLAPSED (so an all-default page keeps a clean URL). The page owns
+  // this state and passes it down (R3) — every entry path (typed URL, share,
+  // reload, click) converges here. (#980)
+  const [collapsedGroups, setCollapsedGroups] = useUrlStringSet('expandChanges')
+  const handleGroupToggle = (category: DiffEventCategory, open: boolean) =>
+    setCollapsedGroups(prev =>
+      open ? prev.filter(c => c !== category) : [...prev, category]
+    )
 
   // The pair must be two distinct dates with from strictly before to. Each
   // invalid shape gets its own explicit prompt (R17) and skips the fetch —
@@ -230,8 +249,11 @@ const DistrictChangesPage: React.FC = () => {
                     {CATEGORY_GROUPS.map(({ category, heading }) => (
                       <ChangeGroup
                         key={category}
+                        category={category}
                         heading={heading}
                         events={eventsByCategory.get(category) ?? []}
+                        collapsed={collapsedGroups.includes(category)}
+                        onToggle={handleGroupToggle}
                       />
                     ))}
                   </div>

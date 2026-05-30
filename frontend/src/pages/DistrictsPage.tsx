@@ -20,6 +20,8 @@ import { useMyDistrict } from '../hooks/useMyDistrict'
 import { useLastVisit } from '../hooks/useLastVisit'
 import { useUrlSort } from '../hooks/useUrlSort'
 import { useUrlState } from '../hooks/useUrlState'
+import { useUrlBoolean } from '../hooks/useUrlBoolean'
+import { useUrlStringSet } from '../hooks/useUrlStringSet'
 import { useDebounce } from '../hooks/useDebounce'
 import { SortableHeader } from '../components/SortableHeader'
 import { LazyComparisonPanel as ComparisonPanel } from '../components/LazyCharts'
@@ -154,12 +156,13 @@ const DistrictsPage: React.FC = () => {
     setSelectedDate,
   } = useUrlProgramYear()
 
-  // Historical rank tracking state
-  const [selectedRegionsForHistory, setSelectedRegionsForHistory] = useState<
-    string[]
-  >([])
+  // Historical rank tracking state — URL-synced so a shared/reloaded link
+  // restores the selection and its disclosure (#980, R3: the page owns it).
+  const [selectedRegionsForHistory, setSelectedRegionsForHistory] =
+    useUrlStringSet('historyRegions')
   // Mobile-friendly collapsible region filters
-  const [isHistoryRegionExpanded, setIsHistoryRegionExpanded] = useState(false)
+  const [isHistoryRegionExpanded, setIsHistoryRegionExpanded] =
+    useUrlBoolean('historyExpanded')
 
   // Fetch cached dates from CDN snapshot index (#233)
   // Uses the same data source as DistrictDetailPage for consistency
