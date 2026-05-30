@@ -543,7 +543,10 @@ const DistrictDetailPageInner: React.FC = () => {
                 {/* Longest-serving clubs — secondary detail, folded behind a
                     disclosure below 768 px (audit §Epic B, #867). On desktop
                     MobileDisclosure renders the leaderboard directly. */}
-                <MobileDisclosure summaryLabel="Longest-serving clubs">
+                <MobileDisclosure
+                  summaryLabel="Longest-serving clubs"
+                  urlParam="clubsExpanded"
+                >
                   <LongestServingClubsLeaderboard
                     clubs={allClubs}
                     {...(districtId !== undefined && { districtId })}
