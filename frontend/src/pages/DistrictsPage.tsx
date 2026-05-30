@@ -51,6 +51,13 @@ const parseList = (v: string): string[] =>
 const serializeList = (a: string[]): string => a.join(',')
 const LIST_OPTS = { parse: parseList, serialize: serializeList }
 
+// Comparison pins cap (#93). Enforced on the inward parse too, not just on
+// togglePin adds, so a hand-edited / shared `?pinned=1,2,3,4,5` can't seed a
+// 4+-district comparison past the cap.
+const MAX_PINNED = 3
+const parsePinned = (v: string): string[] => parseList(v).slice(0, MAX_PINNED)
+const PINNED_OPTS = { parse: parsePinned, serialize: serializeList }
+
 const DistrictsPage: React.FC = () => {
   const navigate = useNavigate()
   // URL-synced click-header sort (#851). Replaces the prior persisted
@@ -96,7 +103,7 @@ const DistrictsPage: React.FC = () => {
   const [pinnedIds, setPinnedIds] = useUrlState<string[]>(
     'pinned',
     EMPTY_LIST,
-    LIST_OPTS
+    PINNED_OPTS
   )
   const pinnedDistrictIds = React.useMemo(() => new Set(pinnedIds), [pinnedIds])
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -451,8 +458,7 @@ const DistrictsPage: React.FC = () => {
     navigate(`/district/${districtId}`)
   }
 
-  // Comparison mode — pin/unpin districts (#93)
-  const MAX_PINNED = 3
+  // Comparison mode — pin/unpin districts (#93). MAX_PINNED is module-level.
   const togglePin = (districtId: string) => {
     setPinnedIds(prev => {
       if (prev.includes(districtId)) {

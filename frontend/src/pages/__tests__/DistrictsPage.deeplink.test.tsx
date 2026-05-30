@@ -99,6 +99,14 @@ const setupThreeRegions = () => {
   })
 }
 
+const setupFiveDistricts = () => {
+  mockedFetchCdnRankings.mockResolvedValue({
+    rankings: [row(1, '1'), row(2, '1'), row(3, '1'), row(4, '1'), row(5, '1')],
+    date: '2025-11-22',
+    generatedAt: '2025-01-01T00:00:00Z',
+  })
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   localStorage.clear()
@@ -174,6 +182,23 @@ describe('DistrictsPage deep-link — pinned comparison (?pinned=)', () => {
       screen.getByRole('button', { name: /unpin district 2/i })
     ).toBeInTheDocument()
     await screen.findByText(/Comparing 2 Districts/i)
+  })
+
+  it('INWARD: a hand-edited URL with >3 ids is capped at MAX_PINNED (3)', async () => {
+    setupFiveDistricts()
+    renderPage('/?pinned=1,2,3,4,5')
+
+    // Only the first 3 should read as pinned; the 4th/5th stay pinnable.
+    expect(
+      await screen.findByRole('button', { name: /unpin district 1/i })
+    ).toBeInTheDocument()
+    const unpinButtons = screen.getAllByRole('button', {
+      name: /unpin district/i,
+    })
+    expect(unpinButtons).toHaveLength(3)
+    expect(
+      screen.getByRole('button', { name: /^pin district 4/i })
+    ).toBeInTheDocument()
   })
 
   it('OUTWARD: clicking pin writes ?pinned=', async () => {
