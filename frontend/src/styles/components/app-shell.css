@@ -1312,6 +1312,40 @@
     background: linear-gradient(to right, rgba(0, 0, 0, 0), var(--surface));
   }
 
+  /* #965 — sticky region-identity column for the /regions OVERVIEW leaderboard
+     (RegionsLeaderboard). This is a DIFFERENT table from the /region/:n detail
+     table above: it is the browser-default `border-collapse: separate` model
+     with Tailwind `divide-y` row rules, NOT the detail table's `collapse`
+     model. So the border restoration is re-derived for THIS model rather than
+     copied from the sibling (Lesson 126). The opaque pinned background MUST be
+     a theme token, never a hardcoded literal, or scrolled metric cells bleed
+     through in dark mode (Lesson 092). */
+  .region-leaderboard-table .region-leaderboard__sticky-col {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background-color: var(--surface);
+    /* Right inset = the sticky/scroll seam. Bottom inset restores the row
+       hairline the opaque cell masks (the `divide-y` rule paints behind it);
+       both --line so the column reads as one themed rule, light and dark. */
+    box-shadow:
+      inset -1px 0 0 var(--line),
+      inset 0 -1px 0 var(--line);
+  }
+
+  /* Header sticky cell rides the slightly-lighter thead surface and layers
+     above the body cells as they scroll under it. */
+  .region-leaderboard-table thead .region-leaderboard__sticky-col {
+    z-index: 3;
+    background-color: var(--surface-2);
+  }
+
+  /* Keep the pinned cell in step with the row-hover highlight so the Region
+     column never reads as a detached strip when a row is hovered. */
+  .region-leaderboard-table tbody tr:hover .region-leaderboard__sticky-col {
+    background-color: var(--surface-2);
+  }
+
   /* District-number chip on each ranking row (#436). Standalone visual
      element so the click affordance reads as obviously interactive. */
   .districts-rankings-table__district-chip {
