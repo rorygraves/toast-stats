@@ -74,28 +74,35 @@ _state_file() {
   fi
 }
 
-# _state_read → the store as JSON on stdout, or `{}` if missing/corrupt.
-# Corruption resolves to an empty store (fail-safe: at worst a few extra
-# relaunch attempts), never to an abort.
-_state_read() {
-  local f
-  f="$(_state_file)"
-  if [[ -f "$f" ]] && jq -e . "$f" >/dev/null 2>&1; then
-    cat "$f"
-  else
-    echo '{}'
-  fi
+# _int_or <value> <default> → echo value if it's a non-negative integer, else
+# the default. Guards every jq --argjson site so a stray value can't abort the
+# tick under set -u.
+_int_or() {
+  if [[ "$1" =~ ^[0-9]+$ ]]; then printf '%s' "$1"; else printf '%s' "$2"; fi
 }
 
-# state_get_attempts <issue> → integer attempt count (0 if absent/corrupt).
-state_get_attempts() {
-  local issue="$1" v
-  v="$(_state_read | jq -r --arg k "$issue" '.[$k].attempts // 0' 2>/dev/null)"
-  if [[ "$v" =~ ^[0-9]+$ ]]; then
-    printf '%s' "$v"
+# _state_read → the store as JSON on stdout, or `{}` if missing/corrupt.
+# Corruption resolves to an empty store (fail-safe: at worst a few extra
+# relaunch attempts), never to an abort. One jq does validate-and-emit.
+_state_read() {
+  jq -e . "$(_state_file)" 2>/dev/null || echo '{}'
+}
+
+# _state_write_atomic  (new JSON content as $1) → replace the store atomically
+# (mktemp + mv rename). The caller computes the content and checks jq's exit
+# BEFORE calling here, so a failed transform never reaches the file.
+_state_write_atomic() {
+  local content="$1" f tmp
+  f="$(_state_file)"
+  mkdir -p "$(dirname "$f")"
+  tmp="$(mktemp "${f}.XXXXXX")"
+  if printf '%s' "$content" > "$tmp"; then
+    mv -f "$tmp" "$f"
   else
-    printf '0'
+    rm -f "$tmp" 2>/dev/null || true
+    return 1
   fi
+  return 0
 }
 
 # state_get_field <issue> <field> → the field's value, or empty string.
@@ -106,30 +113,24 @@ state_get_field() {
   printf '%s' "$v"
 }
 
-# state_record <issue> <verdict> <attempts> [last_relaunch_epoch]
-#   Atomic upsert of one issue's entry. attempts/epoch are coerced to integers
-#   so a stray value can't make jq --argjson fail mid-tick.
-state_record() {
-  local issue="$1" verdict="$2" attempts="$3" relaunch="${4:-0}"
-  [[ "$attempts" =~ ^[0-9]+$ ]] || attempts=0
-  [[ "$relaunch" =~ ^[0-9]+$ ]] || relaunch=0
+# state_get_attempts <issue> → integer attempt count (0 if absent/corrupt).
+state_get_attempts() {
+  _int_or "$(state_get_field "$1" attempts)" 0
+}
 
-  local f tmp cur
-  f="$(_state_file)"
-  mkdir -p "$(dirname "$f")"
-  cur="$(_state_read)"
-  tmp="$(mktemp "${f}.XXXXXX")"
-  if printf '%s' "$cur" | jq \
+# state_record <issue> <verdict> <attempts> [last_relaunch_epoch]
+#   Atomic upsert of one issue's entry.
+state_record() {
+  local issue="$1" verdict="$2" attempts new
+  attempts="$(_int_or "$3" 0)"
+  local relaunch; relaunch="$(_int_or "${4:-0}" 0)"
+
+  new="$(_state_read | jq \
         --arg k "$issue" --arg v "$verdict" \
         --argjson a "$attempts" --argjson r "$relaunch" \
-        '.[$k] = {attempts: $a, last_verdict: $v, last_relaunch_epoch: $r}' \
-        > "$tmp"; then
-    mv -f "$tmp" "$f"
-  else
-    rm -f "$tmp" 2>/dev/null || true
-    return 1
-  fi
-  return 0
+        '.[$k] = {attempts: $a, last_verdict: $v, last_relaunch_epoch: $r}')" \
+    || return 1
+  _state_write_atomic "$new"
 }
 
 # state_prune <keep_issue...>
@@ -137,23 +138,15 @@ state_record() {
 #   for issues that are CLOSED or no longer in the active epic. No args → empty
 #   the store to `{}`. Convergent, so the file can't accumulate stale keys.
 state_prune() {
-  local f tmp cur keep_json='[]'
-  f="$(_state_file)"
-  [[ -f "$f" ]] || return 0
-  cur="$(_state_read)"
+  [[ -f "$(_state_file)" ]] || return 0
+  local keep_json='[]' new
   if (( $# > 0 )); then
-    keep_json="$(printf '%s\n' "$@" | jq -R . | jq -s .)"
+    keep_json="$(printf '%s\n' "$@" | jq -Rn '[inputs]')"
   fi
-  mkdir -p "$(dirname "$f")"
-  tmp="$(mktemp "${f}.XXXXXX")"
-  if printf '%s' "$cur" | jq --argjson keep "$keep_json" \
-        'with_entries(select(.key as $k | $keep | index($k)))' > "$tmp"; then
-    mv -f "$tmp" "$f"
-  else
-    rm -f "$tmp" 2>/dev/null || true
-    return 1
-  fi
-  return 0
+  new="$(_state_read | jq --argjson keep "$keep_json" \
+        'with_entries(select(.key as $k | $keep | index($k)))')" \
+    || return 1
+  _state_write_atomic "$new"
 }
 
 # === Sampling edge =========================================================
@@ -231,8 +224,7 @@ evaluate_liveness() {
   logfile="${RUNNER_LOG_DIR:-$(_wt_base)/.runner-logs}/session-$issue.log"
   if [[ -f "$logfile" ]]; then
     log_present=1
-    mtime="$(stat -f %m "$logfile" 2>/dev/null || echo "$now")"
-    [[ "$mtime" =~ ^[0-9]+$ ]] || mtime="$now"
+    mtime="$(_int_or "$(stat -f %m "$logfile" 2>/dev/null)" "$now")"
     mtime_age=$(( now - mtime ))
   fi
 
