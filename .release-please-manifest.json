@@ -1,5 +1,5 @@
 {
-  ".": "2.22.0",
+  ".": "2.22.1",
   "frontend": "3.7.0",
   "packages/shared-contracts": "1.5.0",
   "packages/collector-cli": "1.4.1",

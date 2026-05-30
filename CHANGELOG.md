@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.22.1](https://github.com/taverns-red/toast-stats/compare/toast-stats-v2.22.0...toast-stats-v2.22.1) (2026-05-30)
+
+
+### Documentation
+
+* design stuck-session liveness detector — probes, fusion, state, state machine ([#928](https://github.com/taverns-red/toast-stats/issues/928)) ([#955](https://github.com/taverns-red/toast-stats/issues/955)) ([577d2fe](https://github.com/taverns-red/toast-stats/commit/577d2fe86327356322686b1b077a360c17f66ad5))
+
 ## [2.22.0](https://github.com/taverns-red/toast-stats/compare/toast-stats-v2.21.0...toast-stats-v2.22.0) (2026-05-30)
 
 
