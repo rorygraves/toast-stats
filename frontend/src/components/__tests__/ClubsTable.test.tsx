@@ -774,7 +774,7 @@ describe('ClubsTable', () => {
       expect(screen.queryByText(/quick filters:/i)).not.toBeInTheDocument()
     })
 
-    it('no longer exposes any of the four removed quick-filter chips', () => {
+    it('no longer exposes the removed quick-filter chips', () => {
       render(
         <ClubsTable
           clubs={clubs}
@@ -783,9 +783,10 @@ describe('ClubsTable', () => {
         />
       )
 
-      expect(
-        screen.queryByRole('button', { name: /close to distinguished/i })
-      ).not.toBeInTheDocument()
+      // The legacy "Needs members" / "Missing renewals" / "President's tier" /
+      // health-band chips are gone. (The single shared "Close to Distinguished"
+      // preset added in Sprint 3 #903 is a deliberate, separate control — see
+      // the "Close to Distinguished preset (#903)" describe below.)
       expect(
         screen.queryByRole('button', { name: /needs members/i })
       ).not.toBeInTheDocument()
@@ -813,6 +814,90 @@ describe('ClubsTable', () => {
       expect(
         screen.getByRole('button', { name: /^filters/i })
       ).toBeInTheDocument()
+    })
+  })
+
+  describe('Close to Distinguished preset (#903)', () => {
+    // The single shared preset that replaced the legacy quick-filter row. It is
+    // powered by the SAME canonical isCloseToDistinguished predicate as the
+    // club-detail-card banner, computed from each club's projection.
+    //
+    // Default createMockClub: members 20 / goals 5 / base 20 → projection is
+    // Distinguished, so it is NOT close (a useful OUT baseline).
+    const presetClubs = [
+      // IN: members 18 (base 18, gap 2), goals 4 → NotDistinguished, close.
+      createMockClub({
+        clubId: 'c-near',
+        clubName: 'NearClub',
+        membershipTrend: [{ date: '2025-09-01', count: 18 }],
+        dcpGoalsTrend: [{ date: '2025-09-01', goalsAchieved: 4 }],
+      }),
+      // OUT: only 1 DCP goal (< 3).
+      createMockClub({
+        clubId: 'c-far',
+        clubName: 'FarClub',
+        membershipTrend: [{ date: '2025-09-01', count: 18 }],
+        dcpGoalsTrend: [{ date: '2025-09-01', goalsAchieved: 1 }],
+      }),
+      // OUT: already Distinguished (default members 20 / goals 5).
+      createMockClub({ clubId: 'c-done', clubName: 'DoneClub' }),
+    ]
+
+    it('renders an unpressed toggle by default, with all clubs shown', () => {
+      render(
+        <ClubsTable
+          clubs={presetClubs}
+          districtId="test-district"
+          isLoading={false}
+        />
+      )
+      const toggle = screen.getByRole('button', {
+        name: /close to distinguished/i,
+      })
+      expect(toggle).toHaveAttribute('aria-pressed', 'false')
+      expect(screen.getByText('NearClub')).toBeInTheDocument()
+      expect(screen.getByText('FarClub')).toBeInTheDocument()
+      expect(screen.getByText('DoneClub')).toBeInTheDocument()
+    })
+
+    it('narrows to only matching clubs when toggled on, and shows a count', () => {
+      render(
+        <ClubsTable
+          clubs={presetClubs}
+          districtId="test-district"
+          isLoading={false}
+        />
+      )
+      const toggle = screen.getByRole('button', {
+        name: /close to distinguished/i,
+      })
+      fireEvent.click(toggle)
+      expect(toggle).toHaveAttribute('aria-pressed', 'true')
+      expect(screen.getByText('NearClub')).toBeInTheDocument()
+      expect(screen.queryByText('FarClub')).not.toBeInTheDocument()
+      expect(screen.queryByText('DoneClub')).not.toBeInTheDocument()
+      // Preset count line (distinct from the table's "Showing N of M" summary).
+      expect(
+        screen.getByText(/1 of 3 clubs need a nudge to distinguished/i)
+      ).toBeInTheDocument()
+    })
+
+    it('restores the full list when toggled back off', () => {
+      render(
+        <ClubsTable
+          clubs={presetClubs}
+          districtId="test-district"
+          isLoading={false}
+        />
+      )
+      const toggle = screen.getByRole('button', {
+        name: /close to distinguished/i,
+      })
+      fireEvent.click(toggle)
+      fireEvent.click(toggle)
+      expect(toggle).toHaveAttribute('aria-pressed', 'false')
+      expect(screen.getByText('FarClub')).toBeInTheDocument()
+      expect(screen.getByText('DoneClub')).toBeInTheDocument()
     })
   })
 

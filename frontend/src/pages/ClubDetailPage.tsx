@@ -26,11 +26,7 @@ import {
   type ClubDCPProjection,
   type DistinguishedLevel,
 } from '../utils/dcpProjections'
-import { CLOSE_TO_DISTINGUISHED_MAX_MEMBERS } from '../utils/closeToDistinguished'
-import {
-  computeMembersToDistinguished,
-  deriveGoalContext,
-} from '../utils/membersToDistinguished'
+import { isCloseToDistinguished } from '../utils/closeToDistinguished'
 import { LoadingSkeleton } from '../components/LoadingSkeleton'
 import { EmptyState } from '../components/ErrorDisplay'
 import ErrorBoundary from '../components/ErrorBoundary'
@@ -281,24 +277,32 @@ const ClubDetailPage: React.FC = () => {
     return calculateClubProjection(club)
   }, [club])
 
-  // Close-to-Distinguished result (#620). The issue asks us to reuse the
-  // `membersToDistinguished` engine: it returns non-null only when adding
-  // members is the *only* remaining barrier (closing the membership
-  // qualification gap and/or earning the member-based DCP goals 7 & 8). We then
-  // bound it by the calibrated CLOSE_TO_DISTINGUISHED_MAX_MEMBERS threshold so
-  // the banner is encouragement, not noise (preserves the #433 fix that
-  // suppressed far-off clubs). Already-Distinguished clubs return null upstream.
-  const closeToDistinguished = useMemo(() => {
-    if (!club || !projection) return null
-    const result = computeMembersToDistinguished(
-      projection,
-      deriveGoalContext(club)
-    )
-    if (!result) return null
-    return result.membersNeeded <= CLOSE_TO_DISTINGUISHED_MAX_MEMBERS
-      ? result
-      : null
-  }, [club, projection])
+  // Close-to-Distinguished banner gate (#620, #903). Uses the ONE shared
+  // canonical predicate (closeToDistinguished.ts) — NotDistinguished, members
+  // gap <= 3, goals >= 3, CSP submitted-or-unknown — so this banner and the
+  // clubs-table preset can never diverge. The encouragement copy below is
+  // derived locally from the projection's already-floored gap.
+  const isCloseBanner = useMemo(
+    () =>
+      !!club &&
+      !!projection &&
+      isCloseToDistinguished({
+        projection,
+        cspSubmitted: club.cspSubmitted,
+      }),
+    [club, projection]
+  )
+  const closeBannerCopy = useMemo(() => {
+    if (!projection) return ''
+    const { members, goals } = projection.gapToDistinguished
+    const parts: string[] = []
+    if (members > 0)
+      parts.push(`${members} more member${members > 1 ? 's' : ''}`)
+    if (goals > 0) parts.push(`${goals} more DCP goal${goals > 1 ? 's' : ''}`)
+    return parts.length > 0
+      ? `Just ${parts.join(' and ')} to reach Distinguished.`
+      : 'On track for Distinguished — finish strong!'
+  }, [projection])
 
   // Filter trends by program year
   const programYear = effectiveProgramYear ?? selectedProgramYear
@@ -857,9 +861,11 @@ const ClubDetailPage: React.FC = () => {
           {/* Close-to-Distinguished call-out (#366, #433; repositioned #620).
               club-reference.html places it directly below the 2/3 + 1/3 trend
               row and above the DCP Goals panel — moved here from above the
-              stats grid. Trigger + copy now come from the membersToDistinguished
-              engine (see the `closeToDistinguished` memo). */}
-          {closeToDistinguished && (
+              stats grid. Show/hide is now gated by the shared canonical
+              isCloseToDistinguished predicate (#903) so this banner and the
+              clubs-table preset agree by construction; the copy is derived
+              locally from the projection's gap. */}
+          {isCloseBanner && (
             <section
               role="region"
               aria-labelledby="close-to-distinguished-heading"
@@ -879,29 +885,7 @@ const ClubDetailPage: React.FC = () => {
                   Close to Distinguished
                 </h2>
                 <p className="club-close-to-distinguished__copy">
-                  {closeToDistinguished.goalsEarned.length === 0 ? (
-                    <>
-                      This club has already met the required goals. They only
-                      need{' '}
-                      <strong>
-                        {closeToDistinguished.membersNeeded} more member
-                        {closeToDistinguished.membersNeeded > 1 ? 's' : ''}
-                      </strong>{' '}
-                      to achieve Distinguished status.
-                    </>
-                  ) : (
-                    <>
-                      <strong>
-                        {closeToDistinguished.membersNeeded} more member
-                        {closeToDistinguished.membersNeeded > 1 ? 's' : ''}
-                      </strong>{' '}
-                      will earn the remaining DCP goal
-                      {closeToDistinguished.goalsEarned.length > 1
-                        ? 's'
-                        : ''}{' '}
-                      and lock in Distinguished status.
-                    </>
-                  )}
+                  {closeBannerCopy}
                 </p>
               </div>
             </section>
