@@ -226,10 +226,12 @@ evaluate_liveness() {
     cpu2="$(ps -o %cpu= -p "$claude_pid" 2>/dev/null | tr -d ' ' || true)"
   fi
 
-  # Log signal: sample the per-session screen logfile IF present. Production
-  # screen-logfile wiring is deferred (macOS screen 4.00.03 has no -Logfile;
-  # see tasks/sprint-930-plan.md), so this is UNKNOWN until a later sprint —
-  # the safe direction (UNKNOWN never counts as STALL).
+  # Log signal: sample the per-session screen logfile. launch_sprint_session
+  # writes it via a per-session screenrc (`logfile` + `deflog on`, launched with
+  # `-c <rc> -L`) since macOS screen 4.00.03 lacks `-Logfile` (epic #933 Sprint
+  # 5 #932; design §2.3 / open-Q #2). A missing logfile (a pre-rollout session,
+  # or one whose log hasn't been created yet) still resolves to UNKNOWN — the
+  # safe direction (UNKNOWN never counts as STALL).
   local logfile log_present=0 mtime_age=0 mtime
   logfile="${RUNNER_LOG_DIR:-$(_wt_base)/.runner-logs}/session-$issue.log"
   if [[ -f "$logfile" ]]; then

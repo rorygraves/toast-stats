@@ -24,6 +24,28 @@
 #
 # Pause autonomy: apply `runner-paused` label to the META_EPIC. Remove to resume.
 #
+# ── Stuck-session liveness contract (epic #933) ───────────────────────────────
+# An OPEN in-epic session is no longer trusted indefinitely. Each tick samples
+# three probes (scripts/lib/sprint-runner-probes.sh) and fuses one verdict
+# (scripts/lib/sprint-runner-liveness.sh):
+#   • commit  — no commit in the worktree for 45 min (9 ticks) → STALL
+#   • process — `claude` child gone but screen daemon alive → HUSK (conclusive);
+#               present but CPU < ~1% across two samples → STALL
+#   • log     — the per-session screen logfile (RUNNER_LOG_DIR/session-<issue>.log,
+#               written at launch via a screenrc) is 45-min stale OR its tail has
+#               collapsed to a repeating loop (the #871 thinking-block signature)
+#               → STALL; missing logfile → UNKNOWN (never STALL)
+# Fusion:  HUSK (alone) → reap now · ≥2 STALL → STUCK (corroborated) · exactly 1
+# STALL → SUSPECT (logged, NOT reaped — the false-positive guard) · else HEALTHY.
+# UNKNOWN never counts as STALL, and any probe flipping to OK rescues the verdict,
+# so a legitimately-slow 6–9h sprint survives. On STUCK/HUSK the runner reaps +
+# relaunches fresh, capped at LIVENESS_MAX_ATTEMPTS (default 3); the ship-state
+# check (L086) skips relaunch if the work already merged. At the cap it escalates:
+# adds `runner-stuck`, comments, notifies, leaves the slot free, does NOT relaunch.
+# To re-arm after a fix: remove the `runner-stuck` label. `--status` prints the
+# per-session verdict + probe breakdown + attempts N/3. State (the relaunch
+# counter — the one fact truth can't rebuild) lives at WORKTREE_BASE/.runner-state.json.
+#
 # Usage:
 #   scripts/sprint-runner.sh             # normal run
 #   scripts/sprint-runner.sh --dry-run   # report what it would launch, no side effects
@@ -45,6 +67,9 @@
 #                         <WORKTREE_BASE>/sprint-<N>. Isolates the spawned
 #                         session's file edits, branches, and index from the
 #                         operator's primary checkout. See #625.
+#   RUNNER_LOG_DIR        Dir for per-session screen logfiles the liveness log
+#                         probe samples (default: <WORKTREE_BASE>/.runner-logs).
+#                         Must match the liveness lib's fallback. See epic #933.
 #
 # Scheduling: this script is invoked by a launchd LaunchAgent — NOT crontab —
 # every 5 minutes (StartInterval 300). Plist lives at:
@@ -67,6 +92,12 @@ BOOTSTRAP_PROMPT="$REPO_DIR/scripts/sprint-bootstrap.prompt"
 LOG_FILE="${SPRINT_RUNNER_LOG:-$HOME/.toast-stats-sprint-runner.log}"
 LOG_ROTATE_BYTES=$((1024 * 1024))
 WORKTREE_BASE="${WORKTREE_BASE:-$HOME/sprint-worktrees}"
+# Per-session screen logfiles live here — a sibling of the worktrees, NEVER
+# inside one (so they don't pollute a git status or get swept by `git worktree
+# remove`). The liveness log probe samples $RUNNER_LOG_DIR/session-<issue>.log
+# (epic #933 §2.3); launch_sprint_session writes it, reap/GC delete it. The
+# default MUST match the liveness lib's own fallback ($WORKTREE_BASE/.runner-logs).
+RUNNER_LOG_DIR="${RUNNER_LOG_DIR:-$WORKTREE_BASE/.runner-logs}"
 
 # Stuck-session liveness (epic #933). Sourcing only DEFINES functions.
 #   probes      — pure classify functions over sampled inputs (Sprint 2 #929).
@@ -311,6 +342,10 @@ reap_screen_session() {
   fi
   # Also remove the worktree (idempotent — no-op if it doesn't exist).
   remove_sprint_worktree "$n"
+  # Delete the per-session screen logfile + screenrc (epic #933 §2.3): they are
+  # truth-tied to session lifetime, so a fresh relaunch never reads a reaped
+  # session's stale loop transcript as the new session's log signal.
+  rm -f "$RUNNER_LOG_DIR/session-$n.log" "$RUNNER_LOG_DIR/session-$n.screenrc" 2>/dev/null || true
   notify "sprint-runner" "Reaped session $session"
 }
 
@@ -403,6 +438,9 @@ gc_worktrees() {
     log "GC: orphan worktree $wt (no sprint-runner-$n screen) — removing"
     git -C "$REPO_DIR" worktree remove --force "$wt" 2>/dev/null \
       || rm -rf "$wt"
+    # A worktree with no paired screen is a dead session — drop its logfile +
+    # screenrc too (same truth-tied lifetime as in reap_screen_session).
+    rm -f "$RUNNER_LOG_DIR/session-$n.log" "$RUNNER_LOG_DIR/session-$n.screenrc" 2>/dev/null || true
     # Best-effort branch cleanup. `git branch -d` refuses unmerged branches,
     # which is what we want — operator can inspect crashed-session branches.
     if [[ -n "$branch" && "$branch" != "main" ]]; then
@@ -471,8 +509,38 @@ launch_sprint_session() {
   # through settings. Single-quoted so the inner bash passes the JSON literally.
   local ultracode_settings='{"effortLevel":"ultracode"}'
 
-  # `screen -dmS` allocates a PTY so claude's interactive UI works.
-  screen -dmS "$session_name" bash -c "
+  # Per-session screen logfile (epic #933 §2.3) — the on-disk feed the liveness
+  # log probe samples to catch a #871-shape loop (output repeating, no commits).
+  # Without it the log probe is permanently UNKNOWN and the #871 shape collapses
+  # to a single soft signal (SUSPECT → never reaped). Installed screen is
+  # 4.00.03 (FAU), which has NO `-Logfile` flag (design open-Q #2) — only `-L`,
+  # which alone writes `screenlog.0` into the window's cwd (collides across
+  # concurrent sessions, pollutes the worktree). So we point logging at an
+  # explicit path via a per-session screenrc and launch with `-c <screenrc> -L`.
+  #   - `source <default>` first (when present) so `-c` ADDS logging rather than
+  #     REPLACING the operator's screen config (term/scrollback the UI may want).
+  #   - `logfile flush 1` so output reaches disk within ~1s (screen's default is
+  #     10s of buffering — long enough to read an empty logfile and be misled);
+  #     mtime then tracks real activity promptly.
+  # Logging taps the window output; the window's PTY is untouched, so claude's
+  # interactive UI still works.
+  local logfile="$RUNNER_LOG_DIR/session-$target_issue.log"
+  local screenrc="$RUNNER_LOG_DIR/session-$target_issue.screenrc"
+  mkdir -p "$RUNNER_LOG_DIR"
+  {
+    [[ -f "$HOME/.screenrc" ]] && printf 'source %s\n' "$HOME/.screenrc"
+    printf 'logfile %s\nlogfile flush 1\ndeflog on\n' "$logfile"
+  } > "$screenrc"
+  # Start every launch from a byte-fresh logfile: screen APPENDS to an existing
+  # logfile, and a same-issue relaunch must never inherit a prior session's loop
+  # transcript as its own log signal (reap/GC normally delete it, but truncating
+  # here is the belt-and-suspenders guard against any residue).
+  : > "$logfile"
+
+  # `screen -dmS` allocates a PTY so claude's interactive UI works. `-dmS
+  # <name>` stays FIRST so downstream `pgrep -f "SCREEN -dmS <name>"` and the
+  # hermetic tests still match on that prefix; the logging flags follow.
+  screen -dmS "$session_name" -c "$screenrc" -L bash -c "
     cd '$worktree' && \
     claude --settings '$ultracode_settings' --remote-control 'sprint-$target_issue' \"\$(cat '$PROMPT_FILE')\";
     EXIT_CODE=\$?;

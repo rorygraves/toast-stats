@@ -1,11 +1,16 @@
 # Sprint-runner stuck-session liveness detector — Design
 
-**Status:** Design (doc-only) · **Sprint 1 of epic #933** · **Issue #928**
-**Date:** 2026-05-30 · **Author:** sprint-928 session
+**Status:** ✅ Implemented — epic #933 complete (Sprints 1–5) · originated as
+Sprint 1 doc-only (#928) · **Date:** 2026-05-30 · **Author:** sprint-928 session
 
-> Implements the detection contract that Sprints 2–5 build. **No code in this
-> sprint.** Sprints 2–5: probes (#929) → fusion + attempt-state (#930) →
-> reap/relaunch/escalate (#931) → simulated-zombie verification + docs (#932).
+> Implements the detection contract that Sprints 2–5 build. Sprints 2–5: probes
+> (#929) → fusion + attempt-state (#930) → reap/relaunch/escalate (#931) →
+> simulated-zombie verification + docs (#932). **Sprint 5 closed the §2.3 / open-Q
+> #2 gap:** installed screen is 4.00.03 (no `-Logfile`), so `launch_sprint_session`
+> wires the per-session logfile via a minimal screenrc (`logfile` + `deflog on`,
+> launched `-c <rc> -L`) instead — without that feed the log probe is UNKNOWN and
+> the #871 alive-loop is undetectable. Verified end-to-end in
+> `scripts/tests/sprint-runner-zombie-verify.test.sh` (3 modes + false-positive guard).
 
 ---
 
@@ -409,6 +414,16 @@ assert on log decisions — no live sessions, no network).
    accepts `-Logfile` (older builds only `-L`); if not, fall back to a periodic
    `screen -X hardcopy` into the session log. Verify in Sprint 2 before the
    log-probe depends on it.
+   **→ RESOLVED (Sprint 5, #932):** installed screen is **4.00.03 (FAU)** — no
+   `-Logfile` (verified empirically). `-L` alone writes `screenlog.0` into the
+   window cwd (collides across concurrent sessions, pollutes the worktree, and is
+   swept by `git worktree remove`). Neither the hardcopy fallback nor bare `-L`
+   was used: instead `launch_sprint_session` writes a minimal **per-session
+   screenrc** (`logfile <RUNNER_LOG_DIR>/session-<issue>.log` + `deflog on`) and
+   launches `screen -dmS <name> -c <screenrc> -L …`. This points logging at an
+   explicit, collision-free path, taps the window output without disturbing the
+   PTY (claude's interactive UI is intact), and the logfile is reaped on
+   reap/GC. `-dmS <name>` stays first so `pgrep`/tests still match the prefix.
 3. **CPU sample window (3s)** — tune if it materially lengthens a tick; the
    two-sample max is the floor, a longer window trades tick latency for fewer
    idle false-reads.
