@@ -131,9 +131,15 @@ const DistrictsPage: React.FC = () => {
   }, [])
 
   // URL-synced region filter (?regions=1,2,3, #978; was localStorage #416).
-  // An empty list means "all regions" — the filter below treats empty as
-  // no-filter, and the toolbar's "All" / solo / shift interactions collapse a
-  // full selection back to empty so the param drops off a clean URL.
+  // Storage backend only — the selection semantics are unchanged from the
+  // localStorage version: it inflates to the full region set on first data
+  // render (see the effect below) and "All" / solo-toggle reset to that full
+  // set. That post-data inflate render is also load-bearing for CLS — it
+  // settles the rankings-table layout after the web-font swap; dropping it
+  // exposed a second table-wrap layout shift on the Linux CI runner that
+  // pushed `/` over the 0.1 budget (0.081 → 0.248). See Lesson 145. The
+  // tradeoff is a fuller default URL (the explicit region list) rather than a
+  // bare `/`; a strict subset still reads as `?regions=1,2,3`.
   const [selectedRegions, setSelectedRegions] = useUrlState<string[]>(
     'regions',
     EMPTY_LIST,
@@ -310,9 +316,18 @@ const DistrictsPage: React.FC = () => {
     return Array.from(uniqueRegions).sort()
   }, [rankings])
 
-  // No inflate-to-all effect (#978): an empty selection already means "all"
-  // for both the filter and the toolbar's active-state logic, and keeps the
-  // URL clean (no ?regions param) in the default view.
+  // Inflate the selection to all known regions on first data render (#416,
+  // retained for #978). Beyond initializing the toolbar's selected state, this
+  // post-data setState is load-bearing for CLS: the extra commit settles the
+  // rankings-table layout after the web-font swap, coalescing what is
+  // otherwise a second table-wrap layout shift on the Linux CI runner (#978 /
+  // Lesson 145). selectedRegions is URL-backed now, so the inflated set lands
+  // in `?regions=`.
+  React.useEffect(() => {
+    if (regions.length > 0 && selectedRegions.length === 0) {
+      setSelectedRegions(regions)
+    }
+  }, [regions, selectedRegions.length, setSelectedRegions])
 
   // Filter by selected regions
   const filteredRankings = React.useMemo(() => {
@@ -949,22 +964,18 @@ const DistrictsPage: React.FC = () => {
                   selectedRegions.length === regions.length)
               const handleRegionClick = (region: string, shiftKey: boolean) => {
                 if (shiftKey) {
-                  // Additive toggle. Empty = all, so start from the full set
-                  // when nothing is explicitly selected; collapse back to
-                  // empty (clean URL) once every region is selected again.
-                  const base =
-                    selectedRegions.length === 0 ? regions : selectedRegions
-                  const next = base.includes(region)
-                    ? base.filter(r => r !== region)
-                    : [...base, region]
+                  // Additive toggle against the explicit selection (post-inflate
+                  // this is the full set, so a shift-click removes one region).
                   setSelectedRegions(
-                    next.length === regions.length ? EMPTY_LIST : next
+                    selectedRegions.includes(region)
+                      ? selectedRegions.filter(r => r !== region)
+                      : [...selectedRegions, region]
                   )
                   return
                 }
                 const isSoloActive =
                   selectedRegions.length === 1 && selectedRegions[0] === region
-                setSelectedRegions(isSoloActive ? EMPTY_LIST : [region])
+                setSelectedRegions(isSoloActive ? regions : [region])
               }
               const stateLabel = isAllActive
                 ? 'Showing all regions'
@@ -976,7 +987,7 @@ const DistrictsPage: React.FC = () => {
                   <span className="districts-toolbar__label">Regions:</span>
                   <button
                     type="button"
-                    onClick={() => setSelectedRegions(EMPTY_LIST)}
+                    onClick={() => setSelectedRegions(regions)}
                     className={`districts-toolbar__region-chip${isAllActive ? ' districts-toolbar__region-chip--active' : ''}`}
                     aria-pressed={isAllActive}
                   >

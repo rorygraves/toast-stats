@@ -126,18 +126,26 @@ describe('DistrictsPage deep-link — region filter (?regions=)', () => {
     )
   })
 
-  it('OUTWARD: clicking a region pill writes ?regions=, clicking again clears it', async () => {
+  it('OUTWARD: clicking a region pill writes the solo region to ?regions=, clicking again returns to all', async () => {
     setupThreeRegions()
     renderPage('/')
 
     await screen.findByText('District 1')
 
+    // Solo a region → only that region in the param + table.
     fireEvent.click(screen.getByRole('button', { name: 'Region 2' }))
     expect(new URLSearchParams(search()).get('regions')).toBe('2')
+    expect(screen.queryByText('District 1')).not.toBeInTheDocument()
 
-    // Click the active solo pill again → back to all → param removed
+    // Click the active solo pill again → back to the full (inflated) set.
     fireEvent.click(screen.getByRole('button', { name: 'Region 2' }))
-    expect(new URLSearchParams(search()).has('regions')).toBe(false)
+    expect(screen.getByText('District 1')).toBeInTheDocument()
+    expect(screen.getByText('District 3')).toBeInTheDocument()
+    // The region param now carries the explicit full set (deep-linkable), not
+    // a bare URL (storage-backend swap of the localStorage default — #978).
+    expect(new URLSearchParams(search()).get('regions')?.split(',')).toEqual(
+      expect.arrayContaining(['1', '2', '3'])
+    )
   })
 })
 
