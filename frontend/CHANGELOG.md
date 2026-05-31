@@ -1,5 +1,26 @@
 # Changelog
 
+## [3.8.0](https://github.com/taverns-red/toast-stats/compare/frontend-v3.7.0...frontend-v3.8.0) (2026-05-31)
+
+
+### Features
+
+* **a11y:** deep-link Methodology open-section state via URL ([#981](https://github.com/taverns-red/toast-stats/issues/981)) ([#990](https://github.com/taverns-red/toast-stats/issues/990)) ([a928620](https://github.com/taverns-red/toast-stats/commit/a9286208cd062c8b0001bb8fe71aeb79f4a3af68))
+* **clubs:** move "Close to Distinguished" preset into the toolbar, after Columns ([#967](https://github.com/taverns-red/toast-stats/issues/967)) ([#977](https://github.com/taverns-red/toast-stats/issues/977)) ([c3ee944](https://github.com/taverns-red/toast-stats/commit/c3ee944c058b4f4a5193aac414089f88fd143f8c))
+* **divisions:** area text — name clubs still needing a visit + state visit qualifying metric & Distinguished impact ([#974](https://github.com/taverns-red/toast-stats/issues/974)) ([#1001](https://github.com/taverns-red/toast-stats/issues/1001)) ([f67b6a8](https://github.com/taverns-red/toast-stats/commit/f67b6a89a42cfd797609e6fe236bbf3772d3c4e6))
+* **divisions:** surface per-area current-round missing club-visit list on AreaPerformance ([#973](https://github.com/taverns-red/toast-stats/issues/973)) ([#997](https://github.com/taverns-red/toast-stats/issues/997)) ([f2b8121](https://github.com/taverns-red/toast-stats/commit/f2b81215dd3947d037b065d257bd8c06f3fb798a))
+* **regions:** restore the /regions leaderboard table — sortable, URL-synced ([#964](https://github.com/taverns-red/toast-stats/issues/964)) ([#994](https://github.com/taverns-red/toast-stats/issues/994)) ([e8c41a2](https://github.com/taverns-red/toast-stats/commit/e8c41a2b09f1525313f17f4d6699dbb0bf89b60f))
+* **regions:** sticky region-identity column + responsive/dark-mode verify + docs ([#965](https://github.com/taverns-red/toast-stats/issues/965)) ([#995](https://github.com/taverns-red/toast-stats/issues/995)) ([1d8a814](https://github.com/taverns-red/toast-stats/commit/1d8a814a667674bacb23d24f032c02122cad9aaf))
+* **ux:** decide storage-only prefs stay off the URL — keep all 3 as storage ([#982](https://github.com/taverns-red/toast-stats/issues/982)) ([#993](https://github.com/taverns-red/toast-stats/issues/993)) ([15e3522](https://github.com/taverns-red/toast-stats/commit/15e35220de010c34d96843779a4f6299d94cae53))
+* **ux:** deep-link Clubs 'Close to Distinguished' preset + RegionsPage region finder ([#979](https://github.com/taverns-red/toast-stats/issues/979)) ([#988](https://github.com/taverns-red/toast-stats/issues/988)) ([5659acd](https://github.com/taverns-red/toast-stats/commit/5659acd1c4c6f65862e48cbf844203a9b0f37497))
+* **ux:** deep-link disclosure & expand-collapse state across routes ([#980](https://github.com/taverns-red/toast-stats/issues/980)) ([#989](https://github.com/taverns-red/toast-stats/issues/989)) ([4120d80](https://github.com/taverns-red/toast-stats/commit/4120d805f0367efd089ac21f84bd900c2df29f0d))
+* **ux:** deep-link landing region filter, search & comparison pins ([#978](https://github.com/taverns-red/toast-stats/issues/978)) ([#984](https://github.com/taverns-red/toast-stats/issues/984)) ([cb41349](https://github.com/taverns-red/toast-stats/commit/cb41349f05ef6acce85414eab8574b818f1ea8fe))
+
+
+### Bug Fixes
+
+* **clubs:** restyle "Close to Distinguished" preset to match toolbar buttons ([#966](https://github.com/taverns-red/toast-stats/issues/966)) ([#971](https://github.com/taverns-red/toast-stats/issues/971)) ([5451eeb](https://github.com/taverns-red/toast-stats/commit/5451eebb03ce5b503fc402a3638b3a605cf440dd))
+
 ## [3.7.0](https://github.com/taverns-red/toast-stats/compare/frontend-v3.6.0...frontend-v3.7.0) (2026-05-30)
 
 
