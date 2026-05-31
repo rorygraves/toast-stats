@@ -9,14 +9,36 @@
  * preserving pre-#832 "tier name appears in badge" assertions.
  */
 import type { AreaPerformance } from '../utils/divisionStatus'
-import { deriveAreaRecognitionState } from '../utils/areaRecognitionState'
+import {
+  deriveAreaRecognitionState,
+  getCurrentVisitRound,
+} from '../utils/areaRecognitionState'
+
+/**
+ * The Sprint-1 (#973) current-round visit fields a component fixture must carry
+ * for the area-progress presenter (#974) to render without re-deriving the
+ * round. Defaulted here so callers that only care about recognition badges
+ * don't have to spell them out; pass them explicitly when a test asserts on the
+ * named missing-club clause.
+ */
+type VisitFields = Pick<
+  AreaPerformance,
+  | 'currentRound'
+  | 'clubsMissingCurrentRoundVisit'
+  | 'clubsMissingCurrentRoundVisitIneligible'
+>
 
 export function withRecognitionState(
-  fixture: Omit<AreaPerformance, 'recognitionState'>,
+  fixture: Omit<AreaPerformance, 'recognitionState' | keyof VisitFields> &
+    Partial<VisitFields>,
   snapshotDate = '2026-03-15'
 ): AreaPerformance {
   return {
     ...fixture,
+    currentRound: fixture.currentRound ?? getCurrentVisitRound(snapshotDate),
+    clubsMissingCurrentRoundVisit: fixture.clubsMissingCurrentRoundVisit ?? [],
+    clubsMissingCurrentRoundVisitIneligible:
+      fixture.clubsMissingCurrentRoundVisitIneligible ?? [],
     recognitionState: deriveAreaRecognitionState({
       clubBase: fixture.clubBase,
       paidClubs: fixture.paidClubs,
