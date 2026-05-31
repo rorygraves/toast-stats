@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { resolveRouteRecovery } from '../errorRecovery'
-import { DISTRICT_SECTIONS } from '../../components/DistrictSubnav'
+import { DISTRICT_SECTIONS } from '../../config/districtSections'
 
 /* Route-aware smart recovery resolver (#1012, epic #1010 Sprint 2).
  *

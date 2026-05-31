@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { axe, toHaveNoViolations } from 'jest-axe'
-import { DistrictSubnav, DISTRICT_SECTIONS } from '../DistrictSubnav'
+import { DistrictSubnav } from '../DistrictSubnav'
+import { DISTRICT_SECTIONS } from '../../config/districtSections'
 
 expect.extend(toHaveNoViolations)
 

@@ -1,4 +1,7 @@
-import { DISTRICT_SECTIONS } from '../components/DistrictSubnav'
+import {
+  DISTRICT_SECTIONS,
+  buildDistrictSectionUrl,
+} from '../config/districtSections'
 
 /**
  * Route-aware smart recovery resolver (#1012, epic #1010 Sprint 2).
@@ -61,8 +64,10 @@ export function resolveRouteRecovery(
       : { kind: 'none', suggestions: [] }
   }
 
+  // `[^/]+` guarantees a non-empty capture; `?? ''` only satisfies the
+  // noUncheckedIndexedAccess type, it is never the empty string at runtime.
   const districtId = match[1] ?? ''
-  if (!districtId || !validDistrictIds.includes(districtId)) {
+  if (!validDistrictIds.includes(districtId)) {
     // Unknown id, or we can't confirm it yet (empty list). Either way the
     // districts index is the honest, useful destination.
     return DISTRICTS_INDEX
@@ -71,9 +76,7 @@ export function resolveRouteRecovery(
   const suggestions: RecoverySuggestion[] = DISTRICT_SECTIONS.map(
     ({ label, segment }) => ({
       label,
-      to: segment
-        ? `/district/${districtId}/${segment}`
-        : `/district/${districtId}`,
+      to: buildDistrictSectionUrl(districtId, segment),
     })
   )
   return { kind: 'district-subpages', districtId, suggestions }
