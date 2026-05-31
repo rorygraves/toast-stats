@@ -126,3 +126,4 @@
 - **146** [router, react, frontend, architecture, error-handling] — A router `errorElement` inherits contexts provided ABOVE `RouterProvider`, but NOT those provided inside the subtree it replaces (#1011, #1010, #1012)
 - **146** [testing, vitest, flake, ci, performance, runner-fleet] — An "aggressively low" testTimeout is a latent flake source the moment the same machine runs concurrent workloads (#1003)
 - **147** [frontend, react, scope, refactor, verification] — A reused "parity" surface must render from its own data source, not sit behind a sibling source's emptiness check (#1015, #1008)
+- **148** [router, react, frontend, verification, error-handling] — A render-thrown `Response` is NOT wrapped into an ErrorResponse; `isRouteErrorResponse` misses it (#1017, #1008)
