@@ -95,9 +95,12 @@ describe('DistrictChangesPage', () => {
     expect(screen.getAllByTestId('kpi-delta-card')).toHaveLength(4)
     expect(screen.getByTestId('changes-list')).toBeInTheDocument()
     expect(screen.getByText(/Clubs that joined/)).toBeInTheDocument()
+    // The club name is now a link to the club detail page (#1013); the prose
+    // remainder of the roster-move label stays as plain text alongside it.
     expect(
-      screen.getByText('iA Montreal Toastmasters (Active) joined the roster')
-    ).toBeInTheDocument()
+      screen.getByRole('link', { name: 'iA Montreal Toastmasters' })
+    ).toHaveAttribute('href', '/district/61/club/28680300')
+    expect(screen.getByText(/\(Active\) joined the roster/)).toBeInTheDocument()
   })
 
   it('renders the date-pair picker when at least two snapshots exist (#794)', () => {
