@@ -5027,4 +5027,104 @@
     padding: 0 4px;
     margin: 0 1px;
   }
+
+  /* Branded root error boundary (#1011, epic #1010). Replaces RR's raw
+     developer default for 404s + thrown render errors. It renders standalone
+     (the errorElement replaces AppShell), so it owns a full-viewport,
+     token-driven canvas that themes for dark mode automatically (--bg/--ink),
+     with the product amber accent (--rt-stats) on the 404 numerals. */
+  .error-page {
+    min-height: 100vh;
+    background-color: var(--bg);
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+
+  .error-page__panel {
+    max-width: 30rem;
+    width: 100%;
+    text-align: center;
+    padding: 32px 24px;
+  }
+
+  .error-page__badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    color: var(--rt-stats, #d4873f);
+  }
+
+  .error-page__code {
+    font-family: var(--serif, var(--rt-font-display));
+    font-weight: 700;
+    font-size: 56px;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  .error-page__glyph {
+    width: 48px;
+    height: 48px;
+  }
+
+  .error-page__heading {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin: 0 0 8px;
+  }
+
+  /* Focus lands here on mount (a11y); the panel already signals the error,
+     so suppress the default focus ring on this non-interactive heading. */
+  .error-page__heading:focus {
+    outline: none;
+  }
+
+  .error-page__message {
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--ink-2);
+    margin: 0 auto 24px;
+    max-width: 26rem;
+  }
+
+  .error-page__detail {
+    font-family: var(--mono, ui-monospace, SFMono-Regular, monospace);
+    font-size: 12px;
+    color: var(--ink-3);
+    background-color: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-sm, 6px);
+    padding: 8px 10px;
+    margin: 0 0 24px;
+    word-break: break-word;
+  }
+
+  .error-page__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+  }
+
+  .error-page__action {
+    text-decoration: none;
+  }
+
+  @media (max-width: 400px) {
+    .error-page__actions {
+      flex-direction: column;
+    }
+
+    .error-page__action {
+      width: 100%;
+    }
+  }
 }

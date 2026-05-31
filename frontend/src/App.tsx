@@ -6,6 +6,7 @@ import { ProgramYearProvider } from './contexts/ProgramYearContext'
 import { DarkModeProvider } from './contexts/DarkModeContext'
 import DistrictsPage from './pages/DistrictsPage'
 import AppShell from './components/AppShell'
+import ErrorPage from './components/ErrorPage'
 
 // Code-split: DistrictDetailPage (816 lines + recharts) loads on navigation (#169)
 const DistrictDetailPage = React.lazy(
@@ -86,6 +87,11 @@ const router = createBrowserRouter(
     {
       path: '/',
       element: <AppShell />,
+      // Branded root boundary (#1011): catches unmatched routes (404 bubbles to
+      // the nearest errorElement) and any child render throw, so React Router's
+      // raw developer default is never reached. Distinguishes 404 vs runtime
+      // error via useRouteError/isRouteErrorResponse.
+      errorElement: <ErrorPage />,
       children: [
         {
           index: true,
