@@ -12,6 +12,7 @@ import { DatePairPicker } from '../components/DatePairPicker'
 import { KpiDeltaCard } from '../components/KpiDeltaCard'
 import { LoadingSkeleton } from '../components/LoadingSkeleton'
 import ErrorBoundary from '../components/ErrorBoundary'
+import { ChangeGroup } from '../components/ChangeGroup'
 import type {
   DiffEvent,
   DiffEventCategory,
@@ -43,36 +44,6 @@ const CATEGORY_GROUPS: { category: DiffEventCategory; heading: string }[] = [
   { category: 'membership', heading: 'Membership changes' },
   { category: 'dcp-goals', heading: 'DCP goal changes' },
 ]
-
-const ChangeGroup: React.FC<{
-  category: DiffEventCategory
-  heading: string
-  events: DiffEvent[]
-  /** Groups are open by default; collapsed when listed in ?expandChanges (#980). */
-  collapsed: boolean
-  onToggle: (category: DiffEventCategory, open: boolean) => void
-}> = ({ category, heading, events, collapsed, onToggle }) => {
-  if (events.length === 0) return null
-  return (
-    <details
-      className="changes-group"
-      open={!collapsed}
-      onToggle={e => onToggle(category, e.currentTarget.open)}
-    >
-      <summary className="changes-group__summary">
-        {heading}{' '}
-        <span className="changes-group__count">({events.length})</span>
-      </summary>
-      <ul className="changes-group__list">
-        {events.map(e => (
-          <li key={`${e.category}-${e.clubId}`} className="changes-group__item">
-            {e.label}
-          </li>
-        ))}
-      </ul>
-    </details>
-  )
-}
 
 const DistrictChangesPage: React.FC = () => {
   const { districtId } = useParams<{ districtId: string }>()
@@ -252,6 +223,7 @@ const DistrictChangesPage: React.FC = () => {
                         category={category}
                         heading={heading}
                         events={eventsByCategory.get(category) ?? []}
+                        districtId={districtId}
                         collapsed={collapsedGroups.includes(category)}
                         onToggle={handleGroupToggle}
                       />
