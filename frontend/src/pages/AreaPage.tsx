@@ -15,6 +15,7 @@ import { calculateAreaGapAnalysis } from '../utils/areaGapAnalysis'
 import { generateAreaProgressText } from '../utils/areaProgressText'
 import { renderRecognitionBadge } from '../utils/areaRecognitionBadge'
 import { AreaPerformanceTable } from '../components/AreaPerformanceTable'
+import { SubpageBreadcrumb } from '../components/SubpageBreadcrumb'
 import type { AreaWithDivision } from '../components/DivisionAreaProgressSummary'
 import { LoadingSkeleton } from '../components/LoadingSkeleton'
 import { EmptyState } from '../components/ErrorDisplay'
@@ -107,14 +108,21 @@ const AreaPage: React.FC = () => {
 
   return (
     <div className="app-shell__page">
+      {/* District › Division › Area wayfinding via the shared SubpageBreadcrumb
+          (Lesson 085) — replaces the ad-hoc eyebrow link so the full trail, link
+          affordance, and aria-current on the leaf are consistent (#1017). */}
+      <SubpageBreadcrumb
+        crumbs={[
+          { label: `District ${districtId}`, to: `/district/${districtId}` },
+          {
+            label: divisionName,
+            to: `/district/${districtId}/division/${divId}`,
+          },
+          { label: areaName },
+        ]}
+      />
       <header className="districts-page-header">
         <div className="districts-page-header__intro">
-          <p className="districts-page-header__eyebrow">
-            District {districtId} ·{' '}
-            <Link to={`/district/${districtId}/division/${divId}`}>
-              {divisionName}
-            </Link>
-          </p>
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="districts-page-header__title">{areaName}</h1>
             {badge && (

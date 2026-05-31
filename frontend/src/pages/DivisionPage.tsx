@@ -13,6 +13,7 @@ import { extractDivisionPerformance } from '../utils/extractDivisionPerformance'
 import { calculateDivisionGapAnalysis } from '../utils/divisionGapAnalysis'
 import { generateDivisionProgressText } from '../utils/divisionProgressText'
 import { DivisionPerformanceCard } from '../components/DivisionPerformanceCard'
+import { SubpageBreadcrumb } from '../components/SubpageBreadcrumb'
 import { LoadingSkeleton } from '../components/LoadingSkeleton'
 import { EmptyState } from '../components/ErrorDisplay'
 import { ClubMiniList } from '../components/ClubMiniList'
@@ -102,12 +103,17 @@ const DivisionPage: React.FC = () => {
 
   return (
     <div className="app-shell__page">
+      {/* District › Division wayfinding via the shared SubpageBreadcrumb every
+          routed sub-page uses (Lesson 085) — replaces the ad-hoc eyebrow link so
+          the trail, link affordance, and aria-current are consistent (#1017). */}
+      <SubpageBreadcrumb
+        crumbs={[
+          { label: `District ${districtId}`, to: `/district/${districtId}` },
+          { label: divisionName },
+        ]}
+      />
       <header className="districts-page-header">
         <div className="districts-page-header__intro">
-          <p className="districts-page-header__eyebrow">
-            District {districtId} ·{' '}
-            <Link to={`/district/${districtId}`}>back to district</Link>
-          </p>
           <h1 className="districts-page-header__title">{divisionName}</h1>
           <p className="districts-page-header__lede">
             {clubs.length === 0
