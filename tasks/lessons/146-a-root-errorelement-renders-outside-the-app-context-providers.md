@@ -4,10 +4,42 @@ category: lesson
 tags: [router, react, frontend, architecture, error-handling]
 auto_load: true
 date: 2026-05-31
-issues: [1011, 1010]
+issues: [1011, 1010, 1012]
 ---
 
-# Lesson 146 — A router `errorElement` renders OUTSIDE the app's context providers; it can only use router hooks + CSS tokens
+# Lesson 146 — A router `errorElement` inherits contexts provided ABOVE `RouterProvider`, but NOT those provided inside the subtree it replaces
+
+> **Correction (Sprint 2, #1012 — empirically verified live).** The original
+> Sprint-1 framing below ("renders outside the app's context providers; it can
+> only use router hooks") is **too strong and partly wrong**. A root
+> `errorElement` renders _within_ `RouterProvider`'s React subtree, so it
+> inherits every provider that wraps `RouterProvider` — in this app that is
+> `QueryClientProvider`, `ProgramYearProvider`, **and** `DarkModeProvider`
+> (`App.tsx`: `QueryClientProvider → … → RouterProvider`). Sprint 2 calls
+> `useDistricts()` (a `useQuery` hook) inside `ErrorPage` and it resolves fine —
+> proven by the integration tests (which mirror App's nesting) **and** a
+> dual-engine Playwright drive of `/district/61/dude` on the live PR-1021
+> preview (the district's real subpages rendered, which only happens if the
+> query resolved). What a root `errorElement` genuinely _loses_ is any context
+> a provider rendered **inside `AppShell` or a route element** — i.e. below
+> `RouterProvider` — because the errorElement _replaces_ that subtree. The
+> original lesson conflated "replaces AppShell's subtree" with "outside all
+> providers"; the generalization broke because the Sprint-1 unit test mounted
+> `ErrorPage` under a _bare_ `RouterProvider` (no `QueryClientProvider`), so the
+> hook threw _there_ and the conclusion was over-extended to the real app.
+>
+> **Corrected rule:** before a boundary calls a hook, ask "is this provider an
+> ancestor of `RouterProvider`, or only of the subtree the boundary replaces?"
+> Ancestors of `RouterProvider` → available. Providers inside the replaced
+> subtree → gone. (Keeping the page self-sufficient on CSS tokens + `env.DEV`
+> is still a fine _defensive_ choice; it just isn't _forced_.)
+>
+> Bonus (#1012): `useRouteError()` exposes **no attempted URL** for a 404 — read
+> the unmatched path from `useLocation().pathname` instead.
+
+---
+
+# Lesson 146 (original framing) — A router `errorElement` renders OUTSIDE the app's context providers; it can only use router hooks + CSS tokens
 
 **Date:** 2026-05-31
 **Issue:** #1011 (epic #1010 Sprint 1 — branded root error boundary)
