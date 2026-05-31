@@ -161,6 +161,13 @@ describe('DivisionPage data parity with the Divisions overview (#1015)', () => {
     ).toBeGreaterThanOrEqual(1)
   })
 
+  it('renders the scoped division-level narrative (generateDivisionProgressText, #1016 S2 refactor)', () => {
+    const { getByTestId } = renderDivision()
+    const narrative = getByTestId('division-progress-text')
+    // The generator always prefixes the division label "Division <id>".
+    expect(narrative.textContent).toMatch(/Division A/)
+  })
+
   it('drops the ad-hoc "Needs Attention" KPI card (swapped for shared data)', () => {
     const { queryByText } = renderDivision()
     expect(queryByText('Needs Attention')).toBeNull()
