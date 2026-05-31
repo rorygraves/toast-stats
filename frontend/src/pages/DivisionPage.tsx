@@ -10,6 +10,8 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useDistrictAnalytics } from '../hooks/useDistrictAnalytics'
 import { useDistrictStatistics } from '../hooks/useMembershipData'
 import { extractDivisionPerformance } from '../utils/extractDivisionPerformance'
+import { calculateDivisionGapAnalysis } from '../utils/divisionGapAnalysis'
+import { generateDivisionProgressText } from '../utils/divisionProgressText'
 import { DivisionPerformanceCard } from '../components/DivisionPerformanceCard'
 import { LoadingSkeleton } from '../components/LoadingSkeleton'
 import { EmptyState } from '../components/ErrorDisplay'
@@ -43,6 +45,19 @@ const DivisionPage: React.FC = () => {
       d => d.divisionId.toUpperCase() === normalizedDivId
     )
   }, [snapshot, normalizedDivId])
+
+  // Scoped division-level narrative — the same prose the overview's Division and
+  // Area Progress Summary shows, scoped to this division (#1016 S2 refactor).
+  // Reuses the existing generateDivisionProgressText generator (R6/R7).
+  const divisionNarrative = React.useMemo(() => {
+    if (!divisionPerformance) return undefined
+    const gapAnalysis = calculateDivisionGapAnalysis({
+      clubBase: divisionPerformance.clubBase,
+      paidClubs: divisionPerformance.paidClubs,
+      distinguishedClubs: divisionPerformance.distinguishedClubs,
+    })
+    return generateDivisionProgressText(divisionPerformance, gapAnalysis)
+  }, [divisionPerformance])
 
   if (isLoading) {
     return <LoadingSkeleton variant="card" />
@@ -113,6 +128,24 @@ const DivisionPage: React.FC = () => {
           isLoadingSnapshot && <LoadingSkeleton variant="table" count={3} />
         )}
       </div>
+
+      {/* Scoped division-level narrative (#1016 S2) — same prose as the overview
+          summary, scoped to this division. */}
+      {divisionNarrative && (
+        <article
+          className="bg-tm-loyal-blue/10 rounded-lg p-4 border border-tm-loyal-blue/30"
+          style={{ marginBottom: 24 }}
+          aria-label="Division progress summary"
+        >
+          <p
+            data-testid="division-progress-text"
+            className="text-gray-800 font-tm-body leading-relaxed font-medium"
+            style={{ fontSize: '15px' }}
+          >
+            {divisionNarrative.progressText}
+          </p>
+        </article>
+      )}
 
       {/* No analytics-club rows for this division (suspended/migrated clubs).
           The recognition card above still renders from the snapshot — don't
