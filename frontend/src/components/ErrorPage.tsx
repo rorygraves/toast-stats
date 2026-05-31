@@ -68,38 +68,43 @@ const ErrorPage: React.FC = () => {
       data-testid="error-page"
       data-error-variant={variant}
     >
-      <div className="error-page__panel redesign-panel" role="alert">
-        <div className="error-page__badge" aria-hidden="true">
-          {is404 ? (
-            <span className="error-page__code">404</span>
-          ) : (
-            <svg
-              className="error-page__glyph"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
+      <div className="error-page__panel redesign-panel">
+        {/* role=alert announces the error context on mount; scope it to the
+            message region so the recovery buttons below aren't read as part of
+            the live region (they're separately focusable affordances). */}
+        <div role="alert">
+          <div className="error-page__badge" aria-hidden="true">
+            {is404 ? (
+              <span className="error-page__code">404</span>
+            ) : (
+              <svg
+                className="error-page__glyph"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+            )}
+          </div>
+
+          <h1 ref={headingRef} tabIndex={-1} className="error-page__heading">
+            {heading}
+          </h1>
+
+          <p className="error-page__message">{message}</p>
+
+          {detail && (
+            <p className="error-page__detail" data-testid="error-page-detail">
+              {detail}
+            </p>
           )}
         </div>
-
-        <h1 ref={headingRef} tabIndex={-1} className="error-page__heading">
-          {heading}
-        </h1>
-
-        <p className="error-page__message">{message}</p>
-
-        {detail && (
-          <p className="error-page__detail" data-testid="error-page-detail">
-            {detail}
-          </p>
-        )}
 
         <div className="error-page__actions">
           <Link to="/" className="tm-btn-primary error-page__action">

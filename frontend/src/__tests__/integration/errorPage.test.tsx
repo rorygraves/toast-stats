@@ -86,6 +86,24 @@ describe('Branded error boundary (#1011)', () => {
     })
   })
 
+  describe('error thrown by the root element itself', () => {
+    // In App the root route's element is <AppShell />; the errorElement
+    // replaces it when AppShell (or anything in its slot) throws. This proves
+    // the boundary still renders standalone — the chrome is not re-mounted.
+    it('replaces the root element with the branded page', () => {
+      const router = createMemoryRouter(
+        [{ path: '/', element: <Boom />, errorElement: <ErrorPage /> }],
+        { initialEntries: ['/'] }
+      )
+      render(<RouterProvider router={router} />)
+      const page = screen.getByTestId('error-page')
+      expect(page).toHaveAttribute('data-error-variant', 'error')
+      expect(
+        screen.getByRole('heading', { name: /something went wrong/i })
+      ).toBeInTheDocument()
+    })
+  })
+
   describe('recovery affordances (both variants)', () => {
     it('offers a Home link to the landing page', () => {
       renderWithRouter('/this-route-does-not-exist')
