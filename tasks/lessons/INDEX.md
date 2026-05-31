@@ -125,3 +125,4 @@
 - **145** [cls, performance, frontend, react, verification, ci] — An incidental post-data re-render can be load-bearing for CLS; a "cleanup" that removes it regresses layout only on the CI font environment (#978, #969)
 - **146** [router, react, frontend, architecture, error-handling] — A router `errorElement` inherits contexts provided ABOVE `RouterProvider`, but NOT those provided inside the subtree it replaces (#1011, #1010, #1012)
 - **146** [testing, vitest, flake, ci, performance, runner-fleet] — An "aggressively low" testTimeout is a latent flake source the moment the same machine runs concurrent workloads (#1003)
+- **147** [frontend, react, scope, refactor, verification] — A reused "parity" surface must render from its own data source, not sit behind a sibling source's emptiness check (#1015, #1008)
