@@ -102,3 +102,71 @@ describe('ChangeGroup club links (#1013)', () => {
     expect(container).toBeEmptyDOMElement()
   })
 })
+
+describe('ChangeGroup area/division links (#1014)', () => {
+  it('links a division-status entity to its scoped division route', () => {
+    renderGroup(
+      [
+        event({
+          category: 'division-status',
+          clubId: '',
+          clubName: '',
+          divisionId: 'G',
+          entityName: 'Division G',
+          label: 'Division G moved to Select Distinguished',
+        }),
+      ],
+      '61'
+    )
+
+    const link = screen.getByRole('link', { name: /Division G/ })
+    expect(link).toHaveAttribute('href', '/district/61/division/G')
+    expect(
+      screen.getByText(/moved to Select Distinguished/)
+    ).toBeInTheDocument()
+  })
+
+  it('links an area-status entity to its division-scoped area route', () => {
+    renderGroup(
+      [
+        event({
+          category: 'area-status',
+          clubId: '',
+          clubName: '',
+          divisionId: 'B',
+          areaId: '2',
+          entityName: 'Area 2',
+          label: 'Area 2 moved to Confirmed Distinguished',
+        }),
+      ],
+      '61'
+    )
+
+    const link = screen.getByRole('link', { name: /Area 2/ })
+    expect(link).toHaveAttribute('href', '/district/61/division/B/area/2')
+    expect(
+      screen.getByText(/moved to Confirmed Distinguished/)
+    ).toBeInTheDocument()
+  })
+
+  it('renders an area entity as plain text when its division ref is missing', () => {
+    renderGroup(
+      [
+        event({
+          category: 'area-status',
+          clubId: '',
+          clubName: '',
+          areaId: '2',
+          entityName: 'Area 2',
+          label: 'Area 2 lost Distinguished status',
+        }),
+      ],
+      '61'
+    )
+
+    expect(
+      screen.getByText('Area 2 lost Distinguished status')
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('link')).not.toBeInTheDocument()
+  })
+})

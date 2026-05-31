@@ -5,6 +5,7 @@ import type {
   PerDistrictData,
   SnapshotDiff,
 } from '@toastmasters/shared-contracts'
+import { diffAreaDivisionStatus } from '../utils/diffAreaDivisionStatus'
 
 /**
  * Resolve the default "since the previous recorded date" pair from a district's
@@ -47,7 +48,12 @@ export function useSnapshotDiff(
         fetchCdnDistrictSnapshot<PerDistrictData>(from!, districtId!),
         fetchCdnDistrictSnapshot<PerDistrictData>(to!, districtId!),
       ])
-      return diffSnapshots(fromSnap.data, toSnap.data)
+      // Club-scoped diff (analytics-core engine) + area/division recognition
+      // transitions (frontend source-of-truth, #1014). The page buckets events
+      // by category, so the two streams coexist in one flat `events` list.
+      const diff = diffSnapshots(fromSnap.data, toSnap.data)
+      const areaDivision = diffAreaDivisionStatus(fromSnap.data, toSnap.data)
+      return { ...diff, events: [...diff.events, ...areaDivision] }
     },
     enabled: !!districtId && !!from && !!to,
     staleTime: 5 * 60 * 1000,

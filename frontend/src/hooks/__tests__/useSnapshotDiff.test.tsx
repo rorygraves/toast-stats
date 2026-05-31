@@ -112,6 +112,66 @@ describe('useSnapshotDiff', () => {
     expect(result.current.data?.to.date).toBe('2026-05-26')
   })
 
+  it('merges area/division recognition-status events into the club diff (#1014)', async () => {
+    // Division G earns Select in `to` (paid 4 → 5 at base 4) while staying
+    // Distinguished in `from` — a division-status transition that the
+    // analytics-core club diff never produces. clubPerformance carries the
+    // raw rows extractDivisionPerformance needs.
+    const gClub = (
+      num: string,
+      distinguished: boolean,
+      extra: Record<string, unknown> = {}
+    ) => ({
+      'Club Number': num,
+      'Club Status': 'Active',
+      'Club Distinguished Status': distinguished ? 'Distinguished' : '',
+      Division: 'G',
+      Area: '1',
+      'Division Club Base': '4',
+      'Area Club Base': '10',
+      'Nov Visit award': '0',
+      'May Visit award': '0',
+      ...extra,
+    })
+    const divPerf = (withFifth: boolean) => {
+      const rows = [
+        gClub('g1', true),
+        gClub('g2', true),
+        gClub('g3', false),
+        gClub('g4', false),
+      ]
+      if (withFifth) rows.push(gClub('g5', false))
+      return rows
+    }
+    const snap = (date: string, withFifth: boolean): PerDistrictData => {
+      const base = wrapper(date, 20)
+      base.data.divisionPerformance = divPerf(withFifth)
+      base.data.clubPerformance = divPerf(withFifth)
+      return base
+    }
+
+    mockedFetch.mockImplementation(
+      (date: string) =>
+        Promise.resolve(
+          snap(date, date === '2026-05-26') as unknown
+        ) as Promise<unknown>
+    )
+
+    const { result } = renderHook(
+      () => useSnapshotDiff('61', '2026-05-25', '2026-05-26'),
+      { wrapper: makeWrapper() }
+    )
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    const divEvent = result.current.data?.events.find(
+      e => e.category === 'division-status'
+    )
+    expect(divEvent).toMatchObject({
+      divisionId: 'G',
+      label: 'Division G moved to Select Distinguished',
+    })
+  })
+
   it('is disabled (does not fetch) when from or to is missing', () => {
     renderHook(() => useSnapshotDiff('61', undefined, '2026-05-26'), {
       wrapper: makeWrapper(),

@@ -5,39 +5,66 @@ import type {
   DiffEventCategory,
 } from '@toastmasters/shared-contracts'
 
-/* District "What Changed" feed group (#1013, epic #1007 — club links).
+/* District "What Changed" feed group (#1013/#1014, epic #1007 — entity links).
    Extracted from DistrictChangesPage so the link logic can be unit-tested
    directly without a full page mount (R22). Every DiffEvent.label is a
-   pre-rendered sentence that BEGINS with the club name (see diffSnapshots:
-   membership/dcp/distinguished labels are `${name} …`; roster labels are
-   `${name} (${status}) joined/left the roster`). We link just that leading
-   club-name token to the club's detail page and keep the rest of the sentence
-   as plain text — only the name is the link, not the whole prose. districtId
-   is the route param the page owns and passes down (R3) — never re-derived
-   from event data; only clubId comes from each event. */
+   pre-rendered sentence that BEGINS with its entity's display name — the club
+   name for club events (membership/dcp/distinguished/roster), or `entityName`
+   ("Division G" / "Area 2") for area/division status events (#1014). We link
+   just that leading name token to the entity's scoped route and keep the rest
+   of the sentence as plain text. districtId is the route param the page owns
+   and passes down (R3); the entity id/name come from each event. */
 
-/** One change line: club name linked, the rest of the label as plain text.
-    Falls back to plain text for a club-less (district-level) event, or when a
-    label unexpectedly doesn't begin with the club name — so a link is only
+/** The display name + scoped route for an event's entity, or null when the
+    event has no linkable target (an aggregate/district-level line, or an area
+    event missing its division ref — degrade gracefully to text, never a broken
+    link). */
+function resolveEntity(
+  event: DiffEvent,
+  districtId: string
+): { name: string; href: string } | null {
+  if (!districtId) return null
+  const { clubId, clubName, divisionId, areaId, entityName } = event
+
+  // Club-scoped event (the Phase-1 default).
+  if (clubId && clubName) {
+    return { name: clubName, href: `/district/${districtId}/club/${clubId}` }
+  }
+  // Area status event → division-scoped area route (#1008). Needs both refs.
+  if (event.category === 'area-status' && areaId && divisionId && entityName) {
+    return {
+      name: entityName,
+      href: `/district/${districtId}/division/${divisionId}/area/${areaId}`,
+    }
+  }
+  // Division status event → division-scoped route (#1008).
+  if (event.category === 'division-status' && divisionId && entityName) {
+    return {
+      name: entityName,
+      href: `/district/${districtId}/division/${divisionId}`,
+    }
+  }
+  return null
+}
+
+/** One change line: the leading entity name linked, the rest of the label as
+    plain text. Falls back to plain text for an entity-less event, or when a
+    label unexpectedly doesn't begin with the entity name — so a link is only
     ever rendered when it points somewhere real. */
 const ChangeLabel: React.FC<{ event: DiffEvent; districtId: string }> = ({
   event,
   districtId,
 }) => {
-  const { clubId, clubName, label } = event
-  const linkable =
-    !!clubId && !!clubName && !!districtId && label.startsWith(clubName)
+  const { label } = event
+  const entity = resolveEntity(event, districtId)
 
-  if (!linkable) return <>{label}</>
+  if (!entity || !label.startsWith(entity.name)) return <>{label}</>
 
-  const rest = label.slice(clubName.length)
+  const rest = label.slice(entity.name.length)
   return (
     <>
-      <Link
-        to={`/district/${districtId}/club/${clubId}`}
-        className="clubs-name-link"
-      >
-        {clubName}
+      <Link to={entity.href} className="clubs-name-link">
+        {entity.name}
       </Link>
       {rest}
     </>
@@ -67,7 +94,10 @@ export const ChangeGroup: React.FC<{
       </summary>
       <ul className="changes-group__list">
         {events.map(e => (
-          <li key={`${e.category}-${e.clubId}`} className="changes-group__item">
+          <li
+            key={`${e.category}-${e.clubId || e.divisionId || ''}-${e.areaId ?? ''}`}
+            className="changes-group__item"
+          >
             <ChangeLabel event={e} districtId={districtId} />
           </li>
         ))}

@@ -26,6 +26,13 @@ export type AggregateDelta = z.infer<typeof AggregateDeltaSchema>
 /**
  * Category of a single change event. Payments is intentionally aggregate-only
  * in Phase 1 (per-club payment churn would double the membership noise).
+ *
+ * `area-status` / `division-status` (#1014) carry recognition-tier transitions
+ * for areas/divisions instead of clubs — derived in the frontend from the
+ * verified recognition source-of-truth (`extractDivisionPerformance`), NOT the
+ * analytics-core engine (which deliberately dropped tier logic in #799 to avoid
+ * divergence — Lesson 117). Such events set `areaId`/`divisionId` rather than a
+ * `clubId`.
  */
 export const DiffEventCategorySchema = z.enum([
   'membership',
@@ -33,6 +40,8 @@ export const DiffEventCategorySchema = z.enum([
   'distinguished',
   'club-added',
   'club-removed',
+  'area-status',
+  'division-status',
 ])
 export type DiffEventCategory = z.infer<typeof DiffEventCategorySchema>
 
@@ -70,11 +79,26 @@ export const ClubPresenceSchema = z.object({
 })
 export type ClubPresence = z.infer<typeof ClubPresenceSchema>
 
-/** A narrative-ready, categorized change event. `magnitude` is signed (sort key). */
+/**
+ * A narrative-ready, categorized change event. `magnitude` is signed (sort key).
+ *
+ * `clubId`/`clubName` identify a club-scoped event (the Phase-1 default; both
+ * empty for an entity-less aggregate line). `areaId`/`divisionId`/`entityName`
+ * (#1014) identify an area- or division-scoped recognition transition — the
+ * frontend links the entity to its scoped route from these. `label` always
+ * BEGINS with the entity display name (club name or `entityName`) so the feed
+ * can link just that leading token, matching the club-link contract (#1013).
+ */
 export const DiffEventSchema = z.object({
   category: DiffEventCategorySchema,
   clubId: z.string(),
   clubName: z.string(),
+  /** Division ref — set for `division-status` and (with `areaId`) `area-status`. */
+  divisionId: z.string().optional(),
+  /** Area ref — set for `area-status` events. */
+  areaId: z.string().optional(),
+  /** Display name the label begins with for an area/division event (e.g. "Area B2"). */
+  entityName: z.string().optional(),
   label: z.string(),
   magnitude: z.number(),
 })
