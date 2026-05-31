@@ -16,6 +16,7 @@
 
 import { AreaWithDivision } from '../components/DivisionAreaProgressSummary'
 import { GapAnalysis, RecognitionLevel } from './areaGapAnalysis'
+import type { MissingVisitClub } from './divisionStatus'
 
 /**
  * Result of generating progress text for an area
@@ -27,21 +28,6 @@ export interface AreaProgressText {
   currentLevel: RecognitionLevel
   /** Concise paragraph describing progress and gaps */
   progressText: string
-}
-
-/**
- * Club visit information for an area
- *
- * When visit data is available, contains completion counts.
- * When unavailable, the entire object should be undefined.
- */
-export interface ClubVisitInfo {
-  /** Number of first-round visits completed */
-  firstRoundCompleted: number
-  /** Number of second-round visits completed */
-  secondRoundCompleted: number
-  /** Total clubs in the area (club base) */
-  totalClubs: number
 }
 
 /**
@@ -84,73 +70,144 @@ function generateMetricsDescription(area: AreaWithDivision): string {
 }
 
 /**
- * Generate club visit status text in terms of qualification requirements
- *
- * Club visits require 75% of club base for each round to qualify for distinguished status.
- * This function communicates progress toward that threshold.
- *
- * Requirements: 6.7, 6.8, 6.9
- *
- * @param visitInfo - Club visit information (undefined if unavailable)
- * @returns Club visit status text describing qualification progress
+ * Fixed Distinguished Area Program visit deadline label for a round (item 1490):
+ * R1 is due Nov 30, R2 is due May 31. The month/day is invariant across program
+ * years, so a static label is correct and matches the operator's wording (#974).
  */
-function generateClubVisitText(visitInfo: ClubVisitInfo | undefined): string {
-  // Requirement 6.9: When visit data unavailable, show "status unknown"
-  if (visitInfo === undefined) {
-    return 'Club visits: status unknown.'
-  }
+function visitDeadlineLabel(round: 1 | 2): string {
+  return round === 1 ? 'Nov 30' : 'May 31'
+}
 
-  const { firstRoundCompleted, secondRoundCompleted, totalClubs } = visitInfo
+/** Join club names for prose display: "A, B, C". */
+function formatMissingClubNames(clubs: MissingVisitClub[]): string {
+  return clubs.map(club => club.clubName).join(', ')
+}
 
-  // Handle edge case of zero clubs
-  if (totalClubs === 0) {
-    return 'Club visits: no clubs in area.'
-  }
+/**
+ * Describe the area's CURRENT-round club-visit progress, naming the active
+ * clubs that still need a visit report and flagging any suspended/ineligible
+ * clubs separately. Reads the snapshot-derived source-of-truth fields added in
+ * Sprint 1 (#973) — the round is never re-derived here (R3).
+ *
+ * Requirements: 6.7, 6.8 (#974)
+ */
+function generateMissingVisitClause(area: AreaWithDivision): string {
+  const round = area.currentRound
+  const roundVisits =
+    round === 1 ? area.firstRoundVisits : area.secondRoundVisits
+  const missing = area.clubsMissingCurrentRoundVisit
+  const ineligible = area.clubsMissingCurrentRoundVisitIneligible
 
-  // Calculate 75% threshold (required for qualification)
-  const requiredVisits = Math.ceil(totalClubs * 0.75)
-
-  // Check if thresholds are met
-  const firstRoundMet = firstRoundCompleted >= requiredVisits
-  const secondRoundMet = secondRoundCompleted >= requiredVisits
-
-  // Both rounds meet threshold
-  if (firstRoundMet && secondRoundMet) {
-    return 'Club visits: both rounds meet 75% threshold.'
-  }
-
-  // Build status text describing progress toward 75% threshold
-  const parts: string[] = []
-
-  // First round status
-  if (firstRoundMet) {
-    parts.push('first-round meets 75% threshold')
+  let clause: string
+  if (area.clubBase === 0) {
+    clause = `Round ${round} club visits: no clubs in area.`
+  } else if (missing.length === 0) {
+    clause = `Round ${round} club visits: all clubs visited.`
   } else {
-    const firstRoundNeeded = requiredVisits - firstRoundCompleted
-    if (firstRoundCompleted === 0) {
-      parts.push(`first-round needs ${requiredVisits} visits for 75%`)
-    } else {
-      parts.push(
-        `first-round ${firstRoundCompleted}/${requiredVisits} (need ${firstRoundNeeded} more for 75%)`
+    const clubWord = missing.length === 1 ? 'active club' : 'active clubs'
+    const verb = missing.length === 1 ? 'needs' : 'need'
+    clause =
+      `Round ${round} club visits: ${roundVisits.completed} of ${area.clubBase} complete` +
+      ` — ${missing.length} ${clubWord} still ${verb} a visit report: ${formatMissingClubNames(missing)}.`
+  }
+
+  if (ineligible.length > 0) {
+    const clubWord = ineligible.length === 1 ? 'club' : 'clubs'
+    clause += ` (${ineligible.length} suspended/ineligible ${clubWord} excluded.)`
+  }
+
+  return clause
+}
+
+/**
+ * State whether the area has met the current round's qualifying visit metric
+ * and what that means for Distinguished recognition. Driven entirely by the
+ * #832 `recognitionState` source of truth — no deadline logic is re-derived
+ * here (R3). The "needs N more" count is presentation arithmetic against the
+ * round's own 75% threshold, not a re-derivation of recognition.
+ *
+ * Requirements: 6.7 (#974)
+ */
+function generateVisitRecognitionImpact(area: AreaWithDivision): string {
+  if (area.clubBase === 0) {
+    return ''
+  }
+
+  const round = area.currentRound
+  const roundVisits =
+    round === 1 ? area.firstRoundVisits : area.secondRoundVisits
+  const { status, pendingRounds, failureReason } = area.recognitionState
+
+  if (status === 'confirmed') {
+    return (
+      `The area has met the Round ${round} visit requirement (75%+), ` +
+      `so visits won't block Distinguished recognition.`
+    )
+  }
+
+  if (status === 'provisional') {
+    const currentPending = pendingRounds.find(r => r.round === round)
+    if (currentPending) {
+      const remaining = Math.max(
+        0,
+        roundVisits.required - roundVisits.completed
+      )
+      const visitWord = remaining === 1 ? 'visit' : 'visits'
+      return (
+        `The Round ${round} visit requirement (75%) is not yet met; ` +
+        `until it is, the area can only be Provisional — needs ${remaining} more ` +
+        `${visitWord} by ${visitDeadlineLabel(round)}.`
       )
     }
-  }
-
-  // Second round status
-  if (secondRoundMet) {
-    parts.push('second-round meets 75% threshold')
-  } else {
-    const secondRoundNeeded = requiredVisits - secondRoundCompleted
-    if (secondRoundCompleted === 0) {
-      parts.push(`second-round needs ${requiredVisits} visits for 75%`)
-    } else {
-      parts.push(
-        `second-round ${secondRoundCompleted}/${requiredVisits} (need ${secondRoundNeeded} more for 75%)`
+    // The current round is met; a different round keeps the area Provisional.
+    const otherPending = pendingRounds[0]
+    if (otherPending) {
+      return (
+        `The area has met the Round ${round} visit requirement (75%), but ` +
+        `remains Provisional until Round ${otherPending.round} is met by ` +
+        `${visitDeadlineLabel(otherPending.round)}.`
       )
     }
+    return `The area has met the Round ${round} visit requirement (75%).`
   }
 
-  return `Club visits: ${parts.join(', ')}.`
+  // status === 'not-distinguished'
+  if (failureReason === 'missed-deadline') {
+    // Attribute the miss to the current round when it is the unmet one; else to
+    // the other (already-passed) round.
+    const curMet =
+      round === 1
+        ? area.firstRoundVisits.meetsThreshold
+        : area.secondRoundVisits.meetsThreshold
+    const missedRound: 1 | 2 = curMet ? (round === 1 ? 2 : 1) : round
+    return (
+      `The Round ${missedRound} visit deadline (${visitDeadlineLabel(missedRound)}) ` +
+      `passed without 75%, so the area cannot be Distinguished this year.`
+    )
+  }
+
+  if (failureReason === 'net-loss') {
+    // Net club loss is the headline blocker (stated earlier); the visit metric
+    // is informational only here.
+    return roundVisits.meetsThreshold
+      ? `The Round ${round} visit requirement (75%) is met.`
+      : ''
+  }
+
+  // insufficient-distinguished (or null): visits are not the gating shortfall.
+  return roundVisits.meetsThreshold
+    ? `The Round ${round} visit requirement (75%) is met; the remaining gap is in distinguished clubs, not visits.`
+    : `Meeting the Round ${round} visit requirement (75%) is one of the remaining requirements for Distinguished.`
+}
+
+/**
+ * Compose the full current-round club-visit text: the named missing-clubs
+ * clause followed by the qualifying-metric → Distinguished-impact sentence.
+ */
+function generateCurrentRoundVisitText(area: AreaWithDivision): string {
+  const clause = generateMissingVisitClause(area)
+  const impact = generateVisitRecognitionImpact(area)
+  return impact ? `${clause} ${impact}` : clause
 }
 
 /**
@@ -322,37 +379,24 @@ function generateNetLossText(
  *
  * @param area - Area performance data
  * @param gapAnalysis - Gap analysis for the area
- * @param visitInfo - Club visit information (undefined if unavailable)
  * @returns Text describing achievement and any remaining gaps
  */
 function generateAchievedText(
   area: AreaWithDivision,
-  gapAnalysis: GapAnalysis,
-  visitInfo: ClubVisitInfo | undefined
+  gapAnalysis: GapAnalysis
 ): string {
   const levelLabel = getRecognitionLevelLabel(gapAnalysis.currentLevel)
   const metrics = generateMetricsDescription(area)
+  const visitText = generateCurrentRoundVisitText(area)
 
   // President's Distinguished - no further gaps to mention
   if (gapAnalysis.currentLevel === 'presidents') {
-    const visitText = generateClubVisitText(visitInfo)
-    // Check if both visit rounds meet 75% threshold for special message
-    if (visitInfo) {
-      const requiredVisits = Math.ceil(visitInfo.totalClubs * 0.75)
-      const bothRoundsMet =
-        visitInfo.firstRoundCompleted >= requiredVisits &&
-        visitInfo.secondRoundCompleted >= requiredVisits
-      if (bothRoundsMet) {
-        return `has achieved ${levelLabel} status with club visits meeting 75% threshold.`
-      }
-    }
-    return `has achieved ${levelLabel} status. ${visitText}`
+    return `has achieved ${levelLabel} status (${metrics}). ${visitText}`
   }
 
   // Select Distinguished - mention gap to President's
   if (gapAnalysis.currentLevel === 'select') {
     const presidentsGap = generatePresidentsGapText(gapAnalysis)
-    const visitText = generateClubVisitText(visitInfo)
     return `has achieved ${levelLabel} status (${metrics}). ${presidentsGap} ${visitText}`
   }
 
@@ -360,7 +404,6 @@ function generateAchievedText(
   if (gapAnalysis.currentLevel === 'distinguished') {
     const selectGap = generateSelectGapText(gapAnalysis)
     const presidentsGap = generatePresidentsGapText(gapAnalysis)
-    const visitText = generateClubVisitText(visitInfo)
     return `has achieved ${levelLabel} status (${metrics}). ${selectGap} ${presidentsGap} ${visitText}`
   }
 
@@ -375,20 +418,18 @@ function generateAchievedText(
  *
  * @param area - Area performance data
  * @param gapAnalysis - Gap analysis for the area
- * @param visitInfo - Club visit information (undefined if unavailable)
  * @returns Text describing current status and all gaps
  */
 function generateNotDistinguishedText(
   area: AreaWithDivision,
-  gapAnalysis: GapAnalysis,
-  visitInfo: ClubVisitInfo | undefined
+  gapAnalysis: GapAnalysis
 ): string {
   const metrics = generateMetricsDescription(area)
 
   const distinguishedGap = generateDistinguishedGapText(gapAnalysis)
   const selectGap = generateSelectGapText(gapAnalysis)
   const presidentsGap = generatePresidentsGapText(gapAnalysis)
-  const visitText = generateClubVisitText(visitInfo)
+  const visitText = generateCurrentRoundVisitText(area)
 
   return `is not yet distinguished (${metrics}). ${distinguishedGap} ${selectGap} ${presidentsGap} ${visitText}`
 }
@@ -421,15 +462,14 @@ function generateNotDistinguishedText(
  *
  * Requirements: 5.1, 5.2, 5.3, 5.6, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7
  *
- * @param area - Area with division information
+ * @param area - Area with division information (carries the Sprint 1 #973
+ *   current-round visit fields and the #832 recognitionState)
  * @param gapAnalysis - Gap analysis for the area
- * @param visitInfo - Club visit information (undefined if unavailable)
  * @returns AreaProgressText with label, level, and progress paragraph
  */
 export function generateAreaProgressText(
   area: AreaWithDivision,
-  gapAnalysis: GapAnalysis,
-  visitInfo?: ClubVisitInfo
+  gapAnalysis: GapAnalysis
 ): AreaProgressText {
   const areaLabel = generateAreaLabel(area)
   const currentLevel = gapAnalysis.currentLevel
@@ -440,16 +480,16 @@ export function generateAreaProgressText(
   if (!gapAnalysis.meetsNoNetLossRequirement) {
     const metrics = generateMetricsDescription(area)
     const netLossText = generateNetLossText(area, gapAnalysis)
-    const visitText = generateClubVisitText(visitInfo)
+    const visitText = generateCurrentRoundVisitText(area)
     progressText = `${areaLabel} has a net club loss (${metrics}). ${netLossText} ${visitText}`
   }
   // Handle achieved recognition levels (Requirement 6.5)
   else if (gapAnalysis.currentLevel !== 'none') {
-    progressText = `${areaLabel} ${generateAchievedText(area, gapAnalysis, visitInfo)}`
+    progressText = `${areaLabel} ${generateAchievedText(area, gapAnalysis)}`
   }
   // Handle not yet distinguished (Requirements 5.2, 5.3, 6.2, 6.3, 6.4)
   else {
-    progressText = `${areaLabel} ${generateNotDistinguishedText(area, gapAnalysis, visitInfo)}`
+    progressText = `${areaLabel} ${generateNotDistinguishedText(area, gapAnalysis)}`
   }
 
   // Clean up any double spaces
