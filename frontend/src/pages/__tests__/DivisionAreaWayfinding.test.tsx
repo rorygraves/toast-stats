@@ -152,13 +152,17 @@ describe('AreaPage wayfinding (#1017)', () => {
 // thrown status.
 function StatusBoundary() {
   const err = useRouteError()
-  return (
-    <div data-testid="boundary">
-      {isRouteErrorResponse(err) ? err.status : 'non-response'}
-    </div>
-  )
+  const status = isRouteErrorResponse(err)
+    ? err.status
+    : err instanceof Response
+      ? err.status
+      : 'non-response'
+  return <div data-testid="boundary">{status}</div>
 }
 
+// Mirror the production router shape (#1011): errorElement on the root route,
+// the page as a child, so a child render-throw bubbles to the root boundary —
+// exactly how a real bad-slug 404 is handled in App.tsx.
 function renderViaDataRouter(
   path: string,
   routePath: string,
@@ -167,9 +171,11 @@ function renderViaDataRouter(
   const router = createMemoryRouter(
     [
       {
-        path: routePath,
-        element: <Element />,
+        path: '/',
         errorElement: <StatusBoundary />,
+        children: [
+          { path: routePath.replace(/^\//, ''), element: <Element /> },
+        ],
       },
     ],
     { initialEntries: [path] }

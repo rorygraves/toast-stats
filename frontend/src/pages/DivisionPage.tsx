@@ -74,6 +74,18 @@ const DivisionPage: React.FC = () => {
     )
   }
 
+  // Slug validation (#1017): once the snapshot has LOADED, a division id absent
+  // from its division list is a bad URL, not a real-but-empty division. Throw a
+  // 404 so the root errorElement (#1011/#1012) renders the branded not-found
+  // page with district-subpage recovery, instead of a misleading empty page.
+  // Gate strictly on `snapshot` being present — never 404 while it's still
+  // loading or errored (data-unavailable ≠ not-found), and never 404 a real
+  // division whose clubs are all suspended (Lesson 147): the snapshot's division
+  // list is the source of truth, the same one the recognition card reads.
+  if (snapshot && !divisionPerformance) {
+    throw new Response(null, { status: 404, statusText: 'Division not found' })
+  }
+
   const clubs = data.allClubs.filter(
     c => c.divisionId.toUpperCase() === normalizedDivId
   )

@@ -92,6 +92,17 @@ const AreaPage: React.FC = () => {
     )
   }
 
+  // Slug validation (#1017): once the snapshot has LOADED, an area id (or its
+  // division id) absent from the snapshot is a bad URL, not a real-but-empty
+  // area. Throw a 404 so the root errorElement (#1011/#1012) renders the branded
+  // not-found page instead of a misleading empty page. Gate strictly on
+  // `snapshot` being present — never 404 while loading/errored, and never 404 a
+  // real area whose clubs are all suspended (Lesson 147): `matched` is membership
+  // in the snapshot's division.areas, the same source of truth the table reads.
+  if (snapshot && !areaPerformance) {
+    throw new Response(null, { status: 404, statusText: 'Area not found' })
+  }
+
   const clubs = data.allClubs.filter(
     c =>
       c.divisionId.toUpperCase() === normalizedDivId &&
