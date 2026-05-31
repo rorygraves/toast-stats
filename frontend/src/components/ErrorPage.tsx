@@ -36,7 +36,18 @@ const ErrorPage: React.FC = () => {
   const location = useLocation()
   const headingRef = useRef<HTMLHeadingElement>(null)
 
-  const is404 = isRouteErrorResponse(error) && error.status === 404
+  // React Router wraps a *loader/action*-thrown Response into an ErrorResponse
+  // (caught by isRouteErrorResponse), but a *render*-thrown Response — the shape
+  // the scoped Division/Area pages use for a bad slug (#1017) — arrives raw. Map
+  // both to a status so either route to a 404 lands on the branded not-found
+  // page rather than the generic "something went wrong".
+  const errorResponse: { status: number; statusText: string } | null =
+    isRouteErrorResponse(error)
+      ? error
+      : error instanceof Response
+        ? error
+        : null
+  const is404 = errorResponse?.status === 404
   const variant = is404 ? 'not-found' : 'error'
 
   // Route-aware smart recovery (#1012). useRouteError exposes no attempted URL,
@@ -76,8 +87,8 @@ const ErrorPage: React.FC = () => {
   // Surface technical detail only in development — never leak a stack trace or
   // framework internals to real users in production.
   const detail = import.meta.env.DEV
-    ? isRouteErrorResponse(error)
-      ? `${error.status} ${error.statusText}`
+    ? errorResponse
+      ? `${errorResponse.status} ${errorResponse.statusText}`
       : error instanceof Error
         ? error.message
         : null
