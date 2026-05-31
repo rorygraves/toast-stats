@@ -1,5 +1,9 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
+import {
+  DISTRICT_SECTIONS,
+  buildDistrictSectionUrl,
+} from '../config/districtSections'
 
 /* #678 (epic #674 Sprint 4) — District secondary route-nav primitive.
 
@@ -23,30 +27,10 @@ import { NavLink } from 'react-router-dom'
    scroll container needs no role="region" (cf. Lesson 105, which applies to
    non-focusable table scrolls). */
 
-export interface DistrictSection {
-  /** Visible label. */
-  label: string
-  /** Path segment appended after /district/:id. '' = the Overview hub. */
-  segment: string
-}
-
-/* The canonical, ordered section list. ADR-005 §2 + the epic's AC1 require
-   every item to be a REAL route — a destination-less nav item is the exact
-   tab-like fiction the no-tabs decision rejects. `/trends` and `/analytics`
-   joined in Sprint 6 (#680); order follows ADR-005 §3
-   (Overview · Clubs · Divisions · Trends · Analytics · Rankings). This const
-   is the single extension point. */
-export const DISTRICT_SECTIONS: readonly DistrictSection[] = [
-  { label: 'Overview', segment: '' },
-  // 'What Changed' (#793, epic #797) — a real route, sits next to Overview as
-  // the "since I last looked" companion to the current-state hub.
-  { label: 'What Changed', segment: 'changes' },
-  { label: 'Clubs', segment: 'clubs' },
-  { label: 'Divisions', segment: 'divisions' },
-  { label: 'Trends', segment: 'trends' },
-  { label: 'Analytics', segment: 'analytics' },
-  { label: 'Rankings', segment: 'rankings' },
-]
+/* The canonical section list (`DISTRICT_SECTIONS`) and its URL builder now live
+   in `config/districtSections` — the single source of truth shared with the
+   route-aware error recovery (#1012), so a util no longer imports from this
+   component. */
 
 interface DistrictSubnavProps {
   districtId: string
@@ -63,9 +47,7 @@ export const DistrictSubnav: React.FC<DistrictSubnavProps> = ({
     >
       <ul className="district-subnav__list">
         {DISTRICT_SECTIONS.map(({ label, segment }) => {
-          const to = segment
-            ? `/district/${districtId}/${segment}`
-            : `/district/${districtId}`
+          const to = buildDistrictSectionUrl(districtId, segment)
           return (
             <li key={label} className="district-subnav__item">
               <NavLink

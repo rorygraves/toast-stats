@@ -3,9 +3,12 @@ import {
   Link,
   useNavigate,
   useRouteError,
+  useLocation,
   isRouteErrorResponse,
 } from 'react-router-dom'
 import { logger } from '../utils/logger'
+import { useDistricts } from '../hooks/useDistricts'
+import { resolveRouteRecovery } from '../utils/errorRecovery'
 
 /**
  * Root `errorElement` for the router (#1011, epic #1010 Sprint 1).
@@ -23,15 +26,33 @@ import { logger } from '../utils/logger'
  * what threw — is not re-mounted); the dark-mode-aware tokens + `redesign-panel`
  * surface give it the product look without rebuilding the nav.
  *
- * Route-aware smart recovery for malformed `/district/:id` is Sprint 2 (#1012).
+ * Sprint 2 (#1012) adds route-aware smart recovery: for a malformed
+ * `/district/:id` 404 it suggests that district's real subpages (valid id) or
+ * the districts index (unknown id). See `utils/errorRecovery.ts`.
  */
 const ErrorPage: React.FC = () => {
   const error = useRouteError()
   const navigate = useNavigate()
+  const location = useLocation()
   const headingRef = useRef<HTMLHeadingElement>(null)
 
   const is404 = isRouteErrorResponse(error) && error.status === 404
   const variant = is404 ? 'not-found' : 'error'
+
+  // Route-aware smart recovery (#1012). useRouteError exposes no attempted URL,
+  // so we read the unmatched path from useLocation and validate the district id
+  // against the known set (useDistricts). Only meaningful for a 404 — a runtime
+  // error fired from a route that DID match needs generic Home + Back, not
+  // "did you mean these subpages". ErrorPage is always rendered under App's
+  // QueryClientProvider, so useDistricts is safe here.
+  const { data: districtsData } = useDistricts()
+  const recovery = is404
+    ? resolveRouteRecovery(
+        location.pathname,
+        districtsData?.districts.map(d => d.id) ?? []
+      )
+    : { kind: 'none' as const, suggestions: [] }
+  const hasSuggestions = recovery.suggestions.length > 0
 
   // Log genuine runtime errors for telemetry; a 404 is expected user navigation
   // (mistyped URL / dead link), not an error worth recording.
@@ -105,6 +126,29 @@ const ErrorPage: React.FC = () => {
             </p>
           )}
         </div>
+
+        {hasSuggestions && (
+          <nav
+            className="error-page__suggestions"
+            data-testid="error-page-suggestions"
+            aria-label="Suggested destinations"
+          >
+            <p className="error-page__suggestions-lead">
+              {recovery.kind === 'district-subpages'
+                ? `Did you mean one of District ${recovery.districtId}'s pages?`
+                : 'Try browsing from the districts list:'}
+            </p>
+            <ul className="error-page__suggestions-list">
+              {recovery.suggestions.map(({ label, to }) => (
+                <li key={to} className="error-page__suggestions-item">
+                  <Link to={to} className="error-page__suggestion-link">
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )}
 
         <div className="error-page__actions">
           <Link to="/" className="tm-btn-primary error-page__action">
