@@ -801,3 +801,101 @@ describe('generateAreaProgressText — current-round visit text (#974)', () => {
     )
   })
 })
+
+/**
+ * Sprint 3 (#975): edge cases the operator asked to CONFIRM for the visit-gap
+ * text — the cases between the happy paths already pinned by #974. These lock
+ * the wording so a later refactor of `generateMissingVisitClause` /
+ * `generateVisitRecognitionImpact` can't silently regress them.
+ */
+describe('generateAreaProgressText — visit-gap edge cases (#975)', () => {
+  it('only suspended/ineligible unvisited: reads "all clubs visited" with a flag-only line, metric met for the active base', () => {
+    // Every ACTIVE club is visited (roundCompleted === clubBase); the only
+    // unvisited clubs are suspended/ineligible, so they must NOT produce a
+    // dangling "needs:" list — just the excluded-flag parenthetical — and the
+    // active base must read as having met the 75% requirement.
+    const area = createRoundArea({
+      clubBase: 4,
+      paidClubs: 4,
+      distinguishedClubs: 2,
+      currentRound: 2,
+      roundCompleted: 4,
+      missing: [],
+      ineligible: [
+        { clubNumber: '30', clubName: 'Vanier', status: 'Suspended' },
+        { clubNumber: '31', clubName: 'Rockland', status: 'Ineligible' },
+      ],
+      recognitionState: {
+        level: 'distinguished',
+        status: 'confirmed',
+        pendingRounds: [],
+        failureReason: null,
+      },
+    })
+    const gapAnalysis = calculateAreaGapAnalysis({
+      clubBase: 4,
+      paidClubs: 4,
+      distinguishedClubs: 2,
+    })
+
+    const result = generateAreaProgressText(area, gapAnalysis)
+
+    // No empty list / no dangling "needs a visit report:" for the active base.
+    expect(result.progressText).toContain(
+      'Round 2 club visits: all clubs visited.'
+    )
+    expect(result.progressText).not.toContain('still need a visit report')
+    expect(result.progressText).not.toContain('still needs a visit report')
+    // The suspended/ineligible clubs are flagged separately, not in the list.
+    expect(result.progressText).toContain(
+      '(2 suspended/ineligible clubs excluded.)'
+    )
+    // Metric reads met for the active base.
+    expect(result.progressText).toContain(
+      'met the Round 2 visit requirement (75%+)'
+    )
+  })
+
+  it('long missing list (6 active clubs unvisited): names every club, comma-joined, no truncation', () => {
+    const sixClubs: MissingVisitClub[] = [
+      { clubNumber: '40', clubName: 'Aylmer' },
+      { clubNumber: '41', clubName: 'Gatineau' },
+      { clubNumber: '42', clubName: 'Hull' },
+      { clubNumber: '43', clubName: 'Buckingham' },
+      { clubNumber: '44', clubName: 'Chelsea' },
+      { clubNumber: '45', clubName: 'Wakefield' },
+    ]
+    const area = createRoundArea({
+      clubBase: 8,
+      paidClubs: 8,
+      distinguishedClubs: 4,
+      currentRound: 1,
+      roundCompleted: 2,
+      missing: sixClubs,
+      recognitionState: {
+        level: 'distinguished',
+        status: 'provisional',
+        pendingRounds: [{ round: 1, deadline: '2025-11-30' }],
+        failureReason: null,
+      },
+    })
+    const gapAnalysis = calculateAreaGapAnalysis({
+      clubBase: 8,
+      paidClubs: 8,
+      distinguishedClubs: 4,
+    })
+
+    const result = generateAreaProgressText(area, gapAnalysis)
+
+    expect(result.progressText).toContain(
+      '6 active clubs still need a visit report:'
+    )
+    // Every one of the six names is present, comma-joined in order.
+    expect(result.progressText).toContain(
+      'Aylmer, Gatineau, Hull, Buckingham, Chelsea, Wakefield.'
+    )
+    for (const club of sixClubs) {
+      expect(result.progressText).toContain(club.clubName)
+    }
+  })
+})

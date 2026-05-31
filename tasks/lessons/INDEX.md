@@ -123,4 +123,4 @@
 - **144** [router, react, frontend, scope, verification] — A cap (or any invariant) enforced only on the mutation path is bypassed the moment the value becomes URL-seedable (#978, #969)
 - **145** [router, react, hooks, frontend, scope] — A URL param that's a pipeline step layered on the filtered set must NOT join the wholesale filter-reconcile key set (#979, #969)
 - **145** [cls, performance, frontend, react, verification, ci] — An incidental post-data re-render can be load-bearing for CLS; a "cleanup" that removes it regresses layout only on the CI font environment (#978, #969)
-- **146** [testing, vitest, flake, ci, performance, runner-fleet] — An aggressively low testTimeout is a latent flake source once the same machine runs concurrent workloads; budget the timeout for the contended wall-clock, not the un-contended tests-phase (#1003)
+- **146** [testing, vitest, flake, ci, performance, runner-fleet] — An "aggressively low" testTimeout is a latent flake source the moment the same machine runs concurrent workloads (#1003)
