@@ -135,6 +135,8 @@ source "$REPO_DIR/scripts/lib/sprint-runner-probes.sh"
 source "$REPO_DIR/scripts/lib/sprint-runner-liveness.sh"
 # shellcheck source=lib/sprint-runner-process.sh
 source "$REPO_DIR/scripts/lib/sprint-runner-process.sh"
+# shellcheck source=lib/sprint-runner-worktree.sh
+source "$REPO_DIR/scripts/lib/sprint-runner-worktree.sh"
 
 # Populated by resolve_active_epic(); used by callers to decide whether
 # auto-tick fires and to print the source in --status.
@@ -370,7 +372,7 @@ reap_screen_session() {
   # Delete the per-session screen logfile + screenrc (epic #933 §2.3): they are
   # truth-tied to session lifetime, so a fresh relaunch never reads a reaped
   # session's stale loop transcript as the new session's log signal.
-  rm -f "$RUNNER_LOG_DIR/session-$n.log" "$RUNNER_LOG_DIR/session-$n.screenrc" 2>/dev/null || true
+  rm -f "$RUNNER_LOG_DIR/session-$n.log" "$RUNNER_LOG_DIR/session-$n.screenrc" "$RUNNER_LOG_DIR/provision-$n.log" 2>/dev/null || true
   notify "sprint-runner" "Reaped session $session"
 }
 
@@ -469,7 +471,7 @@ gc_worktrees() {
       || rm -rf "$wt"
     # A worktree with no paired screen is a dead session — drop its logfile +
     # screenrc too (same truth-tied lifetime as in reap_screen_session).
-    rm -f "$RUNNER_LOG_DIR/session-$n.log" "$RUNNER_LOG_DIR/session-$n.screenrc" 2>/dev/null || true
+    rm -f "$RUNNER_LOG_DIR/session-$n.log" "$RUNNER_LOG_DIR/session-$n.screenrc" "$RUNNER_LOG_DIR/provision-$n.log" 2>/dev/null || true
     # Best-effort branch cleanup. `git branch -d` refuses unmerged branches,
     # which is what we want — operator can inspect crashed-session branches.
     if [[ -n "$branch" && "$branch" != "main" ]]; then
@@ -526,6 +528,15 @@ launch_sprint_session() {
   local worktree
   worktree=$(create_sprint_worktree "$target_issue") || { log "ERROR: Failed to create worktree for sprint-$target_issue"; return 1; }
   log "Created worktree at $worktree"
+  # Provision the worktree (install deps + build workspace dist/) BEFORE the
+  # session so its first commit doesn't fail the pre-commit hook on an
+  # unbuilt env (toast-stats #973 / Lesson 092). Fail-closed: don't launch
+  # a sprint into a broken environment — drop the worktree and retry next tick.
+  if ! provision_worktree "$worktree" "$target_issue"; then
+    log "ERROR: provisioning failed for sprint-$target_issue — not launching; will retry next tick"
+    remove_sprint_worktree "$target_issue"
+    return 1
+  fi
 
   local session_name="${SESSION_PREFIX}$target_issue"
   log "Launching detached screen session $session_name (Sprint $target_n of epic #$epic, work #$target_issue)"
