@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/taverns-red/toast-stats/compare/shared-contracts-v1.5.0...shared-contracts-v1.6.0) (2026-05-31)
+
+
+### Features
+
+* **changes:** area & division status-transition events in the What-Changed feed ([#1014](https://github.com/taverns-red/toast-stats/issues/1014)) ([#1025](https://github.com/taverns-red/toast-stats/issues/1025)) ([94df6f4](https://github.com/taverns-red/toast-stats/commit/94df6f4ecd0d8a18bfe1ab30bf7ef60ee5b6d389))
+
 ## [1.5.0](https://github.com/taverns-red/toast-stats/compare/shared-contracts-v1.4.0...shared-contracts-v1.5.0) (2026-05-27)
 
 

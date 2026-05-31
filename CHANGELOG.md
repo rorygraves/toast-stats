@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.24.0](https://github.com/taverns-red/toast-stats/compare/toast-stats-v2.23.0...toast-stats-v2.24.0) (2026-05-31)
+
+
+### Features
+
+* **area:** AreaPage parity with the divisions overview + scoped narrative ([#1016](https://github.com/taverns-red/toast-stats/issues/1016)) ([#1027](https://github.com/taverns-red/toast-stats/issues/1027)) ([6effa10](https://github.com/taverns-red/toast-stats/commit/6effa1086d55024fb08bc580ae01effb7f386a1d))
+* **changes:** area & division status-transition events in the What-Changed feed ([#1014](https://github.com/taverns-red/toast-stats/issues/1014)) ([#1025](https://github.com/taverns-red/toast-stats/issues/1025)) ([94df6f4](https://github.com/taverns-red/toast-stats/commit/94df6f4ecd0d8a18bfe1ab30bf7ef60ee5b6d389))
+* **division:** DivisionPage data parity with the divisions overview ([#1015](https://github.com/taverns-red/toast-stats/issues/1015)) ([#1026](https://github.com/taverns-red/toast-stats/issues/1026)) ([25a1445](https://github.com/taverns-red/toast-stats/commit/25a1445d2f1189c5adfad11dd0cb1b4afe850b07))
+* **error-page:** branded root errorElement — 404 + runtime boundary ([#1011](https://github.com/taverns-red/toast-stats/issues/1011)) ([#1019](https://github.com/taverns-red/toast-stats/issues/1019)) ([c34a751](https://github.com/taverns-red/toast-stats/commit/c34a7516c49cef989f258e5ae73795d848bded02))
+* **error-page:** route-aware smart recovery — suggest valid destinations for malformed /district/:id ([#1012](https://github.com/taverns-red/toast-stats/issues/1012)) ([#1021](https://github.com/taverns-red/toast-stats/issues/1021)) ([91f3e30](https://github.com/taverns-red/toast-stats/commit/91f3e302cd4ed793c1a30b8b5c7c6f504b33cc26))
+* link club names in the What-Changed feed ([#1013](https://github.com/taverns-red/toast-stats/issues/1013)) ([#1024](https://github.com/taverns-red/toast-stats/issues/1024)) ([2fa06a4](https://github.com/taverns-red/toast-stats/commit/2fa06a46dbc84d6ef0eb2ff22ee8a9efcc8d39c2))
+* **wayfinding:** scoped Division/Area breadcrumbs, bad-slug 404s, flat area alias ([#1017](https://github.com/taverns-red/toast-stats/issues/1017)) ([#1028](https://github.com/taverns-red/toast-stats/issues/1028)) ([4ae32db](https://github.com/taverns-red/toast-stats/commit/4ae32db0ab34878de320bde2cd7a824a99e7358b))
+
 ## [2.23.0](https://github.com/taverns-red/toast-stats/compare/toast-stats-v2.22.1...toast-stats-v2.23.0) (2026-05-31)
 
 
