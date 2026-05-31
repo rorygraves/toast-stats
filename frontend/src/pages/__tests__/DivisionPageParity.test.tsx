@@ -165,4 +165,24 @@ describe('DivisionPage data parity with the Divisions overview (#1015)', () => {
     const { queryByText } = renderDivision()
     expect(queryByText('Needs Attention')).toBeNull()
   })
+
+  it('still renders the recognition card when allClubs has no rows for the division', async () => {
+    // The recognition card is fed by the snapshot, not allClubs. A division
+    // with snapshot data but zero analytics-club rows (suspended/migrated
+    // clubs, or a casing skew) must still show parity data — not a bare
+    // "No clubs found" placeholder that hides it.
+    const mod = await import('../../hooks/useDistrictAnalytics')
+    const spy = mod.useDistrictAnalytics as unknown as ReturnType<typeof vi.fn>
+    spy.mockReturnValueOnce({
+      data: { allClubs: [] },
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    })
+    const { getByRole, queryByText } = renderDivision()
+    expect(
+      getByRole('status', { name: /Division status:/i })
+    ).toBeInTheDocument()
+    expect(queryByText('No clubs found in this division.')).toBeNull()
+  })
 })
