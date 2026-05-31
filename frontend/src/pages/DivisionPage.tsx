@@ -6,6 +6,9 @@
 import React from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useDistrictAnalytics } from '../hooks/useDistrictAnalytics'
+import { useDistrictStatistics } from '../hooks/useMembershipData'
+import { extractDivisionPerformance } from '../utils/extractDivisionPerformance'
+import { DivisionPerformanceCard } from '../components/DivisionPerformanceCard'
 import { LoadingSkeleton } from '../components/LoadingSkeleton'
 import { EmptyState } from '../components/ErrorDisplay'
 import { ClubMiniList } from '../components/ClubMiniList'
@@ -24,6 +27,19 @@ const DivisionPage: React.FC = () => {
     undefined,
     undefined
   )
+
+  // Recognition / gap / visit data come from the same raw snapshot the
+  // Divisions overview reads — one source of truth (R6/R8, #1015). We reuse the
+  // overview's extractDivisionPerformance util + DivisionPerformanceCard rather
+  // than re-deriving from allClubs, so this scoped page can't drift from it.
+  const { data: snapshot, isLoading: isLoadingSnapshot } =
+    useDistrictStatistics(districtId ?? '', undefined, 'divisions')
+  const divisionPerformance = React.useMemo(() => {
+    if (!snapshot || !divId) return undefined
+    return extractDivisionPerformance(snapshot, snapshot.asOfDate).find(
+      d => d.divisionId.toUpperCase() === divId.toUpperCase()
+    )
+  }, [snapshot, divId])
 
   if (isLoading) {
     return <LoadingSkeleton variant="card" />
@@ -60,17 +76,6 @@ const DivisionPage: React.FC = () => {
   }
 
   const divisionName = clubs[0]?.divisionName ?? `Division ${divId}`
-
-  // KPI rollup — counts by health status, total members.
-  const totalMembers = clubs.reduce((sum, c) => {
-    const last = c.membershipTrend[c.membershipTrend.length - 1]
-    return sum + (last?.count ?? 0)
-  }, 0)
-  const thriving = clubs.filter(c => c.currentStatus === 'thriving').length
-  const vulnerable = clubs.filter(c => c.currentStatus === 'vulnerable').length
-  const intervention = clubs.filter(
-    c => c.currentStatus === 'intervention-required'
-  ).length
 
   // Group clubs by area for the table sections.
   const areaGroups = new Map<
@@ -109,42 +114,16 @@ const DivisionPage: React.FC = () => {
         </div>
       </header>
 
-      <div
-        className="districts-kpi-strip"
-        style={{ marginBottom: 24 }}
-        aria-label="Division totals"
-      >
-        <div className="districts-kpi-card">
-          <p className="districts-kpi-card__label">Clubs</p>
-          <div className="districts-kpi-card__value">{clubs.length}</div>
-        </div>
-        <div className="districts-kpi-card">
-          <p className="districts-kpi-card__label">Total Members</p>
-          <div className="districts-kpi-card__value">
-            {totalMembers.toLocaleString()}
-          </div>
-        </div>
-        <div className="districts-kpi-card">
-          <p className="districts-kpi-card__label">Thriving</p>
-          <div
-            className="districts-kpi-card__value"
-            style={{ color: 'var(--green-600, #16a34a)' }}
-          >
-            {thriving}
-          </div>
-        </div>
-        <div className="districts-kpi-card">
-          <p className="districts-kpi-card__label">Needs Attention</p>
-          <div
-            className="districts-kpi-card__value"
-            style={{
-              color:
-                intervention > 0 ? 'var(--red-600, #dc2626)' : 'var(--ink-2)',
-            }}
-          >
-            {vulnerable + intervention}
-          </div>
-        </div>
+      {/* Division + areas recognition data, reused from the Divisions overview
+          (#1015). Replaces the old ad-hoc allClubs KPI strip so the standalone
+          page shows the same status / Gap-to-D-S-P / per-area visit metrics on
+          the same computation as the overview. */}
+      <div style={{ marginBottom: 24 }}>
+        {divisionPerformance ? (
+          <DivisionPerformanceCard division={divisionPerformance} />
+        ) : (
+          isLoadingSnapshot && <LoadingSkeleton variant="table" count={3} />
+        )}
       </div>
 
       {areas.map(area => (
