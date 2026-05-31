@@ -59,6 +59,10 @@ const createArea = (
       percentage: 50,
       meetsThreshold: false,
     },
+    // Mid-PY snapshot (2026-03-15) ⇒ current round is 2 (#973/#974).
+    currentRound: 2,
+    clubsMissingCurrentRoundVisit: [],
+    clubsMissingCurrentRoundVisitIneligible: [],
     status: 'distinguished',
     isQualified: true,
     ...overrides,
@@ -960,6 +964,10 @@ describe('AreaProgressSummary', () => {
               percentage: 50,
               meetsThreshold: false,
             },
+            clubsMissingCurrentRoundVisit: [
+              { clubNumber: '111', clubName: 'North Grenville' },
+              { clubNumber: '222', clubName: 'Manotick' },
+            ],
           }),
           divisionId: 'A',
         },
@@ -967,8 +975,11 @@ describe('AreaProgressSummary', () => {
 
       renderWithProviders(<DivisionAreaProgressSummary divisions={divisions} />)
 
-      // Club visit status should show progress toward 75% threshold
-      expect(screen.getByText(/Club visits:/)).toBeInTheDocument()
+      // Current-round visit status names the active clubs still missing a visit
+      // and states the 75% qualifying metric (#974).
+      expect(
+        screen.getByText(/Round 2 club visits:.*North Grenville.*Manotick/)
+      ).toBeInTheDocument()
       expect(screen.getByText(/75%/)).toBeInTheDocument()
     })
 
@@ -1002,9 +1013,10 @@ describe('AreaProgressSummary', () => {
 
       renderWithProviders(<DivisionAreaProgressSummary divisions={divisions} />)
 
-      // Should show both rounds meet 75% threshold for President's Distinguished
+      // Current round (R2) met ⇒ states the visit requirement is satisfied and
+      // won't block Distinguished recognition (#974, recognitionState-driven).
       expect(
-        screen.getByText(/club visits meeting 75% threshold/)
+        screen.getByText(/won't block Distinguished recognition/)
       ).toBeInTheDocument()
     })
 

@@ -36,7 +36,6 @@ import { renderRecognitionBadge } from '../utils/areaRecognitionBadge'
 import {
   generateAreaProgressText,
   AreaProgressText,
-  ClubVisitInfo,
 } from '../utils/areaProgressText'
 import {
   calculateDivisionGapAnalysis,
@@ -203,24 +202,17 @@ export const DivisionAreaProgressSummary: React.FC<
           distinguishedClubs: area.distinguishedClubs,
         })
 
-        // Extract club visit info from area data
-        const visitInfo: ClubVisitInfo = {
-          firstRoundCompleted: area.firstRoundVisits.completed,
-          secondRoundCompleted: area.secondRoundVisits.completed,
-          totalClubs: area.clubBase,
-        }
-
-        // Create area with division context for progress text generation
+        // Create area with division context for progress text generation.
+        // The current-round visit fields (#973) and recognitionState (#832)
+        // travel on `area`, so the generator reads them directly (#974).
         const areaWithDivision: AreaWithDivision = {
           ...area,
           divisionId: division.divisionId,
         }
 
-        // Generate progress text with actual visit data
         const progressText = generateAreaProgressText(
           areaWithDivision,
-          gapAnalysis,
-          visitInfo
+          gapAnalysis
         )
 
         return {

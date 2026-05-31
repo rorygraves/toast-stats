@@ -11,20 +11,34 @@
  * - Distinguished with incremental gaps to Select and President's
  * - Not distinguished with all gaps described incrementally
  * - Net club loss scenario with eligibility explanation
- * - Club visit status display (complete, partial, unknown)
+ * - Current-round club-visit text: named missing clubs + Distinguished impact (#974)
  * - Edge cases (0 clubs, 1 club)
  *
  * Requirements: 5.1, 5.2, 5.3, 5.6, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7
  */
 
 import { describe, it, expect } from 'vitest'
-import { generateAreaProgressText, ClubVisitInfo } from '../areaProgressText'
+import { generateAreaProgressText } from '../areaProgressText'
 import { AreaWithDivision } from '../../components/DivisionAreaProgressSummary'
 import { calculateAreaGapAnalysis } from '../areaGapAnalysis'
-import { DistinguishedStatus } from '../divisionStatus'
+import {
+  DistinguishedStatus,
+  calculateVisitStatus,
+  MissingVisitClub,
+  IneligibleMissingVisitClub,
+} from '../divisionStatus'
+import {
+  deriveAreaRecognitionState,
+  getCurrentVisitRound,
+  type AreaRecognitionState,
+} from '../areaRecognitionState'
 
 /**
- * Helper function to create an AreaWithDivision object for testing
+ * Build an AreaWithDivision for the gap/level tests. Visit data defaults to
+ * "all clubs visited" with a snapshot-derived `recognitionState`, so the
+ * (Sprint 1 #973) current-round fields are consistent without each test
+ * having to spell them out. Current-round visit *behaviour* is exercised
+ * separately via `createRoundArea` below.
  */
 function createArea(
   areaId: string,
@@ -33,7 +47,17 @@ function createArea(
   paidClubs: number,
   distinguishedClubs: number
 ): AreaWithDivision {
-  // Determine status based on metrics
+  const snapshotDate = '2026-05-15' // PY 2025-26, round 2 in progress
+  const allVisited = calculateVisitStatus(clubBase, clubBase)
+  const recognitionState = deriveAreaRecognitionState({
+    clubBase,
+    paidClubs,
+    distinguishedClubs,
+    firstRoundVisitMet: allVisited.meetsThreshold,
+    secondRoundVisitMet: allVisited.meetsThreshold,
+    snapshotDate,
+  })
+
   let status: DistinguishedStatus = 'not-distinguished'
   if (paidClubs < clubBase) {
     status = 'not-qualified'
@@ -47,35 +71,14 @@ function createArea(
     distinguishedClubs,
     netGrowth: paidClubs - clubBase,
     requiredDistinguishedClubs: Math.ceil(clubBase * 0.5),
-    firstRoundVisits: {
-      completed: 0,
-      required: Math.ceil(clubBase * 0.75),
-      percentage: 0,
-      meetsThreshold: false,
-    },
-    secondRoundVisits: {
-      completed: 0,
-      required: Math.ceil(clubBase * 0.75),
-      percentage: 0,
-      meetsThreshold: false,
-    },
+    firstRoundVisits: allVisited,
+    secondRoundVisits: allVisited,
     status,
     isQualified: paidClubs >= clubBase,
-  }
-}
-
-/**
- * Helper function to create ClubVisitInfo for testing
- */
-function createVisitInfo(
-  firstRoundCompleted: number,
-  secondRoundCompleted: number,
-  totalClubs: number
-): ClubVisitInfo {
-  return {
-    firstRoundCompleted,
-    secondRoundCompleted,
-    totalClubs,
+    recognitionState,
+    currentRound: getCurrentVisitRound(snapshotDate),
+    clubsMissingCurrentRoundVisit: [],
+    clubsMissingCurrentRoundVisitIneligible: [],
   }
 }
 
@@ -85,7 +88,7 @@ describe('generateAreaProgressText', () => {
    * no further gaps should be mentioned.
    */
   describe("President's Distinguished achieved", () => {
-    it('should describe achievement when both visit rounds meet 75% threshold', () => {
+    it('describes achievement and confirms visits do not block recognition', () => {
       // 4 clubs, 5 paid (club base + 1), 3 distinguished (50% + 1 = 3)
       const area = createArea('A1', 'A', 4, 5, 3)
       const gapAnalysis = calculateAreaGapAnalysis({
@@ -93,54 +96,37 @@ describe('generateAreaProgressText', () => {
         paidClubs: 5,
         distinguishedClubs: 3,
       })
-      // 75% of 4 = 3, so 3+ visits meets threshold
-      const visitInfo = createVisitInfo(3, 3, 4)
 
-      const result = generateAreaProgressText(area, gapAnalysis, visitInfo)
+      const result = generateAreaProgressText(area, gapAnalysis)
 
       expect(result.currentLevel).toBe('presidents')
       expect(result.areaLabel).toBe('Area A1 (Division A)')
       expect(result.progressText).toContain("President's Distinguished")
-      expect(result.progressText).toContain('club visits meeting 75% threshold')
+      expect(result.progressText).toContain(
+        "visits won't block Distinguished recognition"
+      )
       // Should NOT mention any gaps
       expect(result.progressText).not.toContain('For Select')
       expect(result.progressText).not.toContain('For Distinguished')
     })
 
-    it('should describe achievement with partial club visits', () => {
+    it('includes the current-round visit clause', () => {
       const area = createArea('B2', 'B', 4, 5, 3)
       const gapAnalysis = calculateAreaGapAnalysis({
         clubBase: 4,
         paidClubs: 5,
         distinguishedClubs: 3,
       })
-      const visitInfo = createVisitInfo(4, 2, 4)
 
-      const result = generateAreaProgressText(area, gapAnalysis, visitInfo)
+      const result = generateAreaProgressText(area, gapAnalysis)
 
       expect(result.currentLevel).toBe('presidents')
       expect(result.progressText).toContain("President's Distinguished")
-      expect(result.progressText).toContain('Club visits:')
-      // Should NOT mention any gaps
+      expect(result.progressText).toContain('Round 2 club visits:')
       expect(result.progressText).not.toContain('For Select')
     })
 
-    it('should describe achievement with unknown club visits', () => {
-      const area = createArea('C3', 'C', 4, 5, 3)
-      const gapAnalysis = calculateAreaGapAnalysis({
-        clubBase: 4,
-        paidClubs: 5,
-        distinguishedClubs: 3,
-      })
-
-      const result = generateAreaProgressText(area, gapAnalysis, undefined)
-
-      expect(result.currentLevel).toBe('presidents')
-      expect(result.progressText).toContain("President's Distinguished")
-      expect(result.progressText).toContain('Club visits: status unknown')
-    })
-
-    it('should include all metrics in the text', () => {
+    it('should mention the achievement', () => {
       const area = createArea('D4', 'D', 4, 5, 3)
       const gapAnalysis = calculateAreaGapAnalysis({
         clubBase: 4,
@@ -148,10 +134,8 @@ describe('generateAreaProgressText', () => {
         distinguishedClubs: 3,
       })
 
-      const result = generateAreaProgressText(area, gapAnalysis, undefined)
+      const result = generateAreaProgressText(area, gapAnalysis)
 
-      // President's Distinguished doesn't show metrics in parentheses
-      // but should mention the achievement
       expect(result.progressText).toContain("President's Distinguished status")
     })
   })
@@ -170,9 +154,8 @@ describe('generateAreaProgressText', () => {
         paidClubs: 4,
         distinguishedClubs: 3,
       })
-      const visitInfo = createVisitInfo(3, 2, 4)
 
-      const result = generateAreaProgressText(area, gapAnalysis, visitInfo)
+      const result = generateAreaProgressText(area, gapAnalysis)
 
       expect(result.currentLevel).toBe('select')
       expect(result.progressText).toContain('Select Distinguished status')
@@ -185,18 +168,17 @@ describe('generateAreaProgressText', () => {
       expect(result.progressText).not.toContain('For Distinguished')
     })
 
-    it('should include club visit status', () => {
+    it('includes the current-round visit clause', () => {
       const area = createArea('B2', 'B', 4, 4, 3)
       const gapAnalysis = calculateAreaGapAnalysis({
         clubBase: 4,
         paidClubs: 4,
         distinguishedClubs: 3,
       })
-      const visitInfo = createVisitInfo(4, 4, 4)
 
-      const result = generateAreaProgressText(area, gapAnalysis, visitInfo)
+      const result = generateAreaProgressText(area, gapAnalysis)
 
-      expect(result.progressText).toContain('Club visits:')
+      expect(result.progressText).toContain('Round 2 club visits:')
     })
   })
 
@@ -207,16 +189,14 @@ describe('generateAreaProgressText', () => {
   describe('Distinguished with incremental gaps to Select and Presidents', () => {
     it('should describe achievement and incremental gaps', () => {
       // 4 clubs, 4 paid (no net loss), 2 distinguished (50% = 2)
-      // Distinguished achieved, Select needs 1 more distinguished, Presidents needs 1 more distinguished + 1 paid
       const area = createArea('A1', 'A', 4, 4, 2)
       const gapAnalysis = calculateAreaGapAnalysis({
         clubBase: 4,
         paidClubs: 4,
         distinguishedClubs: 2,
       })
-      const visitInfo = createVisitInfo(2, 1, 4)
 
-      const result = generateAreaProgressText(area, gapAnalysis, visitInfo)
+      const result = generateAreaProgressText(area, gapAnalysis)
 
       expect(result.currentLevel).toBe('distinguished')
       expect(result.progressText).toContain('Distinguished status')
@@ -236,32 +216,23 @@ describe('generateAreaProgressText', () => {
         distinguishedClubs: 2,
       })
 
-      const result = generateAreaProgressText(area, gapAnalysis, undefined)
+      const result = generateAreaProgressText(area, gapAnalysis)
 
-      // The text should build incrementally
-      // Select gap mentions distinguished clubs needed
-      // President's gap should mention "also" to indicate building on previous
       expect(result.progressText).toContain('Select Distinguished')
       expect(result.progressText).toContain("President's Distinguished")
     })
 
-    it('should include club visit status showing visits needed for 75%', () => {
+    it('includes the current-round visit clause', () => {
       const area = createArea('C3', 'C', 4, 4, 2)
       const gapAnalysis = calculateAreaGapAnalysis({
         clubBase: 4,
         paidClubs: 4,
         distinguishedClubs: 2,
       })
-      // 75% of 4 = 3, first round has 3 (meets), second has 0 (needs 3)
-      const visitInfo = createVisitInfo(3, 0, 4)
 
-      const result = generateAreaProgressText(area, gapAnalysis, visitInfo)
+      const result = generateAreaProgressText(area, gapAnalysis)
 
-      expect(result.progressText).toContain('Club visits:')
-      expect(result.progressText).toContain('first-round meets 75% threshold')
-      expect(result.progressText).toContain(
-        'second-round needs 3 visits for 75%'
-      )
+      expect(result.progressText).toContain('Round 2 club visits:')
     })
   })
 
@@ -278,9 +249,8 @@ describe('generateAreaProgressText', () => {
         paidClubs: 4,
         distinguishedClubs: 1,
       })
-      const visitInfo = createVisitInfo(2, 0, 4)
 
-      const result = generateAreaProgressText(area, gapAnalysis, visitInfo)
+      const result = generateAreaProgressText(area, gapAnalysis)
 
       expect(result.currentLevel).toBe('none')
       expect(result.progressText).toContain('not yet distinguished')
@@ -300,27 +270,11 @@ describe('generateAreaProgressText', () => {
         distinguishedClubs: 0,
       })
 
-      const result = generateAreaProgressText(area, gapAnalysis, undefined)
+      const result = generateAreaProgressText(area, gapAnalysis)
 
-      // Distinguished needs 2 clubs (50% of 4)
-      // Select needs 3 clubs (50% + 1), so 1 additional beyond Distinguished
-      // President's needs 3 distinguished + 1 paid
       expect(result.progressText).toContain('For Distinguished')
       expect(result.progressText).toContain('For Select Distinguished')
       expect(result.progressText).toContain("President's Distinguished")
-    })
-
-    it('should include club visit status unknown when not provided', () => {
-      const area = createArea('C3', 'C', 4, 4, 1)
-      const gapAnalysis = calculateAreaGapAnalysis({
-        clubBase: 4,
-        paidClubs: 4,
-        distinguishedClubs: 1,
-      })
-
-      const result = generateAreaProgressText(area, gapAnalysis, undefined)
-
-      expect(result.progressText).toContain('Club visits: status unknown')
     })
   })
 
@@ -331,16 +285,14 @@ describe('generateAreaProgressText', () => {
   describe('Net club loss scenario with eligibility explanation', () => {
     it('should explain eligibility requirement first (already has enough distinguished)', () => {
       // 4 clubs, 3 paid (net club loss), 2 distinguished
-      // Once eligibility is met, Distinguished requirements would be met (2 = 50% of 4)
       const area = createArea('A1', 'A', 4, 3, 2)
       const gapAnalysis = calculateAreaGapAnalysis({
         clubBase: 4,
         paidClubs: 3,
         distinguishedClubs: 2,
       })
-      const visitInfo = createVisitInfo(3, 1, 4)
 
-      const result = generateAreaProgressText(area, gapAnalysis, visitInfo)
+      const result = generateAreaProgressText(area, gapAnalysis)
 
       expect(result.currentLevel).toBe('none')
       expect(result.progressText).toContain('net club loss')
@@ -363,26 +315,12 @@ describe('generateAreaProgressText', () => {
         distinguishedClubs: 3,
       })
 
-      const result = generateAreaProgressText(area, gapAnalysis, undefined)
+      const result = generateAreaProgressText(area, gapAnalysis)
 
       expect(result.progressText).toContain('net club loss')
       expect(result.progressText).toContain('7 of 10 clubs paid')
       expect(result.progressText).toContain('To become eligible')
       expect(result.progressText).toContain('3 paid clubs')
-    })
-
-    it('should include club visit status', () => {
-      const area = createArea('C3', 'C', 4, 3, 2)
-      const gapAnalysis = calculateAreaGapAnalysis({
-        clubBase: 4,
-        paidClubs: 3,
-        distinguishedClubs: 2,
-      })
-      const visitInfo = createVisitInfo(3, 0, 4)
-
-      const result = generateAreaProgressText(area, gapAnalysis, visitInfo)
-
-      expect(result.progressText).toContain('Club visits:')
     })
 
     it('should describe Distinguished requirements after eligibility', () => {
@@ -394,7 +332,7 @@ describe('generateAreaProgressText', () => {
         distinguishedClubs: 0,
       })
 
-      const result = generateAreaProgressText(area, gapAnalysis, undefined)
+      const result = generateAreaProgressText(area, gapAnalysis)
 
       expect(result.progressText).toContain('To become eligible')
       expect(result.progressText).toContain('2 paid clubs')
@@ -402,95 +340,6 @@ describe('generateAreaProgressText', () => {
       expect(result.progressText).toContain('Then for Distinguished')
       expect(result.progressText).toContain(
         '2 clubs need to become distinguished'
-      )
-    })
-  })
-
-  /**
-   * Requirement 6.7, 6.8, 6.9: Club visit status display in terms of 75% threshold
-   */
-  describe('Club visit status display', () => {
-    it('should show "both rounds meet 75% threshold" when threshold is met', () => {
-      const area = createArea('A1', 'A', 4, 4, 2)
-      const gapAnalysis = calculateAreaGapAnalysis({
-        clubBase: 4,
-        paidClubs: 4,
-        distinguishedClubs: 2,
-      })
-      // 75% of 4 = 3, so 3+ visits meets threshold
-      const visitInfo = createVisitInfo(3, 3, 4)
-
-      const result = generateAreaProgressText(area, gapAnalysis, visitInfo)
-
-      expect(result.progressText).toContain('both rounds meet 75% threshold')
-    })
-
-    it('should show visits needed for 75% when threshold not met', () => {
-      const area = createArea('B2', 'B', 4, 4, 2)
-      const gapAnalysis = calculateAreaGapAnalysis({
-        clubBase: 4,
-        paidClubs: 4,
-        distinguishedClubs: 2,
-      })
-      // 75% of 4 = 3, so 2 visits needs 1 more
-      const visitInfo = createVisitInfo(2, 1, 4)
-
-      const result = generateAreaProgressText(area, gapAnalysis, visitInfo)
-
-      expect(result.progressText).toContain('Club visits:')
-      expect(result.progressText).toContain('first-round')
-      expect(result.progressText).toContain('second-round')
-      expect(result.progressText).toContain('75%')
-    })
-
-    it('should show "status unknown" when visit data unavailable', () => {
-      const area = createArea('C3', 'C', 4, 4, 2)
-      const gapAnalysis = calculateAreaGapAnalysis({
-        clubBase: 4,
-        paidClubs: 4,
-        distinguishedClubs: 2,
-      })
-
-      const result = generateAreaProgressText(area, gapAnalysis, undefined)
-
-      expect(result.progressText).toContain('Club visits: status unknown')
-    })
-
-    it('should show visits needed when zero visits completed', () => {
-      const area = createArea('D4', 'D', 4, 4, 2)
-      const gapAnalysis = calculateAreaGapAnalysis({
-        clubBase: 4,
-        paidClubs: 4,
-        distinguishedClubs: 2,
-      })
-      const visitInfo = createVisitInfo(0, 0, 4)
-
-      const result = generateAreaProgressText(area, gapAnalysis, visitInfo)
-
-      // 75% of 4 = 3 visits needed
-      expect(result.progressText).toContain(
-        'first-round needs 3 visits for 75%'
-      )
-      expect(result.progressText).toContain(
-        'second-round needs 3 visits for 75%'
-      )
-    })
-
-    it('should show first-round meets threshold, second-round needs more', () => {
-      const area = createArea('E5', 'E', 4, 4, 2)
-      const gapAnalysis = calculateAreaGapAnalysis({
-        clubBase: 4,
-        paidClubs: 4,
-        distinguishedClubs: 2,
-      })
-      // 75% of 4 = 3, first round has 3 (meets), second has 1 (needs 2 more)
-      const visitInfo = createVisitInfo(3, 1, 4)
-
-      const result = generateAreaProgressText(area, gapAnalysis, visitInfo)
-
-      expect(result.progressText).toContain('first-round meets 75% threshold')
-      expect(result.progressText).toContain(
-        'second-round 1/3 (need 2 more for 75%)'
       )
     })
   })
@@ -508,24 +357,22 @@ describe('generateAreaProgressText', () => {
           distinguishedClubs: 0,
         })
 
-        const result = generateAreaProgressText(area, gapAnalysis, undefined)
+        const result = generateAreaProgressText(area, gapAnalysis)
 
         expect(result.currentLevel).toBe('none')
         expect(result.areaLabel).toBe('Area A1 (Division A)')
-        // Should handle gracefully without errors
         expect(result.progressText).toBeDefined()
       })
 
-      it('should show "no clubs in area" for visit info with 0 clubs', () => {
+      it('should show "no clubs in area" for an area with 0 clubs', () => {
         const area = createArea('B2', 'B', 0, 0, 0)
         const gapAnalysis = calculateAreaGapAnalysis({
           clubBase: 0,
           paidClubs: 0,
           distinguishedClubs: 0,
         })
-        const visitInfo = createVisitInfo(0, 0, 0)
 
-        const result = generateAreaProgressText(area, gapAnalysis, visitInfo)
+        const result = generateAreaProgressText(area, gapAnalysis)
 
         expect(result.progressText).toContain('no clubs in area')
       })
@@ -541,7 +388,7 @@ describe('generateAreaProgressText', () => {
           distinguishedClubs: 1,
         })
 
-        const result = generateAreaProgressText(area, gapAnalysis, undefined)
+        const result = generateAreaProgressText(area, gapAnalysis)
 
         expect(result.currentLevel).toBe('distinguished')
         expect(result.progressText).toContain('Distinguished status')
@@ -558,13 +405,12 @@ describe('generateAreaProgressText', () => {
           distinguishedClubs: 0,
         })
 
-        const result = generateAreaProgressText(area, gapAnalysis, undefined)
+        const result = generateAreaProgressText(area, gapAnalysis)
 
         expect(result.currentLevel).toBe('none')
         expect(result.progressText).toContain('not yet distinguished')
         expect(result.progressText).toContain('1 of 1 clubs paid')
         expect(result.progressText).toContain('0 of 1 distinguished')
-        // Should mention gap to Distinguished (need 1)
         expect(result.progressText).toContain('For Distinguished')
       })
 
@@ -577,7 +423,7 @@ describe('generateAreaProgressText', () => {
           distinguishedClubs: 0,
         })
 
-        const result = generateAreaProgressText(area, gapAnalysis, undefined)
+        const result = generateAreaProgressText(area, gapAnalysis)
 
         expect(result.currentLevel).toBe('none')
         expect(result.progressText).toContain('net club loss')
@@ -587,7 +433,7 @@ describe('generateAreaProgressText', () => {
       })
 
       it('should handle 1 club area at Presidents level', () => {
-        // 1 club, 2 paid (club base + 1), 2 distinguished (50% + 1 = ceil(0.5) + 1 = 2)
+        // 1 club, 2 paid (club base + 1), 2 distinguished
         const area = createArea('D4', 'D', 1, 2, 2)
         const gapAnalysis = calculateAreaGapAnalysis({
           clubBase: 1,
@@ -595,7 +441,7 @@ describe('generateAreaProgressText', () => {
           distinguishedClubs: 2,
         })
 
-        const result = generateAreaProgressText(area, gapAnalysis, undefined)
+        const result = generateAreaProgressText(area, gapAnalysis)
 
         expect(result.currentLevel).toBe('presidents')
         expect(result.progressText).toContain("President's Distinguished")
@@ -615,7 +461,7 @@ describe('generateAreaProgressText', () => {
         distinguishedClubs: 2,
       })
 
-      const result = generateAreaProgressText(area, gapAnalysis, undefined)
+      const result = generateAreaProgressText(area, gapAnalysis)
 
       expect(result.areaLabel).toBe('Area A1 (Division A)')
       expect(result.progressText).toContain('Area A1 (Division A)')
@@ -629,7 +475,7 @@ describe('generateAreaProgressText', () => {
         distinguishedClubs: 2,
       })
 
-      const result = generateAreaProgressText(area, gapAnalysis, undefined)
+      const result = generateAreaProgressText(area, gapAnalysis)
 
       expect(result.areaLabel).toBe('Area B3 (Division X)')
     })
@@ -647,7 +493,7 @@ describe('generateAreaProgressText', () => {
         distinguishedClubs: 2,
       })
 
-      const result = generateAreaProgressText(area, gapAnalysis, undefined)
+      const result = generateAreaProgressText(area, gapAnalysis)
 
       expect(result).toHaveProperty('areaLabel')
       expect(result).toHaveProperty('currentLevel')
@@ -665,7 +511,7 @@ describe('generateAreaProgressText', () => {
         distinguishedClubs: 3,
       })
 
-      const result = generateAreaProgressText(area, gapAnalysis, undefined)
+      const result = generateAreaProgressText(area, gapAnalysis)
 
       expect(result.currentLevel).toBe(gapAnalysis.currentLevel)
     })
@@ -683,7 +529,7 @@ describe('generateAreaProgressText', () => {
         distinguishedClubs: 2,
       })
 
-      const result = generateAreaProgressText(area, gapAnalysis, undefined)
+      const result = generateAreaProgressText(area, gapAnalysis)
 
       expect(result.progressText).not.toMatch(/\s{2,}/)
     })
@@ -696,12 +542,12 @@ describe('generateAreaProgressText', () => {
         distinguishedClubs: 2,
       })
 
-      const result = generateAreaProgressText(area, gapAnalysis, undefined)
+      const result = generateAreaProgressText(area, gapAnalysis)
 
       // Should start with area label
       expect(result.progressText).toMatch(/^Area/)
-      // Should end with a period
-      expect(result.progressText).toMatch(/\.$/)
+      // Should end with a period (or a parenthetical flag)
+      expect(result.progressText).toMatch(/[.)]$/)
     })
   })
 
@@ -710,7 +556,6 @@ describe('generateAreaProgressText', () => {
    */
   describe('Larger area scenarios', () => {
     it('should handle 10 club area at Distinguished', () => {
-      // 10 clubs, 10 paid, 5 distinguished (50% = ceil(5) = 5)
       const area = createArea('A1', 'A', 10, 10, 5)
       const gapAnalysis = calculateAreaGapAnalysis({
         clubBase: 10,
@@ -718,7 +563,7 @@ describe('generateAreaProgressText', () => {
         distinguishedClubs: 5,
       })
 
-      const result = generateAreaProgressText(area, gapAnalysis, undefined)
+      const result = generateAreaProgressText(area, gapAnalysis)
 
       expect(result.currentLevel).toBe('distinguished')
       expect(result.progressText).toContain('10 of 10 clubs paid')
@@ -726,7 +571,6 @@ describe('generateAreaProgressText', () => {
     })
 
     it('should handle 10 club area not distinguished', () => {
-      // 10 clubs, 10 paid, 4 distinguished (40% - below 50%)
       const area = createArea('B2', 'B', 10, 10, 4)
       const gapAnalysis = calculateAreaGapAnalysis({
         clubBase: 10,
@@ -734,12 +578,226 @@ describe('generateAreaProgressText', () => {
         distinguishedClubs: 4,
       })
 
-      const result = generateAreaProgressText(area, gapAnalysis, undefined)
+      const result = generateAreaProgressText(area, gapAnalysis)
 
       expect(result.currentLevel).toBe('none')
       expect(result.progressText).toContain('not yet distinguished')
-      // Need 1 more for Distinguished (50% of 10 = 5)
       expect(result.progressText).toContain('For Distinguished')
     })
+  })
+})
+
+/**
+ * Sprint 2 (#974): the area progress text must NAME the active clubs still
+ * needing the current-round visit and STATE the qualifying-metric →
+ * Distinguished impact, driven by the Sprint 1 (#973) source-of-truth fields
+ * (`currentRound`, `clubsMissingCurrentRoundVisit`,
+ * `clubsMissingCurrentRoundVisitIneligible`) and the #832 `recognitionState`.
+ */
+function createRoundArea(opts: {
+  clubBase: number
+  paidClubs: number
+  distinguishedClubs: number
+  currentRound: 1 | 2
+  roundCompleted: number
+  missing?: MissingVisitClub[]
+  ineligible?: IneligibleMissingVisitClub[]
+  recognitionState: AreaRecognitionState
+}): AreaWithDivision {
+  const {
+    clubBase,
+    paidClubs,
+    distinguishedClubs,
+    currentRound,
+    roundCompleted,
+  } = opts
+  const roundStatus = calculateVisitStatus(roundCompleted, clubBase)
+  const otherStatus = calculateVisitStatus(0, clubBase)
+  return {
+    areaId: 'A1',
+    divisionId: 'A',
+    clubBase,
+    paidClubs,
+    distinguishedClubs,
+    netGrowth: paidClubs - clubBase,
+    requiredDistinguishedClubs: Math.ceil(clubBase * 0.5),
+    firstRoundVisits: currentRound === 1 ? roundStatus : otherStatus,
+    secondRoundVisits: currentRound === 2 ? roundStatus : otherStatus,
+    status: 'not-distinguished',
+    isQualified: false,
+    recognitionState: opts.recognitionState,
+    currentRound,
+    clubsMissingCurrentRoundVisit: opts.missing ?? [],
+    clubsMissingCurrentRoundVisitIneligible: opts.ineligible ?? [],
+  }
+}
+
+describe('generateAreaProgressText — current-round visit text (#974)', () => {
+  it('all-visited: names no clubs and confirms visits do not block recognition', () => {
+    const area = createRoundArea({
+      clubBase: 4,
+      paidClubs: 5,
+      distinguishedClubs: 3,
+      currentRound: 2,
+      roundCompleted: 4,
+      missing: [],
+      recognitionState: {
+        level: 'presidents',
+        status: 'confirmed',
+        pendingRounds: [],
+        failureReason: null,
+      },
+    })
+    const gapAnalysis = calculateAreaGapAnalysis({
+      clubBase: 4,
+      paidClubs: 5,
+      distinguishedClubs: 3,
+    })
+
+    const result = generateAreaProgressText(area, gapAnalysis)
+
+    expect(result.progressText).toContain(
+      'Round 2 club visits: all clubs visited.'
+    )
+    expect(result.progressText).toContain(
+      'met the Round 2 visit requirement (75%+)'
+    )
+    expect(result.progressText).toContain(
+      "visits won't block Distinguished recognition"
+    )
+  })
+
+  it('some-missing/provisional: names the active clubs and states the Provisional impact', () => {
+    const area = createRoundArea({
+      clubBase: 5,
+      paidClubs: 5,
+      distinguishedClubs: 3,
+      currentRound: 2,
+      roundCompleted: 1,
+      missing: [
+        { clubNumber: '1', clubName: 'North Grenville' },
+        { clubNumber: '2', clubName: 'Manotick' },
+        { clubNumber: '3', clubName: 'Smiths Falls' },
+        { clubNumber: '4', clubName: 'Stittsville' },
+      ],
+      recognitionState: {
+        level: 'distinguished',
+        status: 'provisional',
+        pendingRounds: [{ round: 2, deadline: '2026-05-31' }],
+        failureReason: null,
+      },
+    })
+    const gapAnalysis = calculateAreaGapAnalysis({
+      clubBase: 5,
+      paidClubs: 5,
+      distinguishedClubs: 3,
+    })
+
+    const result = generateAreaProgressText(area, gapAnalysis)
+
+    expect(result.progressText).toContain(
+      'Round 2 club visits: 1 of 5 complete — 4 active clubs still need a visit report: North Grenville, Manotick, Smiths Falls, Stittsville.'
+    )
+    expect(result.progressText).toContain('can only be Provisional')
+    // 75% of 5 = 4 required; 1 done → 3 more needed
+    expect(result.progressText).toContain('needs 3 more visits by May 31')
+  })
+
+  it('flags suspended/ineligible clubs separately from the active list', () => {
+    const area = createRoundArea({
+      clubBase: 4,
+      paidClubs: 4,
+      distinguishedClubs: 2,
+      currentRound: 1,
+      roundCompleted: 1,
+      missing: [{ clubNumber: '10', clubName: 'Kanata' }],
+      ineligible: [
+        { clubNumber: '20', clubName: 'Orleans', status: 'Suspended' },
+        { clubNumber: '21', clubName: 'Nepean', status: 'Suspended' },
+      ],
+      recognitionState: {
+        level: 'distinguished',
+        status: 'provisional',
+        pendingRounds: [{ round: 1, deadline: '2025-11-30' }],
+        failureReason: null,
+      },
+    })
+    const gapAnalysis = calculateAreaGapAnalysis({
+      clubBase: 4,
+      paidClubs: 4,
+      distinguishedClubs: 2,
+    })
+
+    const result = generateAreaProgressText(area, gapAnalysis)
+
+    expect(result.progressText).toContain('still needs a visit report: Kanata.')
+    expect(result.progressText).toContain(
+      '(2 suspended/ineligible clubs excluded.)'
+    )
+    expect(result.progressText).toContain('by Nov 30')
+  })
+
+  it('missed-deadline: states the area cannot be Distinguished this year', () => {
+    const area = createRoundArea({
+      clubBase: 4,
+      paidClubs: 4,
+      distinguishedClubs: 1,
+      currentRound: 2,
+      roundCompleted: 1,
+      missing: [{ clubNumber: '5', clubName: 'Carleton Place' }],
+      recognitionState: {
+        level: 'none',
+        status: 'not-distinguished',
+        pendingRounds: [],
+        failureReason: 'missed-deadline',
+      },
+    })
+    const gapAnalysis = calculateAreaGapAnalysis({
+      clubBase: 4,
+      paidClubs: 4,
+      distinguishedClubs: 1,
+    })
+
+    const result = generateAreaProgressText(area, gapAnalysis)
+
+    expect(result.progressText).toContain(
+      'still needs a visit report: Carleton Place.'
+    )
+    expect(result.progressText).toContain(
+      'Round 2 visit deadline (May 31) passed without 75%'
+    )
+    expect(result.progressText).toContain('cannot be Distinguished this year')
+  })
+
+  it('net-loss: still names the missing clubs for the current round', () => {
+    const area = createRoundArea({
+      clubBase: 5,
+      paidClubs: 4,
+      distinguishedClubs: 2,
+      currentRound: 2,
+      roundCompleted: 1,
+      missing: [
+        { clubNumber: '7', clubName: 'Almonte' },
+        { clubNumber: '8', clubName: 'Perth' },
+      ],
+      recognitionState: {
+        level: 'none',
+        status: 'not-distinguished',
+        pendingRounds: [],
+        failureReason: 'net-loss',
+      },
+    })
+    const gapAnalysis = calculateAreaGapAnalysis({
+      clubBase: 5,
+      paidClubs: 4,
+      distinguishedClubs: 2,
+    })
+
+    const result = generateAreaProgressText(area, gapAnalysis)
+
+    expect(result.progressText).toContain('net club loss')
+    expect(result.progressText).toContain(
+      'still need a visit report: Almonte, Perth.'
+    )
   })
 })
