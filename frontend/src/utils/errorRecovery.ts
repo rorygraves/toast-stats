@@ -58,8 +58,10 @@ export function resolveRouteRecovery(
 ): RouteRecovery {
   const match = DISTRICT_PATH.exec(pathname)
   if (!match) {
-    // Not a district path at all (incl. `/district` with no id, and `/`).
-    return pathname.startsWith('/district/') || pathname === '/district'
+    // The regex requires an id (`[^/]+`), so a district-shaped path that still
+    // fails to match has no usable id — `/district`, `/district/`, `/district//x`.
+    // Point those at the index; any non-district path keeps Home + Back.
+    return pathname === '/district' || pathname.startsWith('/district/')
       ? DISTRICTS_INDEX
       : { kind: 'none', suggestions: [] }
   }
