@@ -1,7 +1,9 @@
-/* DivisionPage (#424) — landing for a single division within a
-   district. Lists every club in that division with health status and
-   a small KPI strip. Reuses the shared district analytics React-Query
-   cache. */
+/* DivisionPage (#424) — landing for a single division within a district.
+   Shows the same division + areas recognition data as the Divisions overview
+   (status, Gap-to-D/S/P, per-area visit metrics) via the shared
+   extractDivisionPerformance + DivisionPerformanceCard (#1015), then lists
+   every club in the division by area with health status. Reuses the shared
+   district analytics + snapshot React-Query caches. */
 
 import React from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
