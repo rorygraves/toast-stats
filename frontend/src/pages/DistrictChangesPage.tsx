@@ -36,11 +36,15 @@ function fmtDate(iso: string): string {
 }
 
 /* Display order + headings for the grouped change list. Roster moves first
-   (most material), then recognition, then the per-club metric churn. */
+   (most material), then club / division / area recognition, then the per-club
+   metric churn. Division & area status changes (#1014) sit with the club
+   distinguished group as the "recognition" band. */
 const CATEGORY_GROUPS: { category: DiffEventCategory; heading: string }[] = [
   { category: 'club-added', heading: 'Clubs that joined' },
   { category: 'club-removed', heading: 'Clubs that left' },
   { category: 'distinguished', heading: 'Distinguished status changes' },
+  { category: 'division-status', heading: 'Division status changes' },
+  { category: 'area-status', heading: 'Area status changes' },
   { category: 'membership', heading: 'Membership changes' },
   { category: 'dcp-goals', heading: 'DCP goal changes' },
 ]

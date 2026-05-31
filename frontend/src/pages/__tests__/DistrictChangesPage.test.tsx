@@ -64,6 +64,25 @@ function diffFixture(over: Partial<SnapshotDiff> = {}): SnapshotDiff {
         label: 'Club 00002959 became Distinguished',
         magnitude: 1,
       },
+      {
+        category: 'division-status',
+        clubId: '',
+        clubName: '',
+        divisionId: 'G',
+        entityName: 'Division G',
+        label: 'Division G moved to Select Distinguished',
+        magnitude: 1,
+      },
+      {
+        category: 'area-status',
+        clubId: '',
+        clubName: '',
+        divisionId: 'B',
+        areaId: '2',
+        entityName: 'Area 2',
+        label: 'Area 2 moved to Confirmed Distinguished',
+        magnitude: 1,
+      },
     ],
     ...over,
   }
@@ -101,6 +120,30 @@ describe('DistrictChangesPage', () => {
       screen.getByRole('link', { name: 'iA Montreal Toastmasters' })
     ).toHaveAttribute('href', '/district/61/club/28680300')
     expect(screen.getByText(/\(Active\) joined the roster/)).toBeInTheDocument()
+  })
+
+  it('renders division and area status groups with entities linked to scoped routes (#1014)', () => {
+    mockedDates.mockReturnValue({
+      data: { dates: ['2026-05-25', '2026-05-26'] },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useDistrictCachedDates>)
+    mockedDiff.mockReturnValue({
+      data: diffFixture(),
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<typeof useSnapshotDiff>)
+
+    renderPage()
+    expect(screen.getByText(/Division status changes/)).toBeInTheDocument()
+    expect(screen.getByText(/Area status changes/)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Division G' })).toHaveAttribute(
+      'href',
+      '/district/61/division/G'
+    )
+    expect(screen.getByRole('link', { name: 'Area 2' })).toHaveAttribute(
+      'href',
+      '/district/61/division/B/area/2'
+    )
   })
 
   it('renders the date-pair picker when at least two snapshots exist (#794)', () => {
