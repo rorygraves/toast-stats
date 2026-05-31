@@ -987,6 +987,15 @@ mode_run() {
         reap_screen_session "$active"
         # Fall through: continue this tick and launch the active epic's
         # next sprint (the cascade loop will re-resolve + re-evaluate).
+      elif ! pgrep -f "claude --remote-control ${RC_NAME_PREFIX}${active_issue}" >/dev/null 2>&1; then
+        # OPEN but DEAD: the screen daemon is up yet its claude is gone (HUSK).
+        # Without this, a foreign session that crashed (e.g. a de-queued sprint
+        # whose session then died) squats the single slot forever and deadlocks
+        # the queue. A dead session — foreign or not — must never hold the slot.
+        log "Foreign session $active: #$active_issue is OPEN but DEAD (screen alive, claude gone — HUSK) — reaping to free the slot."
+        notify "sprint-runner" "Auto-reaped dead (husk) foreign session $active"
+        reap_screen_session "$active"
+        # Fall through: launch the active epic's next sprint this tick.
       else
         log "Slot held by foreign session $active: #$active_issue belongs to a different epic and is $active_state — leaving alone. Operator can --reap to override."
         notify "sprint-runner" "Slot held by foreign session $active (#$active_issue, $active_state)"
