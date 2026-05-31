@@ -31,22 +31,33 @@ const AreaRedirectPage: React.FC = () => {
   } = useDistrictStatistics(districtId ?? '', undefined, 'divisions')
 
   const normalizedAreaId = areaId?.toUpperCase()
-  const divId = React.useMemo(() => {
+  // Resolve BOTH the canonical division id AND the canonical area id from the
+  // snapshot (the source of truth), so a mixed-case alias like /area/a1 lands on
+  // a properly-cased canonical URL — the point of a shareable shortcut. Pass the
+  // snapshot's as-of date so historical snapshots gate correctly (R3), matching
+  // AreaPage's own lookup so the alias resolves the same division.
+  const target = React.useMemo(() => {
     if (!snapshot || !normalizedAreaId) return undefined
-    // Pass the snapshot's as-of date so historical snapshots gate correctly (R3),
-    // matching AreaPage's own lookup so the alias resolves the same division.
-    return extractDivisionPerformance(snapshot, snapshot.asOfDate).find(d =>
+    const divisions = extractDivisionPerformance(snapshot, snapshot.asOfDate)
+    const division = divisions.find(d =>
       d.areas.some(a => a.areaId.toUpperCase() === normalizedAreaId)
-    )?.divisionId
+    )
+    const area = division?.areas.find(
+      a => a.areaId.toUpperCase() === normalizedAreaId
+    )
+    return division && area
+      ? { divId: division.divisionId, areaId: area.areaId }
+      : undefined
   }, [snapshot, normalizedAreaId])
 
   React.useEffect(() => {
-    if (divId && districtId && areaId) {
-      navigate(`/district/${districtId}/division/${divId}/area/${areaId}`, {
-        replace: true,
-      })
+    if (target && districtId) {
+      navigate(
+        `/district/${districtId}/division/${target.divId}/area/${target.areaId}`,
+        { replace: true }
+      )
     }
-  }, [divId, districtId, areaId, navigate])
+  }, [target, districtId, navigate])
 
   if (isLoading) {
     return <LoadingSkeleton variant="card" />
@@ -64,11 +75,11 @@ const AreaRedirectPage: React.FC = () => {
 
   // Snapshot loaded but no division owns this area → bad slug → branded 404,
   // never 404 while loading/errored (data-unavailable ≠ not-found).
-  if (snapshot && !divId) {
+  if (snapshot && !target) {
     throw new Response(null, { status: 404, statusText: 'Area not found' })
   }
 
-  // divId resolved — the effect is navigating; show a brief skeleton meanwhile.
+  // target resolved — the effect is navigating; show a brief skeleton meanwhile.
   return <LoadingSkeleton variant="card" />
 }
 
