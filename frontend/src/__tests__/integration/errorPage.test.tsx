@@ -28,16 +28,18 @@ function Boom(): React.JSX.Element {
 /**
  * Build a QueryClient with the `['districts']` cache pre-seeded so
  * `useDistricts()` (which ErrorPage now calls for route-aware recovery)
- * resolves synchronously with no network. Pass `undefined` to leave it
- * unseeded (the districts-not-loaded path).
+ * resolves synchronously with NO network. `staleTime: Infinity` stops a
+ * background refetch (default staleTime 0 would otherwise hit the real CDN and
+ * make these tests network-flaky); we always seed, so the queryFn never runs.
+ * An empty array models the "districts unresolved" path deterministically.
  */
-function makeClient(districts?: DistrictsResponse['districts']) {
+function makeClient(districts: DistrictsResponse['districts']) {
   const client = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
+    defaultOptions: {
+      queries: { retry: false, staleTime: Infinity, gcTime: Infinity },
+    },
   })
-  if (districts) {
-    client.setQueryData<DistrictsResponse>(['districts'], { districts })
-  }
+  client.setQueryData<DistrictsResponse>(['districts'], { districts })
   return client
 }
 
@@ -49,7 +51,7 @@ const D61_DISTRICTS = [
 /** Mount a router shaped like App's: root with errorElement, throwing child. */
 function renderWithRouter(
   initialPath: string,
-  districts: DistrictsResponse['districts'] | undefined = D61_DISTRICTS
+  districts: DistrictsResponse['districts'] = D61_DISTRICTS
 ) {
   const router = createMemoryRouter(
     [
@@ -183,8 +185,8 @@ describe('Branded error boundary (#1011)', () => {
       ).not.toBeInTheDocument()
     })
 
-    it('falls back to the districts index when districts have not loaded', () => {
-      renderWithRouter('/district/61/dude', undefined)
+    it('falls back to the districts index when the district set is unresolved', () => {
+      renderWithRouter('/district/61/dude', [])
       const region = screen.getByTestId('error-page-suggestions')
       expect(
         within(region).getByRole('link', { name: /all districts/i })

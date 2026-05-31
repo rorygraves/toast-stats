@@ -5107,6 +5107,52 @@
     word-break: break-word;
   }
 
+  /* Route-aware smart recovery (#1012). Contextual destinations between the
+     message and the generic Home + Back actions. Token-driven so it themes for
+     dark mode automatically (--ink-2/--line/--link). */
+  .error-page__suggestions {
+    margin: 0 auto 24px;
+    max-width: 26rem;
+    text-align: left;
+    border-top: 1px solid var(--line);
+    padding-top: 20px;
+  }
+
+  .error-page__suggestions-lead {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-2);
+    margin: 0 0 10px;
+  }
+
+  .error-page__suggestions-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .error-page__suggestion-link {
+    display: inline-block;
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--link, #2563eb);
+    text-decoration: none;
+    padding: 6px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-sm, 6px);
+    background-color: var(--surface-2);
+  }
+
+  .error-page__suggestion-link:hover,
+  .error-page__suggestion-link:focus-visible {
+    text-decoration: underline;
+    border-color: var(--link, #2563eb);
+  }
+
   .error-page__actions {
     display: flex;
     flex-wrap: wrap;
