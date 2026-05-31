@@ -5059,7 +5059,7 @@
   }
 
   .error-page__code {
-    font-family: var(--serif, var(--rt-font-display));
+    font-family: var(--serif);
     font-weight: 700;
     font-size: 56px;
     line-height: 1;
