@@ -46,7 +46,7 @@ const AreaPage: React.FC = () => {
     useDistrictStatistics(districtId ?? '', undefined, 'divisions')
   const normalizedDivId = divId?.toUpperCase()
   const normalizedAreaId = areaId?.toUpperCase()
-  const areaPerformance = React.useMemo(() => {
+  const matched = React.useMemo(() => {
     if (!snapshot || !normalizedDivId || !normalizedAreaId) return undefined
     // The CDN snapshot carries the as-of date; pass it so historical snapshots
     // gate visit deadlines correctly (R3).
@@ -54,26 +54,28 @@ const AreaPage: React.FC = () => {
       snapshot,
       snapshot.asOfDate
     ).find(d => d.divisionId.toUpperCase() === normalizedDivId)
-    return division?.areas.find(
+    const area = division?.areas.find(
       a => a.areaId.toUpperCase() === normalizedAreaId
     )
+    return area ? { area, divisionId: division!.divisionId } : undefined
   }, [snapshot, normalizedDivId, normalizedAreaId])
+  const areaPerformance = matched?.area
 
   const areaNarrative = React.useMemo(() => {
-    if (!areaPerformance || !normalizedDivId) return undefined
+    if (!matched) return undefined
+    const { area, divisionId } = matched
     const gapAnalysis = calculateAreaGapAnalysis({
-      clubBase: areaPerformance.clubBase,
-      paidClubs: areaPerformance.paidClubs,
-      distinguishedClubs: areaPerformance.distinguishedClubs,
+      clubBase: area.clubBase,
+      paidClubs: area.paidClubs,
+      distinguishedClubs: area.distinguishedClubs,
     })
     // The current-round visit fields (#973) and recognitionState (#832) travel
-    // on the area row, so the generator reads them directly (#974).
-    const areaWithDivision: AreaWithDivision = {
-      ...areaPerformance,
-      divisionId: normalizedDivId,
-    }
+    // on the area row, so the generator reads them directly (#974). Use the
+    // division's actual extracted id (not the route param) so the prose matches
+    // the overview's "one source of truth" exactly.
+    const areaWithDivision: AreaWithDivision = { ...area, divisionId }
     return generateAreaProgressText(areaWithDivision, gapAnalysis)
-  }, [areaPerformance, normalizedDivId])
+  }, [matched])
 
   if (isLoading) {
     return <LoadingSkeleton variant="card" />
@@ -118,9 +120,8 @@ const AreaPage: React.FC = () => {
             {badge && (
               <span
                 className={`px-2 py-1 text-xs font-medium rounded-full border ${badge.className}`}
-                aria-label={`Recognition status: ${badge.label}`}
+                aria-label={`Area ${areaPerformance?.areaId ?? areaId} recognition: ${badge.label}`}
                 title={badge.tooltip}
-                role="status"
               >
                 {badge.label}
               </span>
