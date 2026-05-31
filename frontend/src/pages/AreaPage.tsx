@@ -48,11 +48,11 @@ const AreaPage: React.FC = () => {
   const normalizedAreaId = areaId?.toUpperCase()
   const areaPerformance = React.useMemo(() => {
     if (!snapshot || !normalizedDivId || !normalizedAreaId) return undefined
+    // The CDN snapshot carries the as-of date; pass it so historical snapshots
+    // gate visit deadlines correctly (R3).
     const division = extractDivisionPerformance(
       snapshot,
-      // The CDN snapshot carries the as-of date; pass it so historical
-      // snapshots gate visit deadlines correctly (R3).
-      (snapshot as { asOfDate?: string }).asOfDate
+      snapshot.asOfDate
     ).find(d => d.divisionId.toUpperCase() === normalizedDivId)
     return division?.areas.find(
       a => a.areaId.toUpperCase() === normalizedAreaId
@@ -113,14 +113,7 @@ const AreaPage: React.FC = () => {
               {divisionName}
             </Link>
           </p>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-              flexWrap: 'wrap',
-            }}
-          >
+          <div className="flex items-center gap-3 flex-wrap">
             <h1 className="districts-page-header__title">{areaName}</h1>
             {badge && (
               <span
