@@ -173,6 +173,33 @@ LIVENESS_LOG=""
 # _wt_base → the worktree parent (set -u-safe default).
 _wt_base() { printf '%s' "${WORKTREE_BASE:-$HOME/code/.worktrees}"; }
 
+# _session_transcript_path <worktree> <session-uuid> → claude's clean per-session
+# JSONL transcript path. claude writes it under ~/.claude/projects/<cwd>/<uuid>.jsonl
+# where <cwd> is the worktree path with every non-alphanumeric run mapped to '-'.
+# `tr '/.' '-'` is exact ONLY while worktree paths stay within [A-Za-z0-9/._-]
+# (they're always sprint-<n> under WORKTREE_BASE). A path with other chars (space,
+# '@') would diverge — the probe would then find no file and fall back to the
+# legacy log (safe degrade, never a false reap), but update this if the base changes.
+_session_transcript_path() {
+  printf '%s/.claude/projects/%s/%s.jsonl' "$HOME" "$(printf '%s' "$1" | tr '/.' '-')" "$2"
+}
+
+# _liveness_logfile <issue> → the file the log probe should sample. Prefer the
+# clean JSONL transcript (path recorded by the launch in a per-session sidecar);
+# fall back to the legacy screen-capture log for pre-transcript sessions. The
+# transcript is parseable JSON and goes mtime-stale the instant the session stops
+# emitting events — a far cleaner signal than the TUI escape-soup screen log.
+_liveness_logfile() {
+  local base sidecar path
+  base="${RUNNER_LOG_DIR:-$(_wt_base)/.runner-logs}"
+  sidecar="$base/session-$1.transcript"
+  if [[ -f "$sidecar" ]]; then
+    path="$(cat "$sidecar" 2>/dev/null || true)"
+    [[ -n "$path" ]] && { printf '%s' "$path"; return 0; }
+  fi
+  printf '%s/session-%s.log' "$base" "$1"
+}
+
 # _session_start_epoch <issue> <screen_pid> → epoch the session started.
 # DERIVED, not stored (design §4.1): the screen daemon's start time IS the
 # session start. Falls back to the worktree's birth time, then to now (a fresh
@@ -236,7 +263,7 @@ evaluate_liveness() {
   # or one whose log hasn't been created yet) still resolves to UNKNOWN — the
   # safe direction (UNKNOWN never counts as STALL).
   local logfile log_present=0 mtime_age=0 mtime
-  logfile="${RUNNER_LOG_DIR:-$(_wt_base)/.runner-logs}/session-$issue.log"
+  logfile="$(_liveness_logfile "$issue")"
   if [[ -f "$logfile" ]]; then
     mtime="$(stat -f %m "$logfile" 2>/dev/null || true)"
     # Only treat the log as present if we got a real mtime — an unstat-able

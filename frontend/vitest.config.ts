@@ -26,9 +26,14 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/__tests__/setup.ts',
-    // Set aggressive timeout limits for fast test execution
-    testTimeout: 5000, // 5 seconds max per test
-    hookTimeout: 5000, // 5 seconds max for setup/teardown hooks
+    // Timeouts carry headroom for machine saturation: the red-barkeep sprint-runner
+    // fleet runs several builds/test-suites concurrently, and a correct fast test
+    // (CollapsibleSection, normally ~ms) was observed taking 8.3s under that
+    // contention. 5s flaked correct tests at the pre-push gate; 15s — matching the
+    // heavy-journey override in 03-DcpProgressFlow — absorbs the load without
+    // masking real hangs (these tests pass in <1s un-contended). #1003 / #473 / L53
+    testTimeout: 15000,
+    hookTimeout: 15000,
     // Worker-count policy lives in vitest.shared.mjs so the guard test can't
     // drift from it (V8, #914). Local: fixed 3 forks (a busy dev machine
     // saturates at one-fork-per-core and blows the 5s timeout — #473 / Lesson
