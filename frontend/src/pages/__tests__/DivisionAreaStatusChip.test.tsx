@@ -23,6 +23,18 @@ vi.mock('../../hooks/useIsMobile', () => ({
   useIsMobile: () => mockUseIsMobile(),
 }))
 
+// DivisionPage now also reads the raw snapshot for the shared
+// DivisionPerformanceCard (#1015). This suite only exercises the club
+// mini-table de-table behaviour, so stub the snapshot query as "no data" —
+// the recognition card is absent and the club list (under test) renders.
+vi.mock('../../hooks/useMembershipData', () => ({
+  useDistrictStatistics: vi.fn(() => ({
+    data: undefined,
+    isLoading: false,
+    error: null,
+  })),
+}))
+
 const CLUB: ClubTrend = {
   clubId: 'c1',
   clubName: 'Limestone City Club',

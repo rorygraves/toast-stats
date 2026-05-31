@@ -1,11 +1,16 @@
-/* DivisionPage (#424) — landing for a single division within a
-   district. Lists every club in that division with health status and
-   a small KPI strip. Reuses the shared district analytics React-Query
-   cache. */
+/* DivisionPage (#424) — landing for a single division within a district.
+   Shows the same division + areas recognition data as the Divisions overview
+   (status, Gap-to-D/S/P, per-area visit metrics) via the shared
+   extractDivisionPerformance + DivisionPerformanceCard (#1015), then lists
+   every club in the division by area with health status. Reuses the shared
+   district analytics + snapshot React-Query caches. */
 
 import React from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useDistrictAnalytics } from '../hooks/useDistrictAnalytics'
+import { useDistrictStatistics } from '../hooks/useMembershipData'
+import { extractDivisionPerformance } from '../utils/extractDivisionPerformance'
+import { DivisionPerformanceCard } from '../components/DivisionPerformanceCard'
 import { LoadingSkeleton } from '../components/LoadingSkeleton'
 import { EmptyState } from '../components/ErrorDisplay'
 import { ClubMiniList } from '../components/ClubMiniList'
@@ -25,6 +30,20 @@ const DivisionPage: React.FC = () => {
     undefined
   )
 
+  // Recognition / gap / visit data come from the same raw snapshot the
+  // Divisions overview reads — one source of truth (R6/R8, #1015). We reuse the
+  // overview's extractDivisionPerformance util + DivisionPerformanceCard rather
+  // than re-deriving from allClubs, so this scoped page can't drift from it.
+  const { data: snapshot, isLoading: isLoadingSnapshot } =
+    useDistrictStatistics(districtId ?? '', undefined, 'divisions')
+  const normalizedDivId = divId?.toUpperCase()
+  const divisionPerformance = React.useMemo(() => {
+    if (!snapshot || !normalizedDivId) return undefined
+    return extractDivisionPerformance(snapshot, snapshot.asOfDate).find(
+      d => d.divisionId.toUpperCase() === normalizedDivId
+    )
+  }, [snapshot, normalizedDivId])
+
   if (isLoading) {
     return <LoadingSkeleton variant="card" />
   }
@@ -39,38 +58,11 @@ const DivisionPage: React.FC = () => {
     )
   }
 
-  const clubs = data.allClubs.filter(c => c.divisionId === divId)
-
-  if (clubs.length === 0) {
-    return (
-      <div className="app-shell__page">
-        <p className="placeholder-page__eyebrow">Division</p>
-        <h1 className="placeholder-page__title">
-          District {districtId} · Division {divId}
-        </h1>
-        <p className="placeholder-page__body">
-          No clubs found in this division.{' '}
-          <Link to={`/district/${districtId}`}>
-            Back to District {districtId}
-          </Link>
-          .
-        </p>
-      </div>
-    )
-  }
+  const clubs = data.allClubs.filter(
+    c => c.divisionId.toUpperCase() === normalizedDivId
+  )
 
   const divisionName = clubs[0]?.divisionName ?? `Division ${divId}`
-
-  // KPI rollup — counts by health status, total members.
-  const totalMembers = clubs.reduce((sum, c) => {
-    const last = c.membershipTrend[c.membershipTrend.length - 1]
-    return sum + (last?.count ?? 0)
-  }, 0)
-  const thriving = clubs.filter(c => c.currentStatus === 'thriving').length
-  const vulnerable = clubs.filter(c => c.currentStatus === 'vulnerable').length
-  const intervention = clubs.filter(
-    c => c.currentStatus === 'intervention-required'
-  ).length
 
   // Group clubs by area for the table sections.
   const areaGroups = new Map<
@@ -103,49 +95,37 @@ const DivisionPage: React.FC = () => {
           </p>
           <h1 className="districts-page-header__title">{divisionName}</h1>
           <p className="districts-page-header__lede">
-            {clubs.length} club{clubs.length === 1 ? '' : 's'} across{' '}
-            {areas.length} area{areas.length === 1 ? '' : 's'} in this division.
+            {clubs.length === 0
+              ? 'Division recognition standing for this program year.'
+              : `${clubs.length} club${clubs.length === 1 ? '' : 's'} across ${areas.length} area${areas.length === 1 ? '' : 's'} in this division.`}
           </p>
         </div>
       </header>
 
-      <div
-        className="districts-kpi-strip"
-        style={{ marginBottom: 24 }}
-        aria-label="Division totals"
-      >
-        <div className="districts-kpi-card">
-          <p className="districts-kpi-card__label">Clubs</p>
-          <div className="districts-kpi-card__value">{clubs.length}</div>
-        </div>
-        <div className="districts-kpi-card">
-          <p className="districts-kpi-card__label">Total Members</p>
-          <div className="districts-kpi-card__value">
-            {totalMembers.toLocaleString()}
-          </div>
-        </div>
-        <div className="districts-kpi-card">
-          <p className="districts-kpi-card__label">Thriving</p>
-          <div
-            className="districts-kpi-card__value"
-            style={{ color: 'var(--green-600, #16a34a)' }}
-          >
-            {thriving}
-          </div>
-        </div>
-        <div className="districts-kpi-card">
-          <p className="districts-kpi-card__label">Needs Attention</p>
-          <div
-            className="districts-kpi-card__value"
-            style={{
-              color:
-                intervention > 0 ? 'var(--red-600, #dc2626)' : 'var(--ink-2)',
-            }}
-          >
-            {vulnerable + intervention}
-          </div>
-        </div>
+      {/* Division + areas recognition data, reused from the Divisions overview
+          (#1015). Replaces the old ad-hoc allClubs KPI strip so the standalone
+          page shows the same status / Gap-to-D-S-P / per-area visit metrics on
+          the same computation as the overview. */}
+      <div style={{ marginBottom: 24 }}>
+        {divisionPerformance ? (
+          <DivisionPerformanceCard division={divisionPerformance} />
+        ) : (
+          isLoadingSnapshot && <LoadingSkeleton variant="table" count={3} />
+        )}
       </div>
+
+      {/* No analytics-club rows for this division (suspended/migrated clubs).
+          The recognition card above still renders from the snapshot — don't
+          hide it behind an empty club list (#1015). */}
+      {clubs.length === 0 && (
+        <p className="placeholder-page__body">
+          No clubs are currently listed in this division.{' '}
+          <Link to={`/district/${districtId}`}>
+            Back to District {districtId}
+          </Link>
+          .
+        </p>
+      )}
 
       {areas.map(area => (
         <section key={area.areaId} style={{ marginBottom: 32 }}>
