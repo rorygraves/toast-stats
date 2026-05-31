@@ -11,7 +11,15 @@
 import React from 'react'
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, cleanup, within } from '@testing-library/react'
-import { MemoryRouter, Routes, Route } from 'react-router-dom'
+import {
+  MemoryRouter,
+  Routes,
+  Route,
+  createMemoryRouter,
+  RouterProvider,
+  useRouteError,
+  isRouteErrorResponse,
+} from 'react-router-dom'
 import type { ClubTrend } from '../../hooks/useDistrictAnalytics'
 import DivisionPage from '../DivisionPage'
 import AreaPage from '../AreaPage'
@@ -133,5 +141,87 @@ describe('AreaPage wayfinding (#1017)', () => {
     const current = within(nav).getByText('Area 10')
     expect(current).toHaveAttribute('aria-current', 'page')
     expect(current.closest('a')).toBeNull()
+  })
+})
+
+// --- Slug validation → branded 404 (#1017) ---------------------------------
+// A bad division/area id must throw a 404 Response so the root errorElement
+// (#1011/#1012) renders the branded not-found page, NOT an empty "no clubs"
+// page. The throw-to-boundary mechanism only exists in a data router, so these
+// tests mount via createMemoryRouter with a test boundary that reports the
+// thrown status.
+function StatusBoundary() {
+  const err = useRouteError()
+  return (
+    <div data-testid="boundary">
+      {isRouteErrorResponse(err) ? err.status : 'non-response'}
+    </div>
+  )
+}
+
+function renderViaDataRouter(
+  path: string,
+  routePath: string,
+  Element: React.ComponentType
+) {
+  const router = createMemoryRouter(
+    [
+      {
+        path: routePath,
+        element: <Element />,
+        errorElement: <StatusBoundary />,
+      },
+    ],
+    { initialEntries: [path] }
+  )
+  return render(<RouterProvider router={router} />)
+}
+
+describe('DivisionPage slug validation (#1017)', () => {
+  it('throws a 404 for a division id absent from the snapshot', () => {
+    const { getByTestId } = renderViaDataRouter(
+      '/district/61/division/Z',
+      '/district/:districtId/division/:divId',
+      DivisionPage
+    )
+    expect(getByTestId('boundary')).toHaveTextContent('404')
+  })
+
+  it('does NOT throw for a valid division id', () => {
+    const { queryByTestId } = renderViaDataRouter(
+      '/district/61/division/A',
+      '/district/:districtId/division/:divId',
+      DivisionPage
+    )
+    expect(queryByTestId('boundary')).toBeNull()
+  })
+})
+
+describe('AreaPage slug validation (#1017)', () => {
+  it('throws a 404 for an area id absent from the snapshot', () => {
+    const { getByTestId } = renderViaDataRouter(
+      '/district/61/division/A/area/99',
+      '/district/:districtId/division/:divId/area/:areaId',
+      AreaPage
+    )
+    expect(getByTestId('boundary')).toHaveTextContent('404')
+  })
+
+  it('throws a 404 when the division id itself is unknown', () => {
+    const { getByTestId } = renderViaDataRouter(
+      '/district/61/division/Z/area/10',
+      '/district/:districtId/division/:divId/area/:areaId',
+      AreaPage
+    )
+    expect(getByTestId('boundary')).toHaveTextContent('404')
+  })
+
+  it('does NOT throw for a valid area id', () => {
+    const { queryByTestId } = renderViaDataRouter(
+      '/district/61/division/A/area/10',
+      '/district/:districtId/division/:divId/area/:areaId',
+      AreaPage
+    )
+    expect(queryByTestId('boundary')).toBeNull()
   })
 })
