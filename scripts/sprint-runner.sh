@@ -372,7 +372,7 @@ reap_screen_session() {
   # Delete the per-session screen logfile + screenrc (epic #933 §2.3): they are
   # truth-tied to session lifetime, so a fresh relaunch never reads a reaped
   # session's stale loop transcript as the new session's log signal.
-  rm -f "$RUNNER_LOG_DIR/session-$n.log" "$RUNNER_LOG_DIR/session-$n.screenrc" "$RUNNER_LOG_DIR/provision-$n.log" 2>/dev/null || true
+  rm -f "$RUNNER_LOG_DIR/session-$n.log" "$RUNNER_LOG_DIR/session-$n.screenrc" "$RUNNER_LOG_DIR/provision-$n.log" "$RUNNER_LOG_DIR/session-$n.transcript" 2>/dev/null || true
   notify "sprint-runner" "Reaped session $session"
 }
 
@@ -471,7 +471,7 @@ gc_worktrees() {
       || rm -rf "$wt"
     # A worktree with no paired screen is a dead session — drop its logfile +
     # screenrc too (same truth-tied lifetime as in reap_screen_session).
-    rm -f "$RUNNER_LOG_DIR/session-$n.log" "$RUNNER_LOG_DIR/session-$n.screenrc" "$RUNNER_LOG_DIR/provision-$n.log" 2>/dev/null || true
+    rm -f "$RUNNER_LOG_DIR/session-$n.log" "$RUNNER_LOG_DIR/session-$n.screenrc" "$RUNNER_LOG_DIR/provision-$n.log" "$RUNNER_LOG_DIR/session-$n.transcript" 2>/dev/null || true
     # Best-effort branch cleanup. `git branch -d` refuses unmerged branches,
     # which is what we want — operator can inspect crashed-session branches.
     if [[ -n "$branch" && "$branch" != "main" ]]; then
@@ -577,12 +577,24 @@ launch_sprint_session() {
   # here is the belt-and-suspenders guard against any residue).
   : > "$logfile"
 
+  # Pin a session id so we know claude's clean per-session JSONL transcript path
+  # up front, and record it in a sidecar the liveness log probe samples (instead
+  # of the TUI escape-soup screen capture). Remote Control is unaffected — it
+  # coexists with --session-id. If uuidgen is unavailable, we skip it and the
+  # probe falls back to the legacy screen log.
+  local sid_arg="" session_uuid
+  session_uuid="$(uuidgen 2>/dev/null | tr 'A-Z' 'a-z' || true)"
+  if [[ -n "$session_uuid" ]]; then
+    sid_arg="--session-id '$session_uuid'"
+    _session_transcript_path "$worktree" "$session_uuid" > "$RUNNER_LOG_DIR/session-$target_issue.transcript"
+  fi
+
   # `screen -dmS` allocates a PTY so claude's interactive UI works. `-dmS
   # <name>` stays FIRST so downstream `pgrep -f "SCREEN -dmS <name>"` and the
   # hermetic tests still match on that prefix; the logging flags follow.
   screen -dmS "$session_name" -c "$screenrc" -L bash -c "
     cd '$worktree' && \
-    claude --settings '$ultracode_settings' --remote-control '${RC_NAME_PREFIX}$target_issue' \"\$(cat '$PROMPT_FILE')\";
+    claude --settings '$ultracode_settings' $sid_arg --remote-control '${RC_NAME_PREFIX}$target_issue' \"\$(cat '$PROMPT_FILE')\";
     EXIT_CODE=\$?;
     rm -f '$PROMPT_FILE';
     echo \"[sprint-runner] claude exited with code \$EXIT_CODE — session ending.\"
