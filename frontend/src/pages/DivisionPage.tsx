@@ -13,6 +13,7 @@ import { extractDivisionPerformance } from '../utils/extractDivisionPerformance'
 import { calculateDivisionGapAnalysis } from '../utils/divisionGapAnalysis'
 import { generateDivisionProgressText } from '../utils/divisionProgressText'
 import { DivisionPerformanceCard } from '../components/DivisionPerformanceCard'
+import { SubpageBreadcrumb } from '../components/SubpageBreadcrumb'
 import { LoadingSkeleton } from '../components/LoadingSkeleton'
 import { EmptyState } from '../components/ErrorDisplay'
 import { ClubMiniList } from '../components/ClubMiniList'
@@ -73,6 +74,18 @@ const DivisionPage: React.FC = () => {
     )
   }
 
+  // Slug validation (#1017): once the snapshot has LOADED, a division id absent
+  // from its division list is a bad URL, not a real-but-empty division. Throw a
+  // 404 so the root errorElement (#1011/#1012) renders the branded not-found
+  // page with district-subpage recovery, instead of a misleading empty page.
+  // Gate strictly on `snapshot` being present — never 404 while it's still
+  // loading or errored (data-unavailable ≠ not-found), and never 404 a real
+  // division whose clubs are all suspended (Lesson 147): the snapshot's division
+  // list is the source of truth, the same one the recognition card reads.
+  if (snapshot && !divisionPerformance) {
+    throw new Response(null, { status: 404, statusText: 'Division not found' })
+  }
+
   const clubs = data.allClubs.filter(
     c => c.divisionId.toUpperCase() === normalizedDivId
   )
@@ -102,12 +115,17 @@ const DivisionPage: React.FC = () => {
 
   return (
     <div className="app-shell__page">
+      {/* District › Division wayfinding via the shared SubpageBreadcrumb every
+          routed sub-page uses (Lesson 085) — replaces the ad-hoc eyebrow link so
+          the trail, link affordance, and aria-current are consistent (#1017). */}
+      <SubpageBreadcrumb
+        crumbs={[
+          { label: `District ${districtId}`, to: `/district/${districtId}` },
+          { label: divisionName },
+        ]}
+      />
       <header className="districts-page-header">
         <div className="districts-page-header__intro">
-          <p className="districts-page-header__eyebrow">
-            District {districtId} ·{' '}
-            <Link to={`/district/${districtId}`}>back to district</Link>
-          </p>
           <h1 className="districts-page-header__title">{divisionName}</h1>
           <p className="districts-page-header__lede">
             {clubs.length === 0

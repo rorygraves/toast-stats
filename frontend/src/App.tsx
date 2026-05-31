@@ -67,6 +67,10 @@ const DivisionPage = React.lazy(() => import('./pages/DivisionPage'))
 // Code-split: AreaPage — /district/:districtId/division/:divId/area/:areaId (#425)
 const AreaPage = React.lazy(() => import('./pages/AreaPage'))
 
+// Code-split: AreaRedirectPage — flat alias /district/:districtId/area/:areaId
+// → canonical nested area route (#1017)
+const AreaRedirectPage = React.lazy(() => import('./pages/AreaRedirectPage'))
+
 /** Loading fallback for lazy-loaded pages */
 function PageLoadingFallback(): React.JSX.Element {
   // AppShell owns the <main id="main-content"> landmark; this fallback
@@ -222,6 +226,17 @@ const router = createBrowserRouter(
           element: (
             <Suspense fallback={<PageLoadingFallback />}>
               <AreaPage />
+            </Suspense>
+          ),
+        },
+        {
+          // Flat alias (#1017): /district/:districtId/area/:areaId redirects to
+          // the canonical nested route above. Distinct literal segment ('area'
+          // vs 'division'/'club') so it never collides with the nested routes.
+          path: 'district/:districtId/area/:areaId',
+          element: (
+            <Suspense fallback={<PageLoadingFallback />}>
+              <AreaRedirectPage />
             </Suspense>
           ),
         },

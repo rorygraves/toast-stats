@@ -26,6 +26,17 @@ function Boom(): React.JSX.Element {
 }
 
 /**
+ * A child route that throws a 404 `Response` at render — the shape the scoped
+ * Division/Area pages use for a bad slug (#1017). React Router does NOT wrap a
+ * render-thrown Response into an ErrorResponse (only loader/action throws are
+ * wrapped), so `isRouteErrorResponse` is false for it; ErrorPage must still map
+ * a raw 404 Response to the branded not-found variant.
+ */
+function Throw404(): React.JSX.Element {
+  throw new Response(null, { status: 404, statusText: 'Not found' })
+}
+
+/**
  * Build a QueryClient with the `['districts']` cache pre-seeded so
  * `useDistricts()` (which ErrorPage now calls for route-aware recovery)
  * resolves synchronously with NO network. `staleTime: Infinity` stops a
@@ -62,6 +73,7 @@ function renderWithRouter(
         children: [
           { index: true, element: <div>home</div> },
           { path: 'boom', element: <Boom /> },
+          { path: 'gone', element: <Throw404 /> },
         ],
       },
     ],
@@ -115,6 +127,17 @@ describe('Branded error boundary (#1011)', () => {
       renderWithRouter('/boom')
       const page = screen.getByTestId('error-page')
       expect(page.textContent).not.toMatch(/errorElement|Hey developer/i)
+    })
+  })
+
+  describe('render-thrown 404 Response (#1017 — scoped page bad slug)', () => {
+    it('renders the branded 404 not-found variant, not the generic error', () => {
+      renderWithRouter('/gone')
+      const page = screen.getByTestId('error-page')
+      expect(page).toHaveAttribute('data-error-variant', 'not-found')
+      expect(
+        screen.getByRole('heading', { name: /page not found/i })
+      ).toBeInTheDocument()
     })
   })
 
