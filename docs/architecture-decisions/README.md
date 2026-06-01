@@ -29,6 +29,7 @@ Each ADR follows this template:
 | [006](006-data-table-page-layout-and-column-model.md) | Data-table page layout & column-model standard             | Accepted                                                           | May 2026 |
 | [007](007-data-serving-gcs-cdn-lb-over-firebase.md)   | Serve data via GCS + Cloud CDN + LB (not Firebase Hosting) | Accepted                                                           | May 2026 |
 | [008](008-ai-enable-toast-stats.md)                   | AI-enable Toast Stats — thin local MCP server over the CDN | Accepted (revised — thin local MCP, no compute; Phase 0 dropped)   | May 2026 |
+| [009](009-full-range-rederive-promote-semantics.md)   | Full-range re-derive promote semantics (value-aware gate)  | Accepted                                                           | May 2026 |
 
 ## When to Write an ADR
 
