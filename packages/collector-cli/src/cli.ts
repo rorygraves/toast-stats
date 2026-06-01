@@ -1488,5 +1488,82 @@ export function createCLI(): Command {
       }
     )
 
+  // Value-aware staging→production diff for the full-range re-derive promote
+  // gate (#1034, epic #1031). Complements the count-only gate in
+  // data-pipeline.yml: detects re-derived VALUE changes the count gate is blind
+  // to, and blocks promotion until an operator reviews them. Fail-closed.
+  program
+    .command('value-diff')
+    .description(
+      'Compare staging vs production snapshot values and decide if promotion is safe (#1034)'
+    )
+    .requiredOption(
+      '--staging-dir <dir>',
+      'Directory of staging snapshots ({dir}/{date}/all-districts-rankings.json)'
+    )
+    .requiredOption(
+      '--prod-dir <dir>',
+      'Directory of production snapshots (same layout)'
+    )
+    .option(
+      '--allow-value-changes',
+      'Operator override: promote re-derived value changes after reviewing the diff',
+      false
+    )
+    .option('-v, --verbose', 'Enable detailed logging output', false)
+    .action(
+      async (options: {
+        stagingDir: string
+        prodDir: string
+        allowValueChanges: boolean
+        verbose: boolean
+      }) => {
+        const { runValueDiff } =
+          await import('./services/SnapshotValueDiffLoader.js')
+
+        let result
+        try {
+          result = runValueDiff({
+            stagingDir: options.stagingDir,
+            prodDir: options.prodDir,
+            allowValueChanges: options.allowValueChanges,
+          })
+        } catch (err) {
+          // Fail-closed: if we cannot read/compare the snapshots, do NOT promote.
+          const message = err instanceof Error ? err.message : String(err)
+          console.error(`[ERROR] value-diff failed: ${message}`)
+          console.log(
+            JSON.stringify(
+              {
+                promote: false,
+                requiresReview: true,
+                reasons: [`value-diff failed: ${message}`],
+              },
+              null,
+              2
+            )
+          )
+          process.exit(ExitCode.PARTIAL_FAILURE)
+        }
+
+        const { report, decision } = result
+        if (options.verbose) {
+          console.error(
+            `[INFO] overlap=${report.overlap} added=${report.added.length} removed=${report.removed.length} changed=${report.changed.length} unchanged=${report.unchanged.length}`
+          )
+          for (const reason of decision.reasons) {
+            console.error(`[INFO] ${reason}`)
+          }
+        }
+
+        // Structured JSON to stdout (R4: logs to stderr only).
+        console.log(JSON.stringify({ ...decision, report }, null, 2))
+
+        process.exit(
+          decision.promote ? ExitCode.SUCCESS : ExitCode.PARTIAL_FAILURE
+        )
+      }
+    )
+
   return program
 }
