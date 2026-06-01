@@ -1559,9 +1559,8 @@ export function createCLI(): Command {
         // Structured JSON to stdout (R4: logs to stderr only).
         console.log(JSON.stringify({ ...decision, report }, null, 2))
 
-        process.exit(
-          decision.promote ? ExitCode.SUCCESS : ExitCode.PARTIAL_FAILURE
-        )
+        // result.exitCode is the single source of truth (0 promote / 1 blocked).
+        process.exit(result.exitCode)
       }
     )
 
