@@ -330,6 +330,12 @@ export const MembershipTrendChart: React.FC<MembershipTrendChartProps> = ({
             {netChange >= 0 ? '+' : ''}
             {netChange}
           </p>
+          {/* #1023 — name the metric AND baseline so this member-count delta
+              can't be read as the Overview "Net Member Change" (a payments-vs-
+              payment-base figure). Single text node so the copy is assertable. */}
+          <p className="text-xs text-gray-600 mt-1 font-tm-body">
+            {`since first snapshot (${formatLongDate(firstDataPoint.date)}) · member counts`}
+          </p>
         </div>
         <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
           <p className="text-xs text-gray-700 font-medium font-tm-body">Peak</p>

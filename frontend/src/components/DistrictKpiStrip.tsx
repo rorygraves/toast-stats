@@ -168,8 +168,8 @@ export const DistrictKpiStrip: React.FC<DistrictKpiStripProps> = ({ kpis }) => {
             <KpiDeltaCard
               title="Net Member Change"
               current={kpis.netMemberChange.current}
-              secondaryLabel="members vs. base year"
-              tooltipContent="Net change in district membership (payments) since the program-year base."
+              secondaryLabel="payments vs. program-year base"
+              tooltipContent="Membership payments minus the program-year payment base (the recognition baseline). This differs from the Trends 'Net Change', which compares member counts against the first snapshot of the year."
             />
           </div>
           <p
