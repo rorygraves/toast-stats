@@ -129,4 +129,5 @@
 - **148** [router, react, frontend, verification, error-handling] — A render-thrown `Response` is NOT wrapped into an ErrorResponse; `isRouteErrorResponse` misses it (#1017, #1008)
 - **149** [verification, playwright, frontend, responsive, charts, scope] — A responsively-duplicated component needs a `:visible` selector in live verification (or the assertion hits the hidden twin) (#1023, #1022)
 - **150** [data-pipeline, analytics, verification, scope, mcp, process] — An ADR/spec claim that a derived field "lives in the snapshot" can be false; verify the live payload before building a tool that promises it (#1044, #1042)
+- **150** [mcp, verification, tdd, monorepo, ci, automation] — An installable stdio server needs an env-injectable base URL to be offline-smoke-tested via the real bin (#1045, #1042)
 - **150** [monorepo, tdd, build, ci, automation] — TDD-scaffolding a new workspace package has two silent gate traps: the typecheck "no inputs" abort and the explicitly-enumerated CI job (#1043, #1042)
