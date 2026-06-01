@@ -27,6 +27,7 @@
     "lint": "eslint . --ext .ts",
     "test": "vitest --run",
     "test:watch": "vitest",
+    "smoke": "npm run build && vitest run src/__tests__/stdio-boot.smoke.test.ts",
     "typecheck": "tsc --noEmit --skipLibCheck"
   },
   "dependencies": {
