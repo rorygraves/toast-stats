@@ -159,6 +159,26 @@ describe('CdnClient — failure handling (not-available, never throw)', () => {
     expect(res.reason).toMatch(/validation|not available/i)
   })
 
+  it('rejects a rankings body whose ELEMENT fails the shared DistrictRanking schema', async () => {
+    // The wrapper is well-formed (rankings array + valid date), but a single
+    // element violates the shared schema (districtId must be a string, paidClubs
+    // a number). This proves the element-level validation is actually wired —
+    // swapping z.array(DistrictRankingSchema) for z.array(z.unknown()) would
+    // make this test fail.
+    const badElementFetch = (async () =>
+      new Response(
+        JSON.stringify({
+          rankings: [{ districtId: 61, paidClubs: 'lots' }],
+          date: '2026-05-31',
+        }),
+        { status: 200 }
+      )) as typeof fetch
+    const res = await client(badElementFetch).getRankings()
+    expect(res.available).toBe(false)
+    if (res.available) return
+    expect(res.reason).toMatch(/schema validation failed/i)
+  })
+
   it('returns not-available for a non-404 error response (e.g. HTTP 500)', async () => {
     const serverErrorFetch = (async () =>
       new Response('boom', { status: 500 })) as typeof fetch
