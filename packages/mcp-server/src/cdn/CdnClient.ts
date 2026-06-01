@@ -171,23 +171,31 @@ export class CdnClient {
    * validated against the shared `PerDistrictData` write-contract. The snapshot
    * `date` is surfaced from the inner `data.snapshotDate`, not the request arg.
    */
-  getDistrictSnapshot(
+  async getDistrictSnapshot(
     districtId: string,
     date: string
   ): Promise<CdnReadResult<DistrictSnapshot>> {
     if (!DISTRICT_ID_RE.test(districtId) || !ISO_DATE_RE.test(date)) {
-      return Promise.resolve(
-        notAvailable(
-          `${this.baseUrl}/snapshots/${encodeURIComponent(date)}/district_${encodeURIComponent(districtId)}.json`,
-          `not available — "${districtId}"/"${date}" is not a valid district id / YYYY-MM-DD date`
-        )
+      return notAvailable(
+        `${this.baseUrl}/snapshots/${encodeURIComponent(date)}/district_${encodeURIComponent(districtId)}.json`,
+        `not available — "${districtId}"/"${date}" is not a valid district id / YYYY-MM-DD date`
       )
     }
-    return this.read(
+    const res = await this.read(
       `snapshots/${date}/district_${districtId}.json`,
       PerDistrictDataSchema,
       d => d.data.snapshotDate
     )
+    // A failed-collection snapshot is well-formed but carries partial/empty
+    // data — surface it as not-available rather than presenting it as real.
+    if (res.available && res.data.status === 'failed') {
+      const detail = res.data.errorMessage ? `: ${res.data.errorMessage}` : ''
+      return notAvailable(
+        res.sourceUrl,
+        `not available — snapshot for district ${districtId} on ${date} reports a failed collection${detail}`
+      )
+    }
+    return res
   }
 
   /**

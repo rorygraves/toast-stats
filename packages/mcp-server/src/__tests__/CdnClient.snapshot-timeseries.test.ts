@@ -64,6 +64,46 @@ describe('CdnClient.getDistrictSnapshot', () => {
     expect(res.reason).toMatch(/not available/i)
     expect(res.sourceUrl).toBe(`${BASE}/snapshots/2026-05-31/district_99.json`)
   })
+
+  it('treats a failed-collection snapshot as not-available (never surfaces partial data as available)', async () => {
+    const failedFetch = (async () =>
+      new Response(
+        JSON.stringify({
+          districtId: '61',
+          districtName: 'District 61',
+          collectedAt: '2026-05-31T10:00:00.000Z',
+          status: 'failed',
+          errorMessage: 'scrape timed out',
+          data: {
+            districtId: '61',
+            snapshotDate: '2026-05-31',
+            clubs: [],
+            divisions: [],
+            areas: [],
+            totals: {
+              totalClubs: 0,
+              totalMembership: 0,
+              totalPayments: 0,
+              distinguishedClubs: 0,
+              selectDistinguishedClubs: 0,
+              presidentDistinguishedClubs: 0,
+            },
+            divisionPerformance: [],
+            clubPerformance: [],
+            districtPerformance: [],
+          },
+        }),
+        { status: 200 }
+      )) as typeof fetch
+    const res = await client(failedFetch).getDistrictSnapshot(
+      '61',
+      '2026-05-31'
+    )
+    expect(res.available).toBe(false)
+    if (res.available) return
+    expect(res.reason).toMatch(/failed/i)
+    expect(res.sourceUrl).toBe(`${BASE}/snapshots/2026-05-31/district_61.json`)
+  })
 })
 
 describe('CdnClient.getTimeSeries', () => {
