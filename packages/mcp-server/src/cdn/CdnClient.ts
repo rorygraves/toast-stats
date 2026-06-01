@@ -8,8 +8,7 @@
  * performs NO computation, imports NO analytics-core, and never throws on a
  * missing/invalid response — it returns a typed not-available result instead.
  */
-import type { ZodType } from 'zod'
-import type { z } from 'zod'
+import type { ZodType, z } from 'zod'
 import {
   AllDistrictsRankingsDataSchema,
   type AllDistrictsRankingsData,
@@ -35,13 +34,13 @@ import {
   PROGRAM_YEAR_RE,
   DISTRICT_ID_RE,
 } from '../schemas/common.js'
+import { type CdnReadResult, notAvailable } from './result.js'
 
 /** A dated per-district snapshot (`snapshots/{date}/district_{id}.json`). */
 export type DistrictSnapshot = z.infer<typeof PerDistrictDataSchema>
 
 /** A program-year time-series file (`time-series/district_{id}/{py}.json`). */
 export type TimeSeriesProgramYear = z.infer<typeof ProgramYearIndexFileSchema>
-import { type CdnReadResult, notAvailable } from './result.js'
 
 /** Default public CDN origin (ADR-008). */
 export const DEFAULT_CDN_BASE_URL = 'https://cdn.taverns.red'
