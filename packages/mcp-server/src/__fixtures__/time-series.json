@@ -1,0 +1,44 @@
+{
+  "districtId": "61",
+  "programYear": "2025-2026",
+  "startDate": "2025-07-01",
+  "endDate": "2026-06-30",
+  "lastUpdated": "2026-05-31T10:00:00.000Z",
+  "dataPoints": [
+    {
+      "date": "2025-07-31",
+      "snapshotId": "2025-07-31",
+      "membership": 2800,
+      "payments": 2750,
+      "dcpGoals": 120,
+      "distinguishedTotal": 8,
+      "clubCounts": {
+        "total": 160,
+        "thriving": 90,
+        "vulnerable": 50,
+        "interventionRequired": 20
+      }
+    },
+    {
+      "date": "2026-05-31",
+      "snapshotId": "2026-05-31",
+      "membership": 3050,
+      "payments": 2990,
+      "dcpGoals": 410,
+      "distinguishedTotal": 22,
+      "clubCounts": {
+        "total": 162,
+        "thriving": 110,
+        "vulnerable": 38,
+        "interventionRequired": 14
+      }
+    }
+  ],
+  "summary": {
+    "totalDataPoints": 2,
+    "membershipStart": 2800,
+    "membershipEnd": 3050,
+    "membershipPeak": 3050,
+    "membershipLow": 2800
+  }
+}

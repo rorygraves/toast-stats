@@ -9,6 +9,9 @@ export default defineConfig({
       'src/**/*.spec.ts',
       'src/**/__tests__/**/*.ts',
     ],
+    // `__tests__/**/*.ts` would otherwise collect shared support files; skip the
+    // underscore-prefixed helpers (e.g. _fixture-fetch.ts) while keeping defaults.
+    exclude: ['**/node_modules/**', '**/dist/**', 'src/**/__tests__/**/_*.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
