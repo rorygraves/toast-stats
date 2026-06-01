@@ -28,7 +28,7 @@ Each ADR follows this template:
 | [005](005-district-subpage-ia-and-secondary-nav.md)   | District subpage IA map + secondary route-nav              | Accepted                                                           | May 2026 |
 | [006](006-data-table-page-layout-and-column-model.md) | Data-table page layout & column-model standard             | Accepted                                                           | May 2026 |
 | [007](007-data-serving-gcs-cdn-lb-over-firebase.md)   | Serve data via GCS + Cloud CDN + LB (not Firebase Hosting) | Accepted                                                           | May 2026 |
-| [008](008-ai-enable-toast-stats.md)                   | AI-enable Toast Stats — read-only MCP server over the CDN  | Proposed                                                           | May 2026 |
+| [008](008-ai-enable-toast-stats.md)                   | AI-enable Toast Stats — thin local MCP server over the CDN | Accepted (revised — thin local MCP, no compute; Phase 0 dropped)   | May 2026 |
 
 ## When to Write an ADR
 
