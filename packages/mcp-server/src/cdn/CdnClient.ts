@@ -27,12 +27,11 @@ import {
   CdnRankingsSchema,
   type CdnRankings,
 } from '../schemas/cdn-rankings.schema.js'
+import { ISO_DATE_RE } from '../schemas/common.js'
 import { type CdnReadResult, notAvailable } from './result.js'
 
 /** Default public CDN origin (ADR-008). */
 export const DEFAULT_CDN_BASE_URL = 'https://cdn.taverns.red'
-
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
 export interface CdnClientOptions {
   /** CDN origin. Defaults to {@link DEFAULT_CDN_BASE_URL}. */
@@ -100,6 +99,10 @@ export class CdnClient {
   /**
    * Resolve a single club id to its district via the club index. An unknown
    * club id is a typed not-available (the reader never guesses a district).
+   *
+   * Sprint 1 is a stateless thin reader: this fetches the full club index on
+   * every call. Caching the index is deferred to the MCP-tool layer, where the
+   * real call pattern (and TTL vs. snapshot freshness) is known.
    */
   async resolveClubDistrict(
     clubId: string
@@ -135,7 +138,7 @@ export class CdnClient {
   getDistrictRankingsForDate(
     date: string
   ): Promise<CdnReadResult<AllDistrictsRankingsData>> {
-    if (!ISO_DATE.test(date)) {
+    if (!ISO_DATE_RE.test(date)) {
       return Promise.resolve(
         notAvailable(
           `${this.baseUrl}/snapshots/${encodeURIComponent(date)}/all-districts-rankings.json`,

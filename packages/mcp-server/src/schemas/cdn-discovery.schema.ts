@@ -12,8 +12,7 @@
  * shared schema directly (see cdn-rankings.schema.ts and CdnClient).
  */
 import { z } from 'zod'
-
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
+import { ISO_DATE_RE as ISO_DATE } from './common.js'
 
 /** `v1/latest.json` — pointer to the current snapshot date. */
 export const LatestManifestSchema = z.object({

@@ -12,10 +12,11 @@
  */
 import { z } from 'zod'
 import { DistrictRankingSchema } from '@toastmasters/shared-contracts'
+import { ISO_DATE_RE } from './common.js'
 
 export const CdnRankingsSchema = z.object({
   rankings: z.array(DistrictRankingSchema),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  date: z.string().regex(ISO_DATE_RE),
   generatedAt: z.string().optional(),
 })
 export type CdnRankings = z.infer<typeof CdnRankingsSchema>
