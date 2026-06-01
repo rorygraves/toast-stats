@@ -1,0 +1,218 @@
+/**
+ * SnapshotValueDiff — value-aware comparison of two snapshot sets (staging vs
+ * production) for the full-range re-derive promote gate (epic #1031, Sprint 2).
+ *
+ * The existing promote gate (`data-pipeline.yml` `steps.diff`) compares only
+ * aggregate COUNTS — date count and ranked-district count. That is monotonic
+ * protection against a SUBTRACTIVE change, but it gives ZERO protection for the
+ * epic's "re-derive after logic changes" intent: same dates/districts ⇒ counts
+ * identical ⇒ auto-promote, even if every value was recomputed wrong (F2 in
+ * docs/investigations/2017-rerun-raw-csv-coverage.md).
+ *
+ * This module adds a per-date VALUE digest over each district's data fields and
+ * classifies the overlap set as added / removed / changed / unchanged, so a
+ * re-derive must be reviewed (validate-first) before it can promote.
+ */
+import type {
+  AllDistrictsRankingsData,
+  DistrictRanking,
+} from '@toastmasters/shared-contracts'
+
+export interface DateDigest {
+  date: string
+  totalDistricts: number
+  /** districtId → stable digest of that district's data fields */
+  districtDigests: Record<string, string>
+  /** order-independent digest of the whole date */
+  combined: string
+}
+
+export interface ChangedDate {
+  date: string
+  changedDistricts: string[]
+}
+
+export interface ValueDiffReport {
+  /** dates present in staging but not prod (additive) */
+  added: string[]
+  /** dates present in prod but not staging (subtractive) */
+  removed: string[]
+  /** overlap dates whose values differ */
+  changed: ChangedDate[]
+  /** overlap dates whose values are identical */
+  unchanged: string[]
+  /** number of dates present in both sets */
+  overlap: number
+}
+
+export interface PromoteDecision {
+  promote: boolean
+  requiresReview: boolean
+  reasons: string[]
+}
+
+export interface PromoteOptions {
+  /** operator override: promote a reviewed value re-derive despite changed dates */
+  allowValueChanges?: boolean
+}
+
+/**
+ * Deterministic JSON serialization with recursively sorted object keys, so that
+ * a digest depends only on values, never on key insertion order. `undefined`
+ * values (absent optional fields) are dropped consistently by JSON.stringify.
+ */
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== 'object') {
+    return JSON.stringify(value)
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map(stableStringify).join(',')}]`
+  }
+  const obj = value as Record<string, unknown>
+  const keys = Object.keys(obj)
+    .filter(k => obj[k] !== undefined)
+    .sort()
+  return `{${keys
+    .map(k => `${JSON.stringify(k)}:${stableStringify(obj[k])}`)
+    .join(',')}}`
+}
+
+/**
+ * Stable digest of a single district's data. Captures EVERY field of the
+ * ranking (metrics, ranks, scores, the optional #329/#330/#336 fields) so any
+ * re-derived difference is detected — but is independent of object key order.
+ */
+export function digestDistrict(district: DistrictRanking): string {
+  return stableStringify(district)
+}
+
+/**
+ * Per-date digest. Deliberately EXCLUDES `metadata` (calculatedAt, csvFetchedAt,
+ * fromCache, version stamps) — those change on every run without the underlying
+ * data changing, which would make every date falsely read as "changed".
+ */
+export function digestDate(
+  date: string,
+  data: AllDistrictsRankingsData
+): DateDigest {
+  const districtDigests: Record<string, string> = {}
+  for (const district of data.rankings) {
+    districtDigests[district.districtId] = digestDistrict(district)
+  }
+  // Order-independent: sort by districtId before combining.
+  const combined = stableStringify(
+    Object.keys(districtDigests)
+      .sort()
+      .map(id => [id, districtDigests[id]])
+  )
+  return {
+    date,
+    totalDistricts: data.rankings.length,
+    districtDigests,
+    combined,
+  }
+}
+
+function byDate(digests: DateDigest[]): Map<string, DateDigest> {
+  const map = new Map<string, DateDigest>()
+  for (const d of digests) map.set(d.date, d)
+  return map
+}
+
+/** Districts whose per-district digest differs (or is present in only one set). */
+function changedDistricts(a: DateDigest, b: DateDigest): string[] {
+  const ids = new Set([
+    ...Object.keys(a.districtDigests),
+    ...Object.keys(b.districtDigests),
+  ])
+  const changed: string[] = []
+  for (const id of ids) {
+    if (a.districtDigests[id] !== b.districtDigests[id]) changed.push(id)
+  }
+  return changed.sort()
+}
+
+export function diffSnapshots(
+  staging: DateDigest[],
+  prod: DateDigest[]
+): ValueDiffReport {
+  const stagingMap = byDate(staging)
+  const prodMap = byDate(prod)
+
+  const added: string[] = []
+  const removed: string[] = []
+  const changed: ChangedDate[] = []
+  const unchanged: string[] = []
+  let overlap = 0
+
+  for (const date of stagingMap.keys()) {
+    if (!prodMap.has(date)) added.push(date)
+  }
+  for (const date of prodMap.keys()) {
+    if (!stagingMap.has(date)) removed.push(date)
+  }
+  for (const [date, stagingDigest] of stagingMap) {
+    const prodDigest = prodMap.get(date)
+    if (!prodDigest) continue
+    overlap++
+    if (stagingDigest.combined === prodDigest.combined) {
+      unchanged.push(date)
+    } else {
+      changed.push({
+        date,
+        changedDistricts: changedDistricts(stagingDigest, prodDigest),
+      })
+    }
+  }
+
+  return {
+    added: added.sort(),
+    removed: removed.sort(),
+    changed: changed.sort((x, y) => x.date.localeCompare(y.date)),
+    unchanged: unchanged.sort(),
+    overlap,
+  }
+}
+
+/**
+ * Promote gate (validate-first). A SUBTRACTIVE change (date removed from prod)
+ * always blocks. A value re-derive (changed overlap dates) requires explicit
+ * operator review — it blocks unless `allowValueChanges` is set, signalling the
+ * operator has reviewed the value diff. A purely additive change promotes.
+ */
+export function evaluatePromote(
+  report: ValueDiffReport,
+  opts: PromoteOptions = {}
+): PromoteDecision {
+  const reasons: string[] = []
+  let promote = true
+  let requiresReview = false
+
+  if (report.removed.length > 0) {
+    promote = false
+    reasons.push(
+      `subtractive: ${report.removed.length} date(s) present in production are missing from staging (${report.removed.join(', ')})`
+    )
+  }
+
+  if (report.changed.length > 0) {
+    requiresReview = true
+    reasons.push(
+      `changed: ${report.changed.length} overlap date(s) have re-derived values differing from production`
+    )
+    if (!opts.allowValueChanges) {
+      promote = false
+      reasons.push(
+        'value changes require operator review — re-run with --allow-value-changes to promote after reviewing the diff'
+      )
+    }
+  }
+
+  if (promote && reasons.length === 0) {
+    reasons.push(
+      `additive-only: ${report.added.length} new date(s), ${report.unchanged.length} unchanged`
+    )
+  }
+
+  return { promote, requiresReview, reasons }
+}
