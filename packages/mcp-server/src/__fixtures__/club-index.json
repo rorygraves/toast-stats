@@ -1,0 +1,19 @@
+{
+  "generatedAt": "2026-06-01T10:35:00.074Z",
+  "snapshotDate": "2026-05-31",
+  "totalClubs": 3,
+  "clubs": {
+    "28675309": {
+      "districtId": "113",
+      "clubName": "Deporte Chihuahua"
+    },
+    "28675313": {
+      "districtId": "118",
+      "clubName": "WeLink Toastmasters Club"
+    },
+    "28675314": {
+      "districtId": "130",
+      "clubName": "Niamey Online"
+    }
+  }
+}

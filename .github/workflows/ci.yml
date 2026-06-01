@@ -57,6 +57,7 @@ jobs:
         run: |
           npm run build:shared-contracts
           npm run build:analytics-core
+          npm run build:mcp-server
 
       - name: TypeScript Zero Error Check
         id: typescript
@@ -179,6 +180,7 @@ jobs:
         run: |
           npm run build:shared-contracts
           npm run build:analytics-core
+          npm run build:mcp-server
 
       - name: Run shared-contracts tests
         run: npm run test --workspace=@toastmasters/shared-contracts -- --coverage
@@ -188,6 +190,9 @@ jobs:
 
       - name: Run collector-cli tests
         run: npm run test --workspace=@toastmasters/collector-cli -- --coverage
+
+      - name: Run mcp-server tests
+        run: npm run test --workspace=@toastmasters/mcp-server -- --coverage
 
       - name: Check vitest project partition (#482)
         run: npm run test:projects:check --workspace=frontend
