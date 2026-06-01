@@ -57,7 +57,7 @@ const OpenPalette: React.FC<OpenPaletteProps> = ({ onClose }) => {
 
   // The unified index loads on first open (this component only mounts when the
   // palette opens), fanning out to the rankings + club-index CDN fetches.
-  const { data: index, isLoading } = useQuery({
+  const { data: index } = useQuery({
     queryKey: ['omni-search-index'],
     queryFn: loadSearchIndex,
     staleTime: 15 * 60 * 1000,
@@ -180,7 +180,7 @@ const OpenPalette: React.FC<OpenPaletteProps> = ({ onClose }) => {
         </p>
       )
     }
-    if (isLoading && !index) {
+    if (!index) {
       return <p className="command-palette__empty">Searching…</p>
     }
     if (flat.length === 0) {
@@ -193,45 +193,56 @@ const OpenPalette: React.FC<OpenPaletteProps> = ({ onClose }) => {
         aria-label="Search results"
         className="command-palette__results"
       >
-        {groups.map(group => (
-          <li
-            key={group.type}
-            role="group"
-            aria-label={GROUP_LABEL[group.type]}
-            className="command-palette__group"
-          >
-            <div className="command-palette__group-heading" aria-hidden="true">
-              {GROUP_LABEL[group.type]}
-            </div>
-            <ul role="presentation" className="command-palette__group-list">
-              {group.entities.map(entity => {
-                const flatIdx = flat.indexOf(entity)
-                const active = flatIdx === clampedActiveIndex
-                return (
-                  <li
-                    key={optionId(entity)}
-                    role="option"
-                    aria-selected={active}
-                    id={optionId(entity)}
-                    onMouseEnter={() => setActiveIndex(flatIdx)}
-                    className={
-                      'command-palette__result' +
-                      (active ? ' command-palette__result--active' : '')
-                    }
-                  >
-                    <Link
-                      to={entity.route}
-                      onClick={onClose}
-                      className="command-palette__result-link"
+        {groups.map((group, gi) => {
+          // Flat index of this group's first entity — groups are rendered in
+          // the same order they were flattened, so position is the flat index
+          // (no reference lookup, no O(n²) scan).
+          const offset = groups
+            .slice(0, gi)
+            .reduce((n, g) => n + g.entities.length, 0)
+          return (
+            <li
+              key={group.type}
+              role="group"
+              aria-label={GROUP_LABEL[group.type]}
+              className="command-palette__group"
+            >
+              <div
+                className="command-palette__group-heading"
+                aria-hidden="true"
+              >
+                {GROUP_LABEL[group.type]}
+              </div>
+              <ul role="presentation" className="command-palette__group-list">
+                {group.entities.map((entity, ei) => {
+                  const flatIdx = offset + ei
+                  const active = flatIdx === clampedActiveIndex
+                  return (
+                    <li
+                      key={optionId(entity)}
+                      role="option"
+                      aria-selected={active}
+                      id={optionId(entity)}
+                      onMouseEnter={() => setActiveIndex(flatIdx)}
+                      className={
+                        'command-palette__result' +
+                        (active ? ' command-palette__result--active' : '')
+                      }
                     >
-                      {renderEntity(entity)}
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
-          </li>
-        ))}
+                      <Link
+                        to={entity.route}
+                        onClick={onClose}
+                        className="command-palette__result-link"
+                      >
+                        {renderEntity(entity)}
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            </li>
+          )
+        })}
       </ul>
     )
   }
