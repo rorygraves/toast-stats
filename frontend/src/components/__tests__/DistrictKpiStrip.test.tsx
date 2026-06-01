@@ -4,6 +4,7 @@ import {
   render,
   screen,
   within,
+  waitFor,
   fireEvent,
 } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
@@ -134,5 +135,48 @@ describe('DistrictKpiStrip (#572)', () => {
     expect(
       screen.queryByTestId('district-kpi-strip-legend')
     ).not.toBeInTheDocument()
+  })
+
+  // #1023 — disambiguate the Overview "Net Member Change" (payments vs. payment
+  // base) from the Trends "Net Change" (member counts vs. first PY snapshot).
+  describe('net-change disambiguation (#1023)', () => {
+    it('names the metric AND baseline in the secondary line (payments vs. program-year base)', () => {
+      renderStrip(<DistrictKpiStrip kpis={sampleKpis} />)
+      expect(
+        screen.getByText('payments vs. program-year base')
+      ).toBeInTheDocument()
+    })
+
+    it('tooltip contrasts the payment-base delta with the Trends member-count metric', async () => {
+      renderStrip(<DistrictKpiStrip kpis={sampleKpis} />)
+      const deltaCard = screen.getByTestId('kpi-delta-card')
+      const infoBtn = within(deltaCard).getByRole('button', {
+        name: /more info/i,
+      })
+      fireEvent.focus(infoBtn)
+      const tip = await waitFor(() => within(deltaCard).getByRole('tooltip'))
+      // Overview basis: payments minus the program-year payment base.
+      expect(tip).toHaveTextContent(/payment base/i)
+      // Explicitly distinguished from the Trends "Net Change" member-count metric.
+      expect(tip).toHaveTextContent(/member counts/i)
+      expect(tip).toHaveTextContent(/first snapshot/i)
+    })
+
+    it('drift guard: the card value still derives from the passed delta source', () => {
+      // The page wires netMemberChange.current ← analytics.membershipChange
+      // (DistrictDetailPage.tsx). The strip must render exactly that value,
+      // never re-derive it. −8 is the documented payments−paymentBase delta.
+      renderStrip(
+        <DistrictKpiStrip
+          kpis={{ ...sampleKpis, netMemberChange: { current: -8 } }}
+        />
+      )
+      const strip = screen.getByRole('region', {
+        name: /key district metrics/i,
+      })
+      expect(within(strip).getByTestId('kpi-delta-value')).toHaveTextContent(
+        '−8'
+      )
+    })
   })
 })
