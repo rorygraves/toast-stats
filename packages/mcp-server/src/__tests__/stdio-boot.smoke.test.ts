@@ -20,24 +20,12 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
+import { FIXTURE_ROUTES } from './_fixture-routes.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const packageRoot = join(here, '..', '..')
 const binPath = join(packageRoot, 'dist', 'bin.js')
 const fixtureDir = join(here, '..', '__fixtures__')
-
-/** CDN path (after the origin) → committed fixture filename. */
-const ROUTES: Record<string, string> = {
-  '/v1/latest.json': 'latest.json',
-  '/v1/dates.json': 'dates.json',
-  '/config/district-snapshot-index.json': 'district-snapshot-index.json',
-  '/config/club-index.json': 'club-index.json',
-  '/v1/rankings.json': 'v1-rankings.json',
-  '/snapshots/2026-05-31/all-districts-rankings.json':
-    'dated-all-districts-rankings.json',
-  '/snapshots/2026-05-31/district_61.json': 'district-snapshot.json',
-  '/time-series/district_61/2025-2026.json': 'time-series.json',
-}
 
 interface ToolEnvelope {
   available: boolean
@@ -48,7 +36,7 @@ interface ToolEnvelope {
 
 function startFixtureCdn(): Promise<{ server: Server; baseUrl: string }> {
   const server = createServer((req, res) => {
-    const file = req.url ? ROUTES[req.url] : undefined
+    const file = req.url ? FIXTURE_ROUTES[req.url] : undefined
     if (!file) {
       res.writeHead(404).end('not found')
       return

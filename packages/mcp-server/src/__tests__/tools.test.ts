@@ -3,20 +3,11 @@ import type { CdnClient } from '../cdn/CdnClient.js'
 import { TOOLS, type ToolDef } from '../tools/tools.js'
 import { parseToolText } from '../tools/envelope.js'
 import { BASE, makeClient, makeFixtureFetch } from './_fixture-fetch.js'
+import { FIXTURE_ROUTES } from './_fixture-routes.js'
 
-const ROUTES: Record<string, string> = {
-  '/v1/latest.json': 'latest.json',
-  '/v1/dates.json': 'dates.json',
-  '/config/district-snapshot-index.json': 'district-snapshot-index.json',
-  '/config/club-index.json': 'club-index.json',
-  '/v1/rankings.json': 'v1-rankings.json',
-  '/snapshots/2026-05-31/all-districts-rankings.json':
-    'dated-all-districts-rankings.json',
-  '/snapshots/2026-05-31/district_61.json': 'district-snapshot.json',
-  '/time-series/district_61/2025-2026.json': 'time-series.json',
-}
-
-function client(fetchFn: typeof fetch = makeFixtureFetch(ROUTES)): CdnClient {
+function client(
+  fetchFn: typeof fetch = makeFixtureFetch(FIXTURE_ROUTES)
+): CdnClient {
   return makeClient(fetchFn)
 }
 
