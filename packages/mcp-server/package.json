@@ -27,6 +27,7 @@
     "typecheck": "tsc --noEmit --skipLibCheck"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@toastmasters/shared-contracts": "^1.0.0",
     "zod": "^4.4.3"
   },
