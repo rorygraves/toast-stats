@@ -4,9 +4,12 @@
   "license": "MIT",
   "private": true,
   "type": "module",
-  "description": "Thin, local, read-only MCP server over the public Toast Stats snapshot CDN (ADR-008). Sprint 1: typed CDN read client only — no MCP tools yet.",
+  "description": "Thin, local, read-only MCP server over the public Toast Stats snapshot CDN (ADR-008). Exposes the pre-computed snapshot fields as MCP tools over stdio — no computation, no analytics-core.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "toast-stats-mcp": "./dist/bin.js"
+  },
   "exports": {
     ".": {
       "import": {
