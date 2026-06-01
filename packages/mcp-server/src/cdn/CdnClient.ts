@@ -9,9 +9,12 @@
  * missing/invalid response — it returns a typed not-available result instead.
  */
 import type { ZodType } from 'zod'
+import type { z } from 'zod'
 import {
   AllDistrictsRankingsDataSchema,
   type AllDistrictsRankingsData,
+  PerDistrictDataSchema,
+  ProgramYearIndexFileSchema,
 } from '@toastmasters/shared-contracts'
 import {
   LatestManifestSchema,
@@ -27,7 +30,17 @@ import {
   CdnRankingsSchema,
   type CdnRankings,
 } from '../schemas/cdn-rankings.schema.js'
-import { ISO_DATE_RE } from '../schemas/common.js'
+import {
+  ISO_DATE_RE,
+  PROGRAM_YEAR_RE,
+  DISTRICT_ID_RE,
+} from '../schemas/common.js'
+
+/** A dated per-district snapshot (`snapshots/{date}/district_{id}.json`). */
+export type DistrictSnapshot = z.infer<typeof PerDistrictDataSchema>
+
+/** A program-year time-series file (`time-series/district_{id}/{py}.json`). */
+export type TimeSeriesProgramYear = z.infer<typeof ProgramYearIndexFileSchema>
 import { type CdnReadResult, notAvailable } from './result.js'
 
 /** Default public CDN origin (ADR-008). */
@@ -150,6 +163,62 @@ export class CdnClient {
       `snapshots/${date}/all-districts-rankings.json`,
       AllDistrictsRankingsDataSchema,
       d => d.metadata.snapshotId
+    )
+  }
+
+  /**
+   * `snapshots/{date}/district_{id}.json` — the full dated per-district
+   * snapshot (roster, division/area aggregates, totals, raw performance rows),
+   * validated against the shared `PerDistrictData` write-contract. The snapshot
+   * `date` is surfaced from the inner `data.snapshotDate`, not the request arg.
+   */
+  getDistrictSnapshot(
+    districtId: string,
+    date: string
+  ): Promise<CdnReadResult<DistrictSnapshot>> {
+    if (!DISTRICT_ID_RE.test(districtId) || !ISO_DATE_RE.test(date)) {
+      return Promise.resolve(
+        notAvailable(
+          `${this.baseUrl}/snapshots/${encodeURIComponent(date)}/district_${encodeURIComponent(districtId)}.json`,
+          `not available — "${districtId}"/"${date}" is not a valid district id / YYYY-MM-DD date`
+        )
+      )
+    }
+    return this.read(
+      `snapshots/${date}/district_${districtId}.json`,
+      PerDistrictDataSchema,
+      d => d.data.snapshotDate
+    )
+  }
+
+  /**
+   * `time-series/district_{id}/{programYear}.json` — pre-computed membership /
+   * payments / DCP / distinguished / club-health-count series for a program
+   * year, validated against the shared `ProgramYearIndexFile` contract. The
+   * surfaced `date` is the most recent data point in the series.
+   */
+  getTimeSeries(
+    districtId: string,
+    programYear: string
+  ): Promise<CdnReadResult<TimeSeriesProgramYear>> {
+    if (
+      !DISTRICT_ID_RE.test(districtId) ||
+      !PROGRAM_YEAR_RE.test(programYear)
+    ) {
+      return Promise.resolve(
+        notAvailable(
+          `${this.baseUrl}/time-series/district_${encodeURIComponent(districtId)}/${encodeURIComponent(programYear)}.json`,
+          `not available — "${districtId}"/"${programYear}" is not a valid district id / YYYY-YYYY program year`
+        )
+      )
+    }
+    return this.read(
+      `time-series/district_${districtId}/${programYear}.json`,
+      ProgramYearIndexFileSchema,
+      d =>
+        d.dataPoints.length > 0
+          ? d.dataPoints[d.dataPoints.length - 1]!.date
+          : null
     )
   }
 

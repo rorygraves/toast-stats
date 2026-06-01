@@ -8,6 +8,8 @@ export {
   DEFAULT_CDN_BASE_URL,
   type CdnClientOptions,
   type ResolvedClub,
+  type DistrictSnapshot,
+  type TimeSeriesProgramYear,
 } from './cdn/CdnClient.js'
 
 export { type CdnReadResult, notAvailable } from './cdn/result.js'
