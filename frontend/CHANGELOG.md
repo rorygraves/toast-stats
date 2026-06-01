@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.10.0](https://github.com/taverns-red/toast-stats/compare/frontend-v3.9.0...frontend-v3.10.0) (2026-06-01)
+
+
+### Features
+
+* broaden CommandPalette to the unified omni-search index ([#1057](https://github.com/taverns-red/toast-stats/issues/1057)) ([#1060](https://github.com/taverns-red/toast-stats/issues/1060)) ([4c3559f](https://github.com/taverns-red/toast-stats/commit/4c3559f4ae50bdf7f0709cf2f0f824c228ea3782))
+* disambiguate Overview & Trends net-change cards (metric + baseline) ([#1023](https://github.com/taverns-red/toast-stats/issues/1023)) ([#1039](https://github.com/taverns-red/toast-stats/issues/1039)) ([8607f08](https://github.com/taverns-red/toast-stats/commit/8607f0898ebd38c2a8b2664f669abaee75b2c86e))
+* **search:** header omni-search bar — desktop combobox + mobile icon→modal ([#1058](https://github.com/taverns-red/toast-stats/issues/1058)) ([#1061](https://github.com/taverns-red/toast-stats/issues/1061)) ([22cf197](https://github.com/taverns-red/toast-stats/commit/22cf197cd05c1576018b1f9a8269bb8fc93fb21f))
+* unified search index + matcher — omni-search Sprint 1 ([#1056](https://github.com/taverns-red/toast-stats/issues/1056)) ([#1059](https://github.com/taverns-red/toast-stats/issues/1059)) ([5dd8290](https://github.com/taverns-red/toast-stats/commit/5dd8290567a6ba6786f432a8824b0e602f8ccbea))
+
 ## [3.9.0](https://github.com/taverns-red/toast-stats/compare/frontend-v3.8.0...frontend-v3.9.0) (2026-05-31)
 
 

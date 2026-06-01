@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/taverns-red/toast-stats/compare/collector-cli-v1.4.1...collector-cli-v1.5.0) (2026-06-01)
+
+
+### Features
+
+* **pipeline:** value-aware promote gate for full-range re-derive ([#1034](https://github.com/taverns-red/toast-stats/issues/1034)) ([#1047](https://github.com/taverns-red/toast-stats/issues/1047)) ([ec6b91e](https://github.com/taverns-red/toast-stats/commit/ec6b91ee32833c1e81e88119ee29959c7ce0a96a))
+
 ## [1.4.1](https://github.com/taverns-red/toast-stats/compare/collector-cli-v1.4.0...collector-cli-v1.4.1) (2026-05-26)
 
 

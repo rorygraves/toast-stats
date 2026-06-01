@@ -1,5 +1,30 @@
 # Changelog
 
+## [2.25.0](https://github.com/taverns-red/toast-stats/compare/toast-stats-v2.24.0...toast-stats-v2.25.0) (2026-06-01)
+
+
+### Features
+
+* broaden CommandPalette to the unified omni-search index ([#1057](https://github.com/taverns-red/toast-stats/issues/1057)) ([#1060](https://github.com/taverns-red/toast-stats/issues/1060)) ([4c3559f](https://github.com/taverns-red/toast-stats/commit/4c3559f4ae50bdf7f0709cf2f0f824c228ea3782))
+* disambiguate Overview & Trends net-change cards (metric + baseline) ([#1023](https://github.com/taverns-red/toast-stats/issues/1023)) ([#1039](https://github.com/taverns-red/toast-stats/issues/1039)) ([8607f08](https://github.com/taverns-red/toast-stats/commit/8607f0898ebd38c2a8b2664f669abaee75b2c86e))
+* **mcp-server:** Sprint 1 — typed read-only CDN client scaffold ([#1043](https://github.com/taverns-red/toast-stats/issues/1043)) ([#1052](https://github.com/taverns-red/toast-stats/issues/1052)) ([0cce9c4](https://github.com/taverns-red/toast-stats/commit/0cce9c4574ed250bc3f2910864cedc3b13418303))
+* **mcp-server:** Sprint 2 — read-only MCP tools over the CDN client ([#1044](https://github.com/taverns-red/toast-stats/issues/1044)) ([#1053](https://github.com/taverns-red/toast-stats/issues/1053)) ([15d1ac7](https://github.com/taverns-red/toast-stats/commit/15d1ac74afd3ac50d5c0e99de11c1e684373c25f))
+* **mcp-server:** Sprint 3 — install path, README + offline stdio boot smoke ([#1045](https://github.com/taverns-red/toast-stats/issues/1045)) ([#1054](https://github.com/taverns-red/toast-stats/issues/1054)) ([fc2158f](https://github.com/taverns-red/toast-stats/commit/fc2158f16dc2c7dd7140d132b94e5dd6cd3af367))
+* **pipeline:** value-aware promote gate for full-range re-derive ([#1034](https://github.com/taverns-red/toast-stats/issues/1034)) ([#1047](https://github.com/taverns-red/toast-stats/issues/1047)) ([ec6b91e](https://github.com/taverns-red/toast-stats/commit/ec6b91ee32833c1e81e88119ee29959c7ce0a96a))
+* **search:** header omni-search bar — desktop combobox + mobile icon→modal ([#1058](https://github.com/taverns-red/toast-stats/issues/1058)) ([#1061](https://github.com/taverns-red/toast-stats/issues/1061)) ([22cf197](https://github.com/taverns-red/toast-stats/commit/22cf197cd05c1576018b1f9a8269bb8fc93fb21f))
+* unified search index + matcher — omni-search Sprint 1 ([#1056](https://github.com/taverns-red/toast-stats/issues/1056)) ([#1059](https://github.com/taverns-red/toast-stats/issues/1059)) ([5dd8290](https://github.com/taverns-red/toast-stats/commit/5dd8290567a6ba6786f432a8824b0e602f8ccbea))
+
+
+### Documentation
+
+* **adr:** ADR-008 — AI-enable Toast Stats via read-only MCP server over the CDN ([#1018](https://github.com/taverns-red/toast-stats/issues/1018)) ([#1029](https://github.com/taverns-red/toast-stats/issues/1029)) ([2fce3e7](https://github.com/taverns-red/toast-stats/commit/2fce3e772178a0b23d87039a5f71d6070bfa3b7b))
+* **adr:** mark ADR-002 partially superseded — frontend flow → ADR-003/004, data flow live ([#1031](https://github.com/taverns-red/toast-stats/issues/1031)) ([#1038](https://github.com/taverns-red/toast-stats/issues/1038)) ([53a9380](https://github.com/taverns-red/toast-stats/commit/53a938093633fb76f5ff6004fa9374eeb4178a8f))
+* **adr:** revise ADR-008 to thin local MCP, no compute — drop Phase 0 ([#1009](https://github.com/taverns-red/toast-stats/issues/1009)) ([#1041](https://github.com/taverns-red/toast-stats/issues/1041)) ([4fe2839](https://github.com/taverns-red/toast-stats/commit/4fe2839bf5e5dd8db49d859f8cb3ea254ccc3f12))
+* **investigation:** prune --dry-run audit + layer-coverage report ([#1036](https://github.com/taverns-red/toast-stats/issues/1036)) ([#1051](https://github.com/taverns-red/toast-stats/issues/1051)) ([9436765](https://github.com/taverns-red/toast-stats/commit/943676557cba63731a9aec9530468cca651390c1))
+* **investigation:** raw-csv 2017 coverage + full-range rebuild/diff/promote ([#1033](https://github.com/taverns-red/toast-stats/issues/1033)) ([#1046](https://github.com/taverns-red/toast-stats/issues/1046)) ([2828db6](https://github.com/taverns-red/toast-stats/commit/2828db6c168b569b37380967a5ed1c8467783876))
+* **lessons:** add L149 — responsively-duplicated component needs :visible selector in live verification ([#1023](https://github.com/taverns-red/toast-stats/issues/1023)) ([#1040](https://github.com/taverns-red/toast-stats/issues/1040)) ([4a56c3c](https://github.com/taverns-red/toast-stats/commit/4a56c3c6ec95098bd809ab41e28f0d3df3ae7a80))
+* **runbook:** full-range pipeline re-derive 2017→now execution runbook ([#1035](https://github.com/taverns-red/toast-stats/issues/1035)) ([#1050](https://github.com/taverns-red/toast-stats/issues/1050)) ([b90c85e](https://github.com/taverns-red/toast-stats/commit/b90c85e2eadcb0f5e9fcdd763dd0cbbed0eba590))
+
 ## [2.24.0](https://github.com/taverns-red/toast-stats/compare/toast-stats-v2.23.0...toast-stats-v2.24.0) (2026-05-31)
 
 
