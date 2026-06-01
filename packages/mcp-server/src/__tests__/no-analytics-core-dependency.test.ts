@@ -30,6 +30,11 @@ describe('no analytics-core dependency (ADR-008 thin-reader rule)', () => {
   })
 
   it('does not import analytics-core from any source file', () => {
+    // Match an actual import of the package specifier — not a prose mention of
+    // "analytics-core" in a comment (which is legitimate, e.g. documenting the
+    // rule). Covers static `from '…'`, dynamic `import('…')`, and `require('…')`.
+    const importRe =
+      /(?:from\s*|import\s*\(\s*|require\s*\(\s*)['"]@toastmasters\/analytics-core(?:\/[^'"]*)?['"]/
     const offenders: string[] = []
     const walk = (dir: string): void => {
       for (const entry of readdirSync(dir)) {
@@ -40,15 +45,10 @@ describe('no analytics-core dependency (ADR-008 thin-reader rule)', () => {
           continue
         }
         if (!full.endsWith('.ts')) continue
-        const text = readFileSync(full, 'utf8')
-        if (text.includes('analytics-core')) offenders.push(full)
+        if (importRe.test(readFileSync(full, 'utf8'))) offenders.push(full)
       }
     }
     walk(srcRoot)
-    // This guard test names the dependency in prose, so exclude itself.
-    const real = offenders.filter(
-      f => !f.endsWith('no-analytics-core-dependency.test.ts')
-    )
-    expect(real).toEqual([])
+    expect(offenders).toEqual([])
   })
 })

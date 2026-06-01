@@ -158,4 +158,48 @@ describe('CdnClient — failure handling (not-available, never throw)', () => {
     if (res.available) return
     expect(res.reason).toMatch(/validation|not available/i)
   })
+
+  it('returns not-available for a non-404 error response (e.g. HTTP 500)', async () => {
+    const serverErrorFetch = (async () =>
+      new Response('boom', { status: 500 })) as typeof fetch
+    const res = await client(serverErrorFetch).getRankings()
+    expect(res.available).toBe(false)
+    if (res.available) return
+    expect(res.reason).toMatch(/HTTP 500/)
+  })
+
+  it('returns not-available when a 200 response is not valid JSON', async () => {
+    const notJsonFetch = (async () =>
+      new Response('<html>nope</html>', {
+        status: 200,
+        headers: { 'content-type': 'text/html' },
+      })) as typeof fetch
+    const res = await client(notJsonFetch).getRankings()
+    expect(res.available).toBe(false)
+    if (res.available) return
+    expect(res.reason).toMatch(/not valid JSON|not available/i)
+  })
+
+  it('rejects a malformed date without fetching (never builds a junk URL)', async () => {
+    let fetched = false
+    const spyFetch = (async () => {
+      fetched = true
+      return new Response('{}', { status: 200 })
+    }) as typeof fetch
+    const res = await client(spyFetch).getDistrictRankingsForDate('not-a-date')
+    expect(fetched).toBe(false)
+    expect(res.available).toBe(false)
+    if (res.available) return
+    expect(res.reason).toMatch(/not available/i)
+  })
+
+  it('propagates not-available from the club index when resolving a club', async () => {
+    const missingIndexFetch = (async () =>
+      new Response('not found', { status: 404 })) as typeof fetch
+    const res = await client(missingIndexFetch).resolveClubDistrict('28675309')
+    expect(res.available).toBe(false)
+    if (res.available) return
+    expect(res.sourceUrl).toBe(`${BASE}/config/club-index.json`)
+    expect(res.reason).toMatch(/not available/i)
+  })
 })
