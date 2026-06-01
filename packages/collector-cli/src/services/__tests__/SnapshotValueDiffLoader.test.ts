@@ -3,10 +3,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import type { AllDistrictsRankingsData } from '@toastmasters/shared-contracts'
-import {
-  loadDateDigests,
-  runValueDiff,
-} from '../SnapshotValueDiffLoader.js'
+import { loadDateDigests, runValueDiff } from '../SnapshotValueDiffLoader.js'
 
 function rankings(
   date: string,
@@ -78,7 +75,10 @@ describe('loadDateDigests', () => {
     writeSnapshot(root, '2024-07-31', rankings('2024-07-31', 5100))
     mkdirSync(join(root, 'not-a-snapshot')) // skipped: no rankings file
     const digests = loadDateDigests(root)
-    expect(digests.map(d => d.date).sort()).toEqual(['2024-06-30', '2024-07-31'])
+    expect(digests.map(d => d.date).sort()).toEqual([
+      '2024-06-30',
+      '2024-07-31',
+    ])
   })
 
   it('returns [] for a missing root', () => {
