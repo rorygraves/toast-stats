@@ -1,0 +1,91 @@
+{
+  "districtId": "61",
+  "districtName": "District 61",
+  "collectedAt": "2026-05-31T10:00:00.000Z",
+  "status": "success",
+  "data": {
+    "districtId": "61",
+    "snapshotDate": "2026-05-31",
+    "clubs": [
+      {
+        "clubId": "00012345",
+        "clubName": "Downtown Speakers",
+        "divisionId": "A",
+        "areaId": "A1",
+        "membershipCount": 24,
+        "paymentsCount": 22,
+        "dcpGoals": 6,
+        "status": "Distinguished",
+        "divisionName": "Division A",
+        "areaName": "Area A1",
+        "octoberRenewals": 18,
+        "aprilRenewals": 0,
+        "newMembers": 4,
+        "membershipBase": 20,
+        "clubStatus": "Active"
+      },
+      {
+        "clubId": "00067890",
+        "clubName": "Harbour Orators",
+        "divisionId": "B",
+        "areaId": "B2",
+        "membershipCount": 9,
+        "paymentsCount": 8,
+        "dcpGoals": 1,
+        "status": "Active",
+        "divisionName": "Division B",
+        "areaName": "Area B2",
+        "octoberRenewals": 6,
+        "aprilRenewals": 0,
+        "newMembers": 1,
+        "membershipBase": 14,
+        "clubStatus": "Low"
+      }
+    ],
+    "divisions": [
+      {
+        "divisionId": "A",
+        "divisionName": "Division A",
+        "clubCount": 1,
+        "membershipTotal": 24,
+        "paymentsTotal": 22
+      },
+      {
+        "divisionId": "B",
+        "divisionName": "Division B",
+        "clubCount": 1,
+        "membershipTotal": 9,
+        "paymentsTotal": 8
+      }
+    ],
+    "areas": [
+      {
+        "areaId": "A1",
+        "areaName": "Area A1",
+        "divisionId": "A",
+        "clubCount": 1,
+        "membershipTotal": 24,
+        "paymentsTotal": 22
+      },
+      {
+        "areaId": "B2",
+        "areaName": "Area B2",
+        "divisionId": "B",
+        "clubCount": 1,
+        "membershipTotal": 9,
+        "paymentsTotal": 8
+      }
+    ],
+    "totals": {
+      "totalClubs": 2,
+      "totalMembership": 33,
+      "totalPayments": 30,
+      "distinguishedClubs": 1,
+      "selectDistinguishedClubs": 0,
+      "presidentDistinguishedClubs": 0
+    },
+    "divisionPerformance": [],
+    "clubPerformance": [],
+    "districtPerformance": []
+  }
+}
