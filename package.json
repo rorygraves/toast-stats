@@ -11,7 +11,8 @@
     "frontend",
     "packages/collector-cli",
     "packages/analytics-core",
-    "packages/shared-contracts"
+    "packages/shared-contracts",
+    "packages/mcp-server"
   ],
   "scripts": {
     "dev:frontend": "npm run dev --workspace=frontend",
@@ -19,11 +20,13 @@
     "build:collector-cli": "npm run build --workspace=@toastmasters/collector-cli",
     "build:analytics-core": "npm run build --workspace=@toastmasters/analytics-core",
     "build:shared-contracts": "npm run build --workspace=@toastmasters/shared-contracts",
+    "build:mcp-server": "npm run build --workspace=@toastmasters/mcp-server",
     "collector-cli": "npm run start --workspace=@toastmasters/collector-cli --",
     "test:frontend": "npm run test --workspace=frontend",
     "test:collector-cli": "npm run test --workspace=@toastmasters/collector-cli",
     "test:analytics-core": "npm run test --workspace=@toastmasters/analytics-core",
     "test:shared-contracts": "npm run test --workspace=@toastmasters/shared-contracts",
+    "test:mcp-server": "npm run test --workspace=@toastmasters/mcp-server",
     "test": "npm run test --workspaces",
     "test:unit": "npm run test:unit --workspace=frontend",
     "test:integration": "npm run test:integration --workspace=frontend",
