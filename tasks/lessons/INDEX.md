@@ -127,3 +127,4 @@
 - **146** [testing, vitest, flake, ci, performance, runner-fleet] — An "aggressively low" testTimeout is a latent flake source the moment the same machine runs concurrent workloads (#1003)
 - **147** [frontend, react, scope, refactor, verification] — A reused "parity" surface must render from its own data source, not sit behind a sibling source's emptiness check (#1015, #1008)
 - **148** [router, react, frontend, verification, error-handling] — A render-thrown `Response` is NOT wrapped into an ErrorResponse; `isRouteErrorResponse` misses it (#1017, #1008)
+- **149** [verification, playwright, frontend, responsive, charts, scope] — A responsively-duplicated component needs a `:visible` selector in live verification (or the assertion hits the hidden twin) (#1023, #1022)
