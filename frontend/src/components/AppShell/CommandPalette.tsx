@@ -68,6 +68,9 @@ const OpenPalette: React.FC<OpenPaletteProps> = ({ onClose }) => {
     }
   }, [])
 
+  // The listbox only mounts once a query yields results; gate the ARIA refs
+  // on that so they never point at an absent id while loading/empty.
+  const listboxOpen = hasQuery && !!index && flat.length > 0
   const optionId = (e: SearchEntity) => `${OPTION_PREFIX}-${e.type}-${e.id}`
 
   return (
@@ -108,9 +111,9 @@ const OpenPalette: React.FC<OpenPaletteProps> = ({ onClose }) => {
             onKeyDown={handleKeyDown}
             placeholder="Search districts, regions, clubs by name or number…"
             aria-label="Universal search input"
-            aria-controls={LISTBOX_ID}
+            aria-controls={listboxOpen ? LISTBOX_ID : undefined}
             aria-activedescendant={
-              activeEntity ? optionId(activeEntity) : undefined
+              listboxOpen && activeEntity ? optionId(activeEntity) : undefined
             }
             className="command-palette__input"
           />

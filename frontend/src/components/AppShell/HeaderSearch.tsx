@@ -120,6 +120,10 @@ const DesktopOmniCombobox: React.FC = () => {
   }, [focused, dismiss])
 
   const showDropdown = focused && hasQuery
+  // The listbox only mounts once results exist; gate aria-expanded /
+  // -controls / -activedescendant on that so they never reference an absent
+  // id (the strictly-correct WAI-ARIA 1.2 combobox form).
+  const listboxOpen = showDropdown && !!index && flat.length > 0
   const optionId = (e: SearchEntity) => `${OPTION_PREFIX}-${e.type}-${e.id}`
 
   return (
@@ -137,10 +141,10 @@ const DesktopOmniCombobox: React.FC = () => {
           placeholder="Search…"
           aria-label="Search districts, regions, clubs by name or number"
           aria-autocomplete="list"
-          aria-expanded={showDropdown}
-          aria-controls={LISTBOX_ID}
+          aria-expanded={listboxOpen}
+          aria-controls={listboxOpen ? LISTBOX_ID : undefined}
           aria-activedescendant={
-            showDropdown && activeEntity ? optionId(activeEntity) : undefined
+            listboxOpen && activeEntity ? optionId(activeEntity) : undefined
           }
           className="header-search__input"
         />

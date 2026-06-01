@@ -27,7 +27,8 @@ interface OmniSearchResultsProps {
   /** Already-clamped flat index of the highlighted row. */
   activeIndex: number
   onActivate: (flatIndex: number) => void
-  /** Fired when a result link is clicked (e.g. close the surface). */
+  /** Notification (no payload) that a result was chosen — callers close the
+      surface here; navigation is handled by the result's own <Link>. */
   onSelect: () => void
   listboxId: string
   /** Prefix for each option's element id (must be unique per mount). */
