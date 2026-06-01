@@ -18,18 +18,27 @@ import {
   fireEvent,
 } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { DarkModeProvider } from '../../../contexts/DarkModeContext'
 import AppShellTopBar from '../AppShellTopBar'
 
 afterEach(() => cleanup())
 
+// The bar now hosts HeaderSearch (#1058), whose desktop combobox calls
+// useQuery (disabled until focused) — so a QueryClient must be present.
 const renderBar = () =>
   render(
-    <DarkModeProvider>
-      <MemoryRouter>
-        <AppShellTopBar />
-      </MemoryRouter>
-    </DarkModeProvider>
+    <QueryClientProvider
+      client={
+        new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      }
+    >
+      <DarkModeProvider>
+        <MemoryRouter>
+          <AppShellTopBar onOpenSearch={() => {}} />
+        </MemoryRouter>
+      </DarkModeProvider>
+    </QueryClientProvider>
   )
 
 const getToggle = () => screen.getByRole('button', { name: /menu/i })
