@@ -324,6 +324,81 @@
     outline-offset: 2px;
   }
 
+  /* HeaderSearch (#1058) — desktop inline combobox + mobile icon trigger.
+     The desktop dropdown reuses the .command-palette__* result styles. All
+     colours are theme tokens so dark mode follows the existing remaps (R10);
+     the dropdown is absolutely positioned so the header never shifts (no CLS). */
+  .header-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .header-search__field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 36px;
+    padding: 0 12px;
+    min-width: 180px;
+    max-width: 260px;
+    background-color: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-md);
+  }
+
+  .header-search__field:focus-within {
+    border-color: var(--link);
+    outline: 2px solid var(--link);
+    outline-offset: 1px;
+  }
+
+  .header-search__icon {
+    flex-shrink: 0;
+    color: var(--ink-3);
+  }
+
+  .header-search__input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--ink);
+    outline: none;
+  }
+
+  .header-search__input::placeholder {
+    color: var(--ink-4);
+  }
+
+  /* The mobile search trigger needs a ≥44px touch target (#1058 AC). It is
+     only rendered <768px (the combobox replaces it on desktop), so widening
+     past the 32px icon-btn baseline is always the mobile case. */
+  .header-search__trigger {
+    width: 44px;
+    height: 44px;
+  }
+
+  .header-search__dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    width: min(420px, 92vw);
+    max-height: 60vh;
+    overflow: hidden;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--rds-radius-lg);
+    box-shadow: var(--rds-shadow-lg);
+    z-index: 90;
+  }
+
+  .header-search__dropdown .command-palette__results {
+    max-height: 60vh;
+  }
+
   .app-shell-avatar {
     width: 32px;
     height: 32px;
@@ -4998,6 +5073,9 @@
     grid-template-columns: auto 1fr auto;
     align-items: center;
     gap: 12px;
+    /* ≥44px touch target (#1058 AC) — these rows are the mobile modal's
+       primary tap surface; harmless on the desktop dropdown/mouse. */
+    min-height: 44px;
     padding: 10px 12px;
     text-decoration: none;
     color: var(--ink);

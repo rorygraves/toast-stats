@@ -2,17 +2,19 @@
 
 import React from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, within, fireEvent } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import AppShell from '../../components/AppShell/AppShell'
 import { DarkModeProvider } from '../../contexts/DarkModeContext'
 import { useIsMobile } from '../../hooks/useIsMobile'
 
-// Mock the CDN service the CommandPalette (#422) lazy-fetches when the
-// shell mounts — keeps these tests isolated from the network layer.
+// Mock the CDN service the omni-search (#422 → #1058) lazy-fetches when the
+// palette opens — keeps these tests isolated from the network layer. Both
+// fetches are stubbed so opening the modal doesn't hit the network.
 vi.mock('../../services/cdn', () => ({
   fetchCdnRankings: vi.fn().mockResolvedValue({ rankings: [], date: '' }),
+  fetchCdnClubIndex: vi.fn().mockResolvedValue({ clubs: {} }),
 }))
 
 // #889: the footer is dropped at <768px (its meta moves to the nav "About"
@@ -146,6 +148,35 @@ describe('AppShell (#354)', () => {
       const nav = screen.getByRole('navigation', { name: /primary/i })
       const historyLink = within(nav).getByRole('link', { name: 'History' })
       expect(historyLink).toHaveAttribute('aria-current', 'page')
+    })
+  })
+
+  describe('header search (#1058)', () => {
+    it('opens the modal palette when the mobile search icon is tapped', () => {
+      vi.mocked(useIsMobile).mockReturnValue(true)
+      renderShell()
+      // No palette before interaction.
+      expect(
+        screen.queryByRole('dialog', { name: /universal search/i })
+      ).not.toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: /^search$/i }))
+      expect(
+        screen.getByRole('dialog', { name: /universal search/i })
+      ).toBeInTheDocument()
+    })
+
+    it('renders the desktop inline combobox (no modal-opening icon)', () => {
+      vi.mocked(useIsMobile).mockReturnValue(false)
+      renderShell()
+      const header = screen.getByRole('banner')
+      expect(
+        within(header).getByRole('combobox', {
+          name: /search districts, regions/i,
+        })
+      ).toBeInTheDocument()
+      expect(
+        within(header).queryByRole('button', { name: /^search$/i })
+      ).not.toBeInTheDocument()
     })
   })
 

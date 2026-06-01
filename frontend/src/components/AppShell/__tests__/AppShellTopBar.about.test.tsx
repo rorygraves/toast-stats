@@ -13,6 +13,7 @@
 import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest'
 import { cleanup, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { DarkModeProvider } from '../../../contexts/DarkModeContext'
 
 vi.mock('../../../hooks/useIsMobile', () => ({
@@ -25,13 +26,21 @@ import AppShellTopBar from '../AppShellTopBar'
 afterEach(() => cleanup())
 beforeEach(() => vi.mocked(useIsMobile).mockReturnValue(false))
 
+// The bar now hosts HeaderSearch (#1058), whose desktop combobox calls
+// useQuery (disabled until focused) — so a QueryClient must be present.
 const renderBar = () =>
   render(
-    <DarkModeProvider>
-      <MemoryRouter>
-        <AppShellTopBar />
-      </MemoryRouter>
-    </DarkModeProvider>
+    <QueryClientProvider
+      client={
+        new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      }
+    >
+      <DarkModeProvider>
+        <MemoryRouter>
+          <AppShellTopBar onOpenSearch={() => {}} />
+        </MemoryRouter>
+      </DarkModeProvider>
+    </QueryClientProvider>
   )
 
 describe('AppShellTopBar "About ▾" disclosure (#889)', () => {

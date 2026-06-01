@@ -24,6 +24,7 @@ const AppShell: React.FC = () => {
 
   const [paletteOpen, setPaletteOpen] = useState(false)
   const closePalette = useCallback(() => setPaletteOpen(false), [])
+  const openPalette = useCallback(() => setPaletteOpen(true), [])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -41,7 +42,7 @@ const AppShell: React.FC = () => {
       <a href="#main-content" className="tm-skip-link">
         Skip to main content
       </a>
-      <AppShellTopBar />
+      <AppShellTopBar onOpenSearch={openPalette} />
       <main id="main-content" className="app-shell__main">
         <Outlet />
       </main>

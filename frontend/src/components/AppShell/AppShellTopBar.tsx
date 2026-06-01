@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { NavLink, Link, useLocation } from 'react-router-dom'
 import ThemeToggle from '../ThemeToggle'
 import AppMeta from './AppMeta'
+import HeaderSearch from './HeaderSearch'
 import { useIsMobile } from '../../hooks/useIsMobile'
 
 const NAV_ITEMS = [
@@ -13,7 +14,12 @@ const NAV_ITEMS = [
 
 const PRIMARY_NAV_ID = 'app-shell-primary-nav'
 
-const AppShellTopBar: React.FC = () => {
+interface AppShellTopBarProps {
+  /** Open the modal palette — the mobile search icon's target, shared with Cmd-K. */
+  onOpenSearch: () => void
+}
+
+const AppShellTopBar: React.FC<AppShellTopBarProps> = ({ onOpenSearch }) => {
   // Mobile (<768px) disclosure: the primary nav collapses behind a
   // hamburger toggle so the 56px bar stops overflowing the viewport at
   // 375px (#735). On desktop the nav is always inline and `navOpen` is
@@ -138,6 +144,9 @@ const AppShellTopBar: React.FC = () => {
       </nav>
 
       <div className="app-shell-tools">
+        {/* Omni-search (#1058): inline combobox on desktop, icon→modal on
+            mobile. Cmd-K opens the same modal everywhere (AppShell). */}
+        <HeaderSearch onOpenSearch={onOpenSearch} />
         {/* Bell stub removed per #411 — a non-functional icon erodes
             trust. Re-add when there's real notification content. */}
         <Link
