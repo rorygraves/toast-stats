@@ -195,8 +195,8 @@ const OpenPalette: React.FC<OpenPaletteProps> = ({ onClose }) => {
       >
         {groups.map((group, gi) => {
           // Flat index of this group's first entity — groups are rendered in
-          // the same order they were flattened, so position is the flat index
-          // (no reference lookup, no O(n²) scan).
+          // the same order they were flattened, so position gives the flat
+          // index directly (no per-option reference lookup; groups ≤ 3).
           const offset = groups
             .slice(0, gi)
             .reduce((n, g) => n + g.entities.length, 0)
