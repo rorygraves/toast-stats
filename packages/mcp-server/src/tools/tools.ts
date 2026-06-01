@@ -55,11 +55,11 @@ function defineTool<Shape extends ZodRawShape>(def: {
 async function resolveDate(
   client: CdnClient,
   date: string | undefined
-): Promise<{ date: string } | { error: ToolTextResult }> {
-  if (date) return { date }
+): Promise<{ ok: true; date: string } | { ok: false; error: ToolTextResult }> {
+  if (date) return { ok: true, date }
   const latest = await client.getLatestDate()
-  if (!latest.available) return { error: toToolResult(latest) }
-  return { date: latest.data.latestSnapshotDate }
+  if (!latest.available) return { ok: false, error: toToolResult(latest) }
+  return { ok: true, date: latest.data.latestSnapshotDate }
 }
 
 /** The raw health-signal fields surfaced per club (no derived status). */
@@ -181,7 +181,7 @@ export const TOOLS: ToolDef[] = [
     },
     handler: async (client, { districtId, date }) => {
       const resolved = await resolveDate(client, date)
-      if ('error' in resolved) return resolved.error
+      if (!resolved.ok) return resolved.error
       return toToolResult(
         await client.getDistrictSnapshot(districtId, resolved.date)
       )
@@ -223,7 +223,7 @@ export const TOOLS: ToolDef[] = [
     },
     handler: async (client, { districtId, date, divisionId }) => {
       const resolved = await resolveDate(client, date)
-      if ('error' in resolved) return resolved.error
+      if (!resolved.ok) return resolved.error
       const snapshot = await client.getDistrictSnapshot(
         districtId,
         resolved.date

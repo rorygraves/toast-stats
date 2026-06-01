@@ -1,36 +1,16 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
-import { dirname, join } from 'node:path'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js'
-import { CdnClient } from '../cdn/CdnClient.js'
 import { createServer } from '../server.js'
+import { BASE, makeClient, makeFixtureFetch } from './_fixture-fetch.js'
 
-const here = dirname(fileURLToPath(import.meta.url))
-const fixtureDir = join(here, '..', '__fixtures__')
-const BASE = 'https://cdn.taverns.red'
-
-function fixtureClient(): CdnClient {
-  const fetchFn = (async (input: string | URL | Request) => {
-    const url = typeof input === 'string' ? input : input.toString()
-    if (url === `${BASE}/v1/latest.json`) {
-      return new Response(
-        readFileSync(join(fixtureDir, 'latest.json'), 'utf8'),
-        {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        }
-      )
-    }
-    return new Response('not found', { status: 404 })
-  }) as typeof fetch
-  return new CdnClient({ baseUrl: BASE, fetchFn })
+const ROUTES: Record<string, string> = {
+  '/v1/latest.json': 'latest.json',
 }
 
 /** Wire a real MCP client to the server over an in-memory transport pair. */
 async function connectedClient(): Promise<Client> {
-  const server = createServer(fixtureClient())
+  const server = createServer(makeClient(makeFixtureFetch(ROUTES)))
   const [clientTransport, serverTransport] =
     InMemoryTransport.createLinkedPair()
   await server.connect(serverTransport)

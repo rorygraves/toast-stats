@@ -1,15 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
-import { dirname, join } from 'node:path'
-import { CdnClient } from '../cdn/CdnClient.js'
+import type { CdnClient } from '../cdn/CdnClient.js'
 import { TOOLS, type ToolDef } from '../tools/tools.js'
 import { parseToolText } from '../tools/envelope.js'
-
-const here = dirname(fileURLToPath(import.meta.url))
-const fixtureDir = join(here, '..', '__fixtures__')
-
-const BASE = 'https://cdn.taverns.red'
+import { BASE, makeClient, makeFixtureFetch } from './_fixture-fetch.js'
 
 const ROUTES: Record<string, string> = {
   '/v1/latest.json': 'latest.json',
@@ -23,20 +16,8 @@ const ROUTES: Record<string, string> = {
   '/time-series/district_61/2025-2026.json': 'time-series.json',
 }
 
-function fixtureFetch(): typeof fetch {
-  return (async (input: string | URL | Request) => {
-    const url = typeof input === 'string' ? input : input.toString()
-    const file = ROUTES[url.replace(BASE, '')]
-    if (!file) return new Response('not found', { status: 404 })
-    return new Response(readFileSync(join(fixtureDir, file), 'utf8'), {
-      status: 200,
-      headers: { 'content-type': 'application/json' },
-    })
-  }) as typeof fetch
-}
-
-function client(fetchFn: typeof fetch = fixtureFetch()): CdnClient {
-  return new CdnClient({ baseUrl: BASE, fetchFn })
+function client(fetchFn: typeof fetch = makeFixtureFetch(ROUTES)): CdnClient {
+  return makeClient(fetchFn)
 }
 
 function tool(name: string): ToolDef {

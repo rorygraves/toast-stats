@@ -1,13 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
-import { dirname, join } from 'node:path'
-import { CdnClient } from '../index.js'
-
-const here = dirname(fileURLToPath(import.meta.url))
-const fixtureDir = join(here, '..', '__fixtures__')
-
-const BASE = 'https://cdn.taverns.red'
+import type { CdnClient } from '../index.js'
+import { BASE, makeClient, makeFixtureFetch } from './_fixture-fetch.js'
 
 /**
  * Routes the Sprint-2 read targets — the dated district snapshot and a
@@ -18,21 +11,8 @@ const ROUTES: Record<string, string> = {
   '/time-series/district_61/2025-2026.json': 'time-series.json',
 }
 
-function fixtureFetch(): typeof fetch {
-  return (async (input: string | URL | Request) => {
-    const url = typeof input === 'string' ? input : input.toString()
-    const path = url.replace(BASE, '')
-    const file = ROUTES[path]
-    if (!file) return new Response('not found', { status: 404 })
-    return new Response(readFileSync(join(fixtureDir, file), 'utf8'), {
-      status: 200,
-      headers: { 'content-type': 'application/json' },
-    })
-  }) as typeof fetch
-}
-
-function client(fetchFn: typeof fetch = fixtureFetch()): CdnClient {
-  return new CdnClient({ baseUrl: BASE, fetchFn })
+function client(fetchFn: typeof fetch = makeFixtureFetch(ROUTES)): CdnClient {
+  return makeClient(fetchFn)
 }
 
 describe('CdnClient.getDistrictSnapshot', () => {
@@ -96,9 +76,7 @@ describe('CdnClient.getTimeSeries', () => {
     expect(res.data.dataPoints.length).toBe(2)
     // date is the most recent data point in the series
     expect(res.date).toBe('2026-05-31')
-    expect(res.sourceUrl).toBe(
-      `${BASE}/time-series/district_61/2025-2026.json`
-    )
+    expect(res.sourceUrl).toBe(`${BASE}/time-series/district_61/2025-2026.json`)
   })
 
   it('rejects a malformed program year (YYYY-YYYY required) without fetching', async () => {
@@ -119,8 +97,6 @@ describe('CdnClient.getTimeSeries', () => {
     expect(res.available).toBe(false)
     if (res.available) return
     expect(res.reason).toMatch(/not available/i)
-    expect(res.sourceUrl).toBe(
-      `${BASE}/time-series/district_61/1999-2000.json`
-    )
+    expect(res.sourceUrl).toBe(`${BASE}/time-series/district_61/1999-2000.json`)
   })
 })
