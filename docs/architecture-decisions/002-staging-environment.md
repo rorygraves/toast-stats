@@ -1,7 +1,17 @@
 # ADR-002: Staging Environment and Deployment Flow
 
-**Status**: Accepted
+**Status**: Partially superseded (2026-05)
 **Date**: 2026-04-10
+
+> **⚠️ Partially superseded — read this first.** This ADR bundled two flows that have since diverged:
+>
+> - **Data-promotion flow (§"How each change type flows" b, §"Data Promotion", §"Rollback" data) — STILL IN FORCE.** The daily `data-pipeline.yml` writes to the staging bucket `gs://toast-stats-data-staging` (`GCS_BUCKET`), diffs staging vs production (additive→promote / subtractive→block), and `rsync`s staging→production on an additive-only diff (#316). This is the current production data architecture and the authoritative reference for any pipeline rerun/backfill (see #1031).
+> - **Frontend deployment flow (§a/c/d — deploy to `staging.ts.taverns.red` → Playwright smoke → auto-promote to prod) — SUPERSEDED.** Replaced by:
+>   - **[ADR-003](003-staging-bucket-cors-preview-channels.md)** — per-PR **Firebase preview channels** (`pr-preview.yml`) replaced the persistent staging _site_ for verification. The `staging-toast-stats` Firebase target now only hosts ephemeral preview channels, not a smoke-test-and-promote pipeline.
+>   - **[ADR-004](004-release-gated-production-deploy.md)** — frontend prod deploys are now **release-gated** (fire on a release-please release via `deploy.yml`), not auto-promoted after a staging smoke test. There is no workflow performing the §a/c/d staging-site→smoke→auto-promote flow.
+>
+> Net: the **data half is live**, the **frontend half is dead**. The original text below is preserved for historical record.
+
 **Context**: The site is in production, shared with all Toastmasters district directors worldwide. Every commit to main deploys directly to production via Firebase Hosting. Multiple incidents have reached users before detection: closing period data corruption (#309), Distinguished count discrepancy (#311), lighthouse CI failures, stale dates in dropdown. Most incidents were **pipeline data bugs**, not frontend bugs — CI catches code issues but can't catch bad data.
 
 ## Decision

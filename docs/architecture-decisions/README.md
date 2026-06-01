@@ -19,16 +19,16 @@ Each ADR follows this template:
 
 ## Index
 
-| ADR                                                   | Title                                                      | Status   | Date     |
-| ----------------------------------------------------- | ---------------------------------------------------------- | -------- | -------- |
-| [001](001-cdn-only-frontend.md)                       | CDN-only frontend (no API server)                          | Accepted | Jan 2026 |
-| [002](002-staging-environment.md)                     | Staging environment and deployment flow                    | Accepted | Apr 2026 |
-| [003](003-staging-bucket-cors-preview-channels.md)    | Staging bucket CORS for Firebase previews                  | Accepted | May 2026 |
-| [004](004-release-gated-production-deploy.md)         | Release-gated production deploys                           | Accepted | May 2026 |
-| [005](005-district-subpage-ia-and-secondary-nav.md)   | District subpage IA map + secondary route-nav              | Accepted | May 2026 |
-| [006](006-data-table-page-layout-and-column-model.md) | Data-table page layout & column-model standard             | Accepted | May 2026 |
-| [007](007-data-serving-gcs-cdn-lb-over-firebase.md)   | Serve data via GCS + Cloud CDN + LB (not Firebase Hosting) | Accepted | May 2026 |
-| [008](008-ai-enable-toast-stats.md)                   | AI-enable Toast Stats — read-only MCP server over the CDN  | Proposed | May 2026 |
+| ADR                                                   | Title                                                      | Status                                                             | Date     |
+| ----------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------ | -------- |
+| [001](001-cdn-only-frontend.md)                       | CDN-only frontend (no API server)                          | Accepted                                                           | Jan 2026 |
+| [002](002-staging-environment.md)                     | Staging environment and deployment flow                    | Partially superseded (data flow live; frontend flow → ADR-003/004) | Apr 2026 |
+| [003](003-staging-bucket-cors-preview-channels.md)    | Staging bucket CORS for Firebase previews                  | Accepted                                                           | May 2026 |
+| [004](004-release-gated-production-deploy.md)         | Release-gated production deploys                           | Accepted                                                           | May 2026 |
+| [005](005-district-subpage-ia-and-secondary-nav.md)   | District subpage IA map + secondary route-nav              | Accepted                                                           | May 2026 |
+| [006](006-data-table-page-layout-and-column-model.md) | Data-table page layout & column-model standard             | Accepted                                                           | May 2026 |
+| [007](007-data-serving-gcs-cdn-lb-over-firebase.md)   | Serve data via GCS + Cloud CDN + LB (not Firebase Hosting) | Accepted                                                           | May 2026 |
+| [008](008-ai-enable-toast-stats.md)                   | AI-enable Toast Stats — read-only MCP server over the CDN  | Proposed                                                           | May 2026 |
 
 ## When to Write an ADR
 
