@@ -1299,15 +1299,19 @@ jobs:
           echo "Overlap dates to value-compare: ${OVERLAP_COUNT}"
 
           # Pull each overlap date's all-districts-rankings.json from both buckets.
+          # Parallelized (xargs -P): ~2 cp/date sequentially over ~100 dates is
+          # ~200 round-trips dominated by gsutil startup; running them concurrently
+          # cuts wall time markedly. Each cp is fail-soft (a missing file just drops
+          # that date from the compare — loadDateDigests skips dirs without the file).
           rm -rf /tmp/vd && mkdir -p /tmp/vd/staging /tmp/vd/prod
-          while IFS= read -r d; do
-            [ -z "$d" ] && continue
+          xargs -P 16 -I {} bash -c '
+            d="$1"; sb="$2"; pb="$3"
             mkdir -p "/tmp/vd/staging/${d}" "/tmp/vd/prod/${d}"
-            gsutil -q cp "gs://${GCS_BUCKET}/snapshots/${d}/all-districts-rankings.json" \
+            gsutil -q cp "gs://${sb}/snapshots/${d}/all-districts-rankings.json" \
               "/tmp/vd/staging/${d}/all-districts-rankings.json" 2>/dev/null || true
-            gsutil -q cp "gs://${GCS_BUCKET_PRODUCTION}/snapshots/${d}/all-districts-rankings.json" \
+            gsutil -q cp "gs://${pb}/snapshots/${d}/all-districts-rankings.json" \
               "/tmp/vd/prod/${d}/all-districts-rankings.json" 2>/dev/null || true
-          done < /tmp/overlap-dates.txt
+          ' _ {} "${GCS_BUCKET}" "${GCS_BUCKET_PRODUCTION}" < /tmp/overlap-dates.txt
 
           ALLOW_FLAG=""
           if [ "${ALLOW_VALUE_CHANGES:-false}" = "true" ]; then

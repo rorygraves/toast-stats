@@ -8,7 +8,7 @@
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { AllDistrictsRankingsDataSchema } from '@toastmasters/shared-contracts'
+import { validateAllDistrictsRankings } from '@toastmasters/shared-contracts'
 import {
   digestDate,
   diffSnapshots,
@@ -47,12 +47,12 @@ export function loadDateDigests(root: string): DateDigest[] {
     if (!entry.isDirectory()) continue
     const file = join(root, entry.name, RANKINGS_FILE)
     if (!existsSync(file)) continue
-    const parsed = AllDistrictsRankingsDataSchema.safeParse(
+    const parsed = validateAllDistrictsRankings(
       JSON.parse(readFileSync(file, 'utf8'))
     )
-    if (!parsed.success) {
+    if (!parsed.success || !parsed.data) {
       throw new Error(
-        `Invalid ${RANKINGS_FILE} for ${entry.name}: ${parsed.error.message}`
+        `Invalid ${RANKINGS_FILE} for ${entry.name}: ${parsed.error}`
       )
     }
     digests.push(digestDate(entry.name, parsed.data))
