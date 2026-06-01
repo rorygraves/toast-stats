@@ -1,21 +1,24 @@
-/* CommandPalette (#422) — universal search opened with Cmd-K / Ctrl-K
-   from anywhere in the app. v1 searches districts only (the data we
-   already fetch on the landing page); clubs/areas can extend later by
-   resolving the user's pinned district at open time.
+/* CommandPalette (#422 → omni-search epic #1055 Sprint 2, #1057) — universal
+   search opened with Cmd-K / Ctrl-K from anywhere in the app. It searches the
+   three globally-indexable entity types — districts, regions, clubs — via the
+   unified Sprint-1 index (`searchIndex.ts`), grouping results by type.
 
    Architecture: outer <CommandPalette> just gates visibility. The inner
-   <OpenPalette> holds all local state, so closing + reopening naturally
-   resets via React's unmount/remount, avoiding setState-in-effect
-   patterns. */
+   <OpenPalette> holds all local state AND triggers the index load, so the
+   ~1MB club index is fetched only on first open (never at app boot), and
+   closing + reopening naturally resets via React's unmount/remount — avoiding
+   setState-in-effect patterns. */
 
 import React, { useCallback, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { fetchCdnRankings } from '../../services/cdn'
-import type { DistrictRanking } from '../../types/districts'
+import {
+  loadSearchIndex,
+  searchEntities,
+  type SearchEntity,
+  type SearchEntityType,
+} from '../../services/searchIndex'
 import { DistrictChipAndName } from '../DistrictChipAndName'
-
-const MAX_RESULTS = 8
 
 interface CommandPaletteProps {
   isOpen: boolean
@@ -31,14 +34,20 @@ interface OpenPaletteProps {
   onClose: () => void
 }
 
+// Human-readable group headings, in the index's canonical group order.
+const GROUP_LABEL: Record<SearchEntityType, string> = {
+  district: 'Districts',
+  region: 'Regions',
+  club: 'Clubs',
+}
+
 const OpenPalette: React.FC<OpenPaletteProps> = ({ onClose }) => {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [activeIndex, setActiveIndex] = useState(0)
 
   // Auto-focus the input on mount. Callback ref avoids the
-  // setState-in-effect pattern; React calls it once when the input
-  // attaches.
+  // setState-in-effect pattern; React calls it once when the input attaches.
   const inputAttachRef = useCallback((el: HTMLInputElement | null) => {
     if (el) {
       // Defer one frame so the modal animation/layout has settled.
@@ -46,49 +55,41 @@ const OpenPalette: React.FC<OpenPaletteProps> = ({ onClose }) => {
     }
   }, [])
 
-  // Share the same cache as DistrictsPage so opening the palette is
-  // typically free.
-  const { data } = useQuery({
-    queryKey: ['district-rankings', 'latest'],
-    queryFn: async () => {
-      const cdnData = await fetchCdnRankings()
-      return { rankings: cdnData.rankings, date: cdnData.date }
-    },
+  // The unified index loads on first open (this component only mounts when the
+  // palette opens), fanning out to the rankings + club-index CDN fetches.
+  const { data: index, isLoading } = useQuery({
+    queryKey: ['omni-search-index'],
+    queryFn: loadSearchIndex,
     staleTime: 15 * 60 * 1000,
   })
 
-  const matches = useMemo<DistrictRanking[]>(() => {
-    const all: DistrictRanking[] = data?.rankings ?? []
-    const q = query.trim().toLowerCase()
-    if (!q) return all.slice(0, MAX_RESULTS)
-    return all
-      .filter(
-        r =>
-          r.districtId.toLowerCase().includes(q) ||
-          r.districtName.toLowerCase().includes(q)
-      )
-      .slice(0, MAX_RESULTS)
-  }, [data?.rankings, query])
-
-  // Clamp activeIndex at read time rather than in an effect — derived
-  // value, no setState-in-effect needed.
-  const clampedActiveIndex = Math.min(
-    activeIndex,
-    Math.max(0, matches.length - 1)
+  const groups = useMemo(
+    () => (index ? searchEntities(query, index) : []),
+    [index, query]
   )
 
+  // Flatten the grouped results into a single ordered list for keyboard
+  // navigation and aria-activedescendant — groups are for display only.
+  const flat = useMemo<SearchEntity[]>(
+    () => groups.flatMap(g => g.entities),
+    [groups]
+  )
+
+  // Clamp activeIndex at read time rather than in an effect — derived value.
+  const clampedActiveIndex = Math.min(activeIndex, Math.max(0, flat.length - 1))
+  const activeEntity = flat[clampedActiveIndex]
+
   const navigateToActive = useCallback(() => {
-    const choice = matches[clampedActiveIndex]
-    if (!choice) return
-    navigate(`/district/${choice.districtId}`)
+    if (!activeEntity) return
+    navigate(activeEntity.route)
     onClose()
-  }, [matches, clampedActiveIndex, navigate, onClose])
+  }, [activeEntity, navigate, onClose])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'ArrowDown') {
         e.preventDefault()
-        setActiveIndex(i => Math.min(i + 1, Math.max(0, matches.length - 1)))
+        setActiveIndex(i => Math.min(i + 1, Math.max(0, flat.length - 1)))
       } else if (e.key === 'ArrowUp') {
         e.preventDefault()
         setActiveIndex(i => Math.max(0, i - 1))
@@ -100,8 +101,12 @@ const OpenPalette: React.FC<OpenPaletteProps> = ({ onClose }) => {
         onClose()
       }
     },
-    [matches.length, navigateToActive, onClose]
+    [flat.length, navigateToActive, onClose]
   )
+
+  const hasQuery = query.trim().length > 0
+  const optionId = (e: SearchEntity) =>
+    `command-palette-result-${e.type}-${e.id}`
 
   return (
     <div
@@ -142,63 +147,18 @@ const OpenPalette: React.FC<OpenPaletteProps> = ({ onClose }) => {
               setActiveIndex(0)
             }}
             onKeyDown={handleKeyDown}
-            placeholder="Jump to a district by number or name…"
+            placeholder="Search districts, regions, clubs by name or number…"
             aria-label="Universal search input"
             aria-controls="command-palette-results"
             aria-activedescendant={
-              matches[clampedActiveIndex]
-                ? `command-palette-result-${matches[clampedActiveIndex].districtId}`
-                : undefined
+              activeEntity ? optionId(activeEntity) : undefined
             }
             className="command-palette__input"
           />
           <kbd className="command-palette__hint">esc</kbd>
         </div>
 
-        {matches.length > 0 ? (
-          <ul
-            id="command-palette-results"
-            role="listbox"
-            aria-label="Search results"
-            className="command-palette__results"
-          >
-            {matches.map((m, i) => (
-              <li
-                key={m.districtId}
-                role="option"
-                aria-selected={i === clampedActiveIndex}
-                id={`command-palette-result-${m.districtId}`}
-                onMouseEnter={() => setActiveIndex(i)}
-                className={
-                  'command-palette__result' +
-                  (i === clampedActiveIndex
-                    ? ' command-palette__result--active'
-                    : '')
-                }
-              >
-                <Link
-                  to={`/district/${m.districtId}`}
-                  onClick={onClose}
-                  className="command-palette__result-link"
-                >
-                  <DistrictChipAndName
-                    districtId={m.districtId}
-                    name={m.districtName}
-                    chipClassName="command-palette__result-num"
-                    nameClassName="command-palette__result-name"
-                  />
-                  <span className="command-palette__result-region">
-                    Region {m.region}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="command-palette__empty">
-            {data ? 'No districts match.' : 'Loading districts…'}
-          </p>
-        )}
+        {renderBody()}
 
         <div className="command-palette__footer">
           <span>
@@ -208,6 +168,95 @@ const OpenPalette: React.FC<OpenPaletteProps> = ({ onClose }) => {
         </div>
       </div>
     </div>
+  )
+
+  function renderBody() {
+    // Before the user types, guide them — listing every indexed entity (14k+
+    // clubs) is meaningless, so the empty query intentionally shows no listbox.
+    if (!hasQuery) {
+      return (
+        <p className="command-palette__empty">
+          Type to search districts, regions, and clubs.
+        </p>
+      )
+    }
+    if (isLoading && !index) {
+      return <p className="command-palette__empty">Searching…</p>
+    }
+    if (flat.length === 0) {
+      return <p className="command-palette__empty">No matches.</p>
+    }
+    return (
+      <ul
+        id="command-palette-results"
+        role="listbox"
+        aria-label="Search results"
+        className="command-palette__results"
+      >
+        {groups.map(group => (
+          <li
+            key={group.type}
+            role="group"
+            aria-label={GROUP_LABEL[group.type]}
+            className="command-palette__group"
+          >
+            <div className="command-palette__group-heading" aria-hidden="true">
+              {GROUP_LABEL[group.type]}
+            </div>
+            <ul role="presentation" className="command-palette__group-list">
+              {group.entities.map(entity => {
+                const flatIdx = flat.indexOf(entity)
+                const active = flatIdx === clampedActiveIndex
+                return (
+                  <li
+                    key={optionId(entity)}
+                    role="option"
+                    aria-selected={active}
+                    id={optionId(entity)}
+                    onMouseEnter={() => setActiveIndex(flatIdx)}
+                    className={
+                      'command-palette__result' +
+                      (active ? ' command-palette__result--active' : '')
+                    }
+                  >
+                    <Link
+                      to={entity.route}
+                      onClick={onClose}
+                      className="command-palette__result-link"
+                    >
+                      {renderEntity(entity)}
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+}
+
+// District results reuse the chip+name treatment (and its #522 no-duplicate
+// guard); regions and clubs render their label plus disambiguation context.
+function renderEntity(entity: SearchEntity) {
+  if (entity.type === 'district') {
+    return (
+      <DistrictChipAndName
+        districtId={entity.id}
+        name={entity.label}
+        chipClassName="command-palette__result-num"
+        nameClassName="command-palette__result-name"
+      />
+    )
+  }
+  return (
+    <>
+      <span className="command-palette__result-name">{entity.label}</span>
+      {entity.context && (
+        <span className="command-palette__result-region">{entity.context}</span>
+      )}
+    </>
   )
 }
 
