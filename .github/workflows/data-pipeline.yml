@@ -63,6 +63,11 @@ on:
         required: false
         type: boolean
         default: false
+      allow_value_changes:
+        description: 'Promote even if re-derived VALUES changed vs prod (review the value-diff first). For re-derive runs.'
+        required: false
+        type: boolean
+        default: false
 
 # Prevent overlapping pipeline runs
 concurrency:
@@ -1268,10 +1273,77 @@ jobs:
           fi
 
           echo "promote=${PROMOTE}" >> "$GITHUB_OUTPUT"
-          echo "- **Promotion**: $([ "$PROMOTE" = "true" ] && echo '✅ Safe (additive)' || echo '❌ Blocked (subtractive change detected)')" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Promotion (count gate)**: $([ "$PROMOTE" = "true" ] && echo '✅ Safe (additive)' || echo '❌ Blocked (subtractive change detected)')" >> "$GITHUB_STEP_SUMMARY"
+
+      # Value-aware gate (#1034, epic #1031). The count gate above is blind to a
+      # re-derive that keeps the same dates/districts but changes VALUES (F2).
+      # This step compares per-date district values over the overlap set and
+      # blocks promotion until an operator reviews them (allow_value_changes).
+      # Fail-closed: any error leaves value_promote=false.
+      - name: Value diff staging vs production (#1034)
+        id: valuediff
+        if: steps.mode.outputs.mode != 'prune'
+        env:
+          ALLOW_VALUE_CHANGES: ${{ inputs.allow_value_changes }}
+        run: |
+          set -uo pipefail
+          VALUE_PROMOTE="false"
+
+          # Overlap = dates present in BOTH staging and prod indexes.
+          gsutil cat "gs://${GCS_BUCKET}/v1/dates.json" 2>/dev/null \
+            | jq -r '.dates[]?' | sort > /tmp/staging-dates.txt || true
+          gsutil cat "gs://${GCS_BUCKET_PRODUCTION}/v1/dates.json" 2>/dev/null \
+            | jq -r '.dates[]?' | sort > /tmp/prod-dates.txt || true
+          comm -12 /tmp/staging-dates.txt /tmp/prod-dates.txt > /tmp/overlap-dates.txt || true
+          OVERLAP_COUNT=$(wc -l < /tmp/overlap-dates.txt | tr -d ' ')
+          echo "Overlap dates to value-compare: ${OVERLAP_COUNT}"
+
+          # Pull each overlap date's all-districts-rankings.json from both buckets.
+          rm -rf /tmp/vd && mkdir -p /tmp/vd/staging /tmp/vd/prod
+          while IFS= read -r d; do
+            [ -z "$d" ] && continue
+            mkdir -p "/tmp/vd/staging/${d}" "/tmp/vd/prod/${d}"
+            gsutil -q cp "gs://${GCS_BUCKET}/snapshots/${d}/all-districts-rankings.json" \
+              "/tmp/vd/staging/${d}/all-districts-rankings.json" 2>/dev/null || true
+            gsutil -q cp "gs://${GCS_BUCKET_PRODUCTION}/snapshots/${d}/all-districts-rankings.json" \
+              "/tmp/vd/prod/${d}/all-districts-rankings.json" 2>/dev/null || true
+          done < /tmp/overlap-dates.txt
+
+          ALLOW_FLAG=""
+          if [ "${ALLOW_VALUE_CHANGES:-false}" = "true" ]; then
+            ALLOW_FLAG="--allow-value-changes"
+          fi
+
+          # R4: structured JSON on stdout, logs on stderr. Parse .promote from JSON
+          # rather than the exit code so this step stays green and the gate flows
+          # through the step output.
+          npx collector-cli value-diff \
+            --staging-dir /tmp/vd/staging \
+            --prod-dir /tmp/vd/prod \
+            ${ALLOW_FLAG} > /tmp/value-diff.json 2>/tmp/value-diff.log || true
+
+          echo "## 🔬 Value Diff (staging vs production)" >> "$GITHUB_STEP_SUMMARY"
+          if jq -e . /tmp/value-diff.json >/dev/null 2>&1; then
+            VALUE_PROMOTE=$(jq -r '.promote' /tmp/value-diff.json)
+            ADDED=$(jq -r '.report.added | length' /tmp/value-diff.json)
+            REMOVED=$(jq -r '.report.removed | length' /tmp/value-diff.json)
+            CHANGED=$(jq -r '.report.changed | length' /tmp/value-diff.json)
+            echo "- Overlap dates: ${OVERLAP_COUNT}" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Added: ${ADDED} · Removed: ${REMOVED} · **Changed: ${CHANGED}**" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Value-gate promote: ${VALUE_PROMOTE}" >> "$GITHUB_STEP_SUMMARY"
+            jq -r '.reasons[]? | "  - " + .' /tmp/value-diff.json >> "$GITHUB_STEP_SUMMARY" || true
+            jq -r '.report.changed[]? | "  - changed " + .date + " (" + (.changedDistricts | length | tostring) + " districts)"' \
+              /tmp/value-diff.json >> "$GITHUB_STEP_SUMMARY" || true
+          else
+            echo "::warning::value-diff produced no parseable output — failing closed (no promote)"
+            echo "- ⚠️ value-diff failed to produce output — **failing closed**" >> "$GITHUB_STEP_SUMMARY"
+            cat /tmp/value-diff.log || true
+          fi
+
+          echo "value_promote=${VALUE_PROMOTE}" >> "$GITHUB_OUTPUT"
 
       - name: Promote staging to production
-        if: steps.diff.outputs.promote == 'true' && steps.mode.outputs.mode != 'prune'
+        if: steps.diff.outputs.promote == 'true' && steps.valuediff.outputs.value_promote == 'true' && steps.mode.outputs.mode != 'prune'
         run: |
           echo "Promoting staging → production..."
 
@@ -1294,12 +1366,14 @@ jobs:
           echo "Staging data synced to production bucket." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Promotion blocked
-        if: steps.diff.outputs.promote == 'false' && steps.mode.outputs.mode != 'prune'
+        if: (steps.diff.outputs.promote == 'false' || steps.valuediff.outputs.value_promote == 'false') && steps.mode.outputs.mode != 'prune'
         run: |
-          echo "::error::Promotion BLOCKED — subtractive changes detected in staging. Production data unchanged."
+          echo "::error::Promotion BLOCKED — count gate or value gate refused. Production data unchanged."
           echo "## ❌ Promotion Blocked" >> "$GITHUB_STEP_SUMMARY"
-          echo "Subtractive changes detected. Production data is **unchanged**." >> "$GITHUB_STEP_SUMMARY"
-          echo "Review the diff above and manually promote if safe." >> "$GITHUB_STEP_SUMMARY"
+          echo "- Count gate (additive): **${{ steps.diff.outputs.promote }}**" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Value gate: **${{ steps.valuediff.outputs.value_promote }}**" >> "$GITHUB_STEP_SUMMARY"
+          echo "Production data is **unchanged**. Review the diffs above." >> "$GITHUB_STEP_SUMMARY"
+          echo "For a reviewed re-derive, re-run with **allow_value_changes = true**." >> "$GITHUB_STEP_SUMMARY"
 
       # ── Summary ──
       - name: Pipeline summary
