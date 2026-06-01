@@ -9,11 +9,25 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
-import { CdnClient } from './cdn/CdnClient.js'
+import { CdnClient, DEFAULT_CDN_BASE_URL } from './cdn/CdnClient.js'
 import { TOOLS } from './tools/tools.js'
 
 export const SERVER_NAME = 'toast-stats'
 export const SERVER_VERSION = '0.1.0'
+
+/**
+ * Resolve the CDN origin the installed server reads from. Honors a `CDN_BASE_URL`
+ * environment override (self-hosting, a staging CDN, or the offline smoke check
+ * pointing at a localhost fixture server); falls back to the public
+ * {@link DEFAULT_CDN_BASE_URL} when unset or blank. A whitespace-only value is
+ * treated as unset so a stray export can't silently break the default.
+ */
+export function resolveCdnBaseUrl(
+  env: { CDN_BASE_URL?: string } = process.env
+): string {
+  const override = env.CDN_BASE_URL?.trim()
+  return override ? override : DEFAULT_CDN_BASE_URL
+}
 
 /** Register every read-only tool on `server`, backed by `client`. */
 export function registerTools(server: McpServer, client: CdnClient): void {
@@ -50,7 +64,7 @@ export function createServer(client: CdnClient = new CdnClient()): McpServer {
 
 /** Start the server over stdio (the local/self-installed transport). */
 export async function startStdioServer(): Promise<void> {
-  const server = createServer()
+  const server = createServer(new CdnClient({ baseUrl: resolveCdnBaseUrl() }))
   const transport = new StdioServerTransport()
   await server.connect(transport)
 }

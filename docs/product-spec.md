@@ -169,13 +169,14 @@ All Toastmasters-specific rules are documented in [toastmasters-rules-reference.
 
 ## Architecture Decisions
 
-| Decision                            | Rationale                                                                | Date     |
-| ----------------------------------- | ------------------------------------------------------------------------ | -------- |
-| CDN-only frontend (no API server)   | Data is pre-computed and immutable; CDN scales infinitely                | Jan 2026 |
-| One snapshot per month (pruned)     | Daily snapshots were wasteful; monthly is sufficient for trends          | Feb 2026 |
-| Time-series separate from analytics | Analytics JSON has 1-2 trend points; time-series has monthly granularity | Mar 2026 |
-| Borda-count for global rankings     | Fair multi-metric ranking without over-weighting any single metric       | Jan 2026 |
-| Toastmasters brand colors           | Professional appearance aligned with TI brand guidelines                 | Jan 2026 |
+| Decision                                  | Rationale                                                                                                                                                                                       | Date     |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| CDN-only frontend (no API server)         | Data is pre-computed and immutable; CDN scales infinitely                                                                                                                                       | Jan 2026 |
+| One snapshot per month (pruned)           | Daily snapshots were wasteful; monthly is sufficient for trends                                                                                                                                 | Feb 2026 |
+| Time-series separate from analytics       | Analytics JSON has 1-2 trend points; time-series has monthly granularity                                                                                                                        | Mar 2026 |
+| Borda-count for global rankings           | Fair multi-metric ranking without over-weighting any single metric                                                                                                                              | Jan 2026 |
+| Toastmasters brand colors                 | Professional appearance aligned with TI brand guidelines                                                                                                                                        | Jan 2026 |
+| Thin local read-only MCP server (ADR-008) | AI-enable Toast Stats: a self-installed stdio MCP server exposes the public snapshot CDN as read-only tools (no computation, no analytics-core, cite-the-source). `packages/mcp-server` (#1042) | May 2026 |
 
 ---
 
