@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.25.1](https://github.com/taverns-red/toast-stats/compare/toast-stats-v2.25.0...toast-stats-v2.25.1) (2026-06-02)
+
+
+### Documentation
+
+* **spike:** record operator decisions on daily-reports ingest ([#1062](https://github.com/taverns-red/toast-stats/issues/1062)) ([#1068](https://github.com/taverns-red/toast-stats/issues/1068)) ([f764e12](https://github.com/taverns-red/toast-stats/commit/f764e123512df11a342d5d199fc03af0965db742))
+
 ## [2.25.0](https://github.com/taverns-red/toast-stats/compare/toast-stats-v2.24.0...toast-stats-v2.25.0) (2026-06-01)
 
 
