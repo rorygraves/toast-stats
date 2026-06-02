@@ -50,8 +50,12 @@ export const REPORT_GUIDS = {
   sponsors: '4da53bd8-f6d9-4fa5-81d8-34ed5966dddd',
 } as const
 
-/** GUIDs whose data is wired into a section this sprint. */
-const IN_SCOPE_GUIDS: ReadonlySet<string> = new Set([
+/**
+ * GUIDs whose data is wired into a section this sprint, in fetch order. The
+ * fetcher iterates this; the builder uses it to drop out-of-scope reports.
+ * Sponsors/Mentors (#11) and the empty Archive are intentionally absent.
+ */
+export const IN_SCOPE_REPORT_GUIDS: readonly string[] = [
   REPORT_GUIDS.aprilDues,
   REPORT_GUIDS.octoberDues,
   REPORT_GUIDS.officerJan,
@@ -62,7 +66,10 @@ const IN_SCOPE_GUIDS: ReadonlySet<string> = new Set([
   REPORT_GUIDS.newClubs,
   REPORT_GUIDS.prospective,
   REPORT_GUIDS.coaches,
-])
+]
+
+/** GUIDs whose data is wired into a section this sprint. */
+const IN_SCOPE_GUIDS: ReadonlySet<string> = new Set(IN_SCOPE_REPORT_GUIDS)
 
 /** A fetched report: its tableID GUID and the raw HTML response body. */
 export interface RawReport {
