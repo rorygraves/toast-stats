@@ -134,3 +134,4 @@
 - **150** [monorepo, tdd, build, ci, automation] — TDD-scaffolding a new workspace package has two silent gate traps: the typecheck "no inputs" abort and the explicitly-enumerated CI job (#1043, #1042)
 - **151** [monorepo, automation, sprint-runner, build, ci] — A long-lived worktree has stale `node_modules` after a new workspace package merges; `npm install`, never `--no-verify` (#1056, #1055)
 - **152** [verification, playwright, frontend, cdn, scope] — A live-verification locator must key on the stable route, not a CDN-derived label (#1058, #1055)
+- **153** [data-pipeline, analytics, collector-cli, privacy, tdd] — De-identifying a member ledger by aggregation must drop per-row fields, even non-personal ones in the validated KEEP map (#1064, #1062)
