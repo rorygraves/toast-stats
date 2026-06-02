@@ -28,6 +28,7 @@ import { createColumnHelper, type RowData } from '@tanstack/react-table'
 import type { ProcessedClubTrend } from './filters/types'
 import type { ClubTrend, ClubHealthStatus } from '../hooks/useDistrictAnalytics'
 import { isProvisionallyDistinguished } from '../utils/provisionalDistinguished'
+import { ClubStatusCell } from './ClubStatusCell'
 import {
   getClubHealthStatusLabel,
   getClubHealthStatusPillModifier,
@@ -332,12 +333,12 @@ export const clubsColumns = [
     header: 'Club Status',
     sortingFn: 'basic',
     sortUndefined: 'last',
-    cell: info =>
-      info.row.original.clubStatus ? (
-        <span>{info.row.original.clubStatus}</span>
-      ) : (
-        <Dash />
-      ),
+    cell: info => (
+      <ClubStatusCell
+        clubStatus={info.row.original.clubStatus}
+        statusOverlay={info.row.original.statusOverlay}
+      />
+    ),
   }),
   colHelper.accessor(c => c.yearsChartered ?? undefined, {
     id: 'yearsChartered',

@@ -14,6 +14,11 @@
  * Fixes: #168 — Serve analytics via GCS + Cloud CDN
  */
 
+import {
+  DistrictReportsDatasetSchema,
+  type DistrictReportsDataset,
+} from '@toastmasters/shared-contracts'
+
 import { recordCdnResponse } from './cdnCacheTracker'
 
 // CDN base URL — set via VITE_CDN_BASE_URL at build time (#316)
@@ -371,6 +376,41 @@ export async function fetchFromCdn<T>(url: string): Promise<T> {
   }
   recordCdnResponse(res)
   return res.json() as Promise<T>
+}
+
+/**
+ * Construct a CDN URL for a district's de-identified Daily Reports dataset
+ * (epic #1062, Sprint 3 #1065). Persisted SEPARATELY from the base snapshot
+ * (no `analytics/` subfolder), so the daily-reports cadence + provenance stay
+ * distinct and the read-time overlay (Sprint 4 #1069) never touches the base.
+ */
+export function cdnDistrictReportsUrl(
+  date: string,
+  districtId: string
+): string {
+  return `${cdnBaseUrl()}/snapshots/${date}/district_${districtId}_reports.json`
+}
+
+/**
+ * Fetch a district's reports dataset, **tolerantly**. The reports file is
+ * additive and may be absent (no scheduled pipeline run yet for this snapshot)
+ * or, defensively, malformed — neither must break the analytics read path that
+ * joins this overlay. Returns `null` (→ no overlay) on any non-OK response,
+ * schema-validation failure, or network error; only a valid dataset resolves.
+ */
+export async function fetchCdnDistrictReports(
+  date: string,
+  districtId: string
+): Promise<DistrictReportsDataset | null> {
+  try {
+    const res = await fetch(cdnDistrictReportsUrl(date, districtId))
+    if (!res.ok) return null
+    recordCdnResponse(res)
+    const parsed = DistrictReportsDatasetSchema.safeParse(await res.json())
+    return parsed.success ? parsed.data : null
+  } catch {
+    return null
+  }
 }
 
 /**

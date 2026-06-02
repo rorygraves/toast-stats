@@ -3,11 +3,17 @@ import {
   fetchCdnManifest,
   cdnAnalyticsUrl,
   fetchFromCdn,
+  fetchCdnDistrictReports,
 } from '../services/cdn'
 import type {
   ClubHealthStatus,
   ProspectiveClub,
 } from '@toastmasters/shared-contracts'
+import {
+  applyDuesRenewalOverlay,
+  buildDuesRenewalLookup,
+  type ClubStatusOverlay,
+} from '../utils/clubStatusOverlay'
 
 // Re-export for backward compatibility with existing imports
 export type { ClubHealthStatus, ProspectiveClub }
@@ -40,6 +46,14 @@ export interface ClubTrend {
    * Values: "Active", "Suspended", "Ineligible", "Low", or undefined
    */
   clubStatus?: string
+  /**
+   * Read-time augmented status from the daily Dues Renewal report (epic #1062
+   * Sprint 4 #1069). Present only when the renewal report promotes a non-Active
+   * club to Active (`Verified complete`); carries provenance so the UI can show
+   * "Active (renewal verified <date>)" without silently overwriting the frozen
+   * base `clubStatus`. Absent when no overlay applies. @see clubStatusOverlay
+   */
+  statusOverlay?: ClubStatusOverlay
   /** Whether Distinguished status is provisional (pre-April, unconfirmed) */
   isProvisionallyDistinguished?: boolean
   /** Club Success Plan submission status (2025-2026+). Undefined for pre-2025 data. */
@@ -231,8 +245,32 @@ export const useDistrictAnalytics = (
       const snapshotDate =
         endDate || (await fetchCdnManifest()).latestSnapshotDate
       const url = cdnAnalyticsUrl(snapshotDate, districtId, 'analytics')
-      const file = await fetchFromCdn<{ data: DistrictAnalytics }>(url)
-      return file.data
+      // Read-time club-status overlay (epic #1062 Sprint 4 #1069): fetch the
+      // base analytics and the daily Dues Renewal report in parallel (they are
+      // independent once the snapshot date is known). The reports fetch is
+      // tolerant (404/malformed ⇒ null ⇒ no overlay), so the daily-fresh
+      // renewal data can promote a frozen-base club to Active during closing
+      // WITHOUT mutating the base snapshot.
+      const [file, reports] = await Promise.all([
+        fetchFromCdn<{ data: DistrictAnalytics }>(url),
+        fetchCdnDistrictReports(snapshotDate, districtId),
+      ])
+      const analytics = file.data
+
+      // Single join site — build the lookup once, attach to every club array so
+      // each consumer inherits `statusOverlay`.
+      if (reports) {
+        const lookup = buildDuesRenewalLookup(reports)
+        for (const clubs of [
+          analytics.allClubs,
+          analytics.vulnerableClubs,
+          analytics.thrivingClubs,
+          analytics.interventionRequiredClubs,
+        ]) {
+          applyDuesRenewalOverlay(clubs ?? [], lookup)
+        }
+      }
+      return analytics
     },
     enabled: !!districtId && hasValidDateRange,
     staleTime: 10 * 60 * 1000, // 10 minutes - cache analytics calculations longer
