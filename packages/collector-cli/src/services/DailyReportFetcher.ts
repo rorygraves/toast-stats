@@ -45,6 +45,13 @@ export interface DailyReportFetcherConfig {
   maxRetries?: number
   /** Backoff base (ms) between retries. Default 500. */
   backoffMs?: number
+  /**
+   * Minimum ms to wait between report requests — TI's report endpoint is
+   * rate-sensitive (spike §2). Default 1100 (≈0.9 req/sec). Set 0 in tests.
+   */
+  requestIntervalMs?: number
+  /** Injectable sleep (tests pass a spy to assert spacing without real waits). */
+  sleepImpl?: (ms: number) => Promise<void>
 }
 
 /** Build the verified anonymous report-API URL for one report + district. */
@@ -68,12 +75,18 @@ export class DailyReportFetcher {
   private readonly baseUrl: string
   private readonly maxRetries: number
   private readonly backoffMs: number
+  private readonly requestIntervalMs: number
+  private readonly sleep: (ms: number) => Promise<void>
 
   constructor(config: DailyReportFetcherConfig = {}) {
     this.fetchImpl = config.fetchImpl ?? (globalThis.fetch as FetchLike)
     this.baseUrl = config.baseUrl ?? BASE_URL
     this.maxRetries = config.maxRetries ?? 2
     this.backoffMs = config.backoffMs ?? 500
+    this.requestIntervalMs = config.requestIntervalMs ?? 1100
+    this.sleep =
+      config.sleepImpl ??
+      ((ms: number) => new Promise(resolve => setTimeout(resolve, ms)))
   }
 
   private validateDistrictId(districtId: string): void {
@@ -85,10 +98,6 @@ export class DailyReportFetcher {
         `Invalid district ID: only alphanumeric characters allowed (got "${districtId}")`
       )
     }
-  }
-
-  private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms))
   }
 
   /** Fetch a single report's HTML, with retry. Returns null on persistent failure. */
@@ -137,8 +146,15 @@ export class DailyReportFetcher {
   ): Promise<RawReport[]> {
     this.validateDistrictId(districtId)
     const reports: RawReport[] = []
-    for (const tableId of IN_SCOPE_REPORT_GUIDS) {
-      const report = await this.fetchOne(tableId, districtId, programYear)
+    for (let i = 0; i < IN_SCOPE_REPORT_GUIDS.length; i++) {
+      if (i > 0 && this.requestIntervalMs > 0) {
+        await this.sleep(this.requestIntervalMs)
+      }
+      const report = await this.fetchOne(
+        IN_SCOPE_REPORT_GUIDS[i]!,
+        districtId,
+        programYear
+      )
       if (report) reports.push(report)
     }
     return reports

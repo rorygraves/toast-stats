@@ -66,7 +66,10 @@ describe('ingestDistrictReports (fetch → build → write)', () => {
   })
 
   it('writes a schema-valid dataset with all in-scope sections', async () => {
-    const fetcher = new DailyReportFetcher({ fetchImpl: fixtureFetch })
+    const fetcher = new DailyReportFetcher({
+      fetchImpl: fixtureFetch,
+      requestIntervalMs: 0,
+    })
     const path = await ingestDistrictReports({
       cacheDir,
       date: '2026-06-01',
@@ -98,7 +101,10 @@ describe('ingestDistrictReports (fetch → build → write)', () => {
   })
 
   it('no personal value appears in the written file (end-to-end privacy guard)', async () => {
-    const fetcher = new DailyReportFetcher({ fetchImpl: fixtureFetch })
+    const fetcher = new DailyReportFetcher({
+      fetchImpl: fixtureFetch,
+      requestIntervalMs: 0,
+    })
     const path = await ingestDistrictReports({
       cacheDir,
       date: '2026-06-01',

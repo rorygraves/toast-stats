@@ -36,7 +36,7 @@ const okFetch = (body = '<table></table>') =>
 describe('DailyReportFetcher.fetchDistrictReports', () => {
   it('fetches every in-scope GUID and returns a RawReport per report', async () => {
     const fetchImpl = okFetch()
-    const fetcher = new DailyReportFetcher({ fetchImpl })
+    const fetcher = new DailyReportFetcher({ fetchImpl, requestIntervalMs: 0 })
     const reports = await fetcher.fetchDistrictReports('61', '2025-2026')
     expect(reports).toHaveLength(IN_SCOPE_REPORT_GUIDS.length)
     expect(reports.map(r => r.tableId).sort()).toEqual(
@@ -55,7 +55,11 @@ describe('DailyReportFetcher.fetchDistrictReports', () => {
         text: async () => '<table></table>',
       }
     })
-    const fetcher = new DailyReportFetcher({ fetchImpl, maxRetries: 0 })
+    const fetcher = new DailyReportFetcher({
+      fetchImpl,
+      maxRetries: 0,
+      requestIntervalMs: 0,
+    })
     const reports = await fetcher.fetchDistrictReports('61', '2025-2026')
     expect(reports).toHaveLength(IN_SCOPE_REPORT_GUIDS.length - 1)
     expect(reports.map(r => r.tableId)).not.toContain(IN_SCOPE_REPORT_GUIDS[0])
@@ -63,10 +67,24 @@ describe('DailyReportFetcher.fetchDistrictReports', () => {
 
   it('rejects an unsafe district id before fetching', async () => {
     const fetchImpl = okFetch()
-    const fetcher = new DailyReportFetcher({ fetchImpl })
+    const fetcher = new DailyReportFetcher({ fetchImpl, requestIntervalMs: 0 })
     await expect(
       fetcher.fetchDistrictReports('../../etc', '2025-2026')
     ).rejects.toThrow(/district/i)
     expect(fetchImpl).not.toHaveBeenCalled()
+  })
+
+  it('spaces requests by requestIntervalMs (polite to the TI endpoint)', async () => {
+    const fetchImpl = okFetch()
+    const sleepImpl = vi.fn(async () => {})
+    const fetcher = new DailyReportFetcher({
+      fetchImpl,
+      requestIntervalMs: 50,
+      sleepImpl,
+    })
+    await fetcher.fetchDistrictReports('61', '2025-2026')
+    // One inter-request wait between each of the N reports → N-1 sleeps.
+    expect(sleepImpl).toHaveBeenCalledTimes(IN_SCOPE_REPORT_GUIDS.length - 1)
+    expect(sleepImpl).toHaveBeenCalledWith(50)
   })
 })
