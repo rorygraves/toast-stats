@@ -285,6 +285,17 @@ const REGISTRY: Record<string, ReportSpec> = {
   },
 }
 
+/**
+ * Extract the report's "as of" date from its freshness line:
+ *   `Reports are uploaded daily - Updated: June 01, 2026 08: 06 AM MT.`
+ * Returns the `Month DD, YYYY` portion (stable provenance for the dataset), or
+ * `''` when the line is absent (an empty/archive body has none).
+ */
+export function extractReportAsOf(html: string): string {
+  const m = html.match(/Updated:\s*([A-Za-z]+ \d{1,2}, \d{4})/)
+  return m?.[1] ?? ''
+}
+
 // ─── HTML table parsing (desktop <table> only) ───────────────────────────────
 
 interface RawTable {
