@@ -196,7 +196,7 @@ describe('applyDuesRenewalOverlay (join onto clubs at the assembly site)', () =>
       { clubId: '3333333', clubStatus: 'Low' }, // absent from report: unchanged
       { clubId: '4444444', clubStatus: 'Active' }, // base-Active: no-op
     ]
-    applyDuesRenewalOverlay(clubs, centretownDataset)
+    applyDuesRenewalOverlay(clubs, buildDuesRenewalLookup(centretownDataset))
 
     expect(clubs[0]!.statusOverlay).toEqual({
       status: 'Active',
@@ -211,9 +211,9 @@ describe('applyDuesRenewalOverlay (join onto clubs at the assembly site)', () =>
     expect(clubs[0]!.clubStatus).toBe('Low')
   })
 
-  it('is a no-op when there is no dataset (graceful absence)', () => {
+  it('is a no-op when the lookup is empty (graceful absence)', () => {
     const clubs: C[] = [{ clubId: '1009147', clubStatus: 'Low' }]
-    applyDuesRenewalOverlay(clubs, null)
+    applyDuesRenewalOverlay(clubs, buildDuesRenewalLookup(null))
     expect(clubs[0]!.statusOverlay).toBeUndefined()
   })
 })

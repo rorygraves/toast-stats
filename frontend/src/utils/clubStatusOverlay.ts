@@ -136,20 +136,21 @@ export interface OverlayableClub {
 }
 
 /**
- * Attach the read-time Dues Renewal overlay to each club, IN PLACE. This is the
- * single join site (called where club objects are assembled for the frontend).
- * The base `clubStatus` is never mutated — only `statusOverlay` is set, and only
- * for a verified, non-Active club. A null dataset is a clean no-op.
+ * Attach the read-time Dues Renewal overlay to each club, IN PLACE. The base
+ * `clubStatus` is never mutated — only `statusOverlay` is set, and only for a
+ * verified, non-Active club. An empty lookup is a clean no-op.
+ *
+ * Takes a pre-built lookup (from {@link buildDuesRenewalLookup}) rather than the
+ * raw dataset so a caller augmenting several club arrays from one dataset builds
+ * the Map once and reuses it across all of them.
  *
  * @param clubs the clubs to augment (mutated).
- * @param dataset the district's reports dataset, or `null` if absent/malformed.
+ * @param lookup the `clubNumber → renewal signal` map for the district.
  */
 export function applyDuesRenewalOverlay(
   clubs: OverlayableClub[],
-  dataset: DistrictReportsDataset | null
+  lookup: Map<string, DuesRenewalLookup>
 ): void {
-  if (!dataset) return
-  const lookup = buildDuesRenewalLookup(dataset)
   if (lookup.size === 0) return
 
   for (const club of clubs) {

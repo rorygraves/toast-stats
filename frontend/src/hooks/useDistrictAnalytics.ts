@@ -11,6 +11,7 @@ import type {
 } from '@toastmasters/shared-contracts'
 import {
   applyDuesRenewalOverlay,
+  buildDuesRenewalLookup,
   type ClubStatusOverlay,
 } from '../utils/clubStatusOverlay'
 
@@ -244,23 +245,29 @@ export const useDistrictAnalytics = (
       const snapshotDate =
         endDate || (await fetchCdnManifest()).latestSnapshotDate
       const url = cdnAnalyticsUrl(snapshotDate, districtId, 'analytics')
-      const file = await fetchFromCdn<{ data: DistrictAnalytics }>(url)
+      // Read-time club-status overlay (epic #1062 Sprint 4 #1069): fetch the
+      // base analytics and the daily Dues Renewal report in parallel (they are
+      // independent once the snapshot date is known). The reports fetch is
+      // tolerant (404/malformed ⇒ null ⇒ no overlay), so the daily-fresh
+      // renewal data can promote a frozen-base club to Active during closing
+      // WITHOUT mutating the base snapshot.
+      const [file, reports] = await Promise.all([
+        fetchFromCdn<{ data: DistrictAnalytics }>(url),
+        fetchCdnDistrictReports(snapshotDate, districtId),
+      ])
       const analytics = file.data
 
-      // Read-time club-status overlay (epic #1062 Sprint 4 #1069). Fetched
-      // tolerantly (404/malformed ⇒ null ⇒ no overlay) so the daily-fresh
-      // Dues Renewal report can promote a frozen-base club to Active during
-      // closing, WITHOUT mutating the base snapshot. This is the single join
-      // site — every consumer of these club arrays inherits `statusOverlay`.
-      const reports = await fetchCdnDistrictReports(snapshotDate, districtId)
+      // Single join site — build the lookup once, attach to every club array so
+      // each consumer inherits `statusOverlay`.
       if (reports) {
+        const lookup = buildDuesRenewalLookup(reports)
         for (const clubs of [
           analytics.allClubs,
           analytics.vulnerableClubs,
           analytics.thrivingClubs,
           analytics.interventionRequiredClubs,
         ]) {
-          applyDuesRenewalOverlay(clubs ?? [], reports)
+          applyDuesRenewalOverlay(clubs ?? [], lookup)
         }
       }
       return analytics
