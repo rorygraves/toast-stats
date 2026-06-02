@@ -164,6 +164,10 @@ describe('buildDistrictReports — officer-list cadence join (Jan∩Jul)', () =>
     }).sections.officerList!.records
     expect(recs).toHaveLength(1)
     expect(recs[0]!.electionCadence).toBe('semiannual')
+    // January status wins for a both-reports (semiannual) club: its Jan list
+    // was Received, so submitted=true even though July shows "List Not Here".
+    expect(recs[0]!.officerListSubmitted).toBe(true)
+    expect(recs[0]!.listStatus).toBe('Received - 01/05/2026')
   })
 })
 

@@ -1686,9 +1686,15 @@ export function createCLI(): Command {
         // Structured JSON to stdout (R4: logs to stderr only).
         console.log(JSON.stringify(summary, null, 2))
 
-        process.exit(
-          summary.failed === 0 ? ExitCode.SUCCESS : ExitCode.PARTIAL_FAILURE
-        )
+        // Distinguish total outage (every district failed) from partial — a
+        // monitoring caller reads 2 vs 1 differently (matches the enum).
+        const exitCode =
+          summary.failed === 0
+            ? ExitCode.SUCCESS
+            : summary.succeeded === 0 && summary.totalDistricts > 0
+              ? ExitCode.COMPLETE_FAILURE
+              : ExitCode.PARTIAL_FAILURE
+        process.exit(exitCode)
       }
     )
 
