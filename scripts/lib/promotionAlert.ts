@@ -111,9 +111,11 @@ export function evaluatePromotion(
 
   const changed = valueDiff?.report.changed ?? []
   const changedDateCount = changed.length
+  // Numeric-aware sort: district ids are mostly numeric ("25" < "61" < "129")
+  // but a few are alpha ("F", "U"); localeCompare with numeric handles both.
   const affectedDistricts = [
     ...new Set(changed.flatMap(c => c.changedDistricts)),
-  ].sort()
+  ].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
 
   return {
     blocked: !promoted,

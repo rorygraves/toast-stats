@@ -81,18 +81,23 @@ function main(): void {
       `stagingAhead=${result.stagingAhead} changedDates=${result.changedDateCount}`
   )
 
+  // Do the throw-prone work (body build + file write) BEFORE emitting any
+  // output, so a failure here lands in the catch with no half-written outputs
+  // to override — the crash handler then emits a clean blocked=true alert.
+  if (result.blocked) {
+    writeFileSync(BODY_FILE, buildPromotionHeldBody(result, { now }))
+    log('Promotion is HELD — alert body written.')
+  } else {
+    log('Promotion succeeded — any open promotion-held issue should close.')
+  }
+
   emitOutput('blocked', String(result.blocked))
   emitOutput('promoted', String(result.promoted))
   emitOutput('gate', result.gate)
   emitOutput('staging_ahead', String(result.stagingAhead))
-
   if (result.blocked) {
-    writeFileSync(BODY_FILE, buildPromotionHeldBody(result, { now }))
     emitOutput('title', buildPromotionHeldTitle(result))
     emitOutput('body_file', BODY_FILE)
-    log('Promotion is HELD — alert body written.')
-  } else {
-    log('Promotion succeeded — any open promotion-held issue should close.')
   }
 }
 

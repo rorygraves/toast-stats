@@ -91,8 +91,8 @@ describe('evaluatePromotion', () => {
     expect(r.gate).toBe('value')
     expect(r.stagingAhead).toBe(true)
     expect(r.changedDateCount).toBe(2)
-    // unique, sorted union of changed districts across dates
-    expect(r.affectedDistricts).toEqual(['129', '25', '50', '61'])
+    // unique, numeric-aware sorted union of changed districts across dates
+    expect(r.affectedDistricts).toEqual(['25', '50', '61', '129'])
   })
 
   it('is blocked by the count gate (possible regression)', () => {
