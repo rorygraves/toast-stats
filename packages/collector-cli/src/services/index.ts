@@ -38,5 +38,19 @@ export {
   type TimeSeriesIndexWriterConfig,
   type TimeSeriesIndexWriterLogger,
 } from './TimeSeriesIndexWriter.js'
+export {
+  parseDistrictReport,
+  type ParsedDistrictReport,
+  type DistrictReportType,
+  type DuesRenewalRow,
+  type OfficerListRow,
+  type ClubSuccessPlanRow,
+  type EducationAchievementCount,
+  type TripleCrownRow,
+  type NewClubRow,
+  type ProspectiveClubRow,
+  type SponsorMentorRow,
+  type CoachRow,
+} from './DailyReportParser.js'
 // CollectorOrchestrator will be added in Task 3
 // export { CollectorOrchestrator } from './CollectorOrchestrator.js'
