@@ -385,62 +385,23 @@ export function parseDistrictReport(
   const table = parseDesktopTable(html)
   const projected = projectRows(table, spec.columns)
 
-  switch (spec.reportType) {
-    case 'education-archive':
-      return { tableId, reportType: 'education-archive', rows: [] }
-    case 'education-achievements':
-      return {
-        tableId,
-        reportType: 'education-achievements',
-        rows: aggregateEducation(projected),
-      }
-    case 'dues-renewal':
-      return {
-        tableId,
-        reportType: 'dues-renewal',
-        rows: projected as unknown as DuesRenewalRow[],
-      }
-    case 'officer-list':
-      return {
-        tableId,
-        reportType: 'officer-list',
-        rows: projected as unknown as OfficerListRow[],
-      }
-    case 'club-success-plan':
-      return {
-        tableId,
-        reportType: 'club-success-plan',
-        rows: projected as unknown as ClubSuccessPlanRow[],
-      }
-    case 'triple-crown':
-      return {
-        tableId,
-        reportType: 'triple-crown',
-        rows: projected as unknown as TripleCrownRow[],
-      }
-    case 'new-clubs':
-      return {
-        tableId,
-        reportType: 'new-clubs',
-        rows: projected as unknown as NewClubRow[],
-      }
-    case 'prospective-clubs':
-      return {
-        tableId,
-        reportType: 'prospective-clubs',
-        rows: projected as unknown as ProspectiveClubRow[],
-      }
-    case 'sponsors-mentors':
-      return {
-        tableId,
-        reportType: 'sponsors-mentors',
-        rows: projected as unknown as SponsorMentorRow[],
-      }
-    case 'coaches':
-      return {
-        tableId,
-        reportType: 'coaches',
-        rows: projected as unknown as CoachRow[],
-      }
+  // Two report types need their rows reshaped; the other eight are the projected
+  // KEEP columns verbatim (each typed shape is structurally `Record<string,
+  // string>`, so the one whole-result cast is sound — and reportType carries the
+  // discriminant so callers still narrow `rows` correctly).
+  if (spec.reportType === 'education-archive') {
+    return { tableId, reportType: 'education-archive', rows: [] }
   }
+  if (spec.reportType === 'education-achievements') {
+    return {
+      tableId,
+      reportType: 'education-achievements',
+      rows: aggregateEducation(projected),
+    }
+  }
+  return {
+    tableId,
+    reportType: spec.reportType,
+    rows: projected,
+  } as unknown as ParsedDistrictReport
 }
