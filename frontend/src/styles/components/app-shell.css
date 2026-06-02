@@ -4069,6 +4069,37 @@
     );
   }
 
+  /* Read-time club-status overlay affordance (#1069, epic #1062 Sprint 4).
+     When the daily Dues Renewal report promotes a frozen-base club to Active
+     during closing, the cell shows the augmented status above a subtle
+     provenance line ("✓ renewal verified <date>"). The line is driven from
+     --ink-3 (the same theme-aware muted token the DCP val + help icon use, so
+     it rides the [data-theme='dark'] remap with no component branch — R10) and
+     the decorative check from --green-500 (remaps per theme, lesson 095/093).
+     Column-stacked + nowrap so it never widens the cell or wraps mid-date. */
+  .club-status-overlay {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    line-height: 1.25;
+  }
+
+  .club-status-overlay__status {
+    font-weight: 600;
+  }
+
+  .club-status-overlay__mark {
+    font-size: 10px;
+    color: var(--ink-3);
+    white-space: nowrap;
+  }
+
+  .club-status-overlay__mark [aria-hidden='true'] {
+    color: var(--green-500);
+    font-weight: 700;
+  }
+
   /* DCP inline progress bar — mirrors the club-detail .dcp-progress treatment
      (var(--loyal-500) fill, #60a5d8 in dark) so the metric reads the same
      across surfaces (R10). Bar + numeral; the numeral keeps it from being a
