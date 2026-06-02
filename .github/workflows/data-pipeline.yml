@@ -83,6 +83,7 @@ env:
 permissions:
   contents: read
   id-token: write # Required for Workload Identity Federation
+  issues: write # File/refresh/close the promotion-held alert issue (#1073)
 
 jobs:
   pipeline:
@@ -1378,6 +1379,76 @@ jobs:
           echo "- Value gate: **${{ steps.valuediff.outputs.value_promote }}**" >> "$GITHUB_STEP_SUMMARY"
           echo "Production data is **unchanged**. Review the diffs above." >> "$GITHUB_STEP_SUMMARY"
           echo "For a reviewed re-derive, re-run with **allow_value_changes = true**." >> "$GITHUB_STEP_SUMMARY"
+
+      # ════════════════════════════════════════════════════════
+      # PROMOTION-HELD ALERT (#1073, epic #1072)
+      # A blocked promotion leaves prod serving stale content while the run
+      # still reports success. Turn that silent state into a loud, self-
+      # clearing `promotion-held` issue. Decision logic is unit-tested in
+      # scripts/lib/promotionAlert.ts; these steps are thin glue.
+      # ════════════════════════════════════════════════════════
+      - name: Evaluate promotion alert (#1073)
+        id: promoalert
+        if: steps.mode.outputs.mode != 'prune'
+        env:
+          COUNT_PROMOTE: ${{ steps.diff.outputs.promote }}
+          VALUE_PROMOTE: ${{ steps.valuediff.outputs.value_promote }}
+          VALUE_DIFF_FILE: /tmp/value-diff.json
+        run: npx tsx scripts/promotion-alert.ts
+
+      - name: Ensure promotion-held label exists
+        if: steps.promoalert.outputs.blocked == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create promotion-held \
+            --color B60205 \
+            --description "Staging→prod promotion is held; prod is serving stale content" \
+            2>/dev/null || echo "Label already exists"
+
+      - name: File or refresh promotion-held issue
+        if: steps.promoalert.outputs.blocked == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Deduplicate: one open alert at a time. Refresh (comment on) the
+          # existing issue rather than spamming a new one each blocked run.
+          EXISTING=$(gh issue list --label promotion-held --state open \
+            --json number --jq '.[0].number // empty')
+          if [ -n "${EXISTING}" ]; then
+            echo "Existing open alert #${EXISTING} — adding a refresh comment."
+            gh issue comment "${EXISTING}" \
+              --body-file "${{ steps.promoalert.outputs.body_file }}"
+          else
+            echo "No open alert — creating one."
+            gh issue create \
+              --title "${{ steps.promoalert.outputs.title }}" \
+              --label promotion-held \
+              --body-file "${{ steps.promoalert.outputs.body_file }}"
+          fi
+
+      - name: Auto-close promotion-held issue on a promoting run
+        if: steps.promoalert.outputs.promoted == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # A later run promoted — the held state cleared. Close every open
+          # promotion-held issue with a note. The `concurrency: data-pipeline`
+          # group (top of file) serializes pipeline runs, so a promoting run
+          # can't race a concurrent blocking run — once we promote, any prior
+          # held state is genuinely resolved regardless of which mode filed it.
+          OPEN=$(gh issue list --label promotion-held --state open \
+            --json number --jq '.[].number')
+          if [ -z "${OPEN}" ]; then
+            echo "No open promotion-held issue to close."
+          else
+            for n in ${OPEN}; do
+              echo "Closing promotion-held issue #${n} — promotion succeeded."
+              gh issue close "${n}" \
+                --comment "✅ A subsequent pipeline run promoted staging → production; the held state has cleared. Auto-closing (#1073)." \
+                --reason completed
+            done
+          fi
 
       # ── Summary ──
       - name: Pipeline summary
