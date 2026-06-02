@@ -22,6 +22,8 @@
  * @module clubStatusOverlay
  */
 
+import type { DistrictReportsDataset } from '@toastmasters/shared-contracts'
+
 /** The augmented status + provenance attached to a club at read time. */
 export interface ClubStatusOverlay {
   /** The augmented status. The overlay only ever promotes to `Active`. */
@@ -74,4 +76,90 @@ export function resolveClubStatusOverlay(
   if (!activeSince) return null
 
   return { status: 'Active', source: 'dues-renewal', activeSince, asOf }
+}
+
+/** A club's renewal signal + its source freshness date, keyed by club number. */
+export interface DuesRenewalLookup {
+  renewalStatus: string
+  asOf: string
+}
+
+/**
+ * Build a `clubNumber → renewal signal` map from a reports dataset's
+ * Dues Renewal sections (April + October). The join key is the club **number**
+ * (`record.club`), which matches `ClubTrend.clubId`.
+ *
+ * A club may appear in both seasons; we keep the record with the **later**
+ * verified-complete date so the freshest confirmation wins. Non-verified
+ * records are retained (the resolver turns them into a no-op anyway).
+ *
+ * @param dataset the de-identified reports dataset, or `null` if none was
+ *   fetched (404 / malformed) — yields an empty map (no overlay anywhere).
+ */
+export function buildDuesRenewalLookup(
+  dataset: DistrictReportsDataset | null
+): Map<string, DuesRenewalLookup> {
+  const map = new Map<string, DuesRenewalLookup>()
+  if (!dataset) return map
+
+  const sections = [
+    dataset.sections.aprilDuesRenewal,
+    dataset.sections.octoberDuesRenewal,
+  ]
+  for (const sec of sections) {
+    if (!sec) continue
+    const asOf = sec.sources[0]?.asOf ?? ''
+    for (const rec of sec.records) {
+      const candidate: DuesRenewalLookup = {
+        renewalStatus: rec.renewalStatus,
+        asOf,
+      }
+      const existing = map.get(rec.club)
+      if (!existing) {
+        map.set(rec.club, candidate)
+        continue
+      }
+      // Prefer the later verified-complete date; '' (unverified) sorts lowest.
+      const newDate = parseVerifiedComplete(candidate.renewalStatus) ?? ''
+      const oldDate = parseVerifiedComplete(existing.renewalStatus) ?? ''
+      if (newDate > oldDate) map.set(rec.club, candidate)
+    }
+  }
+  return map
+}
+
+/** The minimal club shape the overlay reads + writes. `ClubTrend` satisfies it. */
+export interface OverlayableClub {
+  clubId: string
+  clubStatus?: string
+  statusOverlay?: ClubStatusOverlay
+}
+
+/**
+ * Attach the read-time Dues Renewal overlay to each club, IN PLACE. This is the
+ * single join site (called where club objects are assembled for the frontend).
+ * The base `clubStatus` is never mutated — only `statusOverlay` is set, and only
+ * for a verified, non-Active club. A null dataset is a clean no-op.
+ *
+ * @param clubs the clubs to augment (mutated).
+ * @param dataset the district's reports dataset, or `null` if absent/malformed.
+ */
+export function applyDuesRenewalOverlay(
+  clubs: OverlayableClub[],
+  dataset: DistrictReportsDataset | null
+): void {
+  if (!dataset) return
+  const lookup = buildDuesRenewalLookup(dataset)
+  if (lookup.size === 0) return
+
+  for (const club of clubs) {
+    const renewal = lookup.get(club.clubId)
+    if (!renewal) continue
+    const overlay = resolveClubStatusOverlay(
+      club.clubStatus,
+      renewal.renewalStatus,
+      renewal.asOf
+    )
+    if (overlay) club.statusOverlay = overlay
+  }
 }

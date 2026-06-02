@@ -3,11 +3,16 @@ import {
   fetchCdnManifest,
   cdnAnalyticsUrl,
   fetchFromCdn,
+  fetchCdnDistrictReports,
 } from '../services/cdn'
 import type {
   ClubHealthStatus,
   ProspectiveClub,
 } from '@toastmasters/shared-contracts'
+import {
+  applyDuesRenewalOverlay,
+  type ClubStatusOverlay,
+} from '../utils/clubStatusOverlay'
 
 // Re-export for backward compatibility with existing imports
 export type { ClubHealthStatus, ProspectiveClub }
@@ -40,6 +45,14 @@ export interface ClubTrend {
    * Values: "Active", "Suspended", "Ineligible", "Low", or undefined
    */
   clubStatus?: string
+  /**
+   * Read-time augmented status from the daily Dues Renewal report (epic #1062
+   * Sprint 4 #1069). Present only when the renewal report promotes a non-Active
+   * club to Active (`Verified complete`); carries provenance so the UI can show
+   * "Active (renewal verified <date>)" without silently overwriting the frozen
+   * base `clubStatus`. Absent when no overlay applies. @see clubStatusOverlay
+   */
+  statusOverlay?: ClubStatusOverlay
   /** Whether Distinguished status is provisional (pre-April, unconfirmed) */
   isProvisionallyDistinguished?: boolean
   /** Club Success Plan submission status (2025-2026+). Undefined for pre-2025 data. */
@@ -232,7 +245,25 @@ export const useDistrictAnalytics = (
         endDate || (await fetchCdnManifest()).latestSnapshotDate
       const url = cdnAnalyticsUrl(snapshotDate, districtId, 'analytics')
       const file = await fetchFromCdn<{ data: DistrictAnalytics }>(url)
-      return file.data
+      const analytics = file.data
+
+      // Read-time club-status overlay (epic #1062 Sprint 4 #1069). Fetched
+      // tolerantly (404/malformed ⇒ null ⇒ no overlay) so the daily-fresh
+      // Dues Renewal report can promote a frozen-base club to Active during
+      // closing, WITHOUT mutating the base snapshot. This is the single join
+      // site — every consumer of these club arrays inherits `statusOverlay`.
+      const reports = await fetchCdnDistrictReports(snapshotDate, districtId)
+      if (reports) {
+        for (const clubs of [
+          analytics.allClubs,
+          analytics.vulnerableClubs,
+          analytics.thrivingClubs,
+          analytics.interventionRequiredClubs,
+        ]) {
+          applyDuesRenewalOverlay(clubs ?? [], reports)
+        }
+      }
+      return analytics
     },
     enabled: !!districtId && hasValidDateRange,
     staleTime: 10 * 60 * 1000, // 10 minutes - cache analytics calculations longer
