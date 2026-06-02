@@ -40,6 +40,7 @@ export {
 } from './TimeSeriesIndexWriter.js'
 export {
   parseDistrictReport,
+  extractReportAsOf,
   type ParsedDistrictReport,
   type DistrictReportType,
   type DuesRenewalRow,
@@ -52,5 +53,28 @@ export {
   type SponsorMentorRow,
   type CoachRow,
 } from './DailyReportParser.js'
+// Daily Reports ingest (epic #1062, Sprint 3 #1065): fetch → build → write the
+// separate de-identified per-district dataset.
+export {
+  buildDistrictReports,
+  REPORT_GUIDS,
+  IN_SCOPE_REPORT_GUIDS,
+  type RawReport,
+  type BuildDistrictReportsInput,
+} from './DistrictReportsBuilder.js'
+export {
+  DailyReportFetcher,
+  buildDistrictReportUrl,
+  type FetchLike,
+  type DailyReportFetcherConfig,
+} from './DailyReportFetcher.js'
+export {
+  writeDistrictReports,
+  districtReportsFileName,
+} from './DistrictReportsWriter.js'
+export {
+  ingestDistrictReports,
+  type IngestDistrictReportsOptions,
+} from './DistrictReportsIngest.js'
 // CollectorOrchestrator will be added in Task 3
 // export { CollectorOrchestrator } from './CollectorOrchestrator.js'
