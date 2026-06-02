@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import { DistrictReportsDatasetSchema } from '@toastmasters/shared-contracts'
 
+import { parseDistrictReport } from '../DailyReportParser'
 import {
   buildDistrictReports,
   REPORT_GUIDS,
@@ -69,6 +70,21 @@ const build = (reports = ALL_IN_SCOPE) =>
     generatedAt: '2026-06-01T12:00:00.000Z',
     reports,
   })
+
+describe('REPORT_GUIDS drift guard', () => {
+  // The builder's GUID list and the parser's REGISTRY are two declarations of
+  // the same domain fact (GUID → report). Guard against them drifting: every
+  // REPORT_GUIDS value must parse to a known report (R20/L150 spirit — assert
+  // the partition from the tool itself, not a re-typed copy).
+  it('every REPORT_GUIDS value is a tableId the parser recognises', () => {
+    for (const tableId of Object.values(REPORT_GUIDS)) {
+      // parseDistrictReport throws "unknown report tableId" for an unknown GUID.
+      expect(() =>
+        parseDistrictReport(tableId, '<table></table>')
+      ).not.toThrow()
+    }
+  })
+})
 
 describe('buildDistrictReports — shape + schema', () => {
   it('produces a schema-valid dataset with identity fields', () => {

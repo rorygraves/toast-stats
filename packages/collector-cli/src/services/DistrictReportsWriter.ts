@@ -22,19 +22,7 @@ import {
   type DistrictReportsDataset,
 } from '@toastmasters/shared-contracts'
 
-/** Same posture as TimeSeriesIndexWriter: alphanumeric district ids only. */
-const VALID_DISTRICT_ID_PATTERN = /^[A-Za-z0-9]+$/
-
-function validateDistrictId(districtId: string): void {
-  if (typeof districtId !== 'string' || districtId.length === 0) {
-    throw new Error('Invalid district ID: empty or non-string value')
-  }
-  if (!VALID_DISTRICT_ID_PATTERN.test(districtId)) {
-    throw new Error(
-      'Invalid district ID format: only alphanumeric characters allowed'
-    )
-  }
-}
+import { validateDistrictId } from '../utils/validateDistrictId.js'
 
 /** The reports dataset filename for a district (distinct from the base snapshot). */
 export function districtReportsFileName(districtId: string): string {

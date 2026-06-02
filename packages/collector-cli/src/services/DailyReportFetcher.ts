@@ -14,6 +14,7 @@
  */
 
 import { logger } from '../utils/logger.js'
+import { validateDistrictId } from '../utils/validateDistrictId.js'
 import {
   IN_SCOPE_REPORT_GUIDS,
   type RawReport,
@@ -21,9 +22,6 @@ import {
 
 const BASE_URL = 'https://www.toastmasters.org'
 const REPORT_PATH = '/api/sitecore/DistrictReports/GetDistrictReport'
-
-/** Same alphanumeric-only posture as the snapshot writers (path safety). */
-const VALID_DISTRICT_ID_PATTERN = /^[A-Za-z0-9]+$/
 
 /** Minimal subset of the WHATWG `fetch` response the fetcher needs. */
 interface FetchResponseLike {
@@ -89,17 +87,6 @@ export class DailyReportFetcher {
       ((ms: number) => new Promise(resolve => setTimeout(resolve, ms)))
   }
 
-  private validateDistrictId(districtId: string): void {
-    if (
-      typeof districtId !== 'string' ||
-      !VALID_DISTRICT_ID_PATTERN.test(districtId)
-    ) {
-      throw new Error(
-        `Invalid district ID: only alphanumeric characters allowed (got "${districtId}")`
-      )
-    }
-  }
-
   /** Fetch a single report's HTML, with retry. Returns null on persistent failure. */
   private async fetchOne(
     tableId: string,
@@ -144,7 +131,7 @@ export class DailyReportFetcher {
     districtId: string,
     programYear: string
   ): Promise<RawReport[]> {
-    this.validateDistrictId(districtId)
+    validateDistrictId(districtId)
     const reports: RawReport[] = []
     for (let i = 0; i < IN_SCOPE_REPORT_GUIDS.length; i++) {
       if (i > 0 && this.requestIntervalMs > 0) {
