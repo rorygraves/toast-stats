@@ -123,6 +123,32 @@ export {
   type SnapshotDiff,
 } from './schemas/snapshot-diff.schema.js'
 
+// Daily Reports de-identified dataset (epic #1062) — schema + inferred types
+export {
+  ReportSourceSchema,
+  DuesRenewalRecordSchema,
+  OfficerListRecordSchema,
+  ClubSuccessPlanRecordSchema,
+  EducationAchievementCountRecordSchema,
+  NewClubRecordSchema,
+  ProspectiveClubRecordSchema,
+  CoachRecordSchema,
+  TripleCrownSummarySchema,
+  DistrictReportsSectionsSchema,
+  DistrictReportsDatasetSchema,
+  type ReportSource,
+  type DuesRenewalRecord,
+  type OfficerListRecord,
+  type ClubSuccessPlanRecord,
+  type EducationAchievementCountRecord,
+  type NewClubRecord,
+  type ProspectiveClubRecord,
+  type CoachRecord,
+  type TripleCrownSummary,
+  type DistrictReportsSections,
+  type DistrictReportsDataset,
+} from './schemas/district-reports.schema.js'
+
 // Validation helpers
 export {
   validatePerDistrictData,
