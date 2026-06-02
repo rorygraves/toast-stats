@@ -102,10 +102,33 @@ try {
   const message =
     err instanceof Error ? (err.stack ?? err.message) : String(err)
   log(`Unexpected error: ${message}`)
-  // Don't fabricate a block on a crash — the gate outputs already decided
-  // whether prod changed. Default to the non-blocking branch and let the
-  // independent freshness monitor (#753) catch a genuinely stuck prod.
-  emitOutput('blocked', 'false')
+  // A monitor that can't read its own signal must ALERT, not pass silently
+  // (Lesson 107). If the runner crashes we can't confirm the promotion
+  // succeeded, so treat it as held and file an issue with a fallback body —
+  // mirroring how the freshness runner surfaces its own crash as stale.
+  try {
+    writeFileSync(
+      BODY_FILE,
+      [
+        '## 🚫 Promotion-held alert runner crashed',
+        '',
+        'The `scripts/promotion-alert.ts` runner threw before it could decide whether staging → production promotion succeeded. **Treat production as potentially stale** and check the run logs / step summary for the gate outcome.',
+        '',
+        '```',
+        message,
+        '```',
+        '',
+        '---',
+        '_Filed by `.github/workflows/data-pipeline.yml` (#1073)._',
+      ].join('\n')
+    )
+    emitOutput('body_file', BODY_FILE)
+    emitOutput('title', '🚫 Promotion-held alert runner crashed (#1073)')
+  } catch {
+    // If even the fallback body can't be written, still flag blocked so the
+    // workflow's create step surfaces *something* rather than going quiet.
+  }
+  emitOutput('blocked', 'true')
   emitOutput('promoted', 'false')
 }
 

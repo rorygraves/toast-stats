@@ -1433,7 +1433,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           # A later run promoted — the held state cleared. Close every open
-          # promotion-held issue with a note (there should be at most one).
+          # promotion-held issue with a note. The `concurrency: data-pipeline`
+          # group (top of file) serializes pipeline runs, so a promoting run
+          # can't race a concurrent blocking run — once we promote, any prior
+          # held state is genuinely resolved regardless of which mode filed it.
           OPEN=$(gh issue list --label promotion-held --state open \
             --json number --jq '.[].number')
           if [ -z "${OPEN}" ]; then
