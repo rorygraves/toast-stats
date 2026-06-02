@@ -212,7 +212,11 @@ const REGISTRY: Record<string, ReportSpec> = {
   },
   'c757d313-f815-4b22-93dc-b839d04cec7b': {
     // Education Achievements: Member (person) EXCLUDED; Name = club KEEP.
-    // Aggregated to counts after projection (see parseDistrictReport).
+    // Aggregated to per-(club, award) COUNTS after projection (see
+    // parseDistrictReport). The spike's KEEP map also lists `Date` (the
+    // per-achievement date, non-personal); it is intentionally dropped here
+    // because a count-by-award-type has no single date — keeping it would
+    // shatter every group into one-row buckets and defeat the de-identification.
     reportType: 'education-achievements',
     columns: [
       col('Club', 'club'),
