@@ -1564,5 +1564,139 @@ export function createCLI(): Command {
       }
     )
 
+  // Fetch the in-scope TM District "Daily Reports" per district and persist the
+  // de-identified dataset to snapshots/{date}/district_{id}_reports.json (epic
+  // #1062, Sprint 3 #1065). Separate, additive file — never mutates the base
+  // snapshot. Personal columns are dropped at parse time (hard privacy rule).
+  program
+    .command('fetch-daily-reports')
+    .description(
+      'Fetch the in-scope TM District Daily Reports per district and write the ' +
+        'de-identified dataset (epic #1062)'
+    )
+    .option(
+      '-d, --date <YYYY-MM-DD>',
+      'Snapshot date subdirectory (default: today)',
+      (value: string) => {
+        if (!validateDateFormat(value)) {
+          console.error(
+            `Error: Invalid date format "${value}". Use YYYY-MM-DD.`
+          )
+          process.exit(ExitCode.COMPLETE_FAILURE)
+        }
+        return value
+      }
+    )
+    .option(
+      '--districts <list>',
+      'Comma-separated district IDs (default: read from config)',
+      parseDistrictList
+    )
+    .option(
+      '--program-year <YYYY-YYYY>',
+      'Program year (default: derived from --date)'
+    )
+    .option(
+      '--rate-ms <ms>',
+      'Min ms between report requests (default 1100 ≈ 0.9 req/sec)',
+      (value: string) => parseInt(value, 10),
+      1100
+    )
+    .option('-v, --verbose', 'Enable detailed logging output', false)
+    .option('-c, --config <path>', 'Alternative configuration file path')
+    .action(
+      async (options: {
+        date?: string
+        districts?: string[]
+        programYear?: string
+        rateMs: number
+        verbose: boolean
+        config?: string
+      }) => {
+        const { DailyReportFetcher, ingestDistrictReports } =
+          await import('./services/index.js')
+        const { calculateProgramYear } = await import('./utils/CachePaths.js')
+        const { readFile } = await import('fs/promises')
+
+        const targetDate = options.date ?? getCurrentDateString()
+        const programYear =
+          options.programYear ?? calculateProgramYear(targetDate)
+        const { cacheDir, districtConfigPath } = resolveConfiguration({
+          configPath: options.config,
+        })
+
+        let districts: string[]
+        if (options.districts && options.districts.length > 0) {
+          districts = options.districts
+        } else {
+          const districtsConfig = JSON.parse(
+            await readFile(districtConfigPath, 'utf-8')
+          ) as { districts: Array<{ id: string }> }
+          districts = districtsConfig.districts.map(d => d.id)
+        }
+
+        if (options.verbose) {
+          console.error(`[INFO] Daily Reports: ${districts.length} districts`)
+          console.error(`[INFO] Date: ${targetDate}, PY: ${programYear}`)
+          console.error(`[INFO] Cache: ${cacheDir}`)
+        }
+
+        const fetcher = new DailyReportFetcher({
+          requestIntervalMs: options.rateMs,
+        })
+
+        const results: Array<{
+          districtId: string
+          ok: boolean
+          path?: string
+          error?: string
+        }> = []
+
+        for (const districtId of districts) {
+          try {
+            const path = await ingestDistrictReports({
+              cacheDir,
+              date: targetDate,
+              districtId,
+              programYear,
+              fetcher,
+            })
+            results.push({ districtId, ok: true, path })
+            if (options.verbose) {
+              console.error(`[INFO] district ${districtId} → ${path}`)
+            }
+          } catch (err) {
+            // Per-district try/catch: one failure doesn't fail the whole run.
+            const message = err instanceof Error ? err.message : String(err)
+            results.push({ districtId, ok: false, error: message })
+            if (options.verbose) {
+              console.error(`[ERROR] district ${districtId}: ${message}`)
+            }
+          }
+        }
+
+        const summary = {
+          date: targetDate,
+          programYear,
+          totalDistricts: results.length,
+          succeeded: results.filter(r => r.ok).length,
+          failed: results.filter(r => !r.ok).length,
+          results,
+        }
+        // Structured JSON to stdout (R4: logs to stderr only).
+        console.log(JSON.stringify(summary, null, 2))
+
+        // Distinguish total outage (every district failed) from partial — a
+        // monitoring caller reads 2 vs 1 differently (matches the enum).
+        const exitCode =
+          summary.failed === 0
+            ? ExitCode.SUCCESS
+            : summary.succeeded === 0 && summary.totalDistricts > 0
+              ? ExitCode.COMPLETE_FAILURE
+              : ExitCode.PARTIAL_FAILURE
+        process.exit(exitCode)
+      }
+    )
+
   return program
 }

@@ -1,0 +1,149 @@
+/**
+ * DailyReportFetcher — fetch the in-scope District "Daily Reports" per district
+ * over the anonymous report API (epic #1062, Sprint 3 #1065).
+ *
+ * Verified contract (spike #1063): anonymous GET, no auth/cookie, returns
+ * rendered HTML (not JSON):
+ *   GET https://www.toastmasters.org/api/sitecore/DistrictReports/GetDistrictReport
+ *         ?tableID=<GUID>&district=<D>&year=<PY>&sortBy=
+ *
+ * `fetch` is injectable so units never touch the network. A single report's
+ * failure is logged (stderr — R4) and skipped; it must not abort the rest of
+ * the district. The returned `RawReport[]` is fed straight to
+ * `buildDistrictReports`, which drops any out-of-scope GUID.
+ */
+
+import { logger } from '../utils/logger.js'
+import { validateDistrictId } from '../utils/validateDistrictId.js'
+import {
+  IN_SCOPE_REPORT_GUIDS,
+  type RawReport,
+} from './DistrictReportsBuilder.js'
+
+const BASE_URL = 'https://www.toastmasters.org'
+const REPORT_PATH = '/api/sitecore/DistrictReports/GetDistrictReport'
+
+/** Minimal subset of the WHATWG `fetch` response the fetcher needs. */
+interface FetchResponseLike {
+  ok: boolean
+  status: number
+  text(): Promise<string>
+}
+export type FetchLike = (
+  url: string,
+  init?: Record<string, unknown>
+) => Promise<FetchResponseLike>
+
+export interface DailyReportFetcherConfig {
+  /** Defaults to the global `fetch`. */
+  fetchImpl?: FetchLike
+  /** Override the API origin (self-hosting / offline tests). */
+  baseUrl?: string
+  /** Retries per report on a failed/non-ok response. Default 2. */
+  maxRetries?: number
+  /** Backoff base (ms) between retries. Default 500. */
+  backoffMs?: number
+  /**
+   * Minimum ms to wait between report requests — TI's report endpoint is
+   * rate-sensitive (spike §2). Default 1100 (≈0.9 req/sec). Set 0 in tests.
+   */
+  requestIntervalMs?: number
+  /** Injectable sleep (tests pass a spy to assert spacing without real waits). */
+  sleepImpl?: (ms: number) => Promise<void>
+}
+
+/** Build the verified anonymous report-API URL for one report + district. */
+export function buildDistrictReportUrl(
+  tableId: string,
+  districtId: string,
+  programYear: string,
+  baseUrl: string = BASE_URL
+): string {
+  const params = new URLSearchParams({
+    tableID: tableId,
+    district: districtId,
+    year: programYear,
+    sortBy: '',
+  })
+  return `${baseUrl}${REPORT_PATH}?${params.toString()}`
+}
+
+export class DailyReportFetcher {
+  private readonly fetchImpl: FetchLike
+  private readonly baseUrl: string
+  private readonly maxRetries: number
+  private readonly backoffMs: number
+  private readonly requestIntervalMs: number
+  private readonly sleep: (ms: number) => Promise<void>
+
+  constructor(config: DailyReportFetcherConfig = {}) {
+    this.fetchImpl = config.fetchImpl ?? (globalThis.fetch as FetchLike)
+    this.baseUrl = config.baseUrl ?? BASE_URL
+    this.maxRetries = config.maxRetries ?? 2
+    this.backoffMs = config.backoffMs ?? 500
+    this.requestIntervalMs = config.requestIntervalMs ?? 1100
+    this.sleep =
+      config.sleepImpl ??
+      ((ms: number) => new Promise(resolve => setTimeout(resolve, ms)))
+  }
+
+  /** Fetch a single report's HTML, with retry. Returns null on persistent failure. */
+  private async fetchOne(
+    tableId: string,
+    districtId: string,
+    programYear: string
+  ): Promise<RawReport | null> {
+    const url = buildDistrictReportUrl(
+      tableId,
+      districtId,
+      programYear,
+      this.baseUrl
+    )
+    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+      try {
+        const res = await this.fetchImpl(url, {
+          headers: { 'User-Agent': 'ToastStats-DailyReports/1.0' },
+        })
+        if (res.ok) return { tableId, html: await res.text() }
+        logger.warn(
+          `Daily report ${tableId} (district ${districtId}) returned HTTP ${res.status} (attempt ${attempt + 1}/${this.maxRetries + 1})`
+        )
+      } catch (error) {
+        logger.warn(
+          `Daily report ${tableId} (district ${districtId}) fetch error (attempt ${attempt + 1}/${this.maxRetries + 1})`,
+          error
+        )
+      }
+      if (attempt < this.maxRetries)
+        await this.sleep(this.backoffMs * (attempt + 1))
+    }
+    logger.error(
+      `Daily report ${tableId} (district ${districtId}) failed after ${this.maxRetries + 1} attempts — skipping`
+    )
+    return null
+  }
+
+  /**
+   * Fetch every in-scope report for one district. Reports are fetched
+   * sequentially (the source is rate-sensitive); a failed report is skipped.
+   */
+  async fetchDistrictReports(
+    districtId: string,
+    programYear: string
+  ): Promise<RawReport[]> {
+    validateDistrictId(districtId)
+    const reports: RawReport[] = []
+    for (let i = 0; i < IN_SCOPE_REPORT_GUIDS.length; i++) {
+      if (i > 0 && this.requestIntervalMs > 0) {
+        await this.sleep(this.requestIntervalMs)
+      }
+      const report = await this.fetchOne(
+        IN_SCOPE_REPORT_GUIDS[i]!,
+        districtId,
+        programYear
+      )
+      if (report) reports.push(report)
+    }
+    return reports
+  }
+}
