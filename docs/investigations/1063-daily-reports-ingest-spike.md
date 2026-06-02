@@ -3,7 +3,33 @@
 **Epic:** #1062 — Evaluate ingesting the 12 District Daily Reports
 **Sprint:** 1 (spike, doc-only — no pipeline writes)
 **Date:** 2026-06-01 · **District sampled:** D61, PY 2025-2026
-**Status:** Recommendation ready for operator decision
+**Status:** ✅ Operator-decided 2026-06-01 — see §1a. Cleared for Sprint 3 (#1065) wiring.
+
+---
+
+## 1a. Operator decisions (2026-06-01) — AUTHORITATIVE
+
+These rulings supersede the "defer/skip" hedges below where they differ. Sprint 3 (#1065)
+builds to this list.
+
+| #   | Report                              | Decision                          | What to store                                                                                                                                                                                                                                                                                                                                                           |
+| --- | ----------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1–2 | **April / October Dues Renewal**    | **Ingest + AUGMENT club status**  | When renewal status is `Verified complete - <date>`, **override the club's status to `Active`** in our view, and **store the date it became active** (`activeSince`). This is the closing-period override in action — a club showing stale/Low on the frozen base reads Active from the daily-fresh renewal report. Carry provenance (source=dues-renewal, as-of date). |
+| 3–4 | **Officer List (Jul/Jan)**          | **Ingest**                        | Per club: **election cadence** (`annual` vs `semiannual`) and **whether the officer list is submitted** (list status). Note: a club appears in the **January** report ONLY if it holds elections twice a year (semiannual) — 7 such clubs in D61. A club absent from January but present in July is `annual`. Derive cadence from presence + the `Election` column.     |
+| 5   | **Club Success Plan**               | **Ingest**                        | CSP **submission date** (upgrades today's bool).                                                                                                                                                                                                                                                                                                                        |
+| 6   | **Education Achievements**          | **Ingest** (confirmed)            | Per-club/area **award counts by type**, de-identified (member ledger → counts; `Member` dropped at parse).                                                                                                                                                                                                                                                              |
+| 7   | **Triple Crown**                    | **Ingest as a district scalar**   | One district-level count (no club column exists; `Member` excluded). Was "defer" — now in scope as a scalar.                                                                                                                                                                                                                                                            |
+| 8   | **Educational Achievement Archive** | **Backfill prior PYs (one-time)** | Empty for the current PY, but **prior program years are selectable** via the `year` param → a **one-time, scoped backfill** (like a re-scrape) to populate historical education-achievement data. Not part of the daily flow.                                                                                                                                           |
+| 9   | **New Clubs**                       | **Ingest**                        | The list + charter date + status (today we derive only a count).                                                                                                                                                                                                                                                                                                        |
+| 10  | **Prospective Clubs**               | **Ingest**                        | The list + status + milestones (`Club Contact` dropped).                                                                                                                                                                                                                                                                                                                |
+| 11  | **New Club Sponsors and Mentors**   | **Defer**                         | Presence/count only once names stripped; revisit if a support-role badge is wanted.                                                                                                                                                                                                                                                                                     |
+| 12  | **Club Coaches**                    | **Ingest**                        | Store per-club coach **status**. **If award status is `PENDING` → a coach is actively assigned** to that club; surface this in the club data. (`Name` person column dropped; we keep club + code + status + begin date.)                                                                                                                                                |
+
+**Cross-cutting note (revises §2):** the `year` param IS usable for prior program years
+(contradicts the earlier "current PY only" caution — that was a single-day observation).
+Decision #8 depends on this: prior-PY education-achievement data is retrievable for a scoped
+one-time backfill. Sprint 3 should re-verify per-PY retrieval for the specific reports it
+backfills, but the capability is accepted.
 
 ---
 
@@ -181,15 +207,16 @@ dashboard, esp. membership/payment _counts_):
 
 ---
 
-## 6. Open questions for operator decision (gating Sprint 2)
+## 6. Open questions — RESOLVED (2026-06-01)
 
-1. **Republication licensing.** Anonymously _fetchable_ ≠ licensed to _republish_. The kept
-   fields are club-aggregate (same posture as today's stats), and all personal columns are
-   excluded specifically to preserve that posture — but this is TI's data. **Confirm
-   republishing club-aggregate report fields is acceptable** before wiring ingest.
-2. **Scope confirmation.** Proposed Sprint 2 = Officer List + Education Achievements (counts) +
-   CSP + Dues Renewal + New/Prospective lists; defer Triple Crown, Coaches, Sponsors-Mentors.
-   Confirm or re-prioritise.
+1. **Republication licensing.** ✅ **Accepted risk** (operator, 2026-06-01). Proceed with
+   club-aggregate report fields; all personal columns remain excluded to preserve the
+   same posture as today's published stats.
+2. **Scope confirmation.** ✅ Decided — see §1a. Net change vs the original proposal: **Triple
+   Crown is IN** (as a district scalar), **Club Coaches is IN** (PENDING award ⇒ active coach
+   assigned, surfaced on the club), **Sponsors/Mentors deferred**, **Educational Achievement
+   Archive → one-time prior-PY backfill**, and Dues Renewal additionally **augments club
+   status** (Verified ⇒ Active + `activeSince`).
 
 ---
 
