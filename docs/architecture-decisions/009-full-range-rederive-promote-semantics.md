@@ -1,6 +1,6 @@
 # ADR-009: Full-range re-derive promote semantics (value-aware gate + seed-from-prod)
 
-**Status**: Accepted
+**Status**: Accepted — amended 2026-06-03 (D3, closing-period auto-allow, #1084)
 **Date**: 2026-05-31
 **Issue**: #1034 (epic #1031 — rerun pipeline 2017→now; Sprint 1 investigation #1033)
 
@@ -82,6 +82,35 @@ because it requires **no new promote machinery** — the existing
 `gsutil -m rsync` promote step (additive, no `-d`) already does the right thing
 once staging is a superset of prod, and the safety logic lives entirely in the
 two gates rather than in a bespoke per-date rsync loop.
+
+### D3 — Closing-period auto-allow (amendment 2026-06-03, #1084 / epic #1083)
+
+D1's "any `changed` overlap date requires operator review" turned out to be a
+**daily blocker during month-end closing**: the #309 remap pins the snapshot
+date to the month-end while TI reconciles values daily, so the same overlap
+date legitimately changes every day, prod freezes, and the #1072 freshness
+monitor fires (observed 2026-06-01→03, `pipeline-stale` #1082).
+
+The gate gains one narrowly-scoped auto-allow path — **Closing-Pinned
+Auto-Allow (CPAA)**: when **every** changed overlap date carries the closing
+remap signature in staging's own metadata (date is a month-end AND
+`sourceCsvDate > date` AND the gap ≤ 31 days), and per-district deltas satisfy
+a field-class policy — raw **counters** non-decreasing and within
+`max(50, 10% × prod)`; **bases/identity equal**; plan **booleans** one-way
+`false→true`; **derived** ranks/percents/scores excluded (zero-sum) — the run
+promotes with `autoAllowed: "closing-monotonic"` provenance and the full delta
+table in the summary.
+
+Everything else is unchanged and the invariants are explicit: any **decrease**,
+**district/date removal**, base/identity drift, boolean revert, unclassified
+field, cap breach, or a changed date **without** the closing signature still
+blocks for manual review (`allow_value_changes`), exactly as D1 — outside
+closing the gate behaves byte-for-byte as before. Decision detail, evidence
+(including the genuine D114 charter-reversal decrease that strict monotonicity
+correctly sends to review), and the Sprint 2 test plan:
+[`docs/investigations/closing-period-promote-policy-2026-06-03.md`](../investigations/closing-period-promote-policy-2026-06-03.md).
+Acceptance fixture:
+`packages/collector-cli/src/services/__tests__/fixtures/closing-2026-05-31/`.
 
 ## Consequences
 
