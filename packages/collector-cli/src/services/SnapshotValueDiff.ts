@@ -76,15 +76,52 @@ export const FIELD_CLASSIFICATION: Record<string, FieldClass> = {
   aggregateScore: 'derived',
 }
 
+const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/
+
+/** Parse YYYY-MM-DD into [year, month, day], or null if malformed. */
+function parseIsoDate(value: string): [number, number, number] | null {
+  const m = ISO_DATE.exec(value)
+  if (!m) return null
+  return [Number(m[1]), Number(m[2]), Number(m[3])]
+}
+
 /**
- * Closing-pinned detection (decision doc §5) — placeholder, implemented at
- * GREEN (#1086).
+ * Closing-pinned detection (decision doc §5). A snapshot date `D` carries the
+ * #309 closing-remap signature iff, in staging's own rankings metadata:
+ *   1. `D` is the last day of its calendar month (every remap pins to
+ *      month-end),
+ *   2. `sourceCsvDate > D` (the As-of advanced past the pinned date — TI
+ *      publishes prior-month data with a current-month As-of only during
+ *      closing), and
+ *   3. the gap is ≤ 31 days (belt-and-braces bound; longest closing on record
+ *      is 25 days).
+ *
+ * All comparisons are on the ISO strings / UTC day arithmetic — deliberately
+ * NOT reusing ClosingPeriodDetector, whose `new Date(string)` parsing has a
+ * TZ edge (decision doc §5). Malformed input fails closed (not pinned).
  */
 export function isClosingPinned(
-  _date: string,
-  _sourceCsvDate: string | undefined
+  date: string,
+  sourceCsvDate: string | undefined
 ): boolean {
-  throw new Error('not implemented')
+  if (!sourceCsvDate) return false
+  const pinned = parseIsoDate(date)
+  const asOf = parseIsoDate(sourceCsvDate)
+  if (!pinned || !asOf) return false
+
+  const [year, month, day] = pinned
+  // Day 0 of the NEXT month is the last day of this month (UTC arithmetic —
+  // no string parsing, no local TZ).
+  const lastDayOfMonth = new Date(Date.UTC(year, month, 0)).getUTCDate()
+  if (day !== lastDayOfMonth) return false
+
+  // ISO strings compare lexicographically in date order (incl. across years).
+  if (!(sourceCsvDate > date)) return false
+
+  const gapDays =
+    (Date.UTC(asOf[0], asOf[1] - 1, asOf[2]) - Date.UTC(year, month - 1, day)) /
+    86_400_000
+  return gapDays <= 31
 }
 
 export interface DateDigest {
