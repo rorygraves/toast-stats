@@ -32,11 +32,49 @@ export type FieldClass =
   | 'derived'
 
 /**
- * Field-classification registry — placeholder, populated at GREEN (#1086).
- * Exhaustiveness vs DistrictRankingSchema.shape is enforced by unit test;
- * an unclassified CHANGED field blocks at runtime (fail-closed).
+ * Field-classification registry (decision doc §4 table). Exhaustiveness vs
+ * DistrictRankingSchema.shape is enforced by unit test; an unclassified
+ * CHANGED field blocks at runtime (fail-closed, R20/L150 spirit).
  */
-export const FIELD_CLASSIFICATION: Record<string, FieldClass> = {}
+export const FIELD_CLASSIFICATION: Record<string, FieldClass> = {
+  // Identity — must be equal
+  districtId: 'identity',
+  districtName: 'identity',
+  region: 'identity',
+  // Counters — non-decreasing, magnitude-capped during closing
+  paidClubs: 'counter',
+  activeClubs: 'counter',
+  totalPayments: 'counter',
+  newPayments: 'counter',
+  aprilPayments: 'counter',
+  octoberPayments: 'counter',
+  latePayments: 'counter',
+  charterPayments: 'counter',
+  distinguishedClubs: 'counter',
+  selectDistinguished: 'counter',
+  presidentsDistinguished: 'counter',
+  smedleyDistinguished: 'counter',
+  clubsWith20PlusMembers: 'counter',
+  newCharteredClubs: 'counter',
+  // Bases — fixed at program-year start; any move is an anomaly
+  paidClubBase: 'base',
+  paymentBase: 'base',
+  // Plan booleans — one-way false→true
+  dspSubmitted: 'planBoolean',
+  trainingMet: 'planBoolean',
+  marketAnalysisSubmitted: 'planBoolean',
+  communicationPlanSubmitted: 'planBoolean',
+  regionAdvisorVisitMet: 'planBoolean',
+  // Derived — re-derived, zero-sum across districts; excluded from the check
+  clubGrowthPercent: 'derived',
+  paymentGrowthPercent: 'derived',
+  distinguishedPercent: 'derived',
+  clubsRank: 'derived',
+  paymentsRank: 'derived',
+  distinguishedRank: 'derived',
+  overallRank: 'derived',
+  aggregateScore: 'derived',
+}
 
 export interface DateDigest {
   date: string
