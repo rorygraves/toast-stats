@@ -19,14 +19,14 @@ occasional guard into a **daily blocker**:
 
 ### Evidence (re-verified live, 2026-06-03T22:39Z)
 
-| Fact                                                         | Observation                                                                                                                                             |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Prod `snapshots/2026-05-31/all-districts-rankings.json`      | `sourceCsvDate 2026-05-31`, `calculatedAt 2026-06-01T18:39Z` (last promote)                                                                             |
-| Staging same path, two days later                            | `sourceCsvDate 2026-06-02` — the date-pinned remap signature (As-of advanced past the pinned date)                                                      |
-| Scheduled run 26894802577 (2026-06-03, conclusion `success`) | `::error::Promotion BLOCKED — count gate or value gate refused`; overlap = 153 dates                                                                    |
-| Changed districts on the overlap date                        | **102** of 128 — **24** moved counter fields; **78** moved only derived fields (ranks/percents/aggregateScore — zero-sum consequences of others' moves) |
-| Direction of counter moves                                   | Mostly small upward (D92 totalPayments +158 = 1.8%; D124 paidClubs +3) — **but 5 districts show genuine decreases** (see §3)                            |
-| Freshness                                                    | `pipeline-stale` #1082 fired at 47.6h manifest age (threshold 26h)                                                                                      |
+| Fact                                                         | Observation                                                                                                                                                           |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Prod `snapshots/2026-05-31/all-districts-rankings.json`      | `sourceCsvDate 2026-05-31`, `calculatedAt 2026-06-01T18:39Z` (last promote)                                                                                           |
+| Staging same path, two days later                            | `sourceCsvDate 2026-06-02` — the date-pinned remap signature (As-of advanced past the pinned date)                                                                    |
+| Scheduled run 26894802577 (2026-06-03, conclusion `success`) | `::error::Promotion BLOCKED — count gate or value gate refused`; overlap = 153 dates                                                                                  |
+| Changed districts on the overlap date                        | **102** of the 128 districts — **24** moved counter fields; **78** moved only derived fields (ranks/percents/aggregateScore — zero-sum consequences of others' moves) |
+| Direction of counter moves                                   | Mostly small upward (D92 totalPayments +158 = 1.8%; D124 paidClubs +3) — **but 5 districts show genuine decreases** (see §3)                                          |
+| Freshness                                                    | `pipeline-stale` #1082 fired at 47.6h manifest age (threshold 26h)                                                                                                    |
 
 The staging/prod pair is preserved as
 `packages/collector-cli/src/services/__tests__/fixtures/closing-2026-05-31/`
@@ -100,7 +100,7 @@ read errors) is unchanged.
 5. **Unknown fields block (exhaustiveness guard):** the classification above
    must be a registry checked by a unit test against
    `DistrictRankingSchema.shape` — a new schema field that is not classified
-   fails the test at build time, and at runtime an unclassified changed field
+   fails that test, and at runtime an unclassified changed field
    ⇒ block (fail-closed, R20/L150 spirit).
 
 **If all pass:** `promote=true`, `requiresReview=false`, and the decision JSON
@@ -153,6 +153,10 @@ Verified live: staging's pinned `2026-05-31` file carries
 `sourceCsvDate 2026-06-02` (signature present); prod's last-promoted copy
 carries `2026-05-31` (signature absent). ISO date strings compare correctly
 across year boundaries (the December→January remap, #309 req 2.3).
+Implementation note: compute the month-end and date comparisons on the ISO
+strings directly — do not reuse `ClosingPeriodDetector`, whose
+`new Date(requestedDate)` parsing introduces a TZ edge the string approach
+avoids.
 
 **Why not ClosingDateRegistry:** the registry is a _historical record_
 appended by the pipeline run itself — using it as the live detector makes the
