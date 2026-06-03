@@ -136,5 +136,6 @@
 - **152** [verification, playwright, frontend, cdn, scope] — A live-verification locator must key on the stable route, not a CDN-derived label (#1058, #1055)
 - **153** [data-pipeline, analytics, collector-cli, privacy, tdd] — De-identifying a member ledger by aggregation must drop per-row fields, even non-personal ones in the validated KEEP map (#1064, #1062)
 - **154** [frontend, architecture, data-pipeline, scope, verification] — A "never demote" overlay invariant is structural when it can only ever emit the top state — not a rank comparison (#1069, #1062)
+- **154** [data-pipeline, analytics, verification, process, monitoring] — A "values only move up" policy needs field-causality classes, verified against the live diff — not the narrative (#1084, #1083)
 - **154** [data-pipeline, analytics, collector-cli, privacy, tdd] — A pre-filtered report's MEMBERSHIP SET can itself be the datum; derive from presence, not a column (#1065, #1062)
 - **155** [ci, automation, data-pipeline, monitoring, gcs] — A recency-based freshness monitor is blind to a held-promotion "content-stale" state; freshness has two orthogonal axes (#1073, #1072)
