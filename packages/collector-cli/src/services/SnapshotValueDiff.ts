@@ -76,6 +76,17 @@ export const FIELD_CLASSIFICATION: Record<string, FieldClass> = {
   aggregateScore: 'derived',
 }
 
+/**
+ * Closing-pinned detection (decision doc §5) — placeholder, implemented at
+ * GREEN (#1086).
+ */
+export function isClosingPinned(
+  _date: string,
+  _sourceCsvDate: string | undefined
+): boolean {
+  throw new Error('not implemented')
+}
+
 export interface DateDigest {
   date: string
   totalDistricts: number

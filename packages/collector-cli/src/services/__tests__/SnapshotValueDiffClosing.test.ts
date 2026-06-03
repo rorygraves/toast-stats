@@ -14,7 +14,11 @@
  */
 import { describe, it, expect } from 'vitest'
 import { DistrictRankingSchema } from '@toastmasters/shared-contracts'
-import { FIELD_CLASSIFICATION, type FieldClass } from '../SnapshotValueDiff.js'
+import {
+  FIELD_CLASSIFICATION,
+  isClosingPinned,
+  type FieldClass,
+} from '../SnapshotValueDiff.js'
 
 describe('FIELD_CLASSIFICATION registry (#1086)', () => {
   it('classifies every DistrictRankingSchema field exactly once (exhaustive)', () => {
@@ -75,5 +79,47 @@ describe('FIELD_CLASSIFICATION registry (#1086)', () => {
         'aggregateScore',
       ].sort()
     )
+  })
+})
+
+describe('isClosingPinned (#1086, decision doc §5)', () => {
+  it('detects the live 2026-05-31 signature (month-end, As-of advanced, gap ≤ 31d)', () => {
+    expect(isClosingPinned('2026-05-31', '2026-06-02')).toBe(true)
+  })
+
+  it('detects the December cross-year signature via ISO-string comparison', () => {
+    expect(isClosingPinned('2025-12-31', '2026-01-15')).toBe(true)
+  })
+
+  it('rejects a non-month-end date even when the As-of advanced', () => {
+    expect(isClosingPinned('2026-05-30', '2026-06-02')).toBe(false)
+  })
+
+  it('rejects when sourceCsvDate equals the snapshot date (signature absent)', () => {
+    expect(isClosingPinned('2026-05-31', '2026-05-31')).toBe(false)
+  })
+
+  it('rejects when sourceCsvDate precedes the snapshot date', () => {
+    expect(isClosingPinned('2026-05-31', '2026-05-29')).toBe(false)
+  })
+
+  it('rejects a gap beyond 31 days; accepts the 31-day boundary', () => {
+    expect(isClosingPinned('2026-05-31', '2026-07-02')).toBe(false) // 32 days
+    expect(isClosingPinned('2026-05-31', '2026-07-01')).toBe(true) // 31 days
+  })
+
+  it('rejects a missing sourceCsvDate (fail-closed)', () => {
+    expect(isClosingPinned('2026-05-31', undefined)).toBe(false)
+  })
+
+  it('handles February month-end including leap years', () => {
+    expect(isClosingPinned('2026-02-28', '2026-03-05')).toBe(true)
+    expect(isClosingPinned('2024-02-28', '2024-03-05')).toBe(false) // leap year: not month-end
+    expect(isClosingPinned('2024-02-29', '2024-03-05')).toBe(true)
+  })
+
+  it('rejects malformed date strings (fail-closed)', () => {
+    expect(isClosingPinned('not-a-date', '2026-06-02')).toBe(false)
+    expect(isClosingPinned('2026-05-31', 'garbage')).toBe(false)
   })
 })
