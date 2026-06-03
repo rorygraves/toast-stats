@@ -94,6 +94,48 @@ gh run list --workflow=data-pipeline.yml --limit 5
 
 Do **not** start while a daily run is active — it shares the staging bucket.
 
+### 2d. Recommended hardening (optional but advised)
+
+Two cheap pre-run steps that de-risk the full 9-year reprocess. Neither is
+mandatory, but both close a real gap surfaced in review.
+
+**(1) Enable prod object versioning for the duration — your only true undo.**
+Prod versioning is **Suspended** (confirmed live 2026-06-03), so §8's
+object-level restore is _not_ available as-is: a bad additive promote overwrites
+changed per-date objects with no prior generation to `cp` back, and recovery
+collapses to "re-derive correctly and promote forward" (§8 step 2). Turning
+versioning **on** before the run gives a genuine object-level undo; suspend it
+again afterward.
+
+```bash
+# BEFORE §3. Enables a real rollback target for the promote in §7.
+gsutil versioning set on  gs://toast-stats-data-ca
+gsutil versioning get     gs://toast-stats-data-ca        # expect: Enabled
+# … run the operation …
+gsutil versioning set off gs://toast-stats-data-ca        # after prod is verified good (§7)
+```
+
+**(2) Pilot one year first — measure before committing the full range.** Run just
+2017's dates and read the real per-date wall time and the value-gate `Changed`
+count off its Step Summary. This sizes both risks empirically — the 240-min cap
+(§5) and how many `Changed` dates you'll have to eyeball at the go/no-go (§7) —
+before the all-district, all-year run. The pilot writes to staging additively (§3
+seed still applies), so it composes with the full run that follows.
+
+Note the `dates` input is a **comma-separated `YYYY-MM-DD` list** — it is _not_ a
+year or a range (the workflow splits on comma and matches each literal date in
+`raw-csv/`; `dates=2017` matches nothing). The §5 "2017–2020" range notation is
+shorthand for the comma-separated dates in that span. Derive the list from the
+same `raw-csv/` the rebuild reads (it lives in **staging**, `GCS_BUCKET`):
+
+```bash
+# Pilot: 2017 only, staging, gate armed. Derive the date list, then dispatch.
+DATES_2017=$(gsutil ls gs://toast-stats-data-staging/raw-csv/ \
+  | grep -oE '2017-[0-9]{2}-[0-9]{2}' | sort -u | paste -sd, -)   # ~11 dates, Feb→Dec
+gh workflow run data-pipeline.yml --repo taverns-red/toast-stats \
+  -f mode=rebuild -f dates="$DATES_2017" -f allow_value_changes=false
+```
+
 ---
 
 ## 3. Seed staging from prod FIRST (ADR-009 D2 — mandatory for full-range)
