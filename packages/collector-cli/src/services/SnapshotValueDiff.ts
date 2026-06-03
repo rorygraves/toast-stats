@@ -18,6 +18,26 @@ import type {
   DistrictRanking,
 } from '@toastmasters/shared-contracts'
 
+/**
+ * Causal role of a DistrictRanking field for the Closing-Pinned Auto-Allow
+ * policy (epic #1083, decision doc §4). Counters are monotone + capped;
+ * bases/identity must be equal; plan booleans are one-way (false→true);
+ * derived fields are zero-sum re-derivations and excluded from the check.
+ */
+export type FieldClass =
+  | 'counter'
+  | 'base'
+  | 'identity'
+  | 'planBoolean'
+  | 'derived'
+
+/**
+ * Field-classification registry — placeholder, populated at GREEN (#1086).
+ * Exhaustiveness vs DistrictRankingSchema.shape is enforced by unit test;
+ * an unclassified CHANGED field blocks at runtime (fail-closed).
+ */
+export const FIELD_CLASSIFICATION: Record<string, FieldClass> = {}
+
 export interface DateDigest {
   date: string
   totalDistricts: number
