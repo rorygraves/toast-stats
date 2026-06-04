@@ -515,12 +515,17 @@ function evaluateClosingAutoAllowAcross(
   changed: ChangedDate[],
   digests: PromoteDigests,
   opts: ClosingAutoAllowOptions
-): ClosingAutoAllowResult & { deltasByDate: PromoteDecision['closingDeltas'] } {
+): {
+  allowed: boolean
+  reasons: string[]
+  deltas: NonNullable<PromoteDecision['closingDeltas']>
+  derivedOnlyDistricts: number
+} {
   const stagingMap = byDate(digests.staging)
   const prodMap = byDate(digests.prod)
   const reasons: string[] = []
-  const deltasByDate: NonNullable<PromoteDecision['closingDeltas']> = []
-  const derivedOnly: string[] = []
+  const deltas: NonNullable<PromoteDecision['closingDeltas']> = []
+  let derivedOnlyDistricts = 0
 
   for (const { date } of changed) {
     const staging = stagingMap.get(date)
@@ -533,17 +538,16 @@ function evaluateClosingAutoAllowAcross(
     if (!result.allowed) {
       reasons.push(...result.reasons)
     } else {
-      deltasByDate.push(...result.deltas.map(d => ({ date, ...d })))
-      derivedOnly.push(...result.derivedOnlyDistricts)
+      deltas.push(...result.deltas.map(d => ({ date, ...d })))
+      derivedOnlyDistricts += result.derivedOnlyDistricts.length
     }
   }
 
   return {
     allowed: reasons.length === 0,
     reasons,
-    deltas: [],
-    derivedOnlyDistricts: derivedOnly,
-    deltasByDate,
+    deltas,
+    derivedOnlyDistricts,
   }
 }
 
@@ -596,10 +600,10 @@ export function evaluatePromote(
       if (cpaa?.allowed) {
         requiresReview = false
         autoAllowed = 'closing-monotonic'
-        closingDeltas = cpaa.deltasByDate
-        derivedOnlyDistricts = cpaa.derivedOnlyDistricts.length
+        closingDeltas = cpaa.deltas
+        derivedOnlyDistricts = cpaa.derivedOnlyDistricts
         reasons.push(
-          `closing-pinned auto-allow: ${cpaa.deltasByDate?.length ?? 0} monotone ` +
+          `closing-pinned auto-allow: ${cpaa.deltas.length} monotone ` +
             `counter move(s) across ${report.changed.length} closing-pinned date(s), ` +
             `${derivedOnlyDistricts} derived-only district(s) ignored (#1086)`
         )
