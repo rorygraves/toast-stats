@@ -18,6 +18,112 @@ import type {
   DistrictRanking,
 } from '@toastmasters/shared-contracts'
 
+/**
+ * Causal role of a DistrictRanking field for the Closing-Pinned Auto-Allow
+ * policy (epic #1083, decision doc §4). Counters are monotone + capped;
+ * bases/identity must be equal; plan booleans are one-way (false→true);
+ * derived fields are zero-sum re-derivations and excluded from the check.
+ */
+export type FieldClass =
+  | 'counter'
+  | 'base'
+  | 'identity'
+  | 'planBoolean'
+  | 'derived'
+
+/**
+ * Field-classification registry (decision doc §4 table). Exhaustiveness vs
+ * DistrictRankingSchema.shape is enforced by unit test; an unclassified
+ * CHANGED field blocks at runtime (fail-closed, R20/L150 spirit).
+ */
+export const FIELD_CLASSIFICATION: Record<string, FieldClass> = {
+  // Identity — must be equal
+  districtId: 'identity',
+  districtName: 'identity',
+  region: 'identity',
+  // Counters — non-decreasing, magnitude-capped during closing
+  paidClubs: 'counter',
+  activeClubs: 'counter',
+  totalPayments: 'counter',
+  newPayments: 'counter',
+  aprilPayments: 'counter',
+  octoberPayments: 'counter',
+  latePayments: 'counter',
+  charterPayments: 'counter',
+  distinguishedClubs: 'counter',
+  selectDistinguished: 'counter',
+  presidentsDistinguished: 'counter',
+  smedleyDistinguished: 'counter',
+  clubsWith20PlusMembers: 'counter',
+  newCharteredClubs: 'counter',
+  // Bases — fixed at program-year start; any move is an anomaly
+  paidClubBase: 'base',
+  paymentBase: 'base',
+  // Plan booleans — one-way false→true
+  dspSubmitted: 'planBoolean',
+  trainingMet: 'planBoolean',
+  marketAnalysisSubmitted: 'planBoolean',
+  communicationPlanSubmitted: 'planBoolean',
+  regionAdvisorVisitMet: 'planBoolean',
+  // Derived — re-derived, zero-sum across districts; excluded from the check
+  clubGrowthPercent: 'derived',
+  paymentGrowthPercent: 'derived',
+  distinguishedPercent: 'derived',
+  clubsRank: 'derived',
+  paymentsRank: 'derived',
+  distinguishedRank: 'derived',
+  overallRank: 'derived',
+  aggregateScore: 'derived',
+}
+
+const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/
+
+/** Parse YYYY-MM-DD into [year, month, day], or null if malformed. */
+function parseIsoDate(value: string): [number, number, number] | null {
+  const m = ISO_DATE.exec(value)
+  if (!m) return null
+  return [Number(m[1]), Number(m[2]), Number(m[3])]
+}
+
+/**
+ * Closing-pinned detection (decision doc §5). A snapshot date `D` carries the
+ * #309 closing-remap signature iff, in staging's own rankings metadata:
+ *   1. `D` is the last day of its calendar month (every remap pins to
+ *      month-end),
+ *   2. `sourceCsvDate > D` (the As-of advanced past the pinned date — TI
+ *      publishes prior-month data with a current-month As-of only during
+ *      closing), and
+ *   3. the gap is ≤ 31 days (belt-and-braces bound; longest closing on record
+ *      is 25 days).
+ *
+ * All comparisons are on the ISO strings / UTC day arithmetic — deliberately
+ * NOT reusing ClosingPeriodDetector, whose `new Date(string)` parsing has a
+ * TZ edge (decision doc §5). Malformed input fails closed (not pinned).
+ */
+export function isClosingPinned(
+  date: string,
+  sourceCsvDate: string | undefined
+): boolean {
+  if (!sourceCsvDate) return false
+  const pinned = parseIsoDate(date)
+  const asOf = parseIsoDate(sourceCsvDate)
+  if (!pinned || !asOf) return false
+
+  const [year, month, day] = pinned
+  // Day 0 of the NEXT month is the last day of this month (UTC arithmetic —
+  // no string parsing, no local TZ).
+  const lastDayOfMonth = new Date(Date.UTC(year, month, 0)).getUTCDate()
+  if (day !== lastDayOfMonth) return false
+
+  // ISO strings compare lexicographically in date order (incl. across years).
+  if (!(sourceCsvDate > date)) return false
+
+  const gapDays =
+    (Date.UTC(asOf[0], asOf[1] - 1, asOf[2]) - Date.UTC(year, month - 1, day)) /
+    86_400_000
+  return gapDays <= 31
+}
+
 export interface DateDigest {
   date: string
   totalDistricts: number
@@ -25,6 +131,212 @@ export interface DateDigest {
   districtDigests: Record<string, string>
   /** order-independent digest of the whole date */
   combined: string
+  /**
+   * districtId → parsed ranking row, for closing auto-allow evaluation of
+   * changed dates (#1086). Carried from the data the loader already parses —
+   * no new I/O. Absent on hand-built digests ⇒ CPAA fails closed.
+   */
+  districts?: Record<string, DistrictRanking>
+  /** metadata.sourceCsvDate — the closing-remap signature input (#1086) */
+  sourceCsvDate?: string
+}
+
+/** One monotone counter movement, kept for provenance in the run summary. */
+export interface ClosingDelta {
+  districtId: string
+  field: string
+  prod: number
+  staging: number
+  delta: number
+}
+
+export interface ClosingAutoAllowResult {
+  allowed: boolean
+  /** violations when !allowed — each names the date/district/field */
+  reasons: string[]
+  /** monotone counter movements (provenance for the run summary) */
+  deltas: ClosingDelta[]
+  /** districts whose only differences were derived fields (ignored) */
+  derivedOnlyDistricts: string[]
+}
+
+export interface ClosingAutoAllowOptions {
+  /**
+   * Counters may decrease by at most this much during closing (decision doc
+   * §4). Default 0 (strict — the epic's "never auto-promote a decrease").
+   */
+  closingDecreaseFloor?: number
+}
+
+/**
+ * Closing-Pinned Auto-Allow evaluation for ONE changed overlap date (decision
+ * doc §4–§5, epic #1083). Auto-allow iff the date carries the closing-remap
+ * signature in STAGING's own metadata, the district set is identical, and
+ * every changed field obeys its class rule:
+ *
+ *   counter      −floor ≤ Δ ≤ max(50, 10% × prod)   (floor defaults to 0)
+ *   base         must be equal
+ *   identity     must be equal
+ *   planBoolean  false→true allowed; true→false blocks
+ *   derived      excluded (zero-sum re-derivations)
+ *
+ * Optionality transitions (field present on one side only) and unclassified
+ * CHANGED fields block — fail-closed. Digests lacking the parsed rows (e.g.
+ * hand-built) also fail closed.
+ */
+export function evaluateClosingAutoAllow(
+  stagingDate: DateDigest,
+  prodDate: DateDigest,
+  opts: ClosingAutoAllowOptions = {}
+): ClosingAutoAllowResult {
+  const date = stagingDate.date
+  const reasons: string[] = []
+  const deltas: ClosingDelta[] = []
+  const derivedOnly: string[] = []
+  const decreaseFloor = opts.closingDecreaseFloor ?? 0
+
+  const blocked = (): ClosingAutoAllowResult => ({
+    allowed: false,
+    reasons,
+    deltas: [],
+    derivedOnlyDistricts: [],
+  })
+
+  // Fail-closed: without the parsed rows + signature we cannot evaluate.
+  const stagingDistricts = stagingDate.districts
+  const prodDistricts = prodDate.districts
+  if (!stagingDistricts || !prodDistricts) {
+    reasons.push(
+      `${date}: parsed district rows unavailable — cannot evaluate closing auto-allow`
+    )
+    return blocked()
+  }
+  if (!isClosingPinned(date, stagingDate.sourceCsvDate)) {
+    reasons.push(
+      `${date}: not closing-pinned (month-end + advanced As-of signature absent; ` +
+        `sourceCsvDate=${stagingDate.sourceCsvDate ?? 'missing'}) — ` +
+        `a changed non-closing date is a re-derive review`
+    )
+    return blocked()
+  }
+
+  // District set must be identical on the changed date (#1034 D61 protection).
+  const stagingIds = Object.keys(stagingDistricts)
+  const prodIds = Object.keys(prodDistricts)
+  const onlyStaging = stagingIds.filter(id => !(id in prodDistricts))
+  const onlyProd = prodIds.filter(id => !(id in stagingDistricts))
+  if (onlyStaging.length > 0 || onlyProd.length > 0) {
+    if (onlyStaging.length > 0) {
+      reasons.push(
+        `${date}: district(s) only in staging: ${onlyStaging.sort().join(', ')}`
+      )
+    }
+    if (onlyProd.length > 0) {
+      reasons.push(
+        `${date}: district(s) only in production: ${onlyProd.sort().join(', ')}`
+      )
+    }
+    return blocked()
+  }
+
+  for (const id of stagingIds.sort()) {
+    const stagingRow = stagingDistricts[id] as unknown as Record<
+      string,
+      unknown
+    >
+    const prodRow = prodDistricts[id] as unknown as Record<string, unknown>
+    const fields = new Set([
+      ...Object.keys(stagingRow),
+      ...Object.keys(prodRow),
+    ])
+    let nonDerivedChanges = 0
+    let derivedChanges = 0
+
+    for (const field of [...fields].sort()) {
+      const stagingValue = stagingRow[field]
+      const prodValue = prodRow[field]
+      if (Object.is(stagingValue, prodValue)) continue
+
+      const cls = FIELD_CLASSIFICATION[field]
+      if (cls === 'derived') {
+        derivedChanges++
+        continue
+      }
+      nonDerivedChanges++
+
+      // Unclassified CHANGED field — fail-closed (registry exhaustiveness is
+      // also unit-tested against the schema; this guards unvalidated input).
+      if (cls === undefined) {
+        reasons.push(
+          `${date} D${id} ${field}: unclassified field changed — fail-closed`
+        )
+        continue
+      }
+
+      // Optionality transition: present on one side only (any non-derived
+      // class). During closing TI does not add columns — a field appearing
+      // or vanishing means the pipeline code changed (re-derive review).
+      if (stagingValue === undefined || prodValue === undefined) {
+        reasons.push(
+          `${date} D${id} ${field}: optionality transition ` +
+            `(${String(prodValue)}→${String(stagingValue)}) blocks`
+        )
+        continue
+      }
+
+      switch (cls) {
+        case 'counter': {
+          const prod = prodValue as number
+          const staging = stagingValue as number
+          const delta = staging - prod
+          const cap = Math.max(50, 0.1 * prod)
+          if (delta < -decreaseFloor) {
+            reasons.push(
+              `${date} D${id} ${field}: counter decrease ${prod}→${staging} ` +
+                `(Δ ${delta}) blocks (floor ${decreaseFloor})`
+            )
+          } else if (delta > cap) {
+            reasons.push(
+              `${date} D${id} ${field}: counter move ${prod}→${staging} ` +
+                `(Δ +${delta}) exceeds cap ${cap} = max(50, 10% × ${prod})`
+            )
+          } else {
+            deltas.push({ districtId: id, field, prod, staging, delta })
+          }
+          break
+        }
+        case 'base':
+          reasons.push(
+            `${date} D${id} ${field}: base drift ${String(prodValue)}→` +
+              `${String(stagingValue)} blocks (fixed at program-year start)`
+          )
+          break
+        case 'identity':
+          reasons.push(
+            `${date} D${id} ${field}: identity drift ${String(prodValue)}→` +
+              `${String(stagingValue)} blocks`
+          )
+          break
+        case 'planBoolean':
+          if (prodValue === false && stagingValue === true) break // one-way OK
+          reasons.push(
+            `${date} D${id} ${field}: plan boolean ${String(prodValue)}→` +
+              `${String(stagingValue)} blocks (only false→true allowed)`
+          )
+          break
+      }
+    }
+
+    if (nonDerivedChanges === 0 && derivedChanges > 0) derivedOnly.push(id)
+  }
+
+  if (reasons.length > 0) return blocked()
+  return {
+    allowed: true,
+    reasons: [],
+    deltas,
+    derivedOnlyDistricts: derivedOnly,
+  }
 }
 
 export interface ChangedDate {
@@ -49,11 +361,25 @@ export interface PromoteDecision {
   promote: boolean
   requiresReview: boolean
   reasons: string[]
+  /** present when CPAA auto-allowed every changed overlap date (#1086) */
+  autoAllowed?: 'closing-monotonic'
+  /** provenance: per-date monotone counter movements (run-summary table) */
+  closingDeltas?: Array<ClosingDelta & { date: string }>
+  /** districts (across changed dates) whose only moves were derived fields */
+  derivedOnlyDistricts?: number
 }
 
 export interface PromoteOptions {
   /** operator override: promote a reviewed value re-derive despite changed dates */
   allowValueChanges?: boolean
+  /** CPAA counter decrease tolerance — see {@link ClosingAutoAllowOptions} */
+  closingDecreaseFloor?: number
+}
+
+/** Digest sets for CPAA evaluation of changed overlap dates (#1086). */
+export interface PromoteDigests {
+  staging: DateDigest[]
+  prod: DateDigest[]
 }
 
 /**
@@ -96,8 +422,10 @@ export function digestDate(
   data: AllDistrictsRankingsData
 ): DateDigest {
   const districtDigests: Record<string, string> = {}
+  const districts: Record<string, DistrictRanking> = {}
   for (const district of data.rankings) {
     districtDigests[district.districtId] = digestDistrict(district)
+    districts[district.districtId] = district
   }
   // Order-independent: sort by districtId before combining.
   const combined = stableStringify(
@@ -110,6 +438,10 @@ export function digestDate(
     totalDistricts: data.rankings.length,
     districtDigests,
     combined,
+    // CPAA pass-through (#1086): already-parsed rows + the remap signature
+    // input — no new I/O, evaluated only for changed overlap dates.
+    districts,
+    sourceCsvDate: data.metadata.sourceCsvDate,
   }
 }
 
@@ -175,18 +507,74 @@ export function diffSnapshots(
 }
 
 /**
+ * CPAA across ALL changed overlap dates: every changed date must individually
+ * pass {@link evaluateClosingAutoAllow}; any failure (or a missing digest)
+ * blocks the whole set — fail-closed.
+ */
+function evaluateClosingAutoAllowAcross(
+  changed: ChangedDate[],
+  digests: PromoteDigests,
+  opts: ClosingAutoAllowOptions
+): {
+  allowed: boolean
+  reasons: string[]
+  deltas: NonNullable<PromoteDecision['closingDeltas']>
+  derivedOnlyDistricts: number
+} {
+  const stagingMap = byDate(digests.staging)
+  const prodMap = byDate(digests.prod)
+  const reasons: string[] = []
+  const deltas: NonNullable<PromoteDecision['closingDeltas']> = []
+  let derivedOnlyDistricts = 0
+
+  for (const { date } of changed) {
+    const staging = stagingMap.get(date)
+    const prod = prodMap.get(date)
+    if (!staging || !prod) {
+      reasons.push(`${date}: digest unavailable — cannot evaluate auto-allow`)
+      continue
+    }
+    const result = evaluateClosingAutoAllow(staging, prod, opts)
+    if (!result.allowed) {
+      reasons.push(...result.reasons)
+    } else {
+      deltas.push(...result.deltas.map(d => ({ date, ...d })))
+      derivedOnlyDistricts += result.derivedOnlyDistricts.length
+    }
+  }
+
+  return {
+    allowed: reasons.length === 0,
+    reasons,
+    deltas,
+    derivedOnlyDistricts,
+  }
+}
+
+/**
  * Promote gate (validate-first). A SUBTRACTIVE change (date removed from prod)
  * always blocks. A value re-derive (changed overlap dates) requires explicit
  * operator review — it blocks unless `allowValueChanges` is set, signalling the
  * operator has reviewed the value diff. A purely additive change promotes.
+ *
+ * Closing-Pinned Auto-Allow (#1086, epic #1083): when the only objection is
+ * "changed overlap dates" and EVERY changed date is closing-pinned with
+ * monotone, capped counter moves (decision doc §4–§5), the change is routine
+ * month-end reconciliation and promotes autonomously with provenance.
+ * Subtractive changes still block absolutely; without `digests` the legacy
+ * review path applies (fail-closed).
  */
 export function evaluatePromote(
   report: ValueDiffReport,
-  opts: PromoteOptions = {}
+  opts: PromoteOptions = {},
+  digests?: PromoteDigests
 ): PromoteDecision {
   const reasons: string[] = []
   let promote = true
   let requiresReview = false
+  let autoAllowed: PromoteDecision['autoAllowed']
+  let closingDeltas: PromoteDecision['closingDeltas']
+  let derivedOnlyDistricts: number | undefined
 
   if (report.removed.length > 0) {
     promote = false
@@ -201,10 +589,31 @@ export function evaluatePromote(
       `changed: ${report.changed.length} overlap date(s) have re-derived values differing from production`
     )
     if (!opts.allowValueChanges) {
-      promote = false
-      reasons.push(
-        'value changes require operator review — re-run with --allow-value-changes to promote after reviewing the diff'
-      )
+      // CPAA applies only when the verdict would otherwise be "blocked
+      // because changed is non-empty" — never to a subtractive change.
+      const cpaa =
+        digests && report.removed.length === 0
+          ? evaluateClosingAutoAllowAcross(report.changed, digests, {
+              closingDecreaseFloor: opts.closingDecreaseFloor,
+            })
+          : undefined
+      if (cpaa?.allowed) {
+        requiresReview = false
+        autoAllowed = 'closing-monotonic'
+        closingDeltas = cpaa.deltas
+        derivedOnlyDistricts = cpaa.derivedOnlyDistricts
+        reasons.push(
+          `closing-pinned auto-allow: ${cpaa.deltas.length} monotone ` +
+            `counter move(s) across ${report.changed.length} closing-pinned date(s), ` +
+            `${derivedOnlyDistricts} derived-only district(s) ignored (#1086)`
+        )
+      } else {
+        promote = false
+        reasons.push(
+          'value changes require operator review — re-run with --allow-value-changes to promote after reviewing the diff'
+        )
+        if (cpaa) reasons.push(...cpaa.reasons)
+      }
     }
   }
 
@@ -214,5 +623,14 @@ export function evaluatePromote(
     )
   }
 
-  return { promote, requiresReview, reasons }
+  return {
+    promote,
+    requiresReview,
+    reasons,
+    ...(autoAllowed !== undefined && {
+      autoAllowed,
+      closingDeltas,
+      derivedOnlyDistricts,
+    }),
+  }
 }
