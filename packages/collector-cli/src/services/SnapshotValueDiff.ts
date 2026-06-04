@@ -361,11 +361,25 @@ export interface PromoteDecision {
   promote: boolean
   requiresReview: boolean
   reasons: string[]
+  /** present when CPAA auto-allowed every changed overlap date (#1086) */
+  autoAllowed?: 'closing-monotonic'
+  /** provenance: per-date monotone counter movements (run-summary table) */
+  closingDeltas?: Array<ClosingDelta & { date: string }>
+  /** districts (across changed dates) whose only moves were derived fields */
+  derivedOnlyDistricts?: number
 }
 
 export interface PromoteOptions {
   /** operator override: promote a reviewed value re-derive despite changed dates */
   allowValueChanges?: boolean
+  /** CPAA counter decrease tolerance — see {@link ClosingAutoAllowOptions} */
+  closingDecreaseFloor?: number
+}
+
+/** Digest sets for CPAA evaluation of changed overlap dates (#1086). */
+export interface PromoteDigests {
+  staging: DateDigest[]
+  prod: DateDigest[]
 }
 
 /**
@@ -500,7 +514,8 @@ export function diffSnapshots(
  */
 export function evaluatePromote(
   report: ValueDiffReport,
-  opts: PromoteOptions = {}
+  opts: PromoteOptions = {},
+  _digests?: PromoteDigests
 ): PromoteDecision {
   const reasons: string[] = []
   let promote = true

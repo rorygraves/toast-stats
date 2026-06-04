@@ -24,7 +24,9 @@ import {
 } from '@toastmasters/shared-contracts'
 import {
   digestDate,
+  diffSnapshots,
   evaluateClosingAutoAllow,
+  evaluatePromote,
   FIELD_CLASSIFICATION,
   isClosingPinned,
   type DateDigest,
@@ -449,5 +451,151 @@ describe('evaluateClosingAutoAllow — edges (decision doc §8.3)', () => {
       combined: s.combined,
     }
     expect(evaluateClosingAutoAllow(stripped, p).allowed).toBe(false)
+  })
+})
+
+describe('evaluatePromote CPAA wiring (#1086)', () => {
+  /** Two-sided single-date digest sets around the synthetic district. */
+  function promoteCase(
+    stagingOverrides: Partial<DistrictRanking>,
+    {
+      date = '2026-05-31',
+      stagingSourceCsvDate = '2026-06-02',
+    }: { date?: string; stagingSourceCsvDate?: string } = {}
+  ) {
+    const staging = [
+      digestDate(
+        date,
+        syntheticRankings(
+          [syntheticDistrict(stagingOverrides)],
+          stagingSourceCsvDate
+        )
+      ),
+    ]
+    const prod = [
+      digestDate(date, syntheticRankings([syntheticDistrict()], date)),
+    ]
+    return { report: diffSnapshots(staging, prod), digests: { staging, prod } }
+  }
+
+  it('auto-allows a closing-pinned monotone changed date (promote, no review)', () => {
+    const { report, digests } = promoteCase({ totalPayments: 5050 })
+    const decision = evaluatePromote(report, {}, digests)
+    expect(decision.promote).toBe(true)
+    expect(decision.requiresReview).toBe(false)
+    expect(decision.autoAllowed).toBe('closing-monotonic')
+    expect(decision.closingDeltas).toEqual([
+      {
+        date: '2026-05-31',
+        districtId: '61',
+        field: 'totalPayments',
+        prod: 5000,
+        staging: 5050,
+        delta: 50,
+      },
+    ])
+    expect(decision.reasons.join(' ')).toMatch(/auto-allow/i)
+  })
+
+  it('keeps blocking when CPAA finds a decrease, surfacing the violation', () => {
+    const { report, digests } = promoteCase({ totalPayments: 4999 })
+    const decision = evaluatePromote(report, {}, digests)
+    expect(decision.promote).toBe(false)
+    expect(decision.requiresReview).toBe(true)
+    expect(decision.autoAllowed).toBeUndefined()
+    expect(decision.reasons.join(' ')).toMatch(/decrease/i)
+  })
+
+  it('blocks when ANY changed date lacks the closing signature, even if another passes', () => {
+    const pinnedStaging = digestDate(
+      '2026-05-31',
+      syntheticRankings(
+        [syntheticDistrict({ totalPayments: 5050 })],
+        '2026-06-02'
+      )
+    )
+    const pinnedProd = digestDate(
+      '2026-05-31',
+      syntheticRankings([syntheticDistrict()], '2026-05-31')
+    )
+    // Mid-month historical date whose values changed — a re-derive of history.
+    const histStaging = digestDate(
+      '2026-05-15',
+      syntheticRankings(
+        [syntheticDistrict({ totalPayments: 4600 })],
+        '2026-05-15'
+      )
+    )
+    const histProd = digestDate(
+      '2026-05-15',
+      syntheticRankings(
+        [syntheticDistrict({ totalPayments: 4500 })],
+        '2026-05-15'
+      )
+    )
+    const digests = {
+      staging: [pinnedStaging, histStaging],
+      prod: [pinnedProd, histProd],
+    }
+    const report = diffSnapshots(digests.staging, digests.prod)
+    const decision = evaluatePromote(report, {}, digests)
+    expect(decision.promote).toBe(false)
+    expect(decision.autoAllowed).toBeUndefined()
+    expect(decision.reasons.join(' ')).toMatch(/2026-05-15/)
+  })
+
+  it('still blocks a subtractive change even when changed dates are closing-monotonic', () => {
+    const { digests } = promoteCase({ totalPayments: 5050 })
+    const extraProdDate = digestDate(
+      '2026-04-30',
+      syntheticRankings([syntheticDistrict()], '2026-04-30')
+    )
+    const report = diffSnapshots(digests.staging, [
+      ...digests.prod,
+      extraProdDate,
+    ])
+    const decision = evaluatePromote(
+      report,
+      {},
+      {
+        staging: digests.staging,
+        prod: [...digests.prod, extraProdDate],
+      }
+    )
+    expect(decision.promote).toBe(false)
+    expect(decision.reasons.join(' ')).toMatch(/subtractive/i)
+  })
+
+  it('fails closed to operator review when no digests are provided (legacy path)', () => {
+    const { report } = promoteCase({ totalPayments: 5050 })
+    const decision = evaluatePromote(report)
+    expect(decision.promote).toBe(false)
+    expect(decision.requiresReview).toBe(true)
+    expect(decision.autoAllowed).toBeUndefined()
+  })
+
+  it('keeps allowValueChanges semantics byte-for-byte (no autoAllowed tag)', () => {
+    const { report, digests } = promoteCase({ totalPayments: 4999 })
+    const decision = evaluatePromote(
+      report,
+      { allowValueChanges: true },
+      digests
+    )
+    expect(decision.promote).toBe(true)
+    expect(decision.requiresReview).toBe(true)
+    expect(decision.autoAllowed).toBeUndefined()
+  })
+
+  it('passes closingDecreaseFloor through to the per-date evaluation', () => {
+    const { report, digests } = promoteCase({ totalPayments: 4997 }) // Δ -3
+    const strict = evaluatePromote(report, {}, digests)
+    expect(strict.promote).toBe(false)
+    const relaxed = evaluatePromote(
+      report,
+      { closingDecreaseFloor: 5 },
+      digests
+    )
+    expect(relaxed.promote).toBe(true)
+    expect(relaxed.autoAllowed).toBe('closing-monotonic')
   })
 })

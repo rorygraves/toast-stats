@@ -24,6 +24,8 @@ export interface RunValueDiffOptions {
   stagingDir: string
   prodDir: string
   allowValueChanges?: boolean
+  /** CPAA counter decrease tolerance (#1086) — default 0 (strict) */
+  closingDecreaseFloor?: number
 }
 
 export interface RunValueDiffResult {

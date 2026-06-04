@@ -120,3 +120,62 @@ describe('runValueDiff', () => {
     expect(allowed.exitCode).toBe(0)
   })
 })
+
+describe('runValueDiff — Closing-Pinned Auto-Allow end-to-end (#1086)', () => {
+  /** rankings() variant with an independent As-of date (closing signature). */
+  function closingRankings(
+    date: string,
+    sourceCsvDate: string,
+    totalPayments: number
+  ): AllDistrictsRankingsData {
+    const data = rankings(date, totalPayments)
+    return { ...data, metadata: { ...data.metadata, sourceCsvDate } }
+  }
+
+  it('auto-allows (exit 0) a closing-pinned monotone reconciliation', () => {
+    const staging = join(tmp, 'staging')
+    const prod = join(tmp, 'prod')
+    writeSnapshot(
+      prod,
+      '2026-05-31',
+      closingRankings('2026-05-31', '2026-05-31', 5000)
+    )
+    writeSnapshot(
+      staging,
+      '2026-05-31',
+      closingRankings('2026-05-31', '2026-06-02', 5050)
+    )
+    const { decision, exitCode } = runValueDiff({
+      stagingDir: staging,
+      prodDir: prod,
+    })
+    expect(decision.promote).toBe(true)
+    expect(decision.requiresReview).toBe(false)
+    expect(decision.autoAllowed).toBe('closing-monotonic')
+    expect(decision.closingDeltas).toHaveLength(1)
+    expect(exitCode).toBe(0)
+  })
+
+  it('still blocks (exit 1) a closing-period counter decrease', () => {
+    const staging = join(tmp, 'staging')
+    const prod = join(tmp, 'prod')
+    writeSnapshot(
+      prod,
+      '2026-05-31',
+      closingRankings('2026-05-31', '2026-05-31', 5000)
+    )
+    writeSnapshot(
+      staging,
+      '2026-05-31',
+      closingRankings('2026-05-31', '2026-06-02', 4999)
+    )
+    const { decision, exitCode } = runValueDiff({
+      stagingDir: staging,
+      prodDir: prod,
+    })
+    expect(decision.promote).toBe(false)
+    expect(decision.autoAllowed).toBeUndefined()
+    expect(decision.reasons.join(' ')).toMatch(/decrease/i)
+    expect(exitCode).toBe(1)
+  })
+})
