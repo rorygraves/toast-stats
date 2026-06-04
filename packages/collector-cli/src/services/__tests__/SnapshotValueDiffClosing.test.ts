@@ -269,7 +269,7 @@ describe('evaluateClosingAutoAllow — fixture (2026-05-31 pair)', () => {
     }
   })
 
-  it('auto-allows the monotone subset too (19 movers, 78 derived-only)', () => {
+  it('auto-allows the non-reversal subset too (19 movers, 78 derived-only)', () => {
     const prodRowById = new Map(prodData.rankings.map(r => [r.districtId, r]))
     const patched: AllDistrictsRankingsData = {
       ...stagingData,
@@ -288,7 +288,8 @@ describe('evaluateClosingAutoAllow — fixture (2026-05-31 pair)', () => {
     const moverIds = new Set(res.deltas.map(d => d.districtId))
     expect(moverIds.size).toBe(19)
     expect(res.derivedOnlyDistricts).toHaveLength(78)
-    // Provenance is monotone and capped by construction.
+    // Provenance is within-cap by construction; this subset happens to be
+    // all-positive because the reversal districts were patched to prod (#1092).
     for (const d of res.deltas) {
       expect(d.delta).toBeGreaterThan(0)
       expect(d.delta).toBeLessThanOrEqual(Math.max(50, 0.1 * d.prod))
@@ -297,7 +298,7 @@ describe('evaluateClosingAutoAllow — fixture (2026-05-31 pair)', () => {
 })
 
 describe('evaluateClosingAutoAllow — edges (decision doc §8.3)', () => {
-  it('allows a monotone within-cap counter move on a pinned date', () => {
+  it('allows a within-cap counter increase on a pinned date', () => {
     const [s, p] = syntheticPair({ totalPayments: 5050 })
     const res = evaluateClosingAutoAllow(s, p)
     expect(res.allowed).toBe(true)
