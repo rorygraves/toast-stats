@@ -3,7 +3,11 @@
 **Date:** 2026-06-03
 **Issue:** #1084 (epic #1083 Sprint 1, doc-only)
 **Amends:** [ADR-009](../architecture-decisions/009-full-range-rederive-promote-semantics.md) (#1034)
-**Status:** Decided — policy chosen for Sprint 2 implementation
+**Status:** Decided — policy chosen for Sprint 2 implementation.
+**Amended 2026-06-04 (#1092, ADR-009 D4):** the §4 counter rule is now
+**direction-agnostic** — see [Amendment](#amendment-2026-06-04-1092--decreases-are-normal-the-counter-rule-is-direction-agnostic)
+at the end of this doc. §3(b)'s "decreases must still block" reading and §4's
+decrease floor are superseded.
 
 ## 1. Problem (verified)
 
@@ -226,3 +230,44 @@ As-of-advanced signature is specific to the closing remap.
 5. Workflow summary rendering (display only).
 6. Live verification: next closing-window day with monotone deltas promotes
    with zero manual input; #1072 monitor stays quiet; evidence on the epic.
+
+## Amendment 2026-06-04 (#1092) — decreases are normal; the counter rule is direction-agnostic
+
+The §4 policy survived one day of production. The 2026-06-03 manual review
+(`allow_value_changes=true`, prod promoted 22:32Z) reset the baseline; the
+next scheduled run
+([26947541298](https://github.com/taverns-red/toast-stats/actions/runs/26947541298),
+2026-06-04) blocked again — on **9 decreases across D14/D46/D94** (D14
+`totalPayments` 3774→3764 and `paidClubs` 98→97, D46
+`clubsWith20PlusMembers` 28→27, …). §7's "a reversal day requires one manual
+review" prediction was wrong in frequency: reversals are not occasional, they
+are part of the **daily texture of reconciliation** (payments reversed, clubs
+slipping under thresholds). A policy that needs a manual override most closing
+days defeats the epic's freshness goal.
+
+**Operator decision (2026-06-04, #1092):** a per-unit decrease must NOT block
+promotion. The "monotonic / non-decreasing" model is dropped entirely:
+
+- **Counter rule (replaces §4 row 1):** `|Δ| ≤ max(50, 10% × prodValue)` —
+  the same calibrated magnitude cap, applied **symmetrically**. Direction is
+  no longer a criterion; only an implausible magnitude (systematic inflation,
+  collapse-to-zero on a real base) blocks.
+- **`closingDecreaseFloor` is removed**, not relaxed — §4's "configurable
+  floor" framing treated direction as the gate with a tolerance knob; the
+  amendment removes direction from the gate entirely.
+- **Everything else in §4–§5 stands:** subtractive date/district removals,
+  base/identity drift, plan-boolean reverts, optionality transitions,
+  unclassified fields, and non-closing-pinned changed dates still block.
+  Provenance tag renamed `closing-monotonic` → `closing-reconciliation`.
+- **The missed test layer:** #1086 verified the pure functions; the blocked
+  run proved the integrated verdict (`runValueDiff` → `evaluatePromote` →
+  CPAA) was the surface that mattered. The real 2026-06-04 staging/prod pair
+  (53 counter moves, 9 decreases) is preserved as
+  `fixtures/closing-2026-05-31-decreases/` in the `runValueDiff` directory
+  layout, and an integration test pins `decision.promote === true` on it
+  end-to-end (`SnapshotValueDiffClosingIntegration.test.ts`).
+
+Residual risk (replaces §7 bullet 2): a genuine systematic error that moves
+every district **downward** ≤ cap during closing would now auto-promote, the
+mirror of §7 bullet 1's upward case — same mitigations (full delta
+provenance, deterministic re-derive recovery, historical dates still block).
