@@ -22,7 +22,7 @@
     "@google-cloud/storage": "^7.19.0",
     "@toastmasters/analytics-core": "^1.0.0",
     "@toastmasters/shared-contracts": "^1.0.0",
-    "commander": "^14.0.3",
+    "commander": "^15.0.0",
     "csv-parse": "^6.2.1",
     "dotenv": "^17.4.2",
     "zod": "^4.4.3"
