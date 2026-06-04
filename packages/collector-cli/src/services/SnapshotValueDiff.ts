@@ -20,9 +20,10 @@ import type {
 
 /**
  * Causal role of a DistrictRanking field for the Closing-Pinned Auto-Allow
- * policy (epic #1083, decision doc §4). Counters are monotone + capped;
- * bases/identity must be equal; plan booleans are one-way (false→true);
- * derived fields are zero-sum re-derivations and excluded from the check.
+ * policy (epic #1083, decision doc §4 as amended by #1092). Counters are
+ * direction-agnostic within a symmetric magnitude cap; bases/identity must be
+ * equal; plan booleans are one-way (false→true); derived fields are zero-sum
+ * re-derivations and excluded from the check.
  */
 export type FieldClass =
   | 'counter'
@@ -141,7 +142,7 @@ export interface DateDigest {
   sourceCsvDate?: string
 }
 
-/** One monotone counter movement, kept for provenance in the run summary. */
+/** One counter movement (either direction), kept for provenance in the run summary. */
 export interface ClosingDelta {
   districtId: string
   field: string
@@ -154,7 +155,7 @@ export interface ClosingAutoAllowResult {
   allowed: boolean
   /** violations when !allowed — each names the date/district/field */
   reasons: string[]
-  /** monotone counter movements (provenance for the run summary) */
+  /** within-cap counter movements, either direction (run-summary provenance) */
   deltas: ClosingDelta[]
   /** districts whose only differences were derived fields (ignored) */
   derivedOnlyDistricts: string[]
@@ -545,10 +546,11 @@ function evaluateClosingAutoAllowAcross(
  * operator review — it blocks unless `allowValueChanges` is set, signalling the
  * operator has reviewed the value diff. A purely additive change promotes.
  *
- * Closing-Pinned Auto-Allow (#1086, epic #1083): when the only objection is
- * "changed overlap dates" and EVERY changed date is closing-pinned with
- * monotone, capped counter moves (decision doc §4–§5), the change is routine
- * month-end reconciliation and promotes autonomously with provenance.
+ * Closing-Pinned Auto-Allow (#1086/#1092, epic #1083): when the only objection
+ * is "changed overlap dates" and EVERY changed date is closing-pinned with
+ * within-cap counter moves in either direction (decision doc §4–§5 as amended
+ * by #1092), the change is routine month-end reconciliation and promotes
+ * autonomously with provenance.
  * Subtractive changes still block absolutely; without `digests` the legacy
  * review path applies (fail-closed).
  */
