@@ -131,6 +131,53 @@ export interface DateDigest {
   districtDigests: Record<string, string>
   /** order-independent digest of the whole date */
   combined: string
+  /**
+   * districtId → parsed ranking row, for closing auto-allow evaluation of
+   * changed dates (#1086). Carried from the data the loader already parses —
+   * no new I/O. Absent on hand-built digests ⇒ CPAA fails closed.
+   */
+  districts?: Record<string, DistrictRanking>
+  /** metadata.sourceCsvDate — the closing-remap signature input (#1086) */
+  sourceCsvDate?: string
+}
+
+/** One monotone counter movement, kept for provenance in the run summary. */
+export interface ClosingDelta {
+  districtId: string
+  field: string
+  prod: number
+  staging: number
+  delta: number
+}
+
+export interface ClosingAutoAllowResult {
+  allowed: boolean
+  /** violations when !allowed — each names the date/district/field */
+  reasons: string[]
+  /** monotone counter movements (provenance for the run summary) */
+  deltas: ClosingDelta[]
+  /** districts whose only differences were derived fields (ignored) */
+  derivedOnlyDistricts: string[]
+}
+
+export interface ClosingAutoAllowOptions {
+  /**
+   * Counters may decrease by at most this much during closing (decision doc
+   * §4). Default 0 (strict — the epic's "never auto-promote a decrease").
+   */
+  closingDecreaseFloor?: number
+}
+
+/**
+ * Closing-Pinned Auto-Allow evaluation for ONE changed overlap date —
+ * placeholder, implemented at GREEN (#1086).
+ */
+export function evaluateClosingAutoAllow(
+  _stagingDate: DateDigest,
+  _prodDate: DateDigest,
+  _opts: ClosingAutoAllowOptions = {}
+): ClosingAutoAllowResult {
+  throw new Error('not implemented')
 }
 
 export interface ChangedDate {
