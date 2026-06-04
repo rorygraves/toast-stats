@@ -112,6 +112,41 @@ correctly sends to review), and the Sprint 2 test plan:
 Acceptance fixture:
 `packages/collector-cli/src/services/__tests__/fixtures/closing-2026-05-31/`.
 
+### D4 — CPAA is direction-agnostic (amendment 2026-06-04, #1092 / epic #1083)
+
+D3's "counters non-decreasing" criterion blocked in production on its second
+day: scheduled run 26947541298 (2026-06-04) refused 9 small counter decreases
+across D14/D46/D94 (e.g. D14 `totalPayments` 3774→3764, `paidClubs` 98→97).
+These are **legitimate closing reconciliation** — payments get reversed, a
+club slips below paid status or under the 20-member threshold; numbers go
+down. The operator decision (#1092): a per-unit decrease must NOT block
+promotion. The "monotonic / non-decreasing" model is dropped.
+
+The rule is now: **closing-pinned ⇒ direction-agnostic value auto-allow**
+for counters — `|Δ| ≤ max(50, 10% × prodValue)` (the same magnitude cap D3
+calibrated, applied symmetrically). The cap's job is unchanged: stop a
+systematic re-derive inflation or a collapse-to-zero from riding the closing
+window; ordinary per-unit downward reconciliation is routine. Provenance is
+unchanged — every auto-promoted delta (now possibly negative) lands in the
+run-summary table, tagged `autoAllowed: "closing-reconciliation"` (renamed
+from `"closing-monotonic"`).
+
+Still blocking, exactly as before (NOT direction-based): a **date or district
+removed** from staging vs prod, base/identity drift, plan-boolean reverts,
+optionality transitions, unclassified fields, cap breaches in either
+direction, and any changed date without the closing signature. The
+`closingDecreaseFloor` parameter (D3's relief valve) is removed — it was the
+gating criterion, not a tolerance. The epic's original "never auto-promote a
+decrease" hard constraint is superseded by this amendment for the
+closing-pinned window only; outside closing the gate is unchanged.
+
+End-to-end regression protection: the integrated `runValueDiff` verdict —
+the path run 26947541298 actually took, which #1086's unit-level tests missed —
+is now pinned by
+`packages/collector-cli/src/services/__tests__/SnapshotValueDiffClosingIntegration.test.ts`
+against the real captured pair in
+`fixtures/closing-2026-05-31-decreases/`.
+
 ## Consequences
 
 **Easier**

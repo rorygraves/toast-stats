@@ -132,7 +132,7 @@ describe('runValueDiff — Closing-Pinned Auto-Allow end-to-end (#1086)', () => 
     return { ...data, metadata: { ...data.metadata, sourceCsvDate } }
   }
 
-  it('auto-allows (exit 0) a closing-pinned monotone reconciliation', () => {
+  it('auto-allows (exit 0) a closing-pinned within-cap reconciliation', () => {
     const staging = join(tmp, 'staging')
     const prod = join(tmp, 'prod')
     writeSnapshot(
@@ -151,12 +151,12 @@ describe('runValueDiff — Closing-Pinned Auto-Allow end-to-end (#1086)', () => 
     })
     expect(decision.promote).toBe(true)
     expect(decision.requiresReview).toBe(false)
-    expect(decision.autoAllowed).toBe('closing-monotonic')
+    expect(decision.autoAllowed).toBe('closing-reconciliation')
     expect(decision.closingDeltas).toHaveLength(1)
     expect(exitCode).toBe(0)
   })
 
-  it('still blocks (exit 1) a closing-period counter decrease', () => {
+  it('auto-allows (exit 0) a closing-period counter decrease (#1092)', () => {
     const staging = join(tmp, 'staging')
     const prod = join(tmp, 'prod')
     writeSnapshot(
@@ -173,9 +173,34 @@ describe('runValueDiff — Closing-Pinned Auto-Allow end-to-end (#1086)', () => 
       stagingDir: staging,
       prodDir: prod,
     })
+    expect(decision.promote).toBe(true)
+    expect(decision.autoAllowed).toBe('closing-reconciliation')
+    expect(decision.closingDeltas).toEqual([
+      expect.objectContaining({ delta: -1 }),
+    ])
+    expect(exitCode).toBe(0)
+  })
+
+  it('still blocks (exit 1) an implausible-magnitude closing decrease (#1092)', () => {
+    const staging = join(tmp, 'staging')
+    const prod = join(tmp, 'prod')
+    writeSnapshot(
+      prod,
+      '2026-05-31',
+      closingRankings('2026-05-31', '2026-05-31', 5000)
+    )
+    writeSnapshot(
+      staging,
+      '2026-05-31',
+      closingRankings('2026-05-31', '2026-06-02', 4400) // Δ −600 > cap 500
+    )
+    const { decision, exitCode } = runValueDiff({
+      stagingDir: staging,
+      prodDir: prod,
+    })
     expect(decision.promote).toBe(false)
     expect(decision.autoAllowed).toBeUndefined()
-    expect(decision.reasons.join(' ')).toMatch(/decrease/i)
+    expect(decision.reasons.join(' ')).toMatch(/cap/i)
     expect(exitCode).toBe(1)
   })
 })

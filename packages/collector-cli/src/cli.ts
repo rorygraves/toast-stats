@@ -1510,28 +1510,12 @@ export function createCLI(): Command {
       'Operator override: promote re-derived value changes after reviewing the diff',
       false
     )
-    .option(
-      '--closing-decrease-floor <n>',
-      'Closing auto-allow: tolerate counter decreases up to n (#1086; default 0 = strict)',
-      (value: string) => {
-        const parsed = Number(value)
-        if (!Number.isFinite(parsed) || parsed < 0) {
-          console.error(
-            `Error: --closing-decrease-floor must be a non-negative number, got "${value}"`
-          )
-          process.exit(ExitCode.COMPLETE_FAILURE)
-        }
-        return parsed
-      },
-      0
-    )
     .option('-v, --verbose', 'Enable detailed logging output', false)
     .action(
       async (options: {
         stagingDir: string
         prodDir: string
         allowValueChanges: boolean
-        closingDecreaseFloor: number
         verbose: boolean
       }) => {
         const { runValueDiff } =
@@ -1543,7 +1527,6 @@ export function createCLI(): Command {
             stagingDir: options.stagingDir,
             prodDir: options.prodDir,
             allowValueChanges: options.allowValueChanges,
-            closingDecreaseFloor: options.closingDecreaseFloor,
           })
         } catch (err) {
           // Fail-closed: if we cannot read/compare the snapshots, do NOT promote.
