@@ -169,15 +169,174 @@ export interface ClosingAutoAllowOptions {
 }
 
 /**
- * Closing-Pinned Auto-Allow evaluation for ONE changed overlap date —
- * placeholder, implemented at GREEN (#1086).
+ * Closing-Pinned Auto-Allow evaluation for ONE changed overlap date (decision
+ * doc §4–§5, epic #1083). Auto-allow iff the date carries the closing-remap
+ * signature in STAGING's own metadata, the district set is identical, and
+ * every changed field obeys its class rule:
+ *
+ *   counter      −floor ≤ Δ ≤ max(50, 10% × prod)   (floor defaults to 0)
+ *   base         must be equal
+ *   identity     must be equal
+ *   planBoolean  false→true allowed; true→false blocks
+ *   derived      excluded (zero-sum re-derivations)
+ *
+ * Optionality transitions (field present on one side only) and unclassified
+ * CHANGED fields block — fail-closed. Digests lacking the parsed rows (e.g.
+ * hand-built) also fail closed.
  */
 export function evaluateClosingAutoAllow(
-  _stagingDate: DateDigest,
-  _prodDate: DateDigest,
-  _opts: ClosingAutoAllowOptions = {}
+  stagingDate: DateDigest,
+  prodDate: DateDigest,
+  opts: ClosingAutoAllowOptions = {}
 ): ClosingAutoAllowResult {
-  throw new Error('not implemented')
+  const date = stagingDate.date
+  const reasons: string[] = []
+  const deltas: ClosingDelta[] = []
+  const derivedOnly: string[] = []
+  const decreaseFloor = opts.closingDecreaseFloor ?? 0
+
+  const blocked = (): ClosingAutoAllowResult => ({
+    allowed: false,
+    reasons,
+    deltas: [],
+    derivedOnlyDistricts: [],
+  })
+
+  // Fail-closed: without the parsed rows + signature we cannot evaluate.
+  const stagingDistricts = stagingDate.districts
+  const prodDistricts = prodDate.districts
+  if (!stagingDistricts || !prodDistricts) {
+    reasons.push(
+      `${date}: parsed district rows unavailable — cannot evaluate closing auto-allow`
+    )
+    return blocked()
+  }
+  if (!isClosingPinned(date, stagingDate.sourceCsvDate)) {
+    reasons.push(
+      `${date}: not closing-pinned (month-end + advanced As-of signature absent; ` +
+        `sourceCsvDate=${stagingDate.sourceCsvDate ?? 'missing'}) — ` +
+        `a changed non-closing date is a re-derive review`
+    )
+    return blocked()
+  }
+
+  // District set must be identical on the changed date (#1034 D61 protection).
+  const stagingIds = Object.keys(stagingDistricts)
+  const prodIds = Object.keys(prodDistricts)
+  const onlyStaging = stagingIds.filter(id => !(id in prodDistricts))
+  const onlyProd = prodIds.filter(id => !(id in stagingDistricts))
+  if (onlyStaging.length > 0 || onlyProd.length > 0) {
+    if (onlyStaging.length > 0) {
+      reasons.push(
+        `${date}: district(s) only in staging: ${onlyStaging.sort().join(', ')}`
+      )
+    }
+    if (onlyProd.length > 0) {
+      reasons.push(
+        `${date}: district(s) only in production: ${onlyProd.sort().join(', ')}`
+      )
+    }
+    return blocked()
+  }
+
+  for (const id of stagingIds.sort()) {
+    const stagingRow = stagingDistricts[id] as unknown as Record<
+      string,
+      unknown
+    >
+    const prodRow = prodDistricts[id] as unknown as Record<string, unknown>
+    const fields = new Set([
+      ...Object.keys(stagingRow),
+      ...Object.keys(prodRow),
+    ])
+    let nonDerivedChanges = 0
+    let derivedChanges = 0
+
+    for (const field of [...fields].sort()) {
+      const stagingValue = stagingRow[field]
+      const prodValue = prodRow[field]
+      if (Object.is(stagingValue, prodValue)) continue
+
+      const cls = FIELD_CLASSIFICATION[field]
+      if (cls === 'derived') {
+        derivedChanges++
+        continue
+      }
+      nonDerivedChanges++
+
+      // Unclassified CHANGED field — fail-closed (registry exhaustiveness is
+      // also unit-tested against the schema; this guards unvalidated input).
+      if (cls === undefined) {
+        reasons.push(
+          `${date} D${id} ${field}: unclassified field changed — fail-closed`
+        )
+        continue
+      }
+
+      // Optionality transition: present on one side only (any non-derived
+      // class). During closing TI does not add columns — a field appearing
+      // or vanishing means the pipeline code changed (re-derive review).
+      if (stagingValue === undefined || prodValue === undefined) {
+        reasons.push(
+          `${date} D${id} ${field}: optionality transition ` +
+            `(${String(prodValue)}→${String(stagingValue)}) blocks`
+        )
+        continue
+      }
+
+      switch (cls) {
+        case 'counter': {
+          const prod = prodValue as number
+          const staging = stagingValue as number
+          const delta = staging - prod
+          const cap = Math.max(50, 0.1 * prod)
+          if (delta < -decreaseFloor) {
+            reasons.push(
+              `${date} D${id} ${field}: counter decrease ${prod}→${staging} ` +
+                `(Δ ${delta}) blocks (floor ${decreaseFloor})`
+            )
+          } else if (delta > cap) {
+            reasons.push(
+              `${date} D${id} ${field}: counter move ${prod}→${staging} ` +
+                `(Δ +${delta}) exceeds cap ${cap} = max(50, 10% × ${prod})`
+            )
+          } else {
+            deltas.push({ districtId: id, field, prod, staging, delta })
+          }
+          break
+        }
+        case 'base':
+          reasons.push(
+            `${date} D${id} ${field}: base drift ${String(prodValue)}→` +
+              `${String(stagingValue)} blocks (fixed at program-year start)`
+          )
+          break
+        case 'identity':
+          reasons.push(
+            `${date} D${id} ${field}: identity drift ${String(prodValue)}→` +
+              `${String(stagingValue)} blocks`
+          )
+          break
+        case 'planBoolean':
+          if (prodValue === false && stagingValue === true) break // one-way OK
+          reasons.push(
+            `${date} D${id} ${field}: plan boolean ${String(prodValue)}→` +
+              `${String(stagingValue)} blocks (only false→true allowed)`
+          )
+          break
+      }
+    }
+
+    if (nonDerivedChanges === 0 && derivedChanges > 0) derivedOnly.push(id)
+  }
+
+  if (reasons.length > 0) return blocked()
+  return {
+    allowed: true,
+    reasons: [],
+    deltas,
+    derivedOnlyDistricts: derivedOnly,
+  }
 }
 
 export interface ChangedDate {
@@ -249,8 +408,10 @@ export function digestDate(
   data: AllDistrictsRankingsData
 ): DateDigest {
   const districtDigests: Record<string, string> = {}
+  const districts: Record<string, DistrictRanking> = {}
   for (const district of data.rankings) {
     districtDigests[district.districtId] = digestDistrict(district)
+    districts[district.districtId] = district
   }
   // Order-independent: sort by districtId before combining.
   const combined = stableStringify(
@@ -263,6 +424,10 @@ export function digestDate(
     totalDistricts: data.rankings.length,
     districtDigests,
     combined,
+    // CPAA pass-through (#1086): already-parsed rows + the remap signature
+    // input — no new I/O, evaluated only for changed overlap dates.
+    districts,
+    sourceCsvDate: data.metadata.sourceCsvDate,
   }
 }
 
