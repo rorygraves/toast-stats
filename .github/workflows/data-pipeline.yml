@@ -1345,20 +1345,25 @@ jobs:
             AUTO_ALLOWED=$(jq -r '.autoAllowed // empty' /tmp/value-diff.json)
             if [ -n "${AUTO_ALLOWED}" ]; then
               DERIVED_ONLY=$(jq -r '.derivedOnlyDistricts // 0' /tmp/value-diff.json)
+              DELTA_COUNT=$(jq -r '.closingDeltas | length' /tmp/value-diff.json)
               echo "" >> "$GITHUB_STEP_SUMMARY"
               echo "### 🔓 Closing-Pinned Auto-Allow (\`${AUTO_ALLOWED}\`)" >> "$GITHUB_STEP_SUMMARY"
               {
                 echo "Routine month-end reconciliation auto-promoted (#1083)."
                 echo "${DERIVED_ONLY} derived-only district(s) ignored."
-                echo ""
-                echo "| Date | District | Field | Prod | Staging | Δ |"
-                echo "| --- | --- | --- | ---: | ---: | ---: |"
               } >> "$GITHUB_STEP_SUMMARY"
-              jq -r '.closingDeltas[]?
-                  | "| \(.date) | D\(.districtId) | \(.field) | \(.prod) "
-                    + "| \(.staging) "
-                    + "| \(if .delta >= 0 then "+" else "" end)\(.delta) |"' \
-                /tmp/value-diff.json >> "$GITHUB_STEP_SUMMARY" || true
+              if [ "${DELTA_COUNT}" -gt 0 ] 2>/dev/null; then
+                {
+                  echo ""
+                  echo "| Date | District | Field | Prod | Staging | Δ |"
+                  echo "| --- | --- | --- | ---: | ---: | ---: |"
+                } >> "$GITHUB_STEP_SUMMARY"
+                jq -r '.closingDeltas[]?
+                    | "| \(.date) | D\(.districtId) | \(.field) | \(.prod) "
+                      + "| \(.staging) "
+                      + "| \(if .delta >= 0 then "+" else "" end)\(.delta) |"' \
+                  /tmp/value-diff.json >> "$GITHUB_STEP_SUMMARY" || true
+              fi
             fi
           else
             echo "::warning::value-diff produced no parseable output — failing closed (no promote)"

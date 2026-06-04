@@ -599,3 +599,17 @@ describe('evaluatePromote CPAA wiring (#1086)', () => {
     expect(relaxed.autoAllowed).toBe('closing-monotonic')
   })
 })
+
+describe('evaluateClosingAutoAllow — absolute-floor cap boundary (review nit)', () => {
+  // On a small base (prod 100, 10% = 10) the cap resolves to the absolute
+  // floor of 50: Δ +50 is the last allowed step, Δ +51 blocks.
+  it('allows Δ = 50 and blocks Δ = 51 when the cap is the absolute floor', () => {
+    const [allowS, allowP] = syntheticPair({ paidClubs: 150 }) // prod 100, Δ +50
+    expect(evaluateClosingAutoAllow(allowS, allowP).allowed).toBe(true)
+
+    const [blockS, blockP] = syntheticPair({ paidClubs: 151 }) // prod 100, Δ +51
+    const res = evaluateClosingAutoAllow(blockS, blockP)
+    expect(res.allowed).toBe(false)
+    expect(res.reasons.join(' ')).toMatch(/cap/i)
+  })
+})
