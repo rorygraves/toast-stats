@@ -160,21 +160,13 @@ export interface ClosingAutoAllowResult {
   derivedOnlyDistricts: string[]
 }
 
-export interface ClosingAutoAllowOptions {
-  /**
-   * Counters may decrease by at most this much during closing (decision doc
-   * §4). Default 0 (strict — the epic's "never auto-promote a decrease").
-   */
-  closingDecreaseFloor?: number
-}
-
 /**
  * Closing-Pinned Auto-Allow evaluation for ONE changed overlap date (decision
- * doc §4–§5, epic #1083). Auto-allow iff the date carries the closing-remap
- * signature in STAGING's own metadata, the district set is identical, and
- * every changed field obeys its class rule:
+ * doc §4–§5 as amended by #1092, epic #1083). Auto-allow iff the date carries
+ * the closing-remap signature in STAGING's own metadata, the district set is
+ * identical, and every changed field obeys its class rule:
  *
- *   counter      −floor ≤ Δ ≤ max(50, 10% × prod)   (floor defaults to 0)
+ *   counter      |Δ| ≤ max(50, 10% × prod)   (direction-agnostic, #1092)
  *   base         must be equal
  *   identity     must be equal
  *   planBoolean  false→true allowed; true→false blocks
@@ -186,14 +178,12 @@ export interface ClosingAutoAllowOptions {
  */
 export function evaluateClosingAutoAllow(
   stagingDate: DateDigest,
-  prodDate: DateDigest,
-  opts: ClosingAutoAllowOptions = {}
+  prodDate: DateDigest
 ): ClosingAutoAllowResult {
   const date = stagingDate.date
   const reasons: string[] = []
   const deltas: ClosingDelta[] = []
   const derivedOnly: string[] = []
-  const decreaseFloor = opts.closingDecreaseFloor ?? 0
 
   const blocked = (): ClosingAutoAllowResult => ({
     allowed: false,
@@ -289,16 +279,17 @@ export function evaluateClosingAutoAllow(
           const prod = prodValue as number
           const staging = stagingValue as number
           const delta = staging - prod
+          // Direction-agnostic (#1092): closing reconciliation legitimately
+          // moves counters BOTH ways (payments reversed, a club slipping
+          // under a threshold). Only an implausible MAGNITUDE blocks — the
+          // symmetric cap catches systematic re-derive inflation or a
+          // collapse-to-zero, never a per-unit downward correction.
           const cap = Math.max(50, 0.1 * prod)
-          if (delta < -decreaseFloor) {
-            reasons.push(
-              `${date} D${id} ${field}: counter decrease ${prod}→${staging} ` +
-                `(Δ ${delta}) blocks (floor ${decreaseFloor})`
-            )
-          } else if (delta > cap) {
+          if (Math.abs(delta) > cap) {
             reasons.push(
               `${date} D${id} ${field}: counter move ${prod}→${staging} ` +
-                `(Δ +${delta}) exceeds cap ${cap} = max(50, 10% × ${prod})`
+                `(Δ ${delta > 0 ? '+' : ''}${delta}) exceeds symmetric cap ` +
+                `${cap} = max(50, 10% × ${prod})`
             )
           } else {
             deltas.push({ districtId: id, field, prod, staging, delta })
@@ -362,8 +353,8 @@ export interface PromoteDecision {
   requiresReview: boolean
   reasons: string[]
   /** present when CPAA auto-allowed every changed overlap date (#1086) */
-  autoAllowed?: 'closing-monotonic'
-  /** provenance: per-date monotone counter movements (run-summary table) */
+  autoAllowed?: 'closing-reconciliation'
+  /** provenance: per-date counter movements, either direction (run-summary table) */
   closingDeltas?: Array<ClosingDelta & { date: string }>
   /** districts (across changed dates) whose only moves were derived fields */
   derivedOnlyDistricts?: number
@@ -372,8 +363,6 @@ export interface PromoteDecision {
 export interface PromoteOptions {
   /** operator override: promote a reviewed value re-derive despite changed dates */
   allowValueChanges?: boolean
-  /** CPAA counter decrease tolerance — see {@link ClosingAutoAllowOptions} */
-  closingDecreaseFloor?: number
 }
 
 /** Digest sets for CPAA evaluation of changed overlap dates (#1086). */
@@ -513,8 +502,7 @@ export function diffSnapshots(
  */
 function evaluateClosingAutoAllowAcross(
   changed: ChangedDate[],
-  digests: PromoteDigests,
-  opts: ClosingAutoAllowOptions
+  digests: PromoteDigests
 ): {
   allowed: boolean
   reasons: string[]
@@ -534,7 +522,7 @@ function evaluateClosingAutoAllowAcross(
       reasons.push(`${date}: digest unavailable — cannot evaluate auto-allow`)
       continue
     }
-    const result = evaluateClosingAutoAllow(staging, prod, opts)
+    const result = evaluateClosingAutoAllow(staging, prod)
     if (!result.allowed) {
       reasons.push(...result.reasons)
     } else {
@@ -593,19 +581,17 @@ export function evaluatePromote(
       // because changed is non-empty" — never to a subtractive change.
       const cpaa =
         digests && report.removed.length === 0
-          ? evaluateClosingAutoAllowAcross(report.changed, digests, {
-              closingDecreaseFloor: opts.closingDecreaseFloor,
-            })
+          ? evaluateClosingAutoAllowAcross(report.changed, digests)
           : undefined
       if (cpaa?.allowed) {
         requiresReview = false
-        autoAllowed = 'closing-monotonic'
+        autoAllowed = 'closing-reconciliation'
         closingDeltas = cpaa.deltas
         derivedOnlyDistricts = cpaa.derivedOnlyDistricts
         reasons.push(
-          `closing-pinned auto-allow: ${cpaa.deltas.length} monotone ` +
+          `closing-pinned auto-allow: ${cpaa.deltas.length} within-cap ` +
             `counter move(s) across ${report.changed.length} closing-pinned date(s), ` +
-            `${derivedOnlyDistricts} derived-only district(s) ignored (#1086)`
+            `${derivedOnlyDistricts} derived-only district(s) ignored (#1086, #1092)`
         )
       } else {
         promote = false

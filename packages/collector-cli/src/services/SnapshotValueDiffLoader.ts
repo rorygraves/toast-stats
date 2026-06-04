@@ -24,8 +24,6 @@ export interface RunValueDiffOptions {
   stagingDir: string
   prodDir: string
   allowValueChanges?: boolean
-  /** CPAA counter decrease tolerance (#1086) — default 0 (strict) */
-  closingDecreaseFloor?: number
 }
 
 export interface RunValueDiffResult {
@@ -68,10 +66,7 @@ export function runValueDiff(opts: RunValueDiffOptions): RunValueDiffResult {
   const report = diffSnapshots(staging, prod)
   const decision = evaluatePromote(
     report,
-    {
-      allowValueChanges: opts.allowValueChanges,
-      closingDecreaseFloor: opts.closingDecreaseFloor,
-    },
+    { allowValueChanges: opts.allowValueChanges },
     // CPAA (#1086): digests carry the already-parsed rows + sourceCsvDate.
     { staging, prod }
   )
