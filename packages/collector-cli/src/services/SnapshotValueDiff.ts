@@ -507,19 +507,70 @@ export function diffSnapshots(
 }
 
 /**
+ * CPAA across ALL changed overlap dates: every changed date must individually
+ * pass {@link evaluateClosingAutoAllow}; any failure (or a missing digest)
+ * blocks the whole set — fail-closed.
+ */
+function evaluateClosingAutoAllowAcross(
+  changed: ChangedDate[],
+  digests: PromoteDigests,
+  opts: ClosingAutoAllowOptions
+): ClosingAutoAllowResult & { deltasByDate: PromoteDecision['closingDeltas'] } {
+  const stagingMap = byDate(digests.staging)
+  const prodMap = byDate(digests.prod)
+  const reasons: string[] = []
+  const deltasByDate: NonNullable<PromoteDecision['closingDeltas']> = []
+  const derivedOnly: string[] = []
+
+  for (const { date } of changed) {
+    const staging = stagingMap.get(date)
+    const prod = prodMap.get(date)
+    if (!staging || !prod) {
+      reasons.push(`${date}: digest unavailable — cannot evaluate auto-allow`)
+      continue
+    }
+    const result = evaluateClosingAutoAllow(staging, prod, opts)
+    if (!result.allowed) {
+      reasons.push(...result.reasons)
+    } else {
+      deltasByDate.push(...result.deltas.map(d => ({ date, ...d })))
+      derivedOnly.push(...result.derivedOnlyDistricts)
+    }
+  }
+
+  return {
+    allowed: reasons.length === 0,
+    reasons,
+    deltas: [],
+    derivedOnlyDistricts: derivedOnly,
+    deltasByDate,
+  }
+}
+
+/**
  * Promote gate (validate-first). A SUBTRACTIVE change (date removed from prod)
  * always blocks. A value re-derive (changed overlap dates) requires explicit
  * operator review — it blocks unless `allowValueChanges` is set, signalling the
  * operator has reviewed the value diff. A purely additive change promotes.
+ *
+ * Closing-Pinned Auto-Allow (#1086, epic #1083): when the only objection is
+ * "changed overlap dates" and EVERY changed date is closing-pinned with
+ * monotone, capped counter moves (decision doc §4–§5), the change is routine
+ * month-end reconciliation and promotes autonomously with provenance.
+ * Subtractive changes still block absolutely; without `digests` the legacy
+ * review path applies (fail-closed).
  */
 export function evaluatePromote(
   report: ValueDiffReport,
   opts: PromoteOptions = {},
-  _digests?: PromoteDigests
+  digests?: PromoteDigests
 ): PromoteDecision {
   const reasons: string[] = []
   let promote = true
   let requiresReview = false
+  let autoAllowed: PromoteDecision['autoAllowed']
+  let closingDeltas: PromoteDecision['closingDeltas']
+  let derivedOnlyDistricts: number | undefined
 
   if (report.removed.length > 0) {
     promote = false
@@ -534,10 +585,31 @@ export function evaluatePromote(
       `changed: ${report.changed.length} overlap date(s) have re-derived values differing from production`
     )
     if (!opts.allowValueChanges) {
-      promote = false
-      reasons.push(
-        'value changes require operator review — re-run with --allow-value-changes to promote after reviewing the diff'
-      )
+      // CPAA applies only when the verdict would otherwise be "blocked
+      // because changed is non-empty" — never to a subtractive change.
+      const cpaa =
+        digests && report.removed.length === 0
+          ? evaluateClosingAutoAllowAcross(report.changed, digests, {
+              closingDecreaseFloor: opts.closingDecreaseFloor,
+            })
+          : undefined
+      if (cpaa?.allowed) {
+        requiresReview = false
+        autoAllowed = 'closing-monotonic'
+        closingDeltas = cpaa.deltasByDate
+        derivedOnlyDistricts = cpaa.derivedOnlyDistricts.length
+        reasons.push(
+          `closing-pinned auto-allow: ${cpaa.deltasByDate?.length ?? 0} monotone ` +
+            `counter move(s) across ${report.changed.length} closing-pinned date(s), ` +
+            `${derivedOnlyDistricts} derived-only district(s) ignored (#1086)`
+        )
+      } else {
+        promote = false
+        reasons.push(
+          'value changes require operator review — re-run with --allow-value-changes to promote after reviewing the diff'
+        )
+        if (cpaa) reasons.push(...cpaa.reasons)
+      }
     }
   }
 
@@ -547,5 +619,14 @@ export function evaluatePromote(
     )
   }
 
-  return { promote, requiresReview, reasons }
+  return {
+    promote,
+    requiresReview,
+    reasons,
+    ...(autoAllowed !== undefined && {
+      autoAllowed,
+      closingDeltas,
+      derivedOnlyDistricts,
+    }),
+  }
 }
