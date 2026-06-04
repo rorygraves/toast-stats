@@ -247,18 +247,29 @@ describe('evaluateClosingAutoAllow — fixture (2026-05-31 pair)', () => {
   const stagingDigest = digestDate('2026-05-31', stagingData)
   const prodDigest = digestDate('2026-05-31', prodData)
 
-  it('blocks the as-is pair, naming each of the 5 reversal districts', () => {
+  it('auto-allows the as-is pair — genuine reversals are routine reconciliation (#1092)', () => {
+    // Under #1086 this pair BLOCKED, naming the 5 reversal districts; the
+    // operator decision (#1092) is that per-unit decreases are legitimate
+    // during closing. Direction-agnostic: the pair now auto-allows with the
+    // reversal districts carried in the delta provenance.
     const res = evaluateClosingAutoAllow(stagingDigest, prodDigest)
-    expect(res.allowed).toBe(false)
+    expect(res.allowed).toBe(true)
+    expect(res.reasons).toEqual([])
+    const decreaseIds = new Set(
+      res.deltas.filter(d => d.delta < 0).map(d => d.districtId)
+    )
     for (const id of REVERSAL_DISTRICTS) {
-      expect(
-        res.reasons.some(r => r.includes(`D${id} `)),
-        `expected a reason naming D${id}`
-      ).toBe(true)
+      expect(decreaseIds.has(id), `expected a decrease delta for D${id}`).toBe(
+        true
+      )
+    }
+    // Every move (either direction) sits inside the symmetric magnitude cap.
+    for (const d of res.deltas) {
+      expect(Math.abs(d.delta)).toBeLessThanOrEqual(Math.max(50, 0.1 * d.prod))
     }
   })
 
-  it('auto-allows once the 5 reversal districts match prod (19 monotone movers, 78 derived-only)', () => {
+  it('auto-allows the monotone subset too (19 movers, 78 derived-only)', () => {
     const prodRowById = new Map(prodData.rankings.map(r => [r.districtId, r]))
     const patched: AllDistrictsRankingsData = {
       ...stagingData,
@@ -353,21 +364,35 @@ describe('evaluateClosingAutoAllow — edges (decision doc §8.3)', () => {
     expect(res.reasons.join(' ')).toMatch(/cap/i)
   })
 
-  it('blocks a counter decrease at the default floor of 0', () => {
+  it('allows a counter decrease within the cap — direction-agnostic (#1092)', () => {
     const [s, p] = syntheticPair({ totalPayments: 4999 })
     const res = evaluateClosingAutoAllow(s, p)
-    expect(res.allowed).toBe(false)
-    expect(res.reasons.join(' ')).toMatch(/decrease/i)
+    expect(res.allowed).toBe(true)
+    expect(res.deltas).toEqual([
+      {
+        districtId: '61',
+        field: 'totalPayments',
+        prod: 5000,
+        staging: 4999,
+        delta: -1,
+      },
+    ])
   })
 
-  it('honours a configured decrease floor without weakening the default', () => {
-    const [s, p] = syntheticPair({ totalPayments: 4997 }) // Δ -3
-    expect(
-      evaluateClosingAutoAllow(s, p, { closingDecreaseFloor: 5 }).allowed
-    ).toBe(true)
-    expect(
-      evaluateClosingAutoAllow(s, p, { closingDecreaseFloor: 2 }).allowed
-    ).toBe(false)
+  it('blocks an implausible-magnitude decrease (symmetric cap, #1092)', () => {
+    // Δ −600 on prod 5000: symmetric cap is max(50, 500) = 500. A per-unit
+    // reconciliation never moves this much — a collapse is a regression.
+    const [s, p] = syntheticPair({ totalPayments: 4400 })
+    const res = evaluateClosingAutoAllow(s, p)
+    expect(res.allowed).toBe(false)
+    expect(res.reasons.join(' ')).toMatch(/cap/i)
+  })
+
+  it('blocks a counter collapsing to zero on a large base (#1092)', () => {
+    const [s, p] = syntheticPair({ totalPayments: 0 })
+    const res = evaluateClosingAutoAllow(s, p)
+    expect(res.allowed).toBe(false)
+    expect(res.reasons.join(' ')).toMatch(/cap/i)
   })
 
   it('blocks base drift (paymentBase moved)', () => {
@@ -478,12 +503,12 @@ describe('evaluatePromote CPAA wiring (#1086)', () => {
     return { report: diffSnapshots(staging, prod), digests: { staging, prod } }
   }
 
-  it('auto-allows a closing-pinned monotone changed date (promote, no review)', () => {
+  it('auto-allows a closing-pinned within-cap changed date (promote, no review)', () => {
     const { report, digests } = promoteCase({ totalPayments: 5050 })
     const decision = evaluatePromote(report, {}, digests)
     expect(decision.promote).toBe(true)
     expect(decision.requiresReview).toBe(false)
-    expect(decision.autoAllowed).toBe('closing-monotonic')
+    expect(decision.autoAllowed).toBe('closing-reconciliation')
     expect(decision.closingDeltas).toEqual([
       {
         date: '2026-05-31',
@@ -497,13 +522,31 @@ describe('evaluatePromote CPAA wiring (#1086)', () => {
     expect(decision.reasons.join(' ')).toMatch(/auto-allow/i)
   })
 
-  it('keeps blocking when CPAA finds a decrease, surfacing the violation', () => {
+  it('auto-allows a closing-pinned decrease (direction-agnostic, #1092)', () => {
     const { report, digests } = promoteCase({ totalPayments: 4999 })
+    const decision = evaluatePromote(report, {}, digests)
+    expect(decision.promote).toBe(true)
+    expect(decision.requiresReview).toBe(false)
+    expect(decision.autoAllowed).toBe('closing-reconciliation')
+    expect(decision.closingDeltas).toEqual([
+      {
+        date: '2026-05-31',
+        districtId: '61',
+        field: 'totalPayments',
+        prod: 5000,
+        staging: 4999,
+        delta: -1,
+      },
+    ])
+  })
+
+  it('keeps blocking when CPAA finds a cap breach, surfacing the violation', () => {
+    const { report, digests } = promoteCase({ totalPayments: 4400 }) // Δ −600
     const decision = evaluatePromote(report, {}, digests)
     expect(decision.promote).toBe(false)
     expect(decision.requiresReview).toBe(true)
     expect(decision.autoAllowed).toBeUndefined()
-    expect(decision.reasons.join(' ')).toMatch(/decrease/i)
+    expect(decision.reasons.join(' ')).toMatch(/cap/i)
   })
 
   it('blocks when ANY changed date lacks the closing signature, even if another passes', () => {
@@ -544,7 +587,7 @@ describe('evaluatePromote CPAA wiring (#1086)', () => {
     expect(decision.reasons.join(' ')).toMatch(/2026-05-15/)
   })
 
-  it('still blocks a subtractive change even when changed dates are closing-monotonic', () => {
+  it('still blocks a subtractive change even when changed dates are closing-allowed', () => {
     const { digests } = promoteCase({ totalPayments: 5050 })
     const extraProdDate = digestDate(
       '2026-04-30',
@@ -585,19 +628,6 @@ describe('evaluatePromote CPAA wiring (#1086)', () => {
     expect(decision.requiresReview).toBe(true)
     expect(decision.autoAllowed).toBeUndefined()
   })
-
-  it('passes closingDecreaseFloor through to the per-date evaluation', () => {
-    const { report, digests } = promoteCase({ totalPayments: 4997 }) // Δ -3
-    const strict = evaluatePromote(report, {}, digests)
-    expect(strict.promote).toBe(false)
-    const relaxed = evaluatePromote(
-      report,
-      { closingDecreaseFloor: 5 },
-      digests
-    )
-    expect(relaxed.promote).toBe(true)
-    expect(relaxed.autoAllowed).toBe('closing-monotonic')
-  })
 })
 
 describe('evaluateClosingAutoAllow — absolute-floor cap boundary (review nit)', () => {
@@ -608,6 +638,16 @@ describe('evaluateClosingAutoAllow — absolute-floor cap boundary (review nit)'
     expect(evaluateClosingAutoAllow(allowS, allowP).allowed).toBe(true)
 
     const [blockS, blockP] = syntheticPair({ paidClubs: 151 }) // prod 100, Δ +51
+    const res = evaluateClosingAutoAllow(blockS, blockP)
+    expect(res.allowed).toBe(false)
+    expect(res.reasons.join(' ')).toMatch(/cap/i)
+  })
+
+  it('applies the same boundary on the decrease side (Δ −50 allows, Δ −51 blocks) (#1092)', () => {
+    const [allowS, allowP] = syntheticPair({ paidClubs: 50 }) // prod 100, Δ −50
+    expect(evaluateClosingAutoAllow(allowS, allowP).allowed).toBe(true)
+
+    const [blockS, blockP] = syntheticPair({ paidClubs: 49 }) // prod 100, Δ −51
     const res = evaluateClosingAutoAllow(blockS, blockP)
     expect(res.allowed).toBe(false)
     expect(res.reasons.join(' ')).toMatch(/cap/i)
