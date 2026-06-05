@@ -85,3 +85,7 @@ data/
 
 # Flake-detection harness artifact (#913)
 flake-metric.json
+
+# Forge runtime state/log (committed: profile.json + specs/)
+.forge/state/
+.forge/log/
