@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "featureId": "queryclient-config",
+  "title": "Extract QueryClient config into QUERY_CLIENT_CONFIG",
+  "baseBranch": "main",
+  "branchPrefix": "forge",
+  "mode": "claude-driver",
+  "designPr": null,
+  "pieces": [
+    {
+      "id": "p1",
+      "order": 1,
+      "title": "Extract QUERY_CLIENT_CONFIG and build the client from it",
+      "summary": "In queryClient.ts add an exported typed QUERY_CLIENT_CONFIG const and build the existing queryClient from it with no inline literals; add a vitest test asserting the values and default options.",
+      "specPath": "pieces/p1.md",
+      "acceptanceHash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "status": "pending",
+      "baseSha": null,
+      "prNumber": null,
+      "mergeCommit": null,
+      "mergedAt": null,
+      "attempts": 0
+    }
+  ]
+}
