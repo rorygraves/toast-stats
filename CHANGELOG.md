@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.25.2](https://github.com/rorygraves/toast-stats/compare/toast-stats-v2.25.1...toast-stats-v2.25.2) (2026-06-05)
+
+
+### Documentation
+
+* **runbook:** add §2d pre-run hardening — versioning safety net + 2017 pilot ([#1087](https://github.com/rorygraves/toast-stats/issues/1087)) ([#1088](https://github.com/rorygraves/toast-stats/issues/1088)) ([24c6b01](https://github.com/rorygraves/toast-stats/commit/24c6b01d6c7b79702e7a89b3e9ca97830b66c072))
+
 ## [2.25.1](https://github.com/taverns-red/toast-stats/compare/toast-stats-v2.25.0...toast-stats-v2.25.1) (2026-06-02)
 
 
