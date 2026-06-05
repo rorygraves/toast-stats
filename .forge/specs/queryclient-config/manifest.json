@@ -5,7 +5,7 @@
   "baseBranch": "main",
   "branchPrefix": "forge",
   "mode": "claude-driver",
-  "designPr": null,
+  "designPr": 2,
   "pieces": [
     {
       "id": "p1",
@@ -14,8 +14,8 @@
       "summary": "In queryClient.ts add an exported typed QUERY_CLIENT_CONFIG const and build the existing queryClient from it with no inline literals; add a vitest test asserting the values and default options.",
       "specPath": "pieces/p1.md",
       "acceptanceHash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
-      "status": "pending",
-      "baseSha": null,
+      "status": "in_progress",
+      "baseSha": "60567bcd41ee9e4d19521ed34c6025a61ad59c50",
       "prNumber": null,
       "mergeCommit": null,
       "mergedAt": null,
